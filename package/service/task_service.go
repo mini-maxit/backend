@@ -12,19 +12,19 @@ import (
 var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
 
 type TaskService interface {
-	// CreateEmpty creates a new empty task and returns the task ID
-	CreateEmpty(userId int64) (int64, error)
+	// Create creates a new empty task and returns the task ID
+	Create(task schemas.Task) (int64, error)
 	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
 	CreateSubmission(taskId int64, userId int64, language schemas.LanguageConfig, order int64) (int64, error)
 }
 
 type TaskServiceImpl struct {
-	database               database.Database
-	taskRepository         repository.TaskRepository
-	userSolutionRepository repository.UserSolutionRepository
+	database             database.Database
+	taskRepository       repository.TaskRepository
+	submissionRepository repository.SubmissionRepository
 }
 
-func (ts *TaskServiceImpl) CreateEmpty(userId int64) (int64, error) {
+func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	// Connect to the database and start a transaction
 	db := ts.database.Connect()
 	if db == nil {
@@ -33,7 +33,11 @@ func (ts *TaskServiceImpl) CreateEmpty(userId int64) (int64, error) {
 	tx := db.Begin()
 
 	// Create a new task
-	taskId, err := ts.taskRepository.CreateEmpty(tx, userId)
+	model := models.Task{
+		Title:     task.Title,
+		CreatedBy: task.CreatedBy,
+	}
+	taskId, err := ts.taskRepository.Create(tx, model)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -81,7 +85,7 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	tx := db.Begin()
 
 	// Create a new submission
-	userSolution := models.UserSolution{
+	submission := models.Submission{
 		TaskId:          taskId,
 		UserId:          userId,
 		Order:           order,
@@ -90,7 +94,7 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 		Status:          "received",
 		CheckedAt:       nil,
 	}
-	solutionId, err := ts.userSolutionRepository.CreateUserSolution(tx, userSolution)
+	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 
 	if err != nil {
 		tx.Rollback()
@@ -99,7 +103,7 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 
 	// Commit the transaction
 	tx.Commit()
-	return solutionId, nil
+	return submissionId, nil
 }
 
 func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
@@ -108,10 +112,10 @@ func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *sc
 	}
 }
 
-func NewTaskService(db database.Database, taskRepository repository.TaskRepository, userSolutionRepository repository.UserSolutionRepository) TaskService {
+func NewTaskService(db database.Database, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
 	return &TaskServiceImpl{
-		database:               db,
-		taskRepository:         taskRepository,
-		userSolutionRepository: userSolutionRepository,
+		database:             db,
+		taskRepository:       taskRepository,
+		submissionRepository: submissionRepository,
 	}
 }

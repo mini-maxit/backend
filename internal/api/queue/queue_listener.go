@@ -25,9 +25,9 @@ const (
 
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
-	taskService         service.TaskService
-	queueService        service.QueueService
-	userSolutionService service.UserSolutionService
+	taskService       service.TaskService
+	queueService      service.QueueService
+	submissionService service.SubmissionService
 	// RabbitMQ connection and channel
 	conn    *amqp.Connection
 	channel *amqp.Channel
@@ -112,14 +112,18 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		return
 	}
 	logrus.Infof("Received message: %v", queueMessage.MessageId)
-	// You could implement task-specific processing here using ql.taskService
+	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
+	if err != nil {
+		logrus.Errorf("Failed to get submission id: %s", err)
+		return
+	}
 	if queueMessage.Result.StatusCode == InternalError {
-		ql.userSolutionService.MarkSolutionFailed(queueMessage.UserSolutionId, queueMessage.Result.Message)
+		ql.submissionService.MarkSubmissionFailed(submissionId, queueMessage.Result.Message)
 		return
 	}
 
-	ql.userSolutionService.MarkSolutionCompleted(queueMessage.UserSolutionId)
-	_, err = ql.userSolutionService.CreateUserSolutionResult(queueMessage)
+	ql.submissionService.MarkSubmissionComplete(submissionId)
+	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
 	if err != nil {
 		logrus.Errorf("Failed to create user solution result: %s", err)
 		return

@@ -16,16 +16,17 @@ import (
 type QueueService interface {
 	// PublishTask publishes a task to the queue
 	PublishSubmission(submissionId int64) error
+	GetSubmissionId(messageId string) (int64, error)
 }
 
 type QueueServiceImpl struct {
-	database               database.Database
-	taskRepository         repository.TaskRepository
-	userSolutionRepository repository.UserSolutionRepository
-	queueRepository        repository.QueueMessageRepository
-	channel                *amqp.Channel
-	queue                  amqp.Queue
-	responseQueueName      string
+	database             database.Database
+	taskRepository       repository.TaskRepository
+	submissionRepository repository.SubmissionRepository
+	queueRepository      repository.QueueMessageRepository
+	channel              *amqp.Channel
+	queue                amqp.Queue
+	responseQueueName    string
 }
 
 func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
@@ -53,7 +54,7 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	db := qs.database.Connect()
 	tx := db.Begin()
 
-	submission, err := qs.userSolutionRepository.GetUserSolution(tx, submissionId)
+	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -86,11 +87,11 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	})
 	err = qs.publishMessage(msq)
 	if err != nil {
-		qs.userSolutionRepository.MarkUserSolutionFailed(tx, submissionId, err.Error())
+		qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
 		tx.Rollback()
 		return err
 	}
-	err = qs.userSolutionRepository.MarkUserSolutionProcessing(tx, submissionId)
+	err = qs.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -100,7 +101,21 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	return nil
 }
 
-func NewQueueService(db database.Database, taskRepository repository.TaskRepository, userSolutionRepository repository.UserSolutionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
+func (qs *QueueServiceImpl) GetSubmissionId(messageId string) (int64, error) {
+	db := qs.database.Connect()
+	tx := db.Begin()
+
+	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	tx.Commit()
+	return queueMessage.SubmissionId, nil
+}
+
+func NewQueueService(db database.Database, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
 	q, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
@@ -114,10 +129,10 @@ func NewQueueService(db database.Database, taskRepository repository.TaskReposit
 	}
 
 	return &QueueServiceImpl{database: db,
-		taskRepository:         taskRepository,
-		userSolutionRepository: userSolutionRepository,
-		queueRepository:        queueMessageRepository,
-		queue:                  q,
-		channel:                channel,
-		responseQueueName:      responseQueueName}, nil
+		taskRepository:       taskRepository,
+		submissionRepository: submissionRepository,
+		queueRepository:      queueMessageRepository,
+		queue:                q,
+		channel:              channel,
+		responseQueueName:    responseQueueName}, nil
 }

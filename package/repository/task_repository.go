@@ -6,8 +6,8 @@ import (
 )
 
 type TaskRepository interface {
-	// CreateEmpty creates a new empty task and returns the task ID
-	CreateEmpty(tx *gorm.DB, userId int64) (int64, error)
+	// Create creates a new empty task and returns the task ID
+	Create(tx *gorm.DB, task models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
@@ -17,13 +17,12 @@ type TaskRepository interface {
 type TaskRepositoryImpl struct {
 }
 
-func (tr *TaskRepositoryImpl) CreateEmpty(tx *gorm.DB, userId int64) (int64, error) {
-	emptyTask := &models.Task{CreatedBy: userId}
-	err := tx.Model(&models.Task{}).Create(emptyTask).Error
+func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task models.Task) (int64, error) {
+	err := tx.Model(&models.Task{}).Create(&task).Error
 	if err != nil {
 		return 0, err
 	}
-	return emptyTask.Id, nil
+	return task.Id, nil
 }
 
 func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {

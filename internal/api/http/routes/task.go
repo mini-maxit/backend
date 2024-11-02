@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -44,7 +45,6 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract the overwrite flag
 	overwriteStr := r.FormValue("overwrite")
 	overwrite := false
 	if overwriteStr != "" {
@@ -55,13 +55,11 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	taskName := r.FormValue("taskName")
 	if taskName == "" {
 		utils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
 		return
 	}
-
 	userIdStr := r.FormValue("userId")
 	if userIdStr == "" {
 		utils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
@@ -79,6 +77,10 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
 		return
 	}
+	if !strings.HasSuffix(handler.Filename, ".zip") || !strings.HasSuffix(handler.Filename, ".tar.gz") {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload.")
+		return
+	}
 	defer file.Close()
 
 	// Create a multipart writer for the HTTP request to FileStorage service
@@ -86,7 +88,11 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	writer := multipart.NewWriter(body)
 
 	// Create empty task to get the task ID
-	taskId, err := tr.taskService.CreateEmpty(userId)
+	task := schemas.Task{
+		Title:     taskName,
+		CreatedBy: userId,
+	}
+	taskId, err := tr.taskService.Create(task)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))
 		return
@@ -106,28 +112,24 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error copying file to FileStorage request. %s", err.Error()))
 		return
 	}
-
 	writer.Close()
 
 	// Send the request to FileStorage service
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/createTask", tr.fileStorageUrl), body)
-	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating request to FileStorage. %s", err.Error()))
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.Post(tr.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
 		return
 	}
 	defer resp.Body.Close()
 
-	buffer := make([]byte, resp.ContentLength)
-	resp.Body.Read(buffer)
 	// Handle response from FileStorage
+	buffer := make([]byte, resp.ContentLength)
+	bytesRead, err := resp.Body.Read(buffer)
+	if err != nil && bytesRead == 0 {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
+		return
+	}
 	if resp.StatusCode != http.StatusOK {
 		utils.ReturnError(w, resp.StatusCode, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)))
 		return
@@ -186,7 +188,7 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "User ID is required.", http.StatusBadRequest)
 		return
 	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	userId, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid user ID.", http.StatusBadRequest)
 		return
@@ -227,17 +229,10 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	writer.Close()
 
 	// Send the request to FileStorage service
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/submit", tr.fileStorageUrl), body)
-	if err != nil {
-		http.Error(w, "Error creating request to FileStorage.", http.StatusInternalServerError)
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.Post(tr.fileStorageUrl+"/submit", writer.FormDataContentType(), body)
 	if err != nil {
-		http.Error(w, "Error sending file to FileStorage service.", http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
 		return
 	}
 	defer resp.Body.Close()
@@ -245,12 +240,12 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	buffer := make([]byte, resp.ContentLength)
 	bytesRead, err := resp.Body.Read(buffer)
 	if err != nil && bytesRead == 0 {
-		http.Error(w, "Error reading response from FileStorage.", http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
 		return
 	}
 	// Handle response from FileStorage
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)), resp.StatusCode)
+		utils.ReturnError(w, resp.StatusCode, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)))
 		return
 	}
 	// Waiting to be implemented on the FileStorage service side
@@ -261,17 +256,16 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	// }
 	order := rand.Int64N(30)
 
-	// Update the submission with the correct order
-	// Create submission entry in the database
-	submissionId, err := tr.taskService.CreateSubmission(taskId, userID, language, order)
+	// Create the submission with the correct order
+	submissionId, err := tr.taskService.CreateSubmission(taskId, userId, language, order)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating submission. %s", err.Error()), http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
 		return
 	}
 
 	err = tr.queueService.PublishSubmission(submissionId)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()), http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()))
 		return
 	}
 

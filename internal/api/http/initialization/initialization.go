@@ -63,7 +63,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		panic(fmt.Errorf("failed to create task repository: %w", err))
 	}
-	userSolutionRepository, err := repository.NewUserSolutionRepository(db.Connect())
+	submissionRepository, err := repository.NewSubmissionRepository(db.Connect())
 	if err != nil {
 		panic(fmt.Errorf("failed to create submission repository: %w", err))
 	}
@@ -73,8 +73,8 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	// Services
-	taskService := service.NewTaskService(db, taskRepository, userSolutionRepository)
-	queueService, err := service.NewQueueService(db, taskRepository, userSolutionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
+	taskService := service.NewTaskService(db, taskRepository, submissionRepository)
+	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		panic(fmt.Errorf("failed to create queue service: %w", err))
 	}
