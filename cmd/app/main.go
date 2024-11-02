@@ -21,12 +21,7 @@ func main() {
 
 	initialization := initialization.NewInitialization(cfg)
 
-	queueListener, err := server.NewQueueListener(initialization)
-	if err != nil {
-		logrus.Errorf("failed to create queue listener: %v", err)
-		os.Exit(1)
-	}
-
+	queueListener := initialization.QueueListener
 	cancel, err := queueListener.Start()
 	if err != nil {
 		logrus.Errorf("failed to start queue listener: %v", err)

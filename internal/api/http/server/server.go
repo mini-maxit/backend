@@ -53,6 +53,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 
 	// Task routes
 	mux.HandleFunc("/api/v1/task", initialization.TaskRoute.UploadTask)
+	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
 
 	return &Server{mux: mux, port: initialization.Cfg.App.Port}
 }

@@ -6,17 +6,17 @@ import (
 )
 
 type UserSolutionResult interface {
-	CreateUserSolutionResult(tx *gorm.DB, solutionResult models.UserSolutionResult) (uint, error)
+	CreateUserSolutionResult(tx *gorm.DB, solutionResult models.UserSolutionResult) (int64, error)
 }
 
 type UserSolutionResultRepository struct{}
 
 // Store the result of the solution in the database
-func (usr *UserSolutionResultRepository) CreateUserSolutionResult(tx *gorm.DB, solutionResult models.UserSolutionResult) (uint, error) {
+func (usr *UserSolutionResultRepository) CreateUserSolutionResult(tx *gorm.DB, solutionResult models.UserSolutionResult) (int64, error) {
 	if err := tx.Create(&solutionResult).Error; err != nil {
 		return 0, err
 	}
-	return solutionResult.ID, nil
+	return solutionResult.Id, nil
 }
 
 func NewUserSolutionResultRepository(db *gorm.DB) (UserSolutionResult, error) {

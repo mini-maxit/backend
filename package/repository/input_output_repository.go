@@ -6,14 +6,14 @@ import (
 )
 
 type InputOutput interface {
-	GetInputOutputId(db *gorm.DB, task_id int, order int) (int, error)
+	GetInputOutputId(db *gorm.DB, taskId int64, order int64) (int64, error)
 }
 
 type InputOutputRepository struct{}
 
-func (i *InputOutputRepository) GetInputOutputId(tx *gorm.DB, task_id int, order int) (int, error) {
-	var input_output_id int
-	err := tx.Table("input_outputs").Select("id").Where("task_id = ? AND input_output_order = ?", task_id, order).Scan(&input_output_id).Error
+func (i *InputOutputRepository) GetInputOutputId(tx *gorm.DB, taskId int64, order int64) (int64, error) {
+	var input_output_id int64
+	err := tx.Table("input_outputs").Select("id").Where("task_id = ? AND input_output_order = ?", taskId, order).Scan(&input_output_id).Error
 	return input_output_id, err
 }
 

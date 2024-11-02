@@ -2,25 +2,31 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"mime/multipart"
 	"net/http"
 	"strconv"
 
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/sirupsen/logrus"
 )
 
 type TaskRoute interface {
 	UploadTask(w http.ResponseWriter, r *http.Request)
+	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskRouteImpl struct {
 	fileStorageUrl string
 
 	// Service that handles task-related operations
-	taskService service.TaskService
+	taskService  service.TaskService
+	queueService service.QueueService
 }
 
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +62,17 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userIdStr := r.FormValue("userId")
+	if userIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
+		return
+	}
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
+		return
+	}
+
 	// Extract the uploaded file
 	file, handler, err := r.FormFile("task")
 	if err != nil {
@@ -69,7 +86,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	writer := multipart.NewWriter(body)
 
 	// Create empty task to get the task ID
-	taskId, err := tr.taskService.CreateEmpty()
+	taskId, err := tr.taskService.CreateEmpty(userId)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))
 		return
@@ -80,7 +97,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	writer.WriteField("overwrite", strconv.FormatBool(overwrite))
 
 	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("task", handler.Filename)
+	part, err := writer.CreateFormFile("archive", handler.Filename)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating form file for FileStorage. %s", err.Error()))
 		return
@@ -116,11 +133,151 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the task withw the correct directories
+	// Update the task with the correct directories
+	updateInfo := schemas.UpdateTask{
+		Title: taskName,
+	}
+	if err := tr.taskService.UpdateTask(taskId, updateInfo); err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error updating task directories. %s", err.Error()))
+		return
+	}
 
 	utils.ReturnSuccess(w, http.StatusOK, "Task uploaded successfully")
 }
 
-func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
-	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
+func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Limit the size of the incoming request to 10 MB
+	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
+
+	// Parse the multipart form data
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "The uploaded file is too large.", http.StatusBadRequest)
+		return
+	}
+
+	// Extract the task ID
+	taskIdStr := r.FormValue("taskID")
+	if taskIdStr == "" {
+		http.Error(w, "Task ID is required.", http.StatusBadRequest)
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid task ID.", http.StatusBadRequest)
+		return
+	}
+
+	// Extract the uploaded file
+	file, handler, err := r.FormFile("solution")
+	if err != nil {
+		http.Error(w, "Error retrieving the file. No solution file found.", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Extract user ID
+	userIDStr := r.FormValue("userID")
+	if userIDStr == "" {
+		http.Error(w, "User ID is required.", http.StatusBadRequest)
+		return
+	}
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid user ID.", http.StatusBadRequest)
+		return
+	}
+
+	// Extract language
+	languageStr := r.FormValue("language")
+	if languageStr == "" {
+		http.Error(w, "Language config is required.", http.StatusBadRequest)
+		return
+	}
+	logrus.Info(languageStr)
+	var language schemas.LanguageConfig
+	if err := json.Unmarshal([]byte(languageStr), &language); err != nil {
+		http.Error(w, "Invalid language config.", http.StatusBadRequest)
+		return
+	}
+
+	// Create a multipart writer for the HTTP request to FileStorage service
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Add form fields
+	writer.WriteField("taskID", taskIdStr)
+	writer.WriteField("userID", userIDStr)
+
+	// Create a form file field and copy the uploaded file to it
+	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
+	if err != nil {
+		http.Error(w, "Error creating form file for FileStorage.", http.StatusInternalServerError)
+		return
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		http.Error(w, "Error copying file to FileStorage request.", http.StatusInternalServerError)
+		return
+	}
+
+	writer.Close()
+
+	// Send the request to FileStorage service
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/submit", tr.fileStorageUrl), body)
+	if err != nil {
+		http.Error(w, "Error creating request to FileStorage.", http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Error sending file to FileStorage service.", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	buffer := make([]byte, resp.ContentLength)
+	bytesRead, err := resp.Body.Read(buffer)
+	if err != nil && bytesRead == 0 {
+		http.Error(w, "Error reading response from FileStorage.", http.StatusInternalServerError)
+		return
+	}
+	// Handle response from FileStorage
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)), resp.StatusCode)
+		return
+	}
+	// Waiting to be implemented on the FileStorage service side
+	// order, error := strconv.ParseInt(string(buffer), 10, 64)
+	// if error != nil {
+	// 	http.Error(w, "Error parsing response from FileStorage.", http.StatusInternalServerError)
+	// 	return
+	// }
+	order := rand.Int64N(30)
+
+	// Update the submission with the correct order
+	// Create submission entry in the database
+	submissionId, err := tr.taskService.CreateSubmission(taskId, userID, language, order)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating submission. %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	err = tr.queueService.PublishSubmission(submissionId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, "Solution submitted successfully")
+}
+
+func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, queueService service.QueueService) TaskRoute {
+	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService, queueService: queueService}
 }

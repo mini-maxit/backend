@@ -27,8 +27,8 @@ var (
 )
 
 func ReturnError(w http.ResponseWriter, statusCode int, message any) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	response := ApiResponse[any]{
 		ResponseKey: apiMessage[statusCode],
 		Message:     message,
@@ -42,14 +42,14 @@ func ReturnError(w http.ResponseWriter, statusCode int, message any) {
 }
 
 func ReturnInternalServerError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
 	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte(err.Error()))
 }
 
 func ReturnSuccess(w http.ResponseWriter, statusCode int, message any) {
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	w.Header().Set("Content-Type", "application/json")
 	response := ApiResponse[any]{
 		ResponseKey: apiMessage[statusCode],
 		Message:     message,

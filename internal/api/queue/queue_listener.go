@@ -1,14 +1,14 @@
-package server
+package queue
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
-	"github.com/mini-maxit/backend/internal/api/http/initialization"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type QueueListener interface {
@@ -17,9 +17,17 @@ type QueueListener interface {
 	listen(ctx context.Context) error
 }
 
+const (
+	Success = iota + 1
+	Failed
+	InternalError
+)
+
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
-	taskService service.TaskService
+	taskService         service.TaskService
+	queueService        service.QueueService
+	userSolutionService service.UserSolutionService
 	// RabbitMQ connection and channel
 	conn    *amqp.Connection
 	channel *amqp.Channel
@@ -27,35 +35,25 @@ type QueueListenerImpl struct {
 	queueName string
 }
 
-func NewQueueListener(initialization *initialization.Initialization) (*QueueListenerImpl, error) {
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", initialization.Cfg.BrokerConfig.User, initialization.Cfg.BrokerConfig.Password, initialization.Cfg.BrokerConfig.Host, initialization.Cfg.BrokerConfig.Port))
-	if err != nil {
-		return nil, err
-	}
-
-	channel, err := conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
+func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService service.TaskService, queueName string) (*QueueListenerImpl, error) {
 	// Declare the queue
-	_, err = channel.QueueDeclare(
-		initialization.Cfg.BrokerConfig.ResponseQueueName, // name of the queue
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
+	_, err := channel.QueueDeclare(
+		queueName, // name of the queue
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &QueueListenerImpl{
-		taskService: initialization.TaskService,
+		taskService: taskService,
 		conn:        conn,
 		channel:     channel,
-		queueName:   initialization.Cfg.BrokerConfig.ResponseQueueName,
+		queueName:   queueName,
 	}, nil
 }
 
@@ -102,41 +100,29 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 	return nil
 }
 
-type ResponseMessage struct {
-	MessageID      string `json:"message_id"`
-	TaskID         int64  `json:"task_id"`
-	UserID         int64  `json:"user_id"`
-	UserSolutionID int64  `json:"user_solution_id"`
-	Result         Result `json:"result"`
-}
-
-type Result struct {
-	Success     bool         `json:"Success"`
-	StatusCode  int64        `json:"StatusCode"`
-	Code        string       `json:"Code"`
-	Message     string       `json:"Message"`
-	TestResults []TestResult `json:"TestResults"`
-}
-
-type TestResult struct {
-	InputFile    string `json:"InputFile"`
-	ExpectedFile string `json:"ExpectedFile"`
-	ActualFile   string `json:"ActualFile"`
-	Passed       bool   `json:"Passed"`
-	ErrorMessage string `json:"ErrorMessage"`
-	Order        int64  `json:"Order"`
-}
-
 func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	// Placeholder for processing the message
 	logrus.Info("Received a message")
 
 	// Unmarshal the message body
-	queueMessage := ResponseMessage{}
+	queueMessage := schemas.ResponseMessage{}
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
 		logrus.Errorf("Failed to unmarshal the message: %s", err)
+		return
 	}
-	logrus.Infof("Received message: %v", queueMessage)
+	logrus.Infof("Received message: %v", queueMessage.MessageId)
 	// You could implement task-specific processing here using ql.taskService
+	if queueMessage.Result.StatusCode == InternalError {
+		ql.userSolutionService.MarkSolutionFailed(queueMessage.UserSolutionId, queueMessage.Result.Message)
+		return
+	}
+
+	ql.userSolutionService.MarkSolutionCompleted(queueMessage.UserSolutionId)
+	_, err = ql.userSolutionService.CreateUserSolutionResult(queueMessage)
+	if err != nil {
+		logrus.Errorf("Failed to create user solution result: %s", err)
+		return
+	}
+	logrus.Infof("Succesfuly processed message: %v", queueMessage.MessageId)
 }
