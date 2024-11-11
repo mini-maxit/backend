@@ -71,7 +71,7 @@ func (tr *TaskRepositoryImpl) UpdateTask(tx *gorm.DB, taskId int64, task *models
 }
 
 func NewTaskRepository(db *gorm.DB) (TaskRepository, error) {
-	tables := []interface{}{&models.Task{}, &models.InputOutput{}}
+	tables := []interface{}{&models.Task{}, &models.InputOutput{}, &models.TaskUser{}}
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			err := db.Migrator().CreateTable(table)

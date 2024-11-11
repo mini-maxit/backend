@@ -8,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const TEST_DB_NAME = "test-maxit"
+
 type Config struct {
 	FileStorageUrl string
 	DB             DBConfig
@@ -24,8 +26,7 @@ type DBConfig struct {
 }
 
 type AppConfig struct {
-	Port      uint16
-	QueueName string
+	Port uint16
 }
 
 type BrokerConfig struct {

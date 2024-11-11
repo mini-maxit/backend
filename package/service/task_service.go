@@ -15,7 +15,7 @@ type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(task schemas.Task) (int64, error)
 	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
-	CreateSubmission(taskId int64, userId int64, language schemas.LanguageConfig, order int64) (int64, error)
+	CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error)
 }
 
 type TaskServiceImpl struct {
@@ -76,7 +76,7 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	return nil
 }
 
-func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language schemas.LanguageConfig, order int64) (int64, error) {
+func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error) {
 	// Connect to the database and start a transaction
 	db := ts.database.Connect()
 	if db == nil {
@@ -86,13 +86,12 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 
 	// Create a new submission
 	submission := models.Submission{
-		TaskId:          taskId,
-		UserId:          userId,
-		Order:           order,
-		LanguageType:    language.Language,
-		LanguageVersion: language.Version,
-		Status:          "received",
-		CheckedAt:       nil,
+		TaskId:     taskId,
+		UserId:     userId,
+		Order:      order,
+		LanguageId: languageId,
+		Status:     "received",
+		CheckedAt:  nil,
 	}
 	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 

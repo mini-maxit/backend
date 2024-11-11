@@ -3,18 +3,18 @@ package models
 import "time"
 
 type Submission struct {
-	Id              int64      `gorm:"primaryKey;autoIncrement"`
-	TaskId          int64      `gorm:"not null; foreignKey:TaskID"`
-	UserId          int64      `gorm:"not null; foreignKey:UserID"`
-	Order           int64      `gorm:"not null"`
-	LanguageType    string     `gorm:"type:varchar(255);not null"`
-	LanguageVersion string     `gorm:"type:varchar(50);not null"`
-	Status          string     `gorm:"type:varchar(50);not null"`
-	StatusMessage   string     `gorm:"type:varchar"`
-	SubmittedAt     time.Time  `gorm:"type:timestamp;autoCreateTime"`
-	CheckedAt       *time.Time `gorm:"type:timestamp"`
-	Task            Task       `gorm:"foreignKey:TaskId;references:Id"`
-	User            User       `gorm:"foreignKey:UserId;references:Id"`
+	Id            int64          `gorm:"primaryKey;autoIncrement"`
+	TaskId        int64          `gorm:"not null; foreignKey:TaskID"`
+	UserId        int64          `gorm:"not null; foreignKey:UserID"`
+	Order         int64          `gorm:"not null"`
+	LanguageId    int64          `gorm:"not null; foreignKey:LanguageID"`
+	Status        string         `gorm:"type:varchar(50);not null"`
+	StatusMessage string         `gorm:"type:varchar"`
+	SubmittedAt   time.Time      `gorm:"type:timestamp;autoCreateTime"`
+	CheckedAt     *time.Time     `gorm:"type:timestamp"`
+	Language      LanguageConfig `gorm:"foreignKey:LanguageId;references:Id"`
+	Task          Task           `gorm:"foreignKey:TaskId;references:Id"`
+	User          User           `gorm:"foreignKey:UserId;references:Id"`
 }
 
 type SubmissionResult struct {

@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand/v2"
@@ -195,15 +194,15 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Extract language
-	languageStr := r.FormValue("language")
+	languageStr := r.FormValue("languageID")
 	if languageStr == "" {
-		http.Error(w, "Language config is required.", http.StatusBadRequest)
+		http.Error(w, "Language id is required.", http.StatusBadRequest)
 		return
 	}
 	logrus.Info(languageStr)
-	var language schemas.LanguageConfig
-	if err := json.Unmarshal([]byte(languageStr), &language); err != nil {
-		http.Error(w, "Invalid language config.", http.StatusBadRequest)
+	languageId, err := strconv.ParseInt(languageStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid language ID.", http.StatusBadRequest)
 		return
 	}
 
@@ -257,7 +256,7 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	order := rand.Int64N(30)
 
 	// Create the submission with the correct order
-	submissionId, err := tr.taskService.CreateSubmission(taskId, userId, language, order)
+	submissionId, err := tr.taskService.CreateSubmission(taskId, userId, languageId, order)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
 		return

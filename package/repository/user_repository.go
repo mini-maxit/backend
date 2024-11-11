@@ -8,6 +8,7 @@ import (
 type UserRepositorty interface {
 	// CreateUser creates a new user and returns the user ID
 	CreateUser(tx *gorm.DB, user *models.User) (int64, error)
+	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -19,6 +20,15 @@ func (ur *UserRepositoryImpl) CreateUser(tx *gorm.DB, user *models.User) (int64,
 		return 0, err
 	}
 	return user.Id, nil
+}
+
+func (ur *UserRepositoryImpl) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
+	user := &models.User{}
+	err := tx.Model(&models.User{}).Where("id = ?", userId).First(user).Error
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func NewUserRepository(db *gorm.DB) (UserRepositorty, error) {

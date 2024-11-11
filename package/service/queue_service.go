@@ -76,8 +76,8 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 		TaskId:          submission.TaskId,
 		UserId:          submission.UserId,
 		SumissionNumber: submission.Order,
-		LanguageType:    submission.LanguageType,
-		LanguageVersion: submission.LanguageVersion,
+		LanguageType:    string(submission.Language.Type),
+		LanguageVersion: submission.Language.Version,
 		TimeLimits:      timeLimits,
 		MemoryLimits:    memoryLimits,
 	}
