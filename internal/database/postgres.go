@@ -10,7 +10,7 @@ import (
 )
 
 type PostgresDB struct {
-	db *gorm.DB
+	Db *gorm.DB
 }
 
 func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
@@ -20,10 +20,10 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PostgresDB{db: db}, nil
+	return &PostgresDB{Db: db}, nil
 
 }
 
 func (p *PostgresDB) Connect() *gorm.DB {
-	return p.db
+	return p.Db
 }

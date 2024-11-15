@@ -55,5 +55,10 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/task", initialization.TaskRoute.UploadTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
 
+	// Session routes
+	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)
+	mux.HandleFunc("/api/v1/session/validate", initialization.SessionRoute.ValidateSession)
+	mux.HandleFunc("/api/v1/session/invalidate", initialization.SessionRoute.InvalidateSession)
+
 	return &Server{mux: mux, port: initialization.Cfg.App.Port}
 }

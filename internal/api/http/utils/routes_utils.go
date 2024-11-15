@@ -6,32 +6,16 @@ import (
 )
 
 type ApiResponse[T any] struct {
-	ResponseKey string `json:"response_key"`
-	Message     T      `json:"message"`
+	Ok   bool `json:"ok"`
+	Data T    `json:"data"`
 }
 
-const (
-	SuccessMessage   = "success"
-	NotFound         = "not found"
-	MethodNotAllowed = "method not allowed"
-	BadRequest       = "bad request"
-)
-
-var (
-	apiMessage = map[int]string{
-		http.StatusOK:               SuccessMessage,
-		http.StatusMethodNotAllowed: MethodNotAllowed,
-		http.StatusNotFound:         NotFound,
-		http.StatusBadRequest:       BadRequest,
-	}
-)
-
-func ReturnError(w http.ResponseWriter, statusCode int, message any) {
+func ReturnError(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	response := ApiResponse[any]{
-		ResponseKey: apiMessage[statusCode],
-		Message:     message,
+		Ok:   false,
+		Data: data,
 	}
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(response)
@@ -47,15 +31,14 @@ func ReturnInternalServerError(w http.ResponseWriter, err error) {
 	w.Write([]byte(err.Error()))
 }
 
-func ReturnSuccess(w http.ResponseWriter, statusCode int, message any) {
+func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	response := ApiResponse[any]{
-		ResponseKey: apiMessage[statusCode],
-		Message:     message,
+		Ok:   true,
+		Data: data,
 	}
-	encoder := json.NewEncoder(w)
-	err := encoder.Encode(response)
+	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
 		ReturnInternalServerError(w, err)
 		return
