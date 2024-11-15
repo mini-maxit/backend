@@ -6,7 +6,11 @@ Quick links:
 
 ## Session
 
-Endpoints to store, validate or delete user sessions from the database
+Endpoints to store, validate or delete user sessions from the database.
+
+- [Create Session](#create-session)
+- [Validate Session](#validate-session)
+- [Invalidate Session](#invalidate-session)
 
 ### **Create Session**
 
