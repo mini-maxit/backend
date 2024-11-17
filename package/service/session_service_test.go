@@ -27,7 +27,7 @@ func TestCreateSession(t *testing.T) {
 	}
 	sessionService := NewSessionService(database, sessionRepo, userRepo)
 	t.Run("User not found", func(t *testing.T) {
-		session, err := sessionService.CreateSession(1)
+		session, err := sessionService.CreateSession(nil, 1)
 		assert.ErrorIs(t, err, ErrSessionUserNotFound)
 		assert.Nil(t, session)
 	})
@@ -41,15 +41,15 @@ func TestCreateSession(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	t.Run("Create session successfuly", func(t *testing.T) {
-		session, err := sessionService.CreateSession(userId)
+		session, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		assert.NotNil(t, session)
 	})
 	t.Run("Session already exists", func(t *testing.T) {
-		firstSession, err := sessionService.CreateSession(userId)
+		firstSession, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		assert.NotNil(t, firstSession)
-		session, err := sessionService.CreateSession(userId)
+		session, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		// Due to the fact how go stores time, we can't compare the expiresat of the sessions
 		assert.Equal(t, firstSession.Id, session.Id)
@@ -91,7 +91,7 @@ func TestValidateSession(t *testing.T) {
 			Role:         "test-role",
 		})
 		assert.NoError(t, err)
-		session, err := sessionService.CreateSession(userId)
+		session, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		assert.NotNil(t, session)
 		valid, err := sessionService.ValidateSession(session.Id)
@@ -131,7 +131,7 @@ func TestInvalidateSession(t *testing.T) {
 			Role:         "test-role",
 		})
 		assert.NoError(t, err)
-		session, err := sessionService.CreateSession(userId)
+		session, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		assert.NotNil(t, session)
 		err = sessionService.InvalidateSession(session.Id)

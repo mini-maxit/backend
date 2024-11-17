@@ -19,7 +19,7 @@ var (
 )
 
 type SessionService interface {
-	CreateSession(userId int64) (*schemas.Session, error)
+	CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error)
 	ValidateSession(sessionId string) (bool, error)
 	InvalidateSession(sessionId string) error
 }
@@ -27,7 +27,7 @@ type SessionService interface {
 type SessionServiceImpl struct {
 	database          database.Database
 	sessionRepository repository.SessionRepository
-	userRepository    repository.UserRepositorty
+	userRepository    repository.UserRepository
 }
 
 // Generates a new session token
@@ -44,9 +44,13 @@ func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Ses
 	}
 }
 
-func (s *SessionServiceImpl) CreateSession(userId int64) (*schemas.Session, error) {
-	tx := s.database.Connect().Begin()
-
+func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
+	if tx == nil {
+		tx = s.database.Connect().Begin()
+		if tx.Error != nil {
+			return nil, tx.Error
+		}
+	}
 	_, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -136,7 +140,7 @@ func (s *SessionServiceImpl) InvalidateSession(sessionId string) error {
 	return nil
 }
 
-func NewSessionService(db database.Database, sessionRepository repository.SessionRepository, userRepository repository.UserRepositorty) SessionService {
+func NewSessionService(db database.Database, sessionRepository repository.SessionRepository, userRepository repository.UserRepository) SessionService {
 	return &SessionServiceImpl{
 		database:          db,
 		sessionRepository: sessionRepository,

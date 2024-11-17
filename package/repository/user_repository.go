@@ -5,10 +5,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRepositorty interface {
+type UserRepository interface {
 	// CreateUser creates a new user and returns the user ID
 	CreateUser(tx *gorm.DB, user *models.User) (int64, error)
 	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
+	GetUserByEmail(tx *gorm.DB, email string) (*models.User, error)
 }
 
 type UserRepositoryImpl struct {
@@ -31,7 +32,16 @@ func (ur *UserRepositoryImpl) GetUser(tx *gorm.DB, userId int64) (*models.User, 
 	return user, nil
 }
 
-func NewUserRepository(db *gorm.DB) (UserRepositorty, error) {
+func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models.User, error) {
+	user := &models.User{}
+	err := tx.Model(&models.User{}).Where("email = ?", email).First(user).Error
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func NewUserRepository(db *gorm.DB) (UserRepository, error) {
 	if !db.Migrator().HasTable(&models.User{}) {
 		err := db.Migrator().CreateTable(&models.User{})
 		if err != nil {
