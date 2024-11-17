@@ -51,6 +51,10 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Auth routes
+	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
+	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
+
 	// Task routes
 	mux.HandleFunc("/api/v1/task", initialization.TaskRoute.UploadTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)

@@ -20,6 +20,7 @@ type Initialization struct {
 
 	TaskService service.TaskService
 
+	AuthRoute    routes.AuthRoute
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
 
@@ -91,16 +92,19 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	// Services
+	userService := service.NewUserService(db, userRepository)
 	taskService := service.NewTaskService(db, taskRepository, submissionRepository)
 	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		panic(fmt.Errorf("failed to create queue service: %w", err))
 	}
 	sessionService := service.NewSessionService(db, sessionRepository, userRepository)
+	authService := service.NewAuthService(db, userRepository, sessionService)
 
 	// Routes
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
+	authRoute := routes.NewAuthRoute(userService, authService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
@@ -108,5 +112,5 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		panic(fmt.Errorf("failed to create queue listener: %w", err))
 	}
 
-	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute}
+	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute}
 }

@@ -34,7 +34,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, err := sr.sessionService.CreateSession(request.UserId)
+	session, err := sr.sessionService.CreateSession(nil, request.UserId)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to create session. "+err.Error())
 		return

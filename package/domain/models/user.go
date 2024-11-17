@@ -9,3 +9,11 @@ type User struct {
 	PasswordHash string `gorm:"NOT NULL"`
 	Role         string
 }
+
+type UserRole string
+
+const (
+	UserRoleStudent UserRole = "student"
+	UserRoleTeacher UserRole = "teacher"
+	UserRoleAdmin   UserRole = "admin"
+)
