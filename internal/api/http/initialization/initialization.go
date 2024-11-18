@@ -93,7 +93,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(db, userRepository)
-	taskService := service.NewTaskService(db, taskRepository, submissionRepository)
+	taskService := service.NewTaskService(db, cfg, taskRepository, submissionRepository)
 	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		panic(fmt.Errorf("failed to create queue service: %w", err))

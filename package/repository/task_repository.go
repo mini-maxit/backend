@@ -9,6 +9,7 @@ type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
+	GetAllTasks(tx *gorm.DB) ([]models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error
@@ -27,11 +28,20 @@ func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task models.Task) (int64, erro
 
 func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
+	err := tx.Preload("Author").Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
 	if err != nil {
 		return nil, err
 	}
 	return task, nil
+}
+
+func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB) ([]models.Task, error) {
+	tasks := []models.Task{}
+	err := tx.Model(&models.Task{}).Find(&tasks).Error
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func (tr *TaskRepositoryImpl) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
