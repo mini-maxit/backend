@@ -4,7 +4,7 @@ Quick links:
 
 - [Task](#task)
 - [Session](#session)
-- [Auth](#)
+- [Auth](#auth)
 
 ## Task
 
