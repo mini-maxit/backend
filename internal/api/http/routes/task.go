@@ -17,6 +17,8 @@ import (
 )
 
 type TaskRoute interface {
+	GetAllTasks(w http.ResponseWriter, r *http.Request)
+	GetTask(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
@@ -27,6 +29,50 @@ type TaskRouteImpl struct {
 	// Service that handles task-related operations
 	taskService  service.TaskService
 	queueService service.QueueService
+}
+
+func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAll()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
+	if tasks == nil {
+		tasks = []schemas.Task{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, tasks)
+}
+
+func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	task, err := tr.taskService.GetTask(taskId)
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting task. %s", err.Error()))
+		return
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, task)
 }
 
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +107,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 	userIdStr := r.FormValue("userId")
 	if userIdStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
+		utils.ReturnError(w, http.StatusBadRequest, "User ID of author is required.")
 		return
 	}
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
@@ -71,13 +117,13 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract the uploaded file
-	file, handler, err := r.FormFile("task")
+	file, handler, err := r.FormFile("archive")
 	if err != nil {
 		utils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
 		return
 	}
-	if !strings.HasSuffix(handler.Filename, ".zip") || !strings.HasSuffix(handler.Filename, ".tar.gz") {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload.")
+	if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename)
 		return
 	}
 	defer file.Close()
@@ -134,14 +180,14 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the task with the correct directories
-	updateInfo := schemas.UpdateTask{
-		Title: taskName,
-	}
-	if err := tr.taskService.UpdateTask(taskId, updateInfo); err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error updating task directories. %s", err.Error()))
-		return
-	}
+	// TODO: Update the task with the correct directories. Waiting to be implemented on the FileStorage service side
+	// updateInfo := schemas.UpdateTask{
+	// 	Title: taskName,
+	// }
+	// if err := tr.taskService.UpdateTask(taskId, updateInfo); err != nil {
+	// 	utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error updating task directories. %s", err.Error()))
+	// 	return
+	// }
 
 	utils.ReturnSuccess(w, http.StatusOK, "Task uploaded successfully")
 }

@@ -56,7 +56,15 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
 
 	// Task routes
-	mux.HandleFunc("/api/v1/task", initialization.TaskRoute.UploadTask)
+	mux.HandleFunc("/api/v1/task", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			initialization.TaskRoute.UploadTask(w, r)
+		} else if r.Method == "GET" {
+			initialization.TaskRoute.GetAllTasks(w, r)
+		}
+	},
+	)
+	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
 
 	// Session routes
