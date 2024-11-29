@@ -11,7 +11,7 @@ import (
 	_ "github.com/mini-maxit/backend/docs"
 )
 
-// @title Mini Maxit API Documentation
+// @title Mini Maxit API Documentation testing the workflow
 // @version 1.0
 // @description This is the API documentation for the Mini Maxit API.
 // @host localhost:8080
