@@ -1,6 +1,6 @@
-on: 
+on:
   push:
-    branches: 
+    branches:
       - master
       - swaggerUI
   workflow_dispatch:
@@ -26,7 +26,6 @@ jobs:
       run: swag  t --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
 
     - name: Upload swagger file
-      uses: actions/upload-artifact@v4 
+      uses: actions/upload-artifact@v4
       with:
         path: /docs/swagger.json
-      
