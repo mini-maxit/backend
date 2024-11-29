@@ -19,6 +19,7 @@ jobs:
 
     - name: Get swagger
       run : |
+        # go install github.com/swaggo/swag/cmd/swag@latest
         # go get -u github.com/swaggo/http-swagger
 
     - name: Change to cmd/app
