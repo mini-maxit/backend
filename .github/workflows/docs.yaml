@@ -12,9 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/chcekout@v4
-      with:
-        repository: swaggerUI
+    - uses: actions/checkout@v4
 
     - name: Setup go
       uses: actions/setup-go@v5
