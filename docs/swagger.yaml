@@ -72,7 +72,7 @@ host: localhost:8080
 info:
   contact: {}
   description: This is the API documentation for the Mini Maxit API.
-  title: Mini Maxit API
+  title: Mini Maxit API Documentation testing the workflow
   version: "1.0"
 paths:
   /login:

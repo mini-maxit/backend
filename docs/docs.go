@@ -213,7 +213,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Mini Maxit API",
+	Title:            "Mini Maxit API Documentation testing the workflow",
 	Description:      "This is the API documentation for the Mini Maxit API.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
