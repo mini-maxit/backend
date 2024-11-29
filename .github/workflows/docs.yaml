@@ -11,6 +11,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+    
     steps:
     - uses: actions/checkout@v4
 
@@ -27,8 +31,8 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "docs: update swagger docs"
-        branch: ${{ github.ref }}
+        commit_message: docs: update swagger docs
+        branch: swaggerUI
 
 
 
