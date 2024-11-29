@@ -1,0 +1,130 @@
+basePath: /api/v1
+definitions:
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse'
+      ok:
+        type: boolean
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse:
+    properties:
+      session_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API documentation for the Mini Maxit API.
+  title: Mini Maxit API
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password
+      parameters:
+      - description: User Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse'
+      summary: Login a user
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with name, surname, email, username and password
+      parameters:
+      - description: User Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse'
+      summary: Register a user
+      tags:
+      - auth
+swagger: "2.0"

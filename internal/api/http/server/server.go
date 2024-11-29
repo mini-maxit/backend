@@ -51,6 +51,9 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Swagger route
+	mux.HandleFunc("/api/v1/swagger", initialization.SwaggerRoute.Docs)
+
 	// Auth routes
 	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
 	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
