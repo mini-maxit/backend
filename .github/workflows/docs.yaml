@@ -26,7 +26,7 @@ jobs:
       run: cd cmd/app
 
     - name: Init swag
-      run: swag --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
+      run: swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
 
     - name: Upload swagger file
       uses: actions/upload-artifact@v4
