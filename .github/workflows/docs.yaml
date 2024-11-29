@@ -25,8 +25,7 @@ jobs:
     - name: Init swag
       run: cd cmd/app; swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
 
-    - name: Auto commit
-      run: |
-        git auto-commit -m "Update swagger docs" -a
+   - uses: stefanzweifel/git-auto-commit-action@v4
+
 
 
