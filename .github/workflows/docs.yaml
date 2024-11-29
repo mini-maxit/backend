@@ -25,10 +25,8 @@ jobs:
     - name: Init swag
       run: cd cmd/app; swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
 
-    - name: Change dir
-      run: cd ../..
+    - name: Auto commit
+      run: |
+        git auto-commit -m "Update swagger docs" -a
 
-    - name: Upload swagger file
-      uses: actions/upload-artifact@v4
-      with:
-        path: docs/swagger.json
+
