@@ -22,11 +22,8 @@ jobs:
         go install github.com/swaggo/swag/cmd/swag@latest
         go get -u github.com/swaggo/http-swagger
 
-    - name: Change to cmd/app
-      run: cd cmd/app
-
     - name: Init swag
-      run: swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
+      run: cd cmd/app; swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
 
     - name: Upload swagger file
       uses: actions/upload-artifact@v4
