@@ -16,8 +16,9 @@ jobs:
 
     - name: Setup go
       uses: actions/setup-go@v5
-      - name: Get swagger
-        run: |
+
+    - name: Install Swagger tools
+      run: |
         go install github.com/swaggo/swag/cmd/swag@latest
         go get -u github.com/swaggo/http-swagger
 
