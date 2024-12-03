@@ -16,11 +16,12 @@ var (
 	ErrSessionNotFound     = fmt.Errorf("session not found")
 	ErrSessionExpired      = fmt.Errorf("session expired")
 	ErrSessionUserNotFound = fmt.Errorf("session user not found")
+	ErrSessionRefresh      = fmt.Errorf("session refresh failed")
 )
 
 type SessionService interface {
 	CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error)
-	ValidateSession(sessionId string) (bool, error)
+	ValidateSession(sessionId string) (schemas.ValidateSessionResponse, error)
 	InvalidateSession(sessionId string) error
 }
 
@@ -93,35 +94,51 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 	return s.modelToSchema(session), nil
 }
 
-func (s *SessionServiceImpl) ValidateSession(sessionId string) (bool, error) {
+func (s *SessionServiceImpl) ValidateSession(sessionId string) (schemas.ValidateSessionResponse, error) {
 	tx := s.database.Connect().Begin()
 
 	session, err := s.sessionRepository.GetSession(tx, sessionId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return false, ErrSessionNotFound
+			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionNotFound
 		}
-		return false, err
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
 	}
 	_, err = s.userRepository.GetUser(tx, session.UserId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			tx.Rollback()
-			return false, ErrSessionUserNotFound
+			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionUserNotFound
 		}
 		tx.Rollback()
-		return false, err
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
 	}
 
 	if session.ExpiresAt.Before(time.Now()) {
 		tx.Rollback()
-		return false, ErrSessionExpired
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionExpired
+	}
+
+	err = s.RefreshSession(sessionId)
+	if err != nil {
+		tx.Rollback()
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionRefresh
 	}
 
 	if tx.Commit().Error != nil {
-		return false, err
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
 	}
-	return true, nil
+	return schemas.ValidateSessionResponse{Valid: true, UserId: session.UserId}, nil
+}
+
+func (s *SessionServiceImpl) RefreshSession(sessionId string) error {
+	tx := s.database.Connect().Begin()
+	err := s.sessionRepository.UpdateExpiration(tx, sessionId, time.Now().Add(time.Hour*24))
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
 }
 
 func (s *SessionServiceImpl) InvalidateSession(sessionId string) error {

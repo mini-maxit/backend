@@ -77,9 +77,10 @@ func TestValidateSession(t *testing.T) {
 	}
 	sessionService := NewSessionService(database, sessionRepo, userRepo)
 	t.Run("Session not found", func(t *testing.T) {
-		valid, err := sessionService.ValidateSession("test-session-id")
+		validateSession, err := sessionService.ValidateSession("test-session-id")
 		assert.ErrorIs(t, err, ErrSessionNotFound)
-		assert.False(t, valid)
+		assert.False(t, validateSession.Valid)
+		assert.Equal(t, -1, validateSession.UserId)
 	})
 	t.Run("Session found", func(t *testing.T) {
 		userId, err := userRepo.CreateUser(database.Connect(), &models.User{
@@ -94,9 +95,10 @@ func TestValidateSession(t *testing.T) {
 		session, err := sessionService.CreateSession(nil, userId)
 		assert.NoError(t, err)
 		assert.NotNil(t, session)
-		valid, err := sessionService.ValidateSession(session.Id)
+		validateSession, err := sessionService.ValidateSession(session.Id)
 		assert.NoError(t, err)
-		assert.True(t, valid)
+		assert.True(t, validateSession.Valid)
+		assert.Equal(t, userId, validateSession.UserId)
 	})
 }
 
@@ -136,8 +138,9 @@ func TestInvalidateSession(t *testing.T) {
 		assert.NotNil(t, session)
 		err = sessionService.InvalidateSession(session.Id)
 		assert.NoError(t, err)
-		valid, err := sessionService.ValidateSession(session.Id)
+		validateSession, err := sessionService.ValidateSession(session.Id)
 		assert.ErrorIs(t, err, ErrSessionNotFound)
-		assert.False(t, valid)
+		assert.False(t, validateSession.Valid)
+		assert.Equal(t, -1, validateSession.UserId)
 	})
 }
