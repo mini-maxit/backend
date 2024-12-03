@@ -71,7 +71,7 @@ Retrieves the details of a specific task by its ID.
     "id": 1,
     "title": "Example Task",
     "description_url": "http://file-storage:8888/getTaskDescription&?taskID=2", // This Url should be used to fetch the descirption file. Be aware that you can only do it on server side.
-    "createdBy": 123
+    "created_y": 123
   }
 }
 ```
@@ -186,6 +186,8 @@ Submits a solution for a task.
 
 ---
 
+## Session
+
 Endpoints to store, validate or delete user sessions from the database.
 
 - [Create Session](#create-session)
@@ -194,7 +196,7 @@ Endpoints to store, validate or delete user sessions from the database.
 
 ### **Create Session**
 
-#### `POST /sessions`
+#### `POST /session`
 
 This endpoint is used to create a new session for a user.
 
@@ -252,7 +254,7 @@ The body should be a JSON object containing the following field:
 
 ### Validate Session
 
-#### `GET /sessions/validate`
+#### `GET /session/validate`
 
 This endpoint is used to validate an existing session.
 
@@ -267,7 +269,10 @@ session: The session token (required).
 ```json
 {
   "ok": true,
-  "data": "Session is valid"
+  "data": {
+    "valid": true,
+    "user_id": 123
+  }
 }
 ```
 
@@ -320,7 +325,7 @@ If the user associated with the session is not found:
 
 ### Invalidate Session
 
-#### `POST /sessions/invalidate`
+#### `POST /session/invalidate`
 
 This endpoint is used to invalidate an existing session.
 
