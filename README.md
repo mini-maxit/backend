@@ -71,7 +71,7 @@ Retrieves the details of a specific task by its ID.
     "id": 1,
     "title": "Example Task",
     "description_url": "http://file-storage:8888/getTaskDescription&?taskID=2", // This Url should be used to fetch the descirption file. Be aware that you can only do it on server side.
-    "created_y": 123
+    "created_by": 123
   }
 }
 ```
