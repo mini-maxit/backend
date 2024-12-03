@@ -196,9 +196,9 @@ Endpoints to store, validate or delete user sessions from the database.
 
 ### **Create Session**
 
-#### `POST /session`
+#### `POST /session` (DEPRECATED)
 
-This endpoint is used to create a new session for a user.
+This endpoint is used to create a new session for a user. However, this is huge security issue and should not be used in production. The session is created after login and registration, and only mentioned methods should be used!
 
 ##### Request Body:
 
