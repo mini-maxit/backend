@@ -114,7 +114,7 @@ func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) 
 
 
 	err = us.userRepository.EditUser(tx, currentModel)
-	
+
 	tx.Commit()
 	return err
 }

@@ -149,7 +149,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserRouteImpl) CreateUser(w http.ResponseWriter, r *http.Request) {
-	
+
 }
 
 func NewUserRoute(userService service.UserService) UserRoute {
