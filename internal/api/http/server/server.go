@@ -79,7 +79,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		}
 	},
 	)
-	mux.HandleFunc("/api/v1/user/{id}", initialization.UserRoute.GetUserById)
+	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
 	mux.HandleFunc("api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
 	// Session routes

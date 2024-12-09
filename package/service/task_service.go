@@ -15,7 +15,7 @@ var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(task schemas.Task) (int64, error)
-	GetAll() ([]schemas.Task, error)
+	GetAll(limit, offset int64) ([]schemas.Task, error)
 	GetTask(taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
 	CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error)
@@ -52,7 +52,7 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	return taskId, nil
 }
 
-func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAll(limit, offset int64) ([]schemas.Task, error) {
 	// Connect to the database
 	db := ts.database.Connect()
 	if db == nil {
@@ -71,7 +71,17 @@ func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
 		result = append(result, ts.modelToSchema(task))
 	}
 
-	return result, nil
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
 }
 
 func (ts *TaskServiceImpl) GetTask(taskId int64) (*schemas.TaskDetailed, error) {

@@ -1,5 +1,6 @@
 package service
 
+
 import (
 	"errors"
 
@@ -34,8 +35,6 @@ func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
 		return nil, ErrDatabaseConnection
 	}
 
-	tx.Begin()
-
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -56,23 +55,27 @@ func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, err
 		return nil, ErrDatabaseConnection
 	}
 
-	tx.Begin()
-
 	userModels, err := us.userRepository.GetAllUsers(tx)
 	if err != nil {
 		return nil, err
 	}
 
 	var users []schemas.User
-	for _, userModel := range (*userModels) {
+	for _, userModel := range userModels {
 		users = append(users, *us.modelToSchema(&userModel))
 	}
 
-	if limit + offset > int64(len(users)) {
-		return users[offset:], nil
+	// Handle pagination
+	if offset >= int64(len(users)) {
+		return []schemas.User{}, nil
 	}
 
-	return users[offset: limit+offset], nil
+	end := offset + limit
+	if end > int64(len(users)) {
+		end = int64(len(users))
+	}
+
+	return users[offset:end], nil
 }
 
 func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error){
@@ -81,8 +84,6 @@ func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error){
 	if tx == nil {
 		return nil, ErrDatabaseConnection
 	}
-
-	tx.Begin()
 
 	userModel, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {

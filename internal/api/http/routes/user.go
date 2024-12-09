@@ -32,7 +32,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	limitStr := query.Get("limit")
-	offsetStr := query.Get("limit")
+	offsetStr := query.Get("offset")
 
 	if limitStr == "" {
 		limitStr = utils.PaginationLimitStr
@@ -48,7 +48,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	offset, err := strconv.ParseInt(limitStr, 10, 64)
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
 	if err != nil {
 		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
 		return

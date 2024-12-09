@@ -31,17 +31,54 @@ type TaskRouteImpl struct {
 	queueService service.QueueService
 }
 
+
+// GetAllTasks godoc
+//
+//	@Tags			task
+//	@Summary		Get all tasks
+//	@Description	Returns all tasks
+//	@Produce		json
+//	@Failure		500	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200	{object}	utils.ApiResponse[[]schemas.Task]
+//	@Router			/tasks [get]
 func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	tasks, err := tr.taskService.GetAll()
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	logrus.Info(limitStr)
+	if limitStr == "" {
+		limitStr = utils.PaginationLimitStr
+	}
+
+
+	offsetStr := query.Get("offset")
+	logrus.Info(offsetStr)
+	if offsetStr == "" {
+		offsetStr = "0"
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit.")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset.")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAll(limit, offset)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
+	
 	if tasks == nil {
 		tasks = []schemas.Task{}
 	}
@@ -49,6 +86,19 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
+
+// GetTask godoc
+//
+//	@Tags			task
+//	@Summary		Get a task
+//	@Description	Returns a task by ID
+//	@Produce		json
+//	@Param			id	path		int	true	"Task ID"
+//	@Failure		400	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		405	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		500	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200	{object}	utils.ApiResponse[schemas.TaskDetailed]
+//	@Router			/task/{id} [get]
 func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -75,6 +125,22 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, task)
 }
 
+// UploadTask godoc
+//
+//	@Tags			task
+//	@Summary		Upload a task
+//	@Description	Uploads a task to the FileStorage service
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			taskName	formData	string	true	"Name of the task"
+//	@Param			userId		formData	int		true	"ID of the author"
+//	@Param			overwrite	formData	bool	false	"Overwrite flag"
+//	@Param			archive		formData	file	true	"Task archive"
+//	@Failure		405			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		400			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		500			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200			{object}	utils.ApiResponse[schemas.SuccessResponse]
+//	@Router			/task [post]
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -192,9 +258,24 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, "Task uploaded successfully")
 }
 
+// SubmitSolution godoc
+//
+//@Tags	task
+//@Summary Submit a solution
+//@Description Uploads a solution to the FileSotrage servide
+//@Accept multipart/form-data
+//@Param taskID formData int true "ID of the task"
+//@Param solution formData file true "solution file"
+//@Param userID formData int true "ID of the user"
+//@Param languageID formData int true "Id of the language used in the soloution"
+//@Failure		405		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Failure		400		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Failure		500		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Success 		200 	{object}    utils.ApiResponse[schemas.SuccessResponse]
+//	@Router			/task/submit [post]
 func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed.")
 		return
 	}
 
@@ -203,26 +284,26 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 
 	// Parse the multipart form data
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "The uploaded file is too large.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "The uploaded file is too large.")
 		return
 	}
 
 	// Extract the task ID
 	taskIdStr := r.FormValue("taskID")
 	if taskIdStr == "" {
-		http.Error(w, "Task ID is required.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
 	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid task ID.", http.StatusBadRequest)
+		utils.ReturnError(w,http.StatusBadRequest, "Invalid task ID.")
 		return
 	}
 
 	// Extract the uploaded file
 	file, handler, err := r.FormFile("solution")
 	if err != nil {
-		http.Error(w, "Error retrieving the file. No solution file found.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No solution file found.")
 		return
 	}
 	defer file.Close()
@@ -230,25 +311,25 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	// Extract user ID
 	userIDStr := r.FormValue("userID")
 	if userIDStr == "" {
-		http.Error(w, "User ID is required.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest,  "User ID is required.")
 		return
 	}
 	userId, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid user ID.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
 		return
 	}
 
 	// Extract language
 	languageStr := r.FormValue("languageID")
 	if languageStr == "" {
-		http.Error(w, "Language id is required.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "Language id is required.")
 		return
 	}
 	logrus.Info(languageStr)
 	languageId, err := strconv.ParseInt(languageStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid language ID.", http.StatusBadRequest)
+		utils.ReturnError(w, http.StatusBadRequest, "Language id is required.")
 		return
 	}
 
@@ -263,11 +344,11 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
 	if err != nil {
-		http.Error(w, "Error creating form file for FileStorage.", http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, "Language id is required.")
 		return
 	}
 	if _, err := io.Copy(part, file); err != nil {
-		http.Error(w, "Error copying file to FileStorage request.", http.StatusInternalServerError)
+		utils.ReturnError(w, http.StatusInternalServerError, "Error copying file to FileStorage request.")
 		return
 	}
 
