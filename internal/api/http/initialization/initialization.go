@@ -24,6 +24,7 @@ type Initialization struct {
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
 	SwaggerRoute routes.SwaggerRoute
+	UserRoute 	 routes.UserRoute
 
 	QueueListener queue.QueueListener
 }
@@ -107,6 +108,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
 	swaggerRoute := routes.NewSwaggerRoute()
+	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
@@ -114,5 +116,5 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		panic(fmt.Errorf("failed to create queue listener: %w", err))
 	}
 
-	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute, SwaggerRoute: swaggerRoute}
+	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute, SwaggerRoute: swaggerRoute, UserRoute: userRoute}
 }

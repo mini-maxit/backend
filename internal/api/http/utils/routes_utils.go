@@ -10,6 +10,8 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
+const PaginationLimitStr = "10"
+
 func ReturnError(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

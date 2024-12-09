@@ -70,6 +70,18 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
 
+	// User routes
+	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			initialization.UserRoute.GetUserById(w, r)
+		} else if r.Method == http.MethodPut{
+			initialization.UserRoute.EditUser(w, r)
+		}
+	},
+	)
+	mux.HandleFunc("/api/v1/user/{id}", initialization.UserRoute.GetUserById)
+	mux.HandleFunc("api/v1/user/email", initialization.UserRoute.GetUserByEmail)
+
 	// Session routes
 	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)
 	mux.HandleFunc("/api/v1/session/validate", initialization.SessionRoute.ValidateSession)

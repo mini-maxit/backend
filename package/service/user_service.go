@@ -17,6 +17,9 @@ var (
 
 type UserService interface {
 	GetUserByEmail(email string) (*schemas.User, error)
+	GetAllUsers(limit, offset int64) ([]schemas.User, error)
+	GetUserById(userId int64) (*schemas.User, error)
+	EditUser(userId int64, updateInfo *schemas.UserEdit) error
 }
 
 type UserServiceImpl struct {
@@ -26,6 +29,12 @@ type UserServiceImpl struct {
 
 func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
 	tx := us.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	tx.Begin()
 
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
@@ -40,6 +49,76 @@ func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
 	return user, nil
 }
 
+func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, error) {
+	tx := us.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	tx.Begin()
+
+	userModels, err := us.userRepository.GetAllUsers(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []schemas.User
+	for _, userModel := range (*userModels) {
+		users = append(users, *us.modelToSchema(&userModel))
+	}
+
+	if limit + offset > int64(len(users)) {
+		return users[offset:], nil
+	}
+
+	return users[offset: limit+offset], nil
+}
+
+func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error){
+	tx := us.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	tx.Begin()
+
+	userModel, err := us.userRepository.GetUser(tx, userId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+	}
+
+	user := us.modelToSchema(userModel)
+
+	return user, nil
+}
+
+func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) error {
+	tx := us.database.Connect()
+
+	if tx == nil {
+		return ErrDatabaseConnection
+	}
+
+	tx.Begin()
+
+	currentModel, err := us.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+
+	us.updateModel(currentModel, updateInfo)
+
+
+	err = us.userRepository.EditUser(tx, currentModel)
+	
+	tx.Commit()
+	return err
+}
+
 func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
 	return &schemas.User{
 		Id:       user.Id,
@@ -48,6 +127,24 @@ func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
 		Email:    user.Email,
 		Username: user.Username,
 		Role:     user.Role,
+	}
+}
+
+func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *schemas.UserEdit) {
+	if updateInfo.Email != nil {
+		curretnModel.Email = *updateInfo.Email
+	}
+
+	if updateInfo.Name != nil {
+		curretnModel.Name = *updateInfo.Name
+	}
+
+	if updateInfo.Surname != nil {
+		curretnModel.Surname = *updateInfo.Surname
+	}
+
+	if updateInfo.Username != nil {
+		curretnModel.Username = *updateInfo.Username
 	}
 }
 
