@@ -1,3 +1,15 @@
+# Development
+
+## Run
+
+To run the appication you need running **docker** with **docker compose**
+
+You also need to have local image of file-storage build and stored. The tag for image should be `maxit/file-storage`. Refer to [documentation](https://github.com/mini-maxit/file-storage?tab=readme-ov-file#build) on how to do it.
+
+```bash
+docker compose up --build -d
+```
+
 # Endpoints
 
 Quick links:
