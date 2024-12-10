@@ -48,7 +48,7 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
