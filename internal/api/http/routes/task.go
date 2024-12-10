@@ -19,6 +19,8 @@ import (
 type TaskRoute interface {
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
+	GetAllForUser(w http.ResponseWriter, r *http.Request)
+	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
@@ -123,6 +125,110 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.ReturnSuccess(w, http.StatusOK, task)
+}
+
+func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userIdStr := r.PathValue("id")
+
+	if userIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+
+	if limitStr == "" {
+		limitStr = utils.PaginationLimitStr
+	}
+
+	if offsetStr == "" {
+		offsetStr = "0"
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64) 
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForUser(userId,limit, offset)
+
+	if tasks == nil {
+		tasks = []schemas.Task{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, tasks)
+}
+
+func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+
+	if groupIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		return
+	}
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+
+	if limitStr == "" {
+		limitStr = utils.PaginationLimitStr
+	}
+
+	if offsetStr == "" {
+		offsetStr = "0"
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForGroup(groupId, limit, offset)
+
+	if tasks == nil {
+		tasks = []schemas.Task{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
 // UploadTask godoc

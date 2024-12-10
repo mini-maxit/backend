@@ -16,7 +16,7 @@ type UserRoute interface {
 	GetUserById(w http.ResponseWriter, r *http.Request)
 	GetUserByEmail(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
-	CreateUser(w http.ResponseWriter, r *http.Request)
+	CreateUsers(w http.ResponseWriter, r *http.Request)
 }
 
 type UserRouteImpl struct {
@@ -148,8 +148,9 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, "Update successfull")
 }
 
-func (u *UserRouteImpl) CreateUser(w http.ResponseWriter, r *http.Request) {
-
+func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
+	// this funcion allows admin to ctreate new users with their email and given role
+	// the users will be created with a default password and will be required to change it on first login
 }
 
 func NewUserRoute(userService service.UserService) UserRoute {

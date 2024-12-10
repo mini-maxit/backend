@@ -16,6 +16,8 @@ type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(task schemas.Task) (int64, error)
 	GetAll(limit, offset int64) ([]schemas.Task, error)
+	GetAllForUser(userId, limit, offset int64) ([]schemas.Task, error)
+	GetAllForGroup(groupId, limit, offset int64) ([]schemas.Task, error)
 	GetTask(taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
 	CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error)
@@ -61,6 +63,70 @@ func (ts *TaskServiceImpl) GetAll(limit, offset int64) ([]schemas.Task, error) {
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllTasks(db)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForUser(userId, limit, offset int64) ([]schemas.Task, error) {
+	tx := ts.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForGroup(groupId, limit, offset int64) ([]schemas.Task, error) {
+	tx := ts.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
 	if err != nil {
 		return nil, err
 	}
