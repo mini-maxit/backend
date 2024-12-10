@@ -80,7 +80,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
-	
+
 	if tasks == nil {
 		tasks = []schemas.Task{}
 	}
@@ -158,7 +158,7 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	offset, err := strconv.ParseInt(offsetStr, 10, 64) 
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
 	if err != nil {
 		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
 		return
