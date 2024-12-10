@@ -36,4 +36,5 @@ services:
       timeout: 10s
       retries: 5
   file-storage:
-    image: maxit-file-storage
+    image: maxit/file-storage
+    pull_policy: never

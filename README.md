@@ -1,3 +1,15 @@
+# Development
+
+## Run
+
+To run the appication you need running **docker** with **docker compose**
+
+You also need to have local image of file-storage build and stored. The tag for image should be `maxit/file-storage`. Refer to [documentation](https://github.com/mini-maxit/file-storage?tab=readme-ov-file#build) on how to do it.
+
+```bash
+docker compose up --build -d
+```
+
 # Endpoints
 
 Quick links:
@@ -71,7 +83,7 @@ Retrieves the details of a specific task by its ID.
     "id": 1,
     "title": "Example Task",
     "description_url": "http://file-storage:8888/getTaskDescription&?taskID=2", // This Url should be used to fetch the descirption file. Be aware that you can only do it on server side.
-    "createdBy": 123
+    "created_by": 123
   }
 }
 ```
@@ -186,6 +198,8 @@ Submits a solution for a task.
 
 ---
 
+## Session
+
 Endpoints to store, validate or delete user sessions from the database.
 
 - [Create Session](#create-session)
@@ -194,9 +208,9 @@ Endpoints to store, validate or delete user sessions from the database.
 
 ### **Create Session**
 
-#### `POST /sessions`
+#### `POST /session` (DEPRECATED)
 
-This endpoint is used to create a new session for a user.
+This endpoint is used to create a new session for a user. However, this is huge security issue and should not be used in production. The session is created after login and registration, and only mentioned methods should be used!
 
 ##### Request Body:
 
@@ -252,7 +266,7 @@ The body should be a JSON object containing the following field:
 
 ### Validate Session
 
-#### `GET /sessions/validate`
+#### `GET /session/validate`
 
 This endpoint is used to validate an existing session.
 
@@ -267,7 +281,10 @@ session: The session token (required).
 ```json
 {
   "ok": true,
-  "data": "Session is valid"
+  "data": {
+    "valid": true,
+    "user_id": 123
+  }
 }
 ```
 
@@ -320,7 +337,7 @@ If the user associated with the session is not found:
 
 ### Invalidate Session
 
-#### `POST /sessions/invalidate`
+#### `POST /session/invalidate`
 
 This endpoint is used to invalidate an existing session.
 

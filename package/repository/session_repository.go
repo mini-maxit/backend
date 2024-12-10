@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"gorm.io/gorm"
 )
@@ -9,6 +11,7 @@ type SessionRepository interface {
 	CreateSession(tx *gorm.DB, session *models.Session) error
 	GetSession(tx *gorm.DB, sessionId string) (*models.Session, error)
 	GetSessionByUserId(tx *gorm.DB, userId int64) (*models.Session, error)
+	UpdateExpiration(tx *gorm.DB, sessionId string, expires_at time.Time) error
 	DeleteSession(tx *gorm.DB, sessionId string) error
 }
 
@@ -36,6 +39,11 @@ func (s *SessionRepositoryImpl) GetSessionByUserId(tx *gorm.DB, userId int64) (*
 		return nil, err
 	}
 	return session, nil
+}
+
+func (s *SessionRepositoryImpl) UpdateExpiration(tx *gorm.DB, sessionId string, expires_at time.Time) error {
+	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).Update("expires_at", expires_at).Error
+	return err
 }
 
 func (s *SessionRepositoryImpl) DeleteSession(tx *gorm.DB, sessionId string) error {

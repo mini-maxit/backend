@@ -48,7 +48,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
-	valid, err := sr.sessionService.ValidateSession(sessionToken)
+	validateSession, err := sr.sessionService.ValidateSession(sessionToken)
 	if err != nil {
 		if err == service.ErrSessionNotFound {
 			utils.ReturnError(w, http.StatusUnauthorized, "Session not found")
@@ -66,8 +66,8 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if valid {
-		utils.ReturnSuccess(w, http.StatusOK, "Session is valid")
+	if validateSession.Valid {
+		utils.ReturnSuccess(w, http.StatusOK, validateSession)
 		return
 	} else {
 		utils.ReturnError(w, http.StatusUnauthorized, "Session was invalid, without any error. If you see this, please report it to the developers.")

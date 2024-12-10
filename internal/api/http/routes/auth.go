@@ -54,6 +54,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err == service.ErrInvalidCredentials {
 			utils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
+			return
 		}
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to login. "+err.Error())
 		return
