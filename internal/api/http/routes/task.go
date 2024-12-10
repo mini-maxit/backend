@@ -53,14 +53,14 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	limitStr := query.Get("limit")
 	logrus.Info(limitStr)
 	if limitStr == "" {
-		limitStr = utils.PaginationLimitStr
+		limitStr = utils.DefaultPaginationLimitStr
 	}
 
 
 	offsetStr := query.Get("offset")
 	logrus.Info(offsetStr)
 	if offsetStr == "" {
-		offsetStr = "0"
+		offsetStr = utils.DefaultPaginationOffsetStr
 	}
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
@@ -145,11 +145,11 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	offsetStr := query.Get("offset")
 
 	if limitStr == "" {
-		limitStr = utils.PaginationLimitStr
+		limitStr = utils.DefaultPaginationLimitStr
 	}
 
 	if offsetStr == "" {
-		offsetStr = "0"
+		offsetStr = utils.DefaultPaginationOffsetStr
 	}
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
@@ -197,11 +197,11 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	offsetStr := query.Get("offset")
 
 	if limitStr == "" {
-		limitStr = utils.PaginationLimitStr
+		limitStr = utils.DefaultPaginationLimitStr
 	}
 
 	if offsetStr == "" {
-		offsetStr = "0"
+		offsetStr = utils.DefaultPaginationOffsetStr
 	}
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)

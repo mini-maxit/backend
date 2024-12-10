@@ -69,6 +69,8 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	)
 	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
+	mux.HandleFunc("/api/v1/user/{id}/task", initialization.TaskRoute.GetAllForUser)
+	mux.HandleFunc("/api/v1/group/{id}/task", initialization.TaskRoute.GetAllForGroup)
 
 	// User routes
 	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +82,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	},
 	)
 	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
-	mux.HandleFunc("api/v1/user/email", initialization.UserRoute.GetUserByEmail)
+	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
 	// Session routes
 	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)

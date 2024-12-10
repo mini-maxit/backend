@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -51,6 +52,9 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 			return nil, tx.Error
 		}
 	}
+
+	defer utils.TransactionPanicRecover(tx)
+
 	_, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -95,6 +99,11 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 
 func (s *SessionServiceImpl) ValidateSession(sessionId string) (bool, error) {
 	tx := s.database.Connect().Begin()
+	if tx.Error != nil {
+		return false, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	session, err := s.sessionRepository.GetSession(tx, sessionId)
 	if err != nil {
@@ -126,6 +135,11 @@ func (s *SessionServiceImpl) ValidateSession(sessionId string) (bool, error) {
 
 func (s *SessionServiceImpl) InvalidateSession(sessionId string) error {
 	tx := s.database.Connect().Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	err := s.sessionRepository.DeleteSession(tx, sessionId)
 	if err != nil {

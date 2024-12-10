@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
@@ -36,7 +37,13 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	if db == nil {
 		return 0, ErrDatabaseConnection
 	}
+
 	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	// Create a new task
 	model := models.Task{
@@ -50,7 +57,9 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	}
 
 	// Commit the transaction and return the task ID
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
 	return taskId, nil
 }
 
@@ -183,6 +192,11 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 		return ErrDatabaseConnection
 	}
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
@@ -200,7 +214,9 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	}
 
 	// Commit the transaction
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -211,6 +227,11 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 		return 0, ErrDatabaseConnection
 	}
 	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	// Create a new submission
 	submission := models.Submission{
@@ -229,7 +250,9 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	}
 
 	// Commit the transaction
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
 	return submissionId, nil
 }
 

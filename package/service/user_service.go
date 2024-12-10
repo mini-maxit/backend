@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
 	"gorm.io/gorm"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 var (
@@ -104,10 +105,16 @@ func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) 
 		return ErrDatabaseConnection
 	}
 
-	tx.Begin()
+	tx = tx.Begin()
+    if tx.Error != nil {
+        return tx.Error
+    }
+
+	defer utils.TransactionPanicRecover(tx)
 
 	currentModel, err := us.GetUserById(userId)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -115,9 +122,15 @@ func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) 
 
 
 	err = us.userRepository.EditUser(tx, currentModel)
+	if err != nil {
+        tx.Rollback()
+        return err
+    }
 
-	tx.Commit()
-	return err
+    if err := tx.Commit().Error; err != nil {
+        return err
+    }
+	return nil
 }
 
 func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {

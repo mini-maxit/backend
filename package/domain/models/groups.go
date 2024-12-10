@@ -6,7 +6,7 @@ type Group struct {
 }
 
 type UserGroup struct {
-	UserId  string `gorm:"primaryKey;"`
+	UserId  int64 `gorm:"primaryKey;"`
 	GroupId int64  `gorm:"primaryKey;"`
 }
 
