@@ -138,6 +138,7 @@ func (s *SessionServiceImpl) RefreshSession(sessionId string) error {
 		tx.Rollback()
 		return err
 	}
+	tx.Commit()
 	return nil
 }
 

@@ -43,7 +43,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 }
 
 func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Request) {
-	sessionToken := r.Header.Get("session")
+	sessionToken := r.Header.Get("Session")
 	if sessionToken == "" {
 		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
@@ -77,7 +77,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 }
 
 func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Request) {
-	sessionToken := r.Header.Get("session")
+	sessionToken := r.Header.Get("Session")
 	if sessionToken == "" {
 		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return

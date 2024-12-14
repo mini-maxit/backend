@@ -1,8 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +17,7 @@ import (
 )
 
 type Server struct {
-	mux  *http.ServeMux
+	mux  http.Handler
 	port uint16
 }
 
@@ -42,6 +45,41 @@ func (s *Server) Start() error {
 
 	logrus.Info("Starting server on port ", s.port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.mux)
+}
+
+// LoggingMiddleware logs details of each HTTP request.
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		// Log request method, path, and client address
+		log.Printf("Started %s %s for %s", r.Method, r.URL.Path, r.RemoteAddr)
+
+		// Log headers
+		log.Println("Headers:")
+		for name, values := range r.Header {
+			for _, value := range values {
+				log.Printf("  %s: %s", name, value)
+			}
+		}
+
+		// Log body
+		if r.Body != nil {
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("Error reading body: %v", err)
+			} else {
+				log.Printf("Body: %s", string(bodyBytes))
+			}
+			// Restore the body for the next handler
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
+		next.ServeHTTP(w, r) // Call the next handler
+
+		duration := time.Since(start)
+		log.Printf("Completed %s %s in %v", r.Method, r.URL.Path, duration)
+	})
 }
 
 func NewServer(initialization *initialization.Initialization) *Server {
@@ -72,5 +110,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/session/validate", initialization.SessionRoute.ValidateSession)
 	mux.HandleFunc("/api/v1/session/invalidate", initialization.SessionRoute.InvalidateSession)
 
-	return &Server{mux: mux, port: initialization.Cfg.App.Port}
+	loggedMux := LoggingMiddleware(mux)
+
+	return &Server{mux: loggedMux, port: initialization.Cfg.App.Port}
 }
