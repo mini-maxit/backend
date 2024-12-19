@@ -400,10 +400,9 @@ Handles user authentication by validating credentials and returning a session.
 
   ```json
   {
-    "session": {
-      "token": "string",
-      "expires_at": "string"
-    }
+    "session": "asdflkjasdlfjk",
+    "expires_at": "2024-12-19T16:19:07.756644Z",
+    "userId": 1
   }
   ```
 
@@ -467,15 +466,19 @@ Registers a new user and returns a session upon successful registration.
 
 ```json
 {
+  "name": "name",
+  "surname": "surname",
   "email": "user@example.com",
   "password": "securepassword",
-  "name": "User Name"
+  "username": "User Name"
 }
 ```
 
 - `email` _(string)_: The user's email address.
 - `password` _(string)_: The user's desired password.
-- `name` _(string)_: The user's full name.
+- `name` _(string)_: The user's name.
+- `surname` _(string)_: The user's surname.
+- `username` _(string)_: The user's username.
 
 ##### Responses
 
@@ -483,10 +486,9 @@ Registers a new user and returns a session upon successful registration.
 
   ```json
   {
-    "session": {
-      "token": "string",
-      "expires_at": "string"
-    }
+    "session": "asdflkjasdlfjk",
+    "expires_at": "2024-12-19T16:19:07.756644Z",
+    "userId": 1
   }
   ```
 

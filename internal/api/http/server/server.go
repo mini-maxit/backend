@@ -1,11 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,8 +10,11 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/sirupsen/logrus"
 )
+
+const ApiVersion = "v1"
 
 type Server struct {
 	mux  http.Handler
@@ -47,54 +47,18 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.mux)
 }
 
-// LoggingMiddleware logs details of each HTTP request.
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		// Log request method, path, and client address
-		log.Printf("Started %s %s for %s", r.Method, r.URL.Path, r.RemoteAddr)
-
-		// Log headers
-		log.Println("Headers:")
-		for name, values := range r.Header {
-			for _, value := range values {
-				log.Printf("  %s: %s", name, value)
-			}
-		}
-
-		// Log body
-		if r.Body != nil {
-			bodyBytes, err := io.ReadAll(r.Body)
-			if err != nil {
-				log.Printf("Error reading body: %v", err)
-			} else {
-				log.Printf("Body: %s", string(bodyBytes))
-			}
-			// Restore the body for the next handler
-			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-		}
-
-		next.ServeHTTP(w, r) // Call the next handler
-
-		duration := time.Since(start)
-		log.Printf("Completed %s %s in %v", r.Method, r.URL.Path, duration)
-	})
-}
-
 func NewServer(initialization *initialization.Initialization) *Server {
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
 	// Auth routes
-	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
-	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
+	authMux := http.NewServeMux()
+	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
+	authMux.HandleFunc("/register", initialization.AuthRoute.Register)
 
 	// Task routes
-	mux.HandleFunc("/api/v1/task", func(w http.ResponseWriter, r *http.Request) {
+	taskMux := http.NewServeMux()
+	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			initialization.TaskRoute.UploadTask(w, r)
 		} else if r.Method == "GET" {
@@ -102,15 +66,29 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		}
 	},
 	)
-	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
-	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
+	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
+	taskMux.HandleFunc("/submit", initialization.TaskRoute.SubmitSolution)
 
 	// Session routes
-	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)
-	mux.HandleFunc("/api/v1/session/validate", initialization.SessionRoute.ValidateSession)
-	mux.HandleFunc("/api/v1/session/invalidate", initialization.SessionRoute.InvalidateSession)
+	sessionMux := http.NewServeMux()
+	sessionMux.HandleFunc("/", initialization.SessionRoute.CreateSession)
+	sessionMux.HandleFunc("/validate", initialization.SessionRoute.ValidateSession)
+	sessionMux.HandleFunc("/invalidate", initialization.SessionRoute.InvalidateSession)
 
-	loggedMux := LoggingMiddleware(mux)
+	// Secure routes (require authentication)
+	secureMux := http.NewServeMux()
+	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
+	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
 
-	return &Server{mux: loggedMux, port: initialization.Cfg.App.Port}
+	// API routes
+	apiMux := http.NewServeMux()
+	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
+	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.SessionService))
+
+	loggingMux := http.NewServeMux()
+	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux))
+	// Add the API prefix to all routes
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, loggingMux))
+
+	return &Server{mux: mux, port: initialization.Cfg.App.Port}
 }

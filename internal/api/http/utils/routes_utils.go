@@ -10,25 +10,31 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
-func ReturnError(w http.ResponseWriter, statusCode int, data any) {
+const (
+	CodeInternalServerError = "INTERNAL_SERVER_ERROR"
+	CodeMethodNotAllowed    = "METHOD_NOT_ALLOWED"
+	CodeBadRequest          = "BAD_REQUEST"
+	CodeUnauthorized        = "UNAUTHORIZED"
+)
+
+type Error struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func ReturnError(w http.ResponseWriter, statusCode int, code, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	response := ApiResponse[any]{
 		Ok:   false,
-		Data: data,
+		Data: Error{Code: code, Message: message},
 	}
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(response)
 	if err != nil {
-		ReturnInternalServerError(w, err)
+		ReturnError(w, http.StatusInternalServerError, CodeInternalServerError, err.Error())
 		return
 	}
-}
-
-func ReturnInternalServerError(w http.ResponseWriter, err error) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(err.Error()))
 }
 
 func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
@@ -40,7 +46,7 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	}
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		ReturnInternalServerError(w, err)
+		ReturnError(w, http.StatusInternalServerError, CodeInternalServerError, err.Error())
 		return
 	}
 }
