@@ -10,6 +10,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -53,6 +54,11 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	db := qs.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
@@ -97,13 +103,20 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 		return err
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
 func (qs *QueueServiceImpl) GetSubmissionId(messageId string) (int64, error) {
 	db := qs.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
 	if err != nil {
@@ -111,7 +124,9 @@ func (qs *QueueServiceImpl) GetSubmissionId(messageId string) (int64, error) {
 		return 0, err
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
 	return queueMessage.SubmissionId, nil
 }
 

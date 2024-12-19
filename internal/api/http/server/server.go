@@ -89,6 +89,9 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Swagger route
+	mux.HandleFunc("/api/v1/swagger", initialization.SwaggerRoute.Docs)
+
 	// Auth routes
 	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
 	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
@@ -104,6 +107,20 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	)
 	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
 	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
+	mux.HandleFunc("/api/v1/user/{id}/task", initialization.TaskRoute.GetAllForUser)
+	mux.HandleFunc("/api/v1/group/{id}/task", initialization.TaskRoute.GetAllForGroup)
+
+	// User routes
+	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			initialization.UserRoute.GetUserById(w, r)
+		} else if r.Method == http.MethodPut{
+			initialization.UserRoute.EditUser(w, r)
+		}
+	},
+	)
+	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
+	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
 	// Session routes
 	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)

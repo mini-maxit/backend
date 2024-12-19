@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
@@ -15,7 +16,9 @@ var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(task schemas.Task) (int64, error)
-	GetAll() ([]schemas.Task, error)
+	GetAll(limit, offset int64) ([]schemas.Task, error)
+	GetAllForUser(userId, limit, offset int64) ([]schemas.Task, error)
+	GetAllForGroup(groupId, limit, offset int64) ([]schemas.Task, error)
 	GetTask(taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
 	CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error)
@@ -34,7 +37,13 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	if db == nil {
 		return 0, ErrDatabaseConnection
 	}
+
 	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	// Create a new task
 	model := models.Task{
@@ -48,11 +57,13 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	}
 
 	// Commit the transaction and return the task ID
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
 	return taskId, nil
 }
 
-func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAll(limit, offset int64) ([]schemas.Task, error) {
 	// Connect to the database
 	db := ts.database.Connect()
 	if db == nil {
@@ -71,7 +82,81 @@ func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
 		result = append(result, ts.modelToSchema(task))
 	}
 
-	return result, nil
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForUser(userId, limit, offset int64) ([]schemas.Task, error) {
+	tx := ts.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForGroup(groupId, limit, offset int64) ([]schemas.Task, error) {
+	tx := ts.database.Connect()
+
+	if tx == nil {
+		return nil, ErrDatabaseConnection
+	}
+
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
 }
 
 func (ts *TaskServiceImpl) GetTask(taskId int64) (*schemas.TaskDetailed, error) {
@@ -107,6 +192,11 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 		return ErrDatabaseConnection
 	}
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
@@ -124,7 +214,9 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	}
 
 	// Commit the transaction
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -135,6 +227,11 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 		return 0, ErrDatabaseConnection
 	}
 	tx := db.Begin()
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	// Create a new submission
 	submission := models.Submission{
@@ -153,7 +250,9 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	}
 
 	// Commit the transaction
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return 0, err
+	}
 	return submissionId, nil
 }
 
