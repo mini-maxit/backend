@@ -52,26 +52,35 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 			return nil, tx.Error
 		}
 	}
+
 	_, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
+		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
-			tx.Rollback()
 			return nil, ErrSessionUserNotFound
 		}
-		tx.Rollback()
 		return nil, err
 	}
 
 	session, err := s.sessionRepository.GetSessionByUserId(tx, userId)
-	if err == nil {
-		if tx.Commit().Error != nil {
-			return nil, err
-		}
-		return s.modelToSchema(session), nil
-	}
-	if err != gorm.ErrRecordNotFound {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		tx.Rollback()
 		return nil, err
+	} else if err == nil {
+		// If session exists but is expired remove record and create new session
+		if session.ExpiresAt.Before(time.Now()) {
+			err = s.sessionRepository.DeleteSession(tx, session.Id)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+		} else {
+			err = tx.Commit().Error
+			if err != nil {
+				return nil, err
+			}
+			return s.modelToSchema(session), nil
+		}
 	}
 
 	sessionToken := s.generateSessionToken()
@@ -119,27 +128,29 @@ func (s *SessionServiceImpl) ValidateSession(sessionId string) (schemas.Validate
 		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionExpired
 	}
 
-	err = s.RefreshSession(sessionId)
-	if err != nil {
-		tx.Rollback()
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionRefresh
-	}
-
 	if tx.Commit().Error != nil {
 		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
 	}
 	return schemas.ValidateSessionResponse{Valid: true, UserId: session.UserId}, nil
 }
 
-func (s *SessionServiceImpl) RefreshSession(sessionId string) error {
+func (s *SessionServiceImpl) RefreshSession(sessionId string) (*schemas.Session, error) {
 	tx := s.database.Connect().Begin()
 	err := s.sessionRepository.UpdateExpiration(tx, sessionId, time.Now().Add(time.Hour*24))
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
-	tx.Commit()
-	return nil
+	session, err := s.sessionRepository.GetSession(tx, sessionId)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	err = tx.Commit().Error
+	if err != nil {
+		return nil, err
+	}
+	return s.modelToSchema(session), nil
 }
 
 func (s *SessionServiceImpl) InvalidateSession(sessionId string) error {

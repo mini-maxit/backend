@@ -18,7 +18,8 @@ type Initialization struct {
 	Cfg *config.Config
 	Db  database.Database
 
-	TaskService service.TaskService
+	TaskService    service.TaskService
+	SessionService service.SessionService
 
 	AuthRoute    routes.AuthRoute
 	TaskRoute    routes.TaskRoute
@@ -112,5 +113,5 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		panic(fmt.Errorf("failed to create queue listener: %w", err))
 	}
 
-	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute}
+	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, SessionService: sessionService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute}
 }
