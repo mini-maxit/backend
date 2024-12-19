@@ -18,11 +18,13 @@ Quick links:
 - [Session](#session)
 - [Auth](#auth)
 
+All endpoints are prefixed with `/api/v1` prefix. For example: example.com/api/v1/task
+
 ## Task
 
 ### 1. **Get All Tasks**
 
-#### `GET /tasks`
+#### `GET /task`
 
 Retrieves a list of all tasks.
 
@@ -63,7 +65,7 @@ Retrieves a list of all tasks.
 
 ### 2. **Get Task by ID**
 
-#### `GET /tasks/{id}`
+#### `GET /task/{id}`
 
 Retrieves the details of a specific task by its ID.
 
@@ -110,7 +112,7 @@ Retrieves the details of a specific task by its ID.
 
 ### 3. **Upload Task**
 
-#### `POST /tasks/upload`
+#### `POST /task/upload`
 
 Uploads a new task.
 
@@ -155,7 +157,7 @@ Uploads a new task.
 
 ### 4. **Submit Solution**
 
-#### `POST /tasks/submit`
+#### `POST /task/submit`
 
 Submits a solution for a task.
 
@@ -208,7 +210,7 @@ Endpoints to store, validate or delete user sessions from the database.
 
 ### **Create Session**
 
-#### `POST /session` (DEPRECATED)
+#### `POST /session/` (DEPRECATED)
 
 This endpoint is used to create a new session for a user. However, this is huge security issue and should not be used in production. The session is created after login and registration, and only mentioned methods should be used!
 
