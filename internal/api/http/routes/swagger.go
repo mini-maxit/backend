@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/utils"
-	httpSwagger "github.com/swaggo/http-swagger"
-	_ "github.com/mini-maxit/backend/docs"
 )
 
 type SwaggerRoute struct{}
@@ -20,5 +18,7 @@ func (sw *SwaggerRoute) Docs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpSwagger.Handler(httpSwagger.URL("doc.json")).ServeHTTP(w, r)
+	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
+	// idk what is going on the url in the index.html is not working and not getting the api sepecs correctly
+	// http.ServeFile(w, r, "docs/index.html")
 }

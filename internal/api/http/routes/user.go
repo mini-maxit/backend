@@ -151,6 +151,8 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
 	// this funcion allows admin to ctreate new users with their email and given role
 	// the users will be created with a default password and will be required to change it on first login
+
+	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
 }
 
 func NewUserRoute(userService service.UserService) UserRoute {

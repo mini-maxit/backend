@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
+	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: s.mux,
+		Handler: utils.RecoveryMiddleware(s.mux),
 	}
 	ctx := context.Background()
 	go func() {
@@ -41,7 +42,7 @@ func (s *Server) Start() error {
 	}()
 
 	logrus.Info("Starting server on port ", s.port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.mux)
+	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
 func NewServer(initialization *initialization.Initialization) *Server {
@@ -52,7 +53,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	})
 
 	// Swagger route
-	mux.HandleFunc("/api/v1/swagger", initialization.SwaggerRoute.Docs)
+	mux.HandleFunc("/api/v1/docs", initialization.SwaggerRoute.Docs)
 
 	// Auth routes
 	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
