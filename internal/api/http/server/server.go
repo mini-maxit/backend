@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
-	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/sirupsen/logrus"
 )
@@ -28,7 +27,7 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: utils.RecoveryMiddleware(s.mux),
+		Handler: middleware.RecoveryMiddleware(s.mux),
 	}
 	ctx := context.Background()
 	go func() {

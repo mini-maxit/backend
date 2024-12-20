@@ -13,6 +13,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/sirupsen/logrus"
 )
 
 type TaskRoute interface {
@@ -64,13 +65,13 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit.")
+		utils.ReturnError(w, http.StatusBadRequest,utils.CodeBadRequest ,"Invalid limit.")
 		return
 	}
 
 	offset, err := strconv.ParseInt(offsetStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset.")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid offset.")
 		return
 	}
 
@@ -128,14 +129,14 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 
 func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userIdStr := r.PathValue("id")
 
 	if userIdStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest,  "Invalid user id")
 		return
 	}
 
@@ -153,19 +154,19 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid offset")
 		return
 	}
 
 	offset, err := strconv.ParseInt(offsetStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		utils.ReturnError(w, http.StatusBadRequest,utils.CodeBadRequest, "Invalid offset")
 		return
 	}
 
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid user id")
 		return
 	}
 
@@ -180,14 +181,14 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 
 func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	groupIdStr := r.PathValue("id")
 
 	if groupIdStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid group id")
 		return
 	}
 
@@ -205,19 +206,19 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	limit, err := strconv.ParseInt(limitStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid limit")
 		return
 	}
 
 	offset, err := strconv.ParseInt(offsetStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid offset")
 		return
 	}
 
 	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid group id")
 		return
 	}
 

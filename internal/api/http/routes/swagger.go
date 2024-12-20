@@ -14,11 +14,11 @@ func NewSwaggerRoute() SwaggerRoute {
 
 func (sw *SwaggerRoute) Docs(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		utils.ReturnError(w, http.StatusNotFound, "Not found")
+		utils.ReturnError(w, http.StatusNotFound,utils.CodeMethodNotAllowed ,"Not found")
 		return
 	}
 
-	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
+	utils.ReturnError(w, http.StatusNotImplemented, utils.CodeMethodNotAllowed, "Not implemented")
 	// idk what is going on the url in the index.html is not working and not getting the api sepecs correctly
 	// http.ServeFile(w, r, "docs/index.html")
 }

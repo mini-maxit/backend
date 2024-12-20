@@ -18,6 +18,7 @@ const (
 	CodeMethodNotAllowed    = "METHOD_NOT_ALLOWED"
 	CodeBadRequest          = "BAD_REQUEST"
 	CodeUnauthorized        = "UNAUTHORIZED"
+	CodeNotImplemented      = "NOT_IMPLEMENTED"
 )
 
 type Error struct {
