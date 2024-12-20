@@ -18,6 +18,8 @@ import (
 type TaskRoute interface {
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
+	GetAllForUser(w http.ResponseWriter, r *http.Request)
+	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
@@ -30,17 +32,54 @@ type TaskRouteImpl struct {
 	queueService service.QueueService
 }
 
+
+// GetAllTasks godoc
+//
+//	@Tags			task
+//	@Summary		Get all tasks
+//	@Description	Returns all tasks
+//	@Produce		json
+//	@Failure		500	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200	{object}	utils.ApiResponse[[]schemas.Task]
+//	@Router			/tasks [get]
 func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	tasks, err := tr.taskService.GetAll()
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	logrus.Info(limitStr)
+	if limitStr == "" {
+		limitStr = utils.DefaultPaginationLimitStr
+	}
+
+
+	offsetStr := query.Get("offset")
+	logrus.Info(offsetStr)
+	if offsetStr == "" {
+		offsetStr = utils.DefaultPaginationOffsetStr
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit.")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset.")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAll(limit, offset)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, utils.CodeInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
+
 	if tasks == nil {
 		tasks = []schemas.Task{}
 	}
@@ -48,6 +87,19 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
+
+// GetTask godoc
+//
+//	@Tags			task
+//	@Summary		Get a task
+//	@Description	Returns a task by ID
+//	@Produce		json
+//	@Param			id	path		int	true	"Task ID"
+//	@Failure		400	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		405	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		500	{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200	{object}	utils.ApiResponse[schemas.TaskDetailed]
+//	@Router			/task/{id} [get]
 func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
@@ -74,6 +126,126 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, task)
 }
 
+func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userIdStr := r.PathValue("id")
+
+	if userIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+
+	if limitStr == "" {
+		limitStr = utils.DefaultPaginationLimitStr
+	}
+
+	if offsetStr == "" {
+		offsetStr = utils.DefaultPaginationOffsetStr
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForUser(userId,limit, offset)
+
+	if tasks == nil {
+		tasks = []schemas.Task{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, tasks)
+}
+
+func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+
+	if groupIdStr == "" {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		return
+	}
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+
+	if limitStr == "" {
+		limitStr = utils.DefaultPaginationLimitStr
+	}
+
+	if offsetStr == "" {
+		offsetStr = utils.DefaultPaginationOffsetStr
+	}
+
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForGroup(groupId, limit, offset)
+
+	if tasks == nil {
+		tasks = []schemas.Task{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, tasks)
+}
+
+// UploadTask godoc
+//
+//	@Tags			task
+//	@Summary		Upload a task
+//	@Description	Uploads a task to the FileStorage service
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			taskName	formData	string	true	"Name of the task"
+//	@Param			userId		formData	int		true	"ID of the author"
+//	@Param			overwrite	formData	bool	false	"Overwrite flag"
+//	@Param			archive		formData	file	true	"Task archive"
+//	@Failure		405			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		400			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Failure		500			{object}	utils.ApiResponse[schemas.ErrorResponse]
+//	@Success		200			{object}	utils.ApiResponse[schemas.SuccessResponse]
+//	@Router			/task [post]
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
@@ -191,6 +363,21 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, "Task uploaded successfully")
 }
 
+// SubmitSolution godoc
+//
+//@Tags	task
+//@Summary Submit a solution
+//@Description Uploads a solution to the FileSotrage servide
+//@Accept multipart/form-data
+//@Param taskID formData int true "ID of the task"
+//@Param solution formData file true "solution file"
+//@Param userID formData int true "ID of the user"
+//@Param languageID formData int true "Id of the language used in the soloution"
+//@Failure		405		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Failure		400		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Failure		500		{object}	utils.ApiResponse[schemas.ErrorResponse]
+//@Success 		200 	{object}    utils.ApiResponse[schemas.SuccessResponse]
+//	@Router			/task/submit [post]
 func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")

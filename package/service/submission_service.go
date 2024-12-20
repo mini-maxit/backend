@@ -5,6 +5,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +27,11 @@ type SubmissionServiceImpl struct {
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorMsg string) error {
 	db := us.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
@@ -33,13 +39,20 @@ func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorM
 		return err
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
 func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) error {
 	db := us.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	err := us.submissionRepository.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
@@ -47,13 +60,20 @@ func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) erro
 		return err
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
 func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) error {
 	db := us.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	err := us.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
@@ -61,13 +81,20 @@ func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) er
 		return err
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
 	return nil
 }
 
 func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
 	db := us.database.Connect()
 	tx := db.Begin()
+	if tx.Error != nil {
+		return -1, tx.Error
+	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	submission, err := us.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
@@ -99,7 +126,9 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 		}
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return -1, err
+	}
 	return id, nil
 }
 

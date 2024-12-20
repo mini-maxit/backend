@@ -1,0 +1,337 @@
+basePath: /api/v1
+definitions:
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.ErrorResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SuccessResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse'
+      ok:
+        type: boolean
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.SuccessResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.Task:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      created_by_name:
+        type: string
+      description_url:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse:
+    properties:
+      session_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API documentation for the Mini Maxit API.
+  title: Mini Maxit API Documentation testing the workflow
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password
+      parameters:
+      - description: User Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse'
+      summary: Login a user
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with name, surname, email, username and password
+      parameters:
+      - description: User Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse'
+      summary: Register a user
+      tags:
+      - auth
+  /task:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a task to the FileStorage service
+      parameters:
+      - description: Name of the task
+        in: formData
+        name: taskName
+        required: true
+        type: string
+      - description: ID of the author
+        in: formData
+        name: userId
+        required: true
+        type: integer
+      - description: Overwrite flag
+        in: formData
+        name: overwrite
+        type: boolean
+      - description: Task archive
+        in: formData
+        name: archive
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+      summary: Upload a task
+      tags:
+      - task
+  /task/{id}:
+    get:
+      description: Returns a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+      summary: Get a task
+      tags:
+      - task
+  /task/submit:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a solution to the FileSotrage servide
+      parameters:
+      - description: ID of the task
+        in: formData
+        name: taskID
+        required: true
+        type: integer
+      - description: solution file
+        in: formData
+        name: solution
+        required: true
+        type: file
+      - description: ID of the user
+        in: formData
+        name: userID
+        required: true
+        type: integer
+      - description: Id of the language used in the soloution
+        in: formData
+        name: languageID
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+      summary: Submit a solution
+      tags:
+      - task
+  /tasks:
+    get:
+      description: Returns all tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse'
+      summary: Get all tasks
+      tags:
+      - task
+swagger: "2.0"

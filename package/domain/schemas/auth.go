@@ -12,3 +12,20 @@ type UserRegisterRequest struct {
 	Username string `json:"username" validate:"nonzero,min=3,max=30,regexp=^[a-zA-Z][a-zA-Z0-9_]*[a-zA-Z0-9]$"`
 	Password string `json:"password" validate:"nonzero,min=8,max=50"`
 }
+
+// Structures defining the response of the API
+type UserLoginSuccessResponse struct {
+    Token string `json:"token"`
+}
+
+type UserLoginErrorResponse struct {
+    Message string `json:"message"`
+}
+
+type UserRegisterSuccessResponse struct {
+    SessionID string `json:"session_id"`
+}
+
+type UserRegisterErrorResponse struct {
+    Message string `json:"message"`
+}

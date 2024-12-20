@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
+	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +28,7 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: s.mux,
+		Handler: utils.RecoveryMiddleware(s.mux),
 	}
 	ctx := context.Background()
 	go func() {
@@ -44,12 +45,15 @@ func (s *Server) Start() error {
 	}()
 
 	logrus.Info("Starting server on port ", s.port)
-	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), s.mux)
+	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
 func NewServer(initialization *initialization.Initialization) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
+
+	// Swagger route
+	mux.HandleFunc("/api/v1/docs", initialization.SwaggerRoute.Docs)
 
 	// Auth routes
 	authMux := http.NewServeMux()
@@ -66,8 +70,22 @@ func NewServer(initialization *initialization.Initialization) *Server {
 		}
 	},
 	)
-	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
-	taskMux.HandleFunc("/submit", initialization.TaskRoute.SubmitSolution)
+	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
+	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
+	mux.HandleFunc("/api/v1/user/{id}/task", initialization.TaskRoute.GetAllForUser)
+	mux.HandleFunc("/api/v1/group/{id}/task", initialization.TaskRoute.GetAllForGroup)
+
+	// User routes
+	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			initialization.UserRoute.GetUserById(w, r)
+		} else if r.Method == http.MethodPut{
+			initialization.UserRoute.EditUser(w, r)
+		}
+	},
+	)
+	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
+	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
 	// Session routes
 	sessionMux := http.NewServeMux()

@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
@@ -33,6 +34,8 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 		return nil, tx.Error
 	}
 
+	defer utils.TransactionPanicRecover(tx)
+
 	user, err := as.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -46,7 +49,10 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
 	return session, nil
 }
 
@@ -59,6 +65,8 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
+
+	defer utils.TransactionPanicRecover(tx)
 
 	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -90,7 +98,10 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	tx.Commit()
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
 	return session, nil
 }
 

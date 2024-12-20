@@ -10,6 +10,9 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
+const DefaultPaginationLimitStr = "10"
+const DefaultPaginationOffsetStr = "0"
+
 const (
 	CodeInternalServerError = "INTERNAL_SERVER_ERROR"
 	CodeMethodNotAllowed    = "METHOD_NOT_ALLOWED"
