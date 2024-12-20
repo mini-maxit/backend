@@ -101,7 +101,7 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 func (s *SessionServiceImpl) ValidateSession(sessionId string) (schemas.ValidateSessionResponse, error) {
 	tx := s.database.Connect().Begin()
 	if tx.Error != nil {
-		return false, tx.Error
+		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, tx.Error
 	}
 
 	defer utils.TransactionPanicRecover(tx)
