@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
 )
 
@@ -56,6 +57,10 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 }
 
 func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
+	if err := validator.Validate(userRegister); err != nil {
+		return nil, err
+
+	}
 	tx := as.database.Connect().Begin()
 	if tx.Error != nil {
 		return nil, tx.Error

@@ -18,7 +18,8 @@ type Initialization struct {
 	Cfg *config.Config
 	Db  database.Database
 
-	TaskService service.TaskService
+	TaskService    service.TaskService
+	SessionService service.SessionService
 
 	AuthRoute    routes.AuthRoute
 	TaskRoute    routes.TaskRoute

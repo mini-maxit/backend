@@ -11,11 +11,14 @@ import (
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/sirupsen/logrus"
 )
 
+const ApiVersion = "v1"
+
 type Server struct {
-	mux  *http.ServeMux
+	mux  http.Handler
 	port uint16
 }
 
@@ -47,20 +50,19 @@ func (s *Server) Start() error {
 
 func NewServer(initialization *initialization.Initialization) *Server {
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
+	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
 	// Swagger route
 	mux.HandleFunc("/api/v1/docs", initialization.SwaggerRoute.Docs)
 
 	// Auth routes
-	mux.HandleFunc("/api/v1/auth/login", initialization.AuthRoute.Login)
-	mux.HandleFunc("/api/v1/auth/register", initialization.AuthRoute.Register)
+	authMux := http.NewServeMux()
+	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
+	authMux.HandleFunc("/register", initialization.AuthRoute.Register)
 
 	// Task routes
-	mux.HandleFunc("/api/v1/task", func(w http.ResponseWriter, r *http.Request) {
+	taskMux := http.NewServeMux()
+	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			initialization.TaskRoute.UploadTask(w, r)
 		} else if r.Method == "GET" {
@@ -86,9 +88,25 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
 	// Session routes
-	mux.HandleFunc("/api/v1/session", initialization.SessionRoute.CreateSession)
-	mux.HandleFunc("/api/v1/session/validate", initialization.SessionRoute.ValidateSession)
-	mux.HandleFunc("/api/v1/session/invalidate", initialization.SessionRoute.InvalidateSession)
+	sessionMux := http.NewServeMux()
+	sessionMux.HandleFunc("/", initialization.SessionRoute.CreateSession)
+	sessionMux.HandleFunc("/validate", initialization.SessionRoute.ValidateSession)
+	sessionMux.HandleFunc("/invalidate", initialization.SessionRoute.InvalidateSession)
+
+	// Secure routes (require authentication)
+	secureMux := http.NewServeMux()
+	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
+	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
+
+	// API routes
+	apiMux := http.NewServeMux()
+	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
+	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.SessionService))
+
+	loggingMux := http.NewServeMux()
+	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux))
+	// Add the API prefix to all routes
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, loggingMux))
 
 	return &Server{mux: mux, port: initialization.Cfg.App.Port}
 }
