@@ -17,8 +17,8 @@ import (
 const ApiVersion = "v1"
 
 type Server struct {
-	mux  http.Handler
-	port uint16
+	mux           http.Handler
+	port          uint16
 	server_logger *logger.ServiceLogger
 }
 
@@ -28,7 +28,7 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: middleware.RecoveryMiddleware(s.mux, s.server_logger),
+		Handler: s.mux,
 	}
 	ctx := context.Background()
 	go func() {
@@ -79,7 +79,7 @@ func NewServer(initialization *initialization.Initialization, server_logger *log
 	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			initialization.UserRoute.GetUserById(w, r)
-		} else if r.Method == http.MethodPut{
+		} else if r.Method == http.MethodPut {
 			initialization.UserRoute.EditUser(w, r)
 		}
 	},
@@ -108,7 +108,7 @@ func NewServer(initialization *initialization.Initialization, server_logger *log
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, loggingMux))
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(loggingMux, server_logger)))
 
 	return &Server{mux: mux, port: initialization.Cfg.App.Port, server_logger: server_logger}
 }

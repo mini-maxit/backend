@@ -26,7 +26,7 @@ type Initialization struct {
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
 	SwaggerRoute routes.SwaggerRoute
-	UserRoute 	 routes.UserRoute
+	UserRoute    routes.UserRoute
 
 	QueueListener queue.QueueListener
 }
@@ -50,7 +50,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 	}
 	channel, err := conn.Channel()
 	if err != nil {
-		logger.Log(&broker_logger,"Failed to create channel:", err.Error(), logger.Panic)
+		logger.Log(&broker_logger, "Failed to create channel:", err.Error(), logger.Panic)
 	}
 
 	return conn, channel
@@ -121,5 +121,5 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		logger.Log(&init_logger, "Failed to create queue listener:", err.Error(), logger.Panic)
 	}
 
-	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute, SwaggerRoute: swaggerRoute, UserRoute: userRoute}
+	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, SessionService: sessionService, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute, SwaggerRoute: swaggerRoute, UserRoute: userRoute}
 }

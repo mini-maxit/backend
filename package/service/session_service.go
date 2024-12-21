@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
@@ -31,7 +31,7 @@ type SessionServiceImpl struct {
 	database          database.Database
 	sessionRepository repository.SessionRepository
 	userRepository    repository.UserRepository
-	session_logger   *logger.ServiceLogger
+	session_logger    *logger.ServiceLogger
 }
 
 // Generates a new session token
@@ -48,15 +48,8 @@ func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Ses
 	}
 }
 
+// Creates a new session for a given user
 func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
-	if tx == nil {
-		tx = s.database.Connect().Begin()
-		if tx.Error != nil {
-			logger.Log(s.session_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
-			return nil, tx.Error
-		}
-	}
-
 	defer utils.TransactionPanicRecover(tx)
 
 	_, err := s.userRepository.GetUser(tx, userId)
@@ -84,11 +77,6 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 				return nil, err
 			}
 		} else {
-			err = tx.Commit().Error
-			if err != nil {
-				logger.Log(s.session_logger, "Error committing transaction:", err.Error(), logger.Error)
-				return nil, err
-			}
 			return s.modelToSchema(session), nil
 		}
 	}
@@ -107,11 +95,6 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 		return nil, err
 	}
 
-	err = tx.Commit().Error
-	if err != nil {
-		logger.Log(s.session_logger, "Error committing transaction:", err.Error(), logger.Error)
-		return nil, err
-	}
 	return s.modelToSchema(session), nil
 }
 
@@ -208,6 +191,6 @@ func NewSessionService(db database.Database, sessionRepository repository.Sessio
 		database:          db,
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
-		session_logger:   &session_logger,
+		session_logger:    &session_logger,
 	}
 }

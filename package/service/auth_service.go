@@ -12,7 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
-
 )
 
 var (
