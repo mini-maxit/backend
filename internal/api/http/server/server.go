@@ -11,7 +11,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
-	"github.com/sirupsen/logrus"
+	"github.com/mini-maxit/backend/internal/logger"
 )
 
 const ApiVersion = "v1"
@@ -19,6 +19,7 @@ const ApiVersion = "v1"
 type Server struct {
 	mux  http.Handler
 	port uint16
+	server_logger *logger.ServiceLogger
 }
 
 func (s *Server) Start() error {
@@ -27,27 +28,27 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: middleware.RecoveryMiddleware(s.mux),
+		Handler: middleware.RecoveryMiddleware(s.mux, s.server_logger),
 	}
 	ctx := context.Background()
 	go func() {
 		<-sigChan
-		logrus.Info("Shutting down server...")
+		logger.Log(s.server_logger, "Shutting down server...", "", logger.Info)
 
 		// Create a context with timeout to allow graceful shutdown
 		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
 		defer shutdownCancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			logrus.Errorf("Server forced to shutdown: %v", err)
+			logger.Log(s.server_logger, "Error shutting down server:", err.Error(), logger.Error)
 		}
 	}()
 
-	logrus.Info("Starting server on port ", s.port)
+	logger.Log(s.server_logger, fmt.Sprintf("Starting server on port %d", s.port), "", logger.Info)
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
-func NewServer(initialization *initialization.Initialization) *Server {
+func NewServer(initialization *initialization.Initialization, server_logger *logger.ServiceLogger) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
@@ -102,10 +103,12 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
 	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.SessionService))
 
+	// Logging middleware
+	httpLoger := logger.NewHttpLogger()
 	loggingMux := http.NewServeMux()
-	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux))
+	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, loggingMux))
 
-	return &Server{mux: mux, port: initialization.Cfg.App.Port}
+	return &Server{mux: mux, port: initialization.Cfg.App.Port, server_logger: server_logger}
 }

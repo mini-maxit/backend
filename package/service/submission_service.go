@@ -5,6 +5,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
@@ -22,12 +23,14 @@ type SubmissionServiceImpl struct {
 	submissionResultRepository repository.SubmissionResultRepository
 	inputOutputRepository      repository.InputOutputRepository
 	testResultRepository       repository.TestResultRepository
+	submission_logger          *logger.ServiceLogger
 }
 
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorMsg string) error {
 	db := us.database.Connect()
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(us.submission_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
 		return tx.Error
 	}
 
@@ -35,11 +38,13 @@ func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorM
 
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
+		logger.Log(us.submission_logger, "Error marking submission failed:", err.Error(), logger.Error)
 		tx.Rollback()
 		return err
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(us.submission_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return err
 	}
 	return nil
@@ -49,6 +54,7 @@ func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) erro
 	db := us.database.Connect()
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(us.submission_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
 		return tx.Error
 	}
 
@@ -56,11 +62,13 @@ func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) erro
 
 	err := us.submissionRepository.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
+		logger.Log(us.submission_logger, "Error marking submission complete:", err.Error(), logger.Error)
 		tx.Rollback()
 		return err
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(us.submission_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return err
 	}
 	return nil
@@ -70,6 +78,7 @@ func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) er
 	db := us.database.Connect()
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(us.submission_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
 		return tx.Error
 	}
 
@@ -77,11 +86,13 @@ func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) er
 
 	err := us.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
+		logger.Log(us.submission_logger, "Error marking submission processing:", err.Error(), logger.Error)
 		tx.Rollback()
 		return err
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(us.submission_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return err
 	}
 	return nil
@@ -91,6 +102,7 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 	db := us.database.Connect()
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(us.submission_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
 		return -1, tx.Error
 	}
 
@@ -98,6 +110,7 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 
 	submission, err := us.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
+		logger.Log(us.submission_logger, "Error getting submission:", err.Error(), logger.Error)
 		tx.Rollback()
 		return -1, err
 	}
@@ -109,6 +122,7 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 	}
 	id, err := us.submissionResultRepository.CreateSubmissionResult(tx, submissionResult)
 	if err != nil {
+		logger.Log(us.submission_logger, "Error creating submission result:", err.Error(), logger.Error)
 		tx.Rollback()
 		return -1, err
 	}
@@ -116,17 +130,20 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 	for _, testResult := range responseMessage.Result.TestResults {
 		inputOutputId, err := us.inputOutputRepository.GetInputOutputId(tx, submission.TaskId, testResult.Order)
 		if err != nil {
+			logger.Log(us.submission_logger, "Error getting input output id:", err.Error(), logger.Error)
 			tx.Rollback()
 			return -1, err
 		}
 		err = us.createTestResult(tx, id, inputOutputId, testResult)
 		if err != nil {
+			logger.Log(us.submission_logger, "Error creating test result:", err.Error(), logger.Error)
 			tx.Rollback()
 			return -1, err
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(us.submission_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return -1, err
 	}
 	return id, nil
@@ -143,9 +160,11 @@ func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultI
 }
 
 func NewSubmissionService(database database.Database, submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
+	submission_logger := logger.NewNamedLogger("submission_service")
 	return &SubmissionServiceImpl{
 		database:                   database,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
+		submission_logger:          &submission_logger,
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -29,17 +30,20 @@ type TaskServiceImpl struct {
 	cfg                  *config.Config
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
+	task_logger          *logger.ServiceLogger
 }
 
 func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	// Connect to the database and start a transaction
 	db := ts.database.Connect()
 	if db == nil {
+		logger.Log(ts.task_logger, "Error connecting to database", ErrDatabaseConnection.Error(),logger.Error)
 		return 0, ErrDatabaseConnection
 	}
 
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(ts.task_logger, "Error starting transaction", tx.Error.Error(), logger.Error)
 		return 0, tx.Error
 	}
 
@@ -52,12 +56,14 @@ func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
 	}
 	taskId, err := ts.taskRepository.Create(tx, model)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error creating task", err.Error(), logger.Error)
 		tx.Rollback()
 		return 0, err
 	}
 
 	// Commit the transaction and return the task ID
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(ts.task_logger, "Error committing transaction", err.Error(), logger.Error)
 		return 0, err
 	}
 	return taskId, nil
@@ -67,12 +73,14 @@ func (ts *TaskServiceImpl) GetAll(limit, offset int64) ([]schemas.Task, error) {
 	// Connect to the database
 	db := ts.database.Connect()
 	if db == nil {
+		logger.Log(ts.task_logger, "Error connecting to database", ErrDatabaseConnection.Error(), logger.Error)
 		return nil, ErrDatabaseConnection
 	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllTasks(db)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -99,12 +107,14 @@ func (ts *TaskServiceImpl) GetAllForUser(userId, limit, offset int64) ([]schemas
 	tx := ts.database.Connect()
 
 	if tx == nil {
+		logger.Log(ts.task_logger, "Error connecting to database", ErrDatabaseConnection.Error(), logger.Error)
 		return nil, ErrDatabaseConnection
 	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks for user", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -131,12 +141,14 @@ func (ts *TaskServiceImpl) GetAllForGroup(groupId, limit, offset int64) ([]schem
 	tx := ts.database.Connect()
 
 	if tx == nil {
+		logger.Log(ts.task_logger, "Error connecting to database", ErrDatabaseConnection.Error(), logger.Error)
 		return nil, ErrDatabaseConnection
 	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks for group", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -163,12 +175,14 @@ func (ts *TaskServiceImpl) GetTask(taskId int64) (*schemas.TaskDetailed, error) 
 	// Connect to the database
 	db := ts.database.Connect()
 	if db == nil {
+		logger.Log(ts.task_logger, "Error connecting to database", ErrDatabaseConnection.Error(), logger.Error)
 		return nil, ErrDatabaseConnection
 	}
 
 	// Get the task
 	task, err := ts.taskRepository.GetTask(db, taskId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting task", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -189,10 +203,12 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	// Connect to the database and start a transaction
 	db := ts.database.Connect()
 	if db == nil {
+		logger.Log(ts.task_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
 		return ErrDatabaseConnection
 	}
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(ts.task_logger, "Error starting transaction:", tx.Error.Error(), logger.Error)
 		return tx.Error
 	}
 
@@ -200,6 +216,7 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting task:", err.Error(), logger.Error)
 		tx.Rollback()
 		return err
 	}
@@ -209,12 +226,14 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	// Update the task
 	err = ts.taskRepository.UpdateTask(tx, taskId, currentTask)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error updating task:", err.Error(), logger.Error)
 		tx.Rollback()
 		return err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(ts.task_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return err
 	}
 	return nil
@@ -224,10 +243,12 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	// Connect to the database and start a transaction
 	db := ts.database.Connect()
 	if db == nil {
+		logger.Log(ts.task_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
 		return 0, ErrDatabaseConnection
 	}
 	tx := db.Begin()
 	if tx.Error != nil {
+		logger.Log(ts.task_logger, "Error starting transaction:", tx.Error.Error(), logger.Error)
 		return 0, tx.Error
 	}
 
@@ -245,12 +266,14 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 
 	if err != nil {
+		logger.Log(ts.task_logger, "Error creating submission:", err.Error(), logger.Error)
 		tx.Rollback()
 		return 0, err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
+		logger.Log(ts.task_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return 0, err
 	}
 	return submissionId, nil
@@ -272,10 +295,12 @@ func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
 }
 
 func NewTaskService(db database.Database, cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
+	task_logger := logger.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
 		database:             db,
 		cfg:                  cfg,
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
+		task_logger:          &task_logger,
 	}
 }
