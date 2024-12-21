@@ -116,7 +116,7 @@ func Log(logger *ServiceLogger, log_message, error_message string, log_type LogT
 	case Info:
 		logger.file_logger.Info(message)
 		logger.std_logger.Info(message)
-	case Error:	
+	case Error:
 		logger.file_logger.Error(message)
 		logger.std_logger.Error(message)
 	case Warn:

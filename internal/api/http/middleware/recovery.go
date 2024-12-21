@@ -12,7 +12,7 @@ func RecoveryMiddleware(next http.Handler, log *logger.ServiceLogger) http.Handl
 		defer func() {
 			if rec := recover(); rec != nil {
 
-				logger.Log(log, "Panic recovered", rec.(string), logger.Error)
+				logger.Log(log, "Panic recovered:", rec.(string), logger.Error)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()

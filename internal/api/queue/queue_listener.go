@@ -113,13 +113,13 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	queueMessage := schemas.ResponseMessage{}
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
-		logger.Log(ql.queue_logger, "Failed to unmarshal the message", err.Error(), logger.Error)
+		logger.Log(ql.queue_logger, "Failed to unmarshal the message:", err.Error(), logger.Error)
 		return
 	}
 	logger.Log(ql.queue_logger, "Received message: "+queueMessage.MessageId, "", logger.Info)
 	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
 	if err != nil {
-		logger.Log(ql.queue_logger, "Failed to get submission id", err.Error(), logger.Error)
+		logger.Log(ql.queue_logger, "Failed to get submission id:", err.Error(), logger.Error)
 		return
 	}
 	if queueMessage.Result.StatusCode == InternalError {
@@ -130,7 +130,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	ql.submissionService.MarkSubmissionComplete(submissionId)
 	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
 	if err != nil {
-		logger.Log(ql.queue_logger, "Failed to create user solution result", err.Error(), logger.Error)
+		logger.Log(ql.queue_logger, "Failed to create user solution result:", err.Error(), logger.Error)
 		return
 	}
 	logger.Log(ql.queue_logger, "Succesfuly processed message: " +  queueMessage.MessageId, "", logger.Info)

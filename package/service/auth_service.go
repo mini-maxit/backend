@@ -68,12 +68,12 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 
 func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	if err := validator.Validate(userRegister); err != nil {
-		logger.Log(as.service_logger, "Error validating user register request", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error validating user register request:", err.Error(), logger.Error)
 		return nil, err
 	}
 	tx := as.database.Connect().Begin()
 	if tx.Error != nil {
-		logger.Log(as.service_logger, "Error connecting to database", tx.Error.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
 		return nil, tx.Error
 	}
 
@@ -81,7 +81,7 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 
 	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
-		logger.Log(as.service_logger, "Error getting user by email", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error getting user by email:", err.Error(), logger.Error)
 		return nil, err
 	}
 	if user != nil {
@@ -91,7 +91,7 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logger.Log(as.service_logger, "Error generating password hash", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error generating password hash:", err.Error(), logger.Error)
 		return nil, err
 	}
 	userModel := &models.User{
@@ -105,22 +105,22 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 
 	userId, err := as.userRepository.CreateUser(tx, userModel)
 	if err != nil {
-		logger.Log(as.service_logger, "Error creating user", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error creating user:", err.Error(), logger.Error)
 		return nil, err
 	}
 
 	session, err := as.sessionService.CreateSession(tx, userId)
 	if err != nil {
-		logger.Log(as.service_logger, "Error creating session", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error creating session:", err.Error(), logger.Error)
 		return nil, err
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		logger.Log(as.service_logger, "Error committing transaction", err.Error(), logger.Error)
+		logger.Log(as.service_logger, "Error committing transaction:", err.Error(), logger.Error)
 		return nil, err
 	}
 
-	logger.Log(as.service_logger, "User registered successfully", "", logger.Info)
+	logger.Log(as.service_logger, "User registered successfully:", "", logger.Info)
 	return session, nil
 }
 
