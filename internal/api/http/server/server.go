@@ -27,7 +27,7 @@ func (s *Server) Start() error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: middleware.RecoveryMiddleware(s.mux),
+		Handler: s.mux,
 	}
 	ctx := context.Background()
 	go func() {
@@ -78,7 +78,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			initialization.UserRoute.GetUserById(w, r)
-		} else if r.Method == http.MethodPut{
+		} else if r.Method == http.MethodPut {
 			initialization.UserRoute.EditUser(w, r)
 		}
 	},
@@ -105,7 +105,7 @@ func NewServer(initialization *initialization.Initialization) *Server {
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, loggingMux))
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, initialization.Db))))
 
 	return &Server{mux: mux, port: initialization.Cfg.App.Port}
 }
