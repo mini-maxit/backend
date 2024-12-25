@@ -356,7 +356,8 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add form fields
-	writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
+	// writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
+	writer.WriteField("taskID", fmt.Sprintf("%d", 1))
 	writer.WriteField("overwrite", strconv.FormatBool(overwrite))
 
 	// Create a form file field and copy the uploaded file to it

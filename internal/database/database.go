@@ -7,4 +7,5 @@ type Database interface {
 	ShouldRollback() bool       // Returns whether the transaction should be rolled back
 	Rollback()                  // Sets the transaction to be rolled back after execution finishes
 	Commit() error              // Commits the transaction
+	InvalidateTx()              // Invalidates the transaction
 }

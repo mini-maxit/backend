@@ -59,3 +59,11 @@ func (p *PostgresDB) Commit() error {
 	return nil
 
 }
+
+func (p *PostgresDB) InvalidateTx() {
+	p.shouldRollback = false
+	if p.tx != nil {
+		p.tx.Rollback()
+	}
+	p.tx = nil
+}

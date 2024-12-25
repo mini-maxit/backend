@@ -36,7 +36,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(wrappedWriter, rWithDatabase)
 		if db.ShouldRollback() {
-			tx.Rollback()
+			db.InvalidateTx()
 		} else {
 			err = db.Commit()
 			if err != nil {
