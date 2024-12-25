@@ -6,22 +6,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"gorm.io/gorm"
 )
 
 type QueueService interface {
 	// PublishTask publishes a task to the queue
-	PublishSubmission(submissionId int64) error
-	GetSubmissionId(messageId string) (int64, error)
+	PublishSubmission(tx *gorm.DB, submissionId int64) error
+	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
 }
 
 type QueueServiceImpl struct {
-	database             database.Database
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
 	queueRepository      repository.QueueMessageRepository
@@ -51,29 +49,18 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
-	db := qs.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	timeLimits, err := qs.taskRepository.GetTaskTimeLimits(tx, submission.TaskId)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 	memoryLimits, err := qs.taskRepository.GetTaskMemoryLimits(tx, submission.TaskId)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -94,43 +81,27 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	err = qs.publishMessage(msq)
 	if err != nil {
 		qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
-		tx.Rollback()
 		return err
 	}
 	err = qs.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return err
-	}
 	return nil
 }
 
-func (qs *QueueServiceImpl) GetSubmissionId(messageId string) (int64, error) {
-	db := qs.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return 0, tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
 	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return 0, err
-	}
 	return queueMessage.SubmissionId, nil
 }
 
-func NewQueueService(db database.Database, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
+func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
 	q, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
@@ -143,7 +114,7 @@ func NewQueueService(db database.Database, taskRepository repository.TaskReposit
 		return nil, err
 	}
 
-	return &QueueServiceImpl{database: db,
+	return &QueueServiceImpl{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
 		queueRepository:      queueMessageRepository,

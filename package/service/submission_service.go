@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -10,95 +9,48 @@ import (
 )
 
 type SubmissionService interface {
-	MarkSubmissionFailed(submissionId int64, errorMsg string) error
-	MarkSubmissionComplete(submissionId int64) error
-	MarkSubmissionProcessing(submissionId int64) error
-	CreateSubmissionResult(submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
+	MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error
+	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
+	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
+	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
 }
 
 type SubmissionServiceImpl struct {
-	database                   database.Database
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
 	inputOutputRepository      repository.InputOutputRepository
 	testResultRepository       repository.TestResultRepository
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorMsg string) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
+func (us *SubmissionServiceImpl) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
 	defer utils.TransactionPanicRecover(tx)
 
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
 	err := us.submissionRepository.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
 	err := us.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		return -1, tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
 	submission, err := us.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
-		tx.Rollback()
 		return -1, err
 	}
 
@@ -109,26 +61,20 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 	}
 	id, err := us.submissionResultRepository.CreateSubmissionResult(tx, submissionResult)
 	if err != nil {
-		tx.Rollback()
 		return -1, err
 	}
 	// Save test results
 	for _, testResult := range responseMessage.Result.TestResults {
 		inputOutputId, err := us.inputOutputRepository.GetInputOutputId(tx, submission.TaskId, testResult.Order)
 		if err != nil {
-			tx.Rollback()
 			return -1, err
 		}
 		err = us.createTestResult(tx, id, inputOutputId, testResult)
 		if err != nil {
-			tx.Rollback()
 			return -1, err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return -1, err
-	}
 	return id, nil
 }
 
@@ -142,9 +88,8 @@ func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultI
 	return us.testResultRepository.CreateTestResults(tx, testResultModel)
 }
 
-func NewSubmissionService(database database.Database, submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
+func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
 	return &SubmissionServiceImpl{
-		database:                   database,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
 	}

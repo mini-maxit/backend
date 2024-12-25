@@ -8,10 +8,6 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 )
 
-func requestSuccess(code int) bool {
-	return code >= 200 && code < 300
-}
-
 type ResponseWriterWrapper struct {
 	http.ResponseWriter
 	statusCode int
@@ -30,8 +26,8 @@ func (w *ResponseWriterWrapper) StatusCode() int {
 func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		tx := db.Connect().Begin()
-		if tx.Error != nil {
+		tx, err := db.Connect()
+		if err != nil {
 			utils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
 			return
 		}
@@ -39,10 +35,16 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		rWithDatabase := r.WithContext(ctx)
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(wrappedWriter, rWithDatabase)
-		if requestSuccess(wrappedWriter.StatusCode()) {
-			tx.Commit()
-		} else {
+		if db.ShouldRollback() {
 			tx.Rollback()
+		} else {
+			err = db.Commit()
+			if err != nil {
+				tx.Rollback()
+				utils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
+				return
+			}
+
 		}
 	})
 

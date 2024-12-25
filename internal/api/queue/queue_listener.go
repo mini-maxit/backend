@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/sirupsen/logrus"
@@ -25,6 +26,7 @@ const (
 
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
+	database          database.Database
 	taskService       service.TaskService
 	queueService      service.QueueService
 	submissionService service.SubmissionService
@@ -112,19 +114,31 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		return
 	}
 	logrus.Infof("Received message: %v", queueMessage.MessageId)
-	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
+
+	tx, err := ql.database.Connect()
+	if err != nil {
+		logrus.Errorf("Failed to connect to database: %s", err)
+		return
+	}
+	submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)
 	if err != nil {
 		logrus.Errorf("Failed to get submission id: %s", err)
 		return
 	}
 	if queueMessage.Result.StatusCode == InternalError {
-		ql.submissionService.MarkSubmissionFailed(submissionId, queueMessage.Result.Message)
+		ql.submissionService.MarkSubmissionFailed(tx, submissionId, queueMessage.Result.Message)
 		return
 	}
 
-	ql.submissionService.MarkSubmissionComplete(submissionId)
-	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
+	err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("Failed to mark submission as complete: %s", err)
+		return
+	}
+	_, err = ql.submissionService.CreateSubmissionResult(tx, submissionId, queueMessage)
+	if err != nil {
+		tx.Rollback()
 		logrus.Errorf("Failed to create user solution result: %s", err)
 		return
 	}

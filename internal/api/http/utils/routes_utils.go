@@ -10,9 +10,6 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
-const DefaultPaginationLimitStr = "10"
-const DefaultPaginationOffsetStr = "0"
-
 type Error struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`

@@ -3,11 +3,9 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/package/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
@@ -18,24 +16,16 @@ var (
 )
 
 type AuthService interface {
-	Login(email, password string) (*schemas.Session, error)
-	Register(userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
+	Login(tx *gorm.DB, email, password string) (*schemas.Session, error)
+	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
 type AuthServiceImpl struct {
-	database       database.Database
 	userRepository repository.UserRepository
 	sessionService SessionService
 }
 
-func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, error) {
-	tx := as.database.Connect().Begin()
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (as *AuthServiceImpl) Login(tx *gorm.DB, email, password string) (*schemas.Session, error) {
 	user, err := as.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -49,24 +39,14 @@ func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, erro
 	if err != nil {
 		return nil, err
 	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
 	return session, nil
 }
 
-func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
+func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	if err := validator.Validate(userRegister); err != nil {
+		// TODO: Add  ErrValidationFailed
 		return nil, err
-
 	}
-	tx := as.database.Connect().Begin()
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
 
 	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -99,15 +79,11 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 		return nil, err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
 	return session, nil
 }
 
-func NewAuthService(database database.Database, userRepository repository.UserRepository, sessionService SessionService) AuthService {
+func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
 	return &AuthServiceImpl{
-		database:       database,
 		userRepository: userRepository,
 		sessionService: sessionService,
 	}

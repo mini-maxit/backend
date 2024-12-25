@@ -5,17 +5,23 @@ import (
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/service"
 )
 
-func SessionValidationMiddleware(next http.Handler, sessionService service.SessionService) http.Handler {
+func SessionValidationMiddleware(next http.Handler, db database.Database, sessionService service.SessionService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionHeader := r.Header.Get("Session")
 		if sessionHeader == "" {
 			utils.ReturnError(w, http.StatusUnauthorized, "Session header is not set, could not authorize")
 			return
 		}
-		sessionResponse, err := sessionService.ValidateSession(sessionHeader)
+		tx, err := db.Connect()
+		if err != nil {
+			utils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
+			return
+		}
+		sessionResponse, err := sessionService.ValidateSession(tx, sessionHeader)
 		if err != nil {
 			if err == service.ErrSessionNotFound {
 				utils.ReturnError(w, http.StatusUnauthorized, "Session not found")

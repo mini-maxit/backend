@@ -10,7 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/sirupsen/logrus"
@@ -73,8 +75,16 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := tr.taskService.GetAll(limit, offset)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	tasks, err := tr.taskService.GetAll(tx, limit, offset)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
@@ -115,8 +125,16 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := tr.taskService.GetTask(taskId)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	task, err := tr.taskService.GetTask(tx, taskId)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting task. %s", err.Error()))
 		return
 	}
@@ -167,7 +185,13 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := tr.taskService.GetAllForUser(userId, limit, offset)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+	}
+
+	tasks, err := tr.taskService.GetAllForUser(tx, userId, limit, offset)
 
 	if tasks == nil {
 		tasks = []schemas.Task{}
@@ -219,7 +243,19 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tasks, err := tr.taskService.GetAllForGroup(groupId, limit, offset)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, limit, offset)
+	if err != nil {
+		db.Rollback()
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
 
 	if tasks == nil {
 		tasks = []schemas.Task{}
@@ -306,8 +342,15 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		Title:     taskName,
 		CreatedBy: userId,
 	}
-	taskId, err := tr.taskService.Create(task)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+	taskId, err := tr.taskService.Create(tx, task)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))
 		return
 	}
@@ -319,10 +362,12 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("archive", handler.Filename)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating form file for FileStorage. %s", err.Error()))
 		return
 	}
 	if _, err := io.Copy(part, file); err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error copying file to FileStorage request. %s", err.Error()))
 		return
 	}
@@ -332,6 +377,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Post(tr.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
 		return
 	}
@@ -341,10 +387,12 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	buffer := make([]byte, resp.ContentLength)
 	bytesRead, err := resp.Body.Read(buffer)
 	if err != nil && bytesRead == 0 {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)))
 		return
 	}
@@ -358,7 +406,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	utils.ReturnSuccess(w, http.StatusOK, "Task uploaded successfully")
+	utils.ReturnSuccess(w, http.StatusOK, map[string]interface{}{"taskId": taskId})
 }
 
 // SubmitSolution godoc
@@ -484,15 +532,24 @@ func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Create the submission with the correct order
-	submissionId, err := tr.taskService.CreateSubmission(taskId, userId, languageId, respJson.SubmissionNumber)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	// Create the submission with the correct order
+	submissionId, err := tr.taskService.CreateSubmission(tx, taskId, userId, languageId, respJson.SubmissionNumber)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
 		return
 	}
 
-	err = tr.queueService.PublishSubmission(submissionId)
+	err = tr.queueService.PublishSubmission(tx, submissionId)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()))
 		return
 	}

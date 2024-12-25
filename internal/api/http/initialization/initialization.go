@@ -10,6 +10,8 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
+	"github.com/sirupsen/logrus"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -36,11 +38,12 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 	for v := range 5 {
 		conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
 		if err != nil {
-			fmt.Printf("Failed to connect to RabbitMQ: %v\n", err)
+			logrus.Printf("Failed to connect to RabbitMQ: %v\nRetrying...", err)
 			time.Sleep(2*time.Second + time.Duration(v))
 			continue
 		}
 	}
+	logrus.Printf("Connected to RabbitMQ")
 
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to RabbitMQ: %w", err))
@@ -59,50 +62,60 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database: %w", err))
 	}
+	tx, err := db.Connect()
 
+	defer utils.TransactionPanicRecover(tx)
+
+	if err != nil {
+		panic(fmt.Errorf("failed to connect to database: %w", err))
+	}
 	// Repositories
-	_, err = repository.NewLanguageRepository(db.Connect())
+	_, err = repository.NewLanguageRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create language repository: %w", err))
 	}
-	userRepository, err := repository.NewUserRepository(db.Connect())
+	userRepository, err := repository.NewUserRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create user repository: %w", err))
 	}
-	taskRepository, err := repository.NewTaskRepository(db.Connect())
+	taskRepository, err := repository.NewTaskRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create task repository: %w", err))
 	}
-	_, err = repository.NewGroupRepository(db.Connect())
+	_, err = repository.NewGroupRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create group repository: %w", err))
 	}
-	submissionRepository, err := repository.NewSubmissionRepository(db.Connect())
+	submissionRepository, err := repository.NewSubmissionRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create submission repository: %w", err))
 	}
-	_, err = repository.NewSubmissionResultRepository(db.Connect())
+	_, err = repository.NewSubmissionResultRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create submission result repository: %w", err))
 	}
-	queueRepository, err := repository.NewQueueMessageRepository(db.Connect())
+	queueRepository, err := repository.NewQueueMessageRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create queue repository: %w", err))
 	}
-	sessionRepository, err := repository.NewSessionRepository(db.Connect())
+	sessionRepository, err := repository.NewSessionRepository(tx)
 	if err != nil {
 		panic(fmt.Errorf("failed to create session repository: %w", err))
 	}
 
+	if err := db.Commit(); err != nil {
+		panic(fmt.Errorf("failed to commit transaction: %v", err))
+	}
+
 	// Services
-	userService := service.NewUserService(db, userRepository)
-	taskService := service.NewTaskService(db, cfg, taskRepository, submissionRepository)
-	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
+	userService := service.NewUserService(userRepository)
+	taskService := service.NewTaskService(cfg, taskRepository, submissionRepository)
+	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		panic(fmt.Errorf("failed to create queue service: %w", err))
 	}
-	sessionService := service.NewSessionService(db, sessionRepository, userRepository)
-	authService := service.NewAuthService(db, userRepository, sessionService)
+	sessionService := service.NewSessionService(sessionRepository, userRepository)
+	authService := service.NewAuthService(userRepository, sessionService)
 
 	// Routes
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)

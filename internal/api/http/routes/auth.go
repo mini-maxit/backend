@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 )
@@ -44,14 +46,21 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = ar.userService.GetUserByEmail(request.Email)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+	}
+	_, err = ar.userService.GetUserByEmail(tx, request.Email)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusUnauthorized, "Given email does not exist. Verify your email and try again.")
 		return
 	}
 
-	session, err := ar.authService.Login(request.Email, request.Password)
+	session, err := ar.authService.Login(tx, request.Email, request.Password)
 	if err != nil {
+		db.Rollback()
 		if err == service.ErrInvalidCredentials {
 			utils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
 			return
@@ -86,15 +95,22 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+	}
 
-	session, err := ar.authService.Register(request)
+	session, err := ar.authService.Register(tx, request)
 	switch err {
 	case nil:
 		break
 	case service.ErrUserAlreadyExists:
+		db.Rollback()
 		utils.ReturnError(w, http.StatusBadRequest, err.Error())
 		return
 	default:
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
 		return
 	}
