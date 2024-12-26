@@ -14,7 +14,7 @@ import (
 func NewTestConfig() *config.Config {
 	return &config.Config{
 		DB: config.DBConfig{
-			Host:     "postgres",
+			Host:     "localhost",
 			Port:     5432,
 			User:     "postgres",
 			Password: "postgres",
