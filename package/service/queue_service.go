@@ -94,7 +94,6 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
 	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 

@@ -192,6 +192,11 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tasks, err := tr.taskService.GetAllForUser(tx, userId, limit, offset)
+	if err != nil {
+		db.Rollback()
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
 
 	if tasks == nil {
 		tasks = []schemas.Task{}
@@ -356,8 +361,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add form fields
-	// writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
-	writer.WriteField("taskID", fmt.Sprintf("%d", 1))
+	writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
 	writer.WriteField("overwrite", strconv.FormatBool(overwrite))
 
 	// Create a form file field and copy the uploaded file to it

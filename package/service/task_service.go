@@ -37,7 +37,6 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error)
 	}
 	taskId, err := ts.taskRepository.Create(tx, model)
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 
@@ -145,7 +144,6 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -154,7 +152,6 @@ func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo sche
 	// Update the task
 	err = ts.taskRepository.UpdateTask(tx, taskId, currentTask)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -175,7 +172,6 @@ func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId in
 	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 
 	if err != nil {
-		tx.Rollback()
 		return 0, err
 	}
 

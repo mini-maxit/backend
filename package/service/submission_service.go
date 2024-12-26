@@ -4,7 +4,6 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -23,8 +22,6 @@ type SubmissionServiceImpl struct {
 }
 
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
-	defer utils.TransactionPanicRecover(tx)
-
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
 		return err
