@@ -12,6 +12,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/logger"
+	"go.uber.org/zap"
 )
 
 const ApiVersion = "v1"
@@ -19,7 +20,7 @@ const ApiVersion = "v1"
 type Server struct {
 	mux           http.Handler
 	port          uint16
-	server_logger *logger.ServiceLogger
+	logger *zap.SugaredLogger
 }
 
 func (s *Server) Start() error {
@@ -33,22 +34,22 @@ func (s *Server) Start() error {
 	ctx := context.Background()
 	go func() {
 		<-sigChan
-		logger.Log(s.server_logger, "Shutting down server...", "", logger.Info)
+		s.logger.Info("Shutting down server...")
 
 		// Create a context with timeout to allow graceful shutdown
 		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
 		defer shutdownCancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Log(s.server_logger, "Error shutting down server:", err.Error(), logger.Error)
+			s.logger.Error("Error shutting down server:", err.Error())
 		}
 	}()
-
-	logger.Log(s.server_logger, fmt.Sprintf("Starting server on port %d", s.port), "", logger.Info)
+	
+	s.logger.Infof("Starting server on port %d", s.port)
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
-func NewServer(initialization *initialization.Initialization, server_logger *logger.ServiceLogger) *Server {
+func NewServer(initialization *initialization.Initialization, server_logger *zap.SugaredLogger) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
@@ -110,5 +111,5 @@ func NewServer(initialization *initialization.Initialization, server_logger *log
 	// Add the API prefix to all routes
 	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(loggingMux, server_logger)))
 
-	return &Server{mux: mux, port: initialization.Cfg.App.Port, server_logger: server_logger}
+	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: server_logger}
 }

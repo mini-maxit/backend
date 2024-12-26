@@ -33,15 +33,15 @@ func main() {
 	queueListener := initialization.QueueListener
 	cancel, err := queueListener.Start()
 	if err != nil {
-		logger.Log(&server_logger, "failed to start queue listener:", err.Error(), logger.Error)
+		server_logger.Errorf("failed to start queue listener: %v", err.Error())
 		os.Exit(1)
 	}
 
-	server := server.NewServer(initialization, &server_logger)
+	server := server.NewServer(initialization, server_logger)
 	err = server.Start()
 	if err != nil {
 		cancel() // Stop the queue listener
-		logger.Log(&server_logger, "failed to start server:", err.Error(), logger.Error)
+		server_logger.Errorf("failed to start server: %v", err.Error())
 		os.Exit(1)
 
 	}

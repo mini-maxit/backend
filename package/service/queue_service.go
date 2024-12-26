@@ -13,6 +13,7 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
 )
 
 type QueueService interface {
@@ -29,13 +30,13 @@ type QueueServiceImpl struct {
 	channel              *amqp.Channel
 	queue                amqp.Queue
 	responseQueueName    string
-	service_logger *logger.ServiceLogger
+	logger *zap.SugaredLogger
 }
 
 func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
-		logger.Log(qs.service_logger, "Error marshalling message:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error marshalling message: %v", err.Error())
 		return err
 	}
 
@@ -48,11 +49,11 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 		ReplyTo:     qs.responseQueueName,
 	})
 	if err != nil {
-		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
 		return err
 	}
 
-	logger.Log(qs.service_logger, "Message published", "", logger.Info)
+	qs.logger.Info("Message published")
 	return nil
 }
 
@@ -60,7 +61,7 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	db := qs.database.Connect()
 	tx := db.Begin()
 	if tx.Error != nil {
-		logger.Log(qs.service_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
+		qs.logger.Errorf("Error connecting to database: %v", tx.Error.Error())
 		return tx.Error
 	}
 
@@ -69,20 +70,20 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		tx.Rollback()
-		logger.Log(qs.service_logger, "Error getting submission:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting submission: %v", err.Error())
 		return err
 	}
 
 	timeLimits, err := qs.taskRepository.GetTaskTimeLimits(tx, submission.TaskId)
 	if err != nil {
 		tx.Rollback()
-		logger.Log(qs.service_logger, "Error getting task time limits:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting task time limits: %v", err.Error())
 		return err
 	}
 	memoryLimits, err := qs.taskRepository.GetTaskMemoryLimits(tx, submission.TaskId)
 	if err != nil {
 		tx.Rollback()
-		logger.Log(qs.service_logger, "Error getting task memory limits:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting task memory limits: %v", err.Error())
 		return err
 	}
 
@@ -104,22 +105,22 @@ func (qs *QueueServiceImpl) PublishSubmission(submissionId int64) error {
 	if err != nil {
 		qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
 		tx.Rollback()
-		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
 		return err
 	}
 	err = qs.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
 		tx.Rollback()
-		logger.Log(qs.service_logger, "Error marking submission processing:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error marking submission processing: %v", err.Error())
 		return err
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		logger.Log(qs.service_logger, "Error committing transaction:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error committing transaction: %v", err.Error())
 		return err
 	}
 
-	logger.Log(qs.service_logger, "Submission published", "", logger.Info)
+	qs.logger.Info("Submission published")
 	return nil
 }
 
@@ -142,7 +143,7 @@ func (qs *QueueServiceImpl) GetSubmissionId(messageId string) (int64, error) {
 		return 0, err
 	}
 
-	logger.Log(qs.service_logger, "Submission id retrieved", "", logger.Info)
+	qs.logger.Info("Submission id retrieved")
 	return queueMessage.SubmissionId, nil
 }
 
@@ -166,6 +167,6 @@ func NewQueueService(db database.Database, taskRepository repository.TaskReposit
 		queue:                q,
 		channel:              channel,
 		responseQueueName:    responseQueueName,
-		service_logger: &service_logger,
+		logger: service_logger,
 		}, nil
 }
