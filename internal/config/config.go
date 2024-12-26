@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
-	
+
 	"github.com/mini-maxit/backend/internal/logger"
 	"go.uber.org/zap"
 )

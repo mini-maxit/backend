@@ -44,7 +44,7 @@ func (s *Server) Start() error {
 			s.logger.Error("Error shutting down server:", err.Error())
 		}
 	}()
-	
+
 	s.logger.Infof("Starting server on port %d", s.port)
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
