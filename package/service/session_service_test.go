@@ -60,6 +60,7 @@ func TestCreateSession(t *testing.T) {
 		assert.InEpsilon(t, firstSession.ExpiresAt.Unix(), session.ExpiresAt.Unix(), 1)
 
 	})
+	tx.Rollback()
 }
 
 func TestValidateSession(t *testing.T) {
@@ -107,6 +108,7 @@ func TestValidateSession(t *testing.T) {
 		assert.True(t, validateSession.Valid)
 		assert.Equal(t, userId, validateSession.UserId)
 	})
+	tx.Rollback()
 }
 
 func TestInvalidateSession(t *testing.T) {
@@ -154,4 +156,5 @@ func TestInvalidateSession(t *testing.T) {
 		assert.False(t, validateSession.Valid)
 		assert.Equal(t, int64(-1), validateSession.UserId)
 	})
+	tx.Rollback()
 }
