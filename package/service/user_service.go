@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -23,11 +24,13 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	userRepository repository.UserRepository
+	user_logger    *logger.ServiceLogger
 }
 
 func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
+		logger.Log(us.user_logger, "Error getting user by email:", err.Error(), logger.Error)
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
@@ -41,6 +44,7 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error) {
 	userModels, err := us.userRepository.GetAllUsers(tx)
 	if err != nil {
+		logger.Log(us.user_logger, "Error getting all users:", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -65,9 +69,11 @@ func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]sche
 func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
+		logger.Log(us.user_logger, "Error getting user by id:", err.Error(), logger.Error)
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
+		return nil, err
 	}
 
 	user := us.modelToSchema(userModel)
@@ -85,9 +91,9 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 
 	err = us.userRepository.EditUser(tx, currentModel)
 	if err != nil {
+		logger.Log(us.user_logger, "Error editing user:", err.Error(), logger.Error)
 		return err
 	}
-
 	return nil
 }
 
@@ -121,7 +127,9 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 }
 
 func NewUserService(userRepository repository.UserRepository) UserService {
+	user_logger := logger.NewNamedLogger("user_service")
 	return &UserServiceImpl{
 		userRepository: userRepository,
+		user_logger:    &user_logger,
 	}
 }

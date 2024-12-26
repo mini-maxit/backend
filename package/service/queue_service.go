@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -26,11 +27,13 @@ type QueueServiceImpl struct {
 	channel              *amqp.Channel
 	queue                amqp.Queue
 	responseQueueName    string
+	service_logger       *logger.ServiceLogger
 }
 
 func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
+		logger.Log(qs.service_logger, "Error marshalling message:", err.Error(), logger.Error)
 		return err
 	}
 
@@ -43,24 +46,29 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 		ReplyTo:     qs.responseQueueName,
 	})
 	if err != nil {
+		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
 		return err
 	}
 
+	logger.Log(qs.service_logger, "Message published", "", logger.Info)
 	return nil
 }
 
 func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
+		logger.Log(qs.service_logger, "Error getting submission:", err.Error(), logger.Error)
 		return err
 	}
 
 	timeLimits, err := qs.taskRepository.GetTaskTimeLimits(tx, submission.TaskId)
 	if err != nil {
+		logger.Log(qs.service_logger, "Error getting task time limits:", err.Error(), logger.Error)
 		return err
 	}
 	memoryLimits, err := qs.taskRepository.GetTaskMemoryLimits(tx, submission.TaskId)
 	if err != nil {
+		logger.Log(qs.service_logger, "Error getting task memory limits:", err.Error(), logger.Error)
 		return err
 	}
 
@@ -81,13 +89,17 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 	err = qs.publishMessage(msq)
 	if err != nil {
 		qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
+		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
 		return err
 	}
 	err = qs.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
+
+		logger.Log(qs.service_logger, "Error marking submission processing:", err.Error(), logger.Error)
 		return err
 	}
 
+	logger.Log(qs.service_logger, "Submission published", "", logger.Info)
 	return nil
 }
 
@@ -97,6 +109,7 @@ func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int6
 		return 0, err
 	}
 
+	logger.Log(qs.service_logger, "Submission id retrieved", "", logger.Info)
 	return queueMessage.SubmissionId, nil
 }
 
@@ -112,12 +125,14 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 	if err != nil {
 		return nil, err
 	}
-
+	service_logger := logger.NewNamedLogger("queue_service")
 	return &QueueServiceImpl{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
 		queueRepository:      queueMessageRepository,
 		queue:                q,
 		channel:              channel,
-		responseQueueName:    responseQueueName}, nil
+		responseQueueName:    responseQueueName,
+		service_logger:       &service_logger,
+	}, nil
 }

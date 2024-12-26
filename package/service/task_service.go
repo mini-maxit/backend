@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mini-maxit/backend/internal/config"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -27,6 +28,7 @@ type TaskServiceImpl struct {
 	cfg                  *config.Config
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
+	task_logger          *logger.ServiceLogger
 }
 
 func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error) {
@@ -37,6 +39,7 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error)
 	}
 	taskId, err := ts.taskRepository.Create(tx, model)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error creating task:", err.Error(), logger.Error)
 		return 0, err
 	}
 
@@ -47,6 +50,7 @@ func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.T
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllTasks(tx)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks:", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -73,6 +77,7 @@ func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int6
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks for user:", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -99,6 +104,7 @@ func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset in
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting all tasks for group:", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -125,6 +131,7 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 	// Get the task
 	task, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting task:", err.Error(), logger.Error)
 		return nil, err
 	}
 
@@ -144,6 +151,7 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error getting task:", err.Error(), logger.Error)
 		return err
 	}
 
@@ -152,10 +160,10 @@ func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo sche
 	// Update the task
 	err = ts.taskRepository.UpdateTask(tx, taskId, currentTask)
 	if err != nil {
+		logger.Log(ts.task_logger, "Error updating task:", err.Error(), logger.Error)
 		return err
 	}
 
-	// Commit the transaction
 	return nil
 }
 
@@ -172,6 +180,7 @@ func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId in
 	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 
 	if err != nil {
+		logger.Log(ts.task_logger, "Error creating submission:", err.Error(), logger.Error)
 		return 0, err
 	}
 
@@ -194,9 +203,11 @@ func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
 }
 
 func NewTaskService(cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
+	task_logger := logger.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
 		cfg:                  cfg,
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
+		task_logger:          &task_logger,
 	}
 }
