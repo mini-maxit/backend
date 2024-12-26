@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 )
@@ -54,8 +56,16 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := u.userService.GetAllUsers(limit, offset)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
 	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	users, err := u.userService.GetAllUsers(tx, limit, offset)
+	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting users. %s", err.Error()))
 		return
 	}
@@ -86,7 +96,14 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := u.userService.GetUserById(userId)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	user, err := u.userService.GetUserById(tx, userId)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error fetching user: %s", err.Error()))
 		return
@@ -108,7 +125,14 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := u.userService.GetUserByEmail(email)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	user, err := u.userService.GetUserByEmail(tx, email)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting user. %s", err.Error()))
 		return
@@ -139,7 +163,14 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.userService.EditUser(userId, &request)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	err = u.userService.EditUser(tx, userId, &request)
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, "Error ocured during editing. "+err.Error())
 		return

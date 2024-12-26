@@ -1,25 +1,22 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type SubmissionService interface {
-	MarkSubmissionFailed(submissionId int64, errorMsg string) error
-	MarkSubmissionComplete(submissionId int64) error
-	MarkSubmissionProcessing(submissionId int64) error
-	CreateSubmissionResult(submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
+	MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error
+	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
+	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
+	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
 }
 
 type SubmissionServiceImpl struct {
-	database                   database.Database
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
 	inputOutputRepository      repository.InputOutputRepository
@@ -27,92 +24,40 @@ type SubmissionServiceImpl struct {
 	logger                     *zap.SugaredLogger
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorMsg string) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		us.logger.Errorf("Error connecting to database: %v", tx.Error.Error())
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
 		us.logger.Errorf("Error marking submission failed: %v", err.Error())
-		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		us.logger.Errorf("Error committing transaction: %v", err.Error())
-		return err
-	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionComplete(submissionId int64) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		us.logger.Errorf("Error connecting to database: %v", tx.Error.Error())
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
 	err := us.submissionRepository.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
 		us.logger.Errorf("Error marking submission complete: %v", err.Error())
-		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		us.logger.Errorf("Error committing transaction: %v", err.Error())
-		return err
-	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) MarkSubmissionProcessing(submissionId int64) error {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		us.logger.Errorf("Error connecting to database: %v", tx.Error.Error())
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
 	err := us.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
 		us.logger.Errorf("Error marking submission processing: %v", err.Error())
-		tx.Rollback()
 		return err
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		us.logger.Errorf("Error committing transaction: %v", err.Error())
-		return err
-	}
 	return nil
 }
 
-func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
-	db := us.database.Connect()
-	tx := db.Begin()
-	if tx.Error != nil {
-		us.logger.Errorf("Error connecting to database: %v", tx.Error.Error())
-		return -1, tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
+func (us *SubmissionServiceImpl) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
 	submission, err := us.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		us.logger.Errorf("Error getting submission: %v", err.Error())
-		tx.Rollback()
 		return -1, err
 	}
 
@@ -124,7 +69,6 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 	id, err := us.submissionResultRepository.CreateSubmissionResult(tx, submissionResult)
 	if err != nil {
 		us.logger.Errorf("Error creating submission result: %v", err.Error())
-		tx.Rollback()
 		return -1, err
 	}
 	// Save test results
@@ -132,21 +76,15 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(submissionId int64, resp
 		inputOutputId, err := us.inputOutputRepository.GetInputOutputId(tx, submission.TaskId, testResult.Order)
 		if err != nil {
 			us.logger.Errorf("Error getting input output id: %v", err.Error())
-			tx.Rollback()
 			return -1, err
 		}
 		err = us.createTestResult(tx, id, inputOutputId, testResult)
 		if err != nil {
 			us.logger.Errorf("Error creating test result: %v", err.Error())
-			tx.Rollback()
 			return -1, err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		us.logger.Errorf("Error committing transaction: %v", err.Error())
-		return -1, err
-	}
 	return id, nil
 }
 
@@ -160,10 +98,9 @@ func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultI
 	return us.testResultRepository.CreateTestResults(tx, testResultModel)
 }
 
-func NewSubmissionService(database database.Database, submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
+func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
 	log := logger.NewNamedLogger("submission_service")
 	return &SubmissionServiceImpl{
-		database:                   database,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
 		logger:                     log,

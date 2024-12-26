@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
@@ -26,6 +27,7 @@ const (
 
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
+	database          database.Database
 	taskService       service.TaskService
 	queueService      service.QueueService
 	submissionService service.SubmissionService
@@ -118,19 +120,31 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		return
 	}
 	ql.logger.Infof("Received message: %s", queueMessage.MessageId)
-	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
+
+	tx, err := ql.database.Connect()
+	if err != nil {
+		ql.logger.Errorf("Failed to connect to database: %s", err)
+		return
+	}
+	submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)
 	if err != nil {
 		ql.logger.Errorf("Failed to get submission id: %s", err.Error())
 		return
 	}
 	if queueMessage.Result.StatusCode == InternalError {
-		ql.submissionService.MarkSubmissionFailed(submissionId, queueMessage.Result.Message)
+		ql.submissionService.MarkSubmissionFailed(tx, submissionId, queueMessage.Result.Message)
 		return
 	}
 
-	ql.submissionService.MarkSubmissionComplete(submissionId)
-	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
+	err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
+		tx.Rollback()
+		ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
+		return
+	}
+	_, err = ql.submissionService.CreateSubmissionResult(tx, submissionId, queueMessage)
+	if err != nil {
+		tx.Rollback()
 		ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
 		return
 	}

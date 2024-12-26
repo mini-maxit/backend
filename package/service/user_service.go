@@ -3,12 +3,10 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -19,26 +17,18 @@ var (
 )
 
 type UserService interface {
-	GetUserByEmail(email string) (*schemas.User, error)
-	GetAllUsers(limit, offset int64) ([]schemas.User, error)
-	GetUserById(userId int64) (*schemas.User, error)
-	EditUser(userId int64, updateInfo *schemas.UserEdit) error
+	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
+	GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error)
+	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
+	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
 }
 
 type UserServiceImpl struct {
-	database       database.Database
 	userRepository repository.UserRepository
 	logger         *zap.SugaredLogger
 }
 
-func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
-	tx := us.database.Connect()
-
-	if tx == nil {
-		us.logger.Error("Error connecting to database")
-		return nil, ErrDatabaseConnection
-	}
-
+func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
@@ -49,18 +39,10 @@ func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
 	}
 
 	user := us.modelToSchema(userModel)
-
 	return user, nil
 }
 
-func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, error) {
-	tx := us.database.Connect()
-
-	if tx == nil {
-		us.logger.Error("Error connecting to database")
-		return nil, ErrDatabaseConnection
-	}
-
+func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error) {
 	userModels, err := us.userRepository.GetAllUsers(tx)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
@@ -85,14 +67,7 @@ func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, err
 	return users[offset:end], nil
 }
 
-func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error) {
-	tx := us.database.Connect()
-
-	if tx == nil {
-		us.logger.Error("Error connecting to database")
-		return nil, ErrDatabaseConnection
-	}
-
+func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -107,26 +82,10 @@ func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error) {
 	return user, nil
 }
 
-func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) error {
-	tx := us.database.Connect()
-
-	if tx == nil {
-		us.logger.Error("Error connecting to database")
-		return ErrDatabaseConnection
-	}
-
-	tx = tx.Begin()
-	if tx.Error != nil {
-		us.logger.Error("Error connecting to database")
-		return tx.Error
-	}
-
-	defer utils.TransactionPanicRecover(tx)
-
-	currentModel, err := us.GetUserById(userId)
+func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
+	currentModel, err := us.GetUserById(tx, userId)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
-		tx.Rollback()
 		return err
 	}
 
@@ -135,12 +94,6 @@ func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) 
 	err = us.userRepository.EditUser(tx, currentModel)
 	if err != nil {
 		us.logger.Errorf("Error editing user: %v", err.Error())
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		us.logger.Errorf("Error committing transaction: %v", err.Error())
 		return err
 	}
 	return nil
@@ -175,10 +128,9 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 	}
 }
 
-func NewUserService(database database.Database, userRepository repository.UserRepository) UserService {
+func NewUserService(userRepository repository.UserRepository) UserService {
 	log := logger.NewNamedLogger("user_service")
 	return &UserServiceImpl{
-		database:       database,
 		userRepository: userRepository,
 		logger:         log,
 	}

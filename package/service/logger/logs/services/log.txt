@@ -1,0 +1,6 @@
+2024-12-26T13:16:47.066+0100	ERROR	session_service	Error getting user by id: record not found
+2024-12-26T13:16:47.079+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-26T13:16:47.094+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-26T13:16:54.134+0100	ERROR	session_service	Error getting user by id: record not found
+2024-12-26T13:16:54.149+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-26T13:16:54.168+0100	ERROR	session_service	Error getting session by id: record not found

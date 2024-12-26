@@ -11,8 +11,10 @@ import (
 )
 
 type PostgresDB struct {
-	Db     *gorm.DB
-	logger *zap.SugaredLogger
+	Db             *gorm.DB
+	tx             *gorm.DB
+	shouldRollback bool
+	logger         *zap.SugaredLogger
 }
 
 func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
@@ -27,6 +29,44 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 
 }
 
-func (p *PostgresDB) Connect() *gorm.DB {
-	return p.Db
+func (p *PostgresDB) Connect() (*gorm.DB, error) {
+	if p.tx != nil {
+		return p.tx, nil
+	}
+	tx := p.Db.Begin()
+	if tx.Error != nil {
+		p.logger.Errorf("Failed to start transaction: %s", tx.Error.Error())
+		return nil, tx.Error
+	}
+	p.tx = tx
+	return tx, nil
+}
+
+func (p *PostgresDB) ShouldRollback() bool {
+	return p.shouldRollback
+}
+
+func (p *PostgresDB) Rollback() {
+	p.shouldRollback = true
+}
+
+func (p *PostgresDB) Commit() error {
+	if p.tx == nil {
+		return fmt.Errorf("no transaction to commit to")
+	}
+	p.shouldRollback = false
+	p.tx.Commit()
+	if p.tx.Error != nil {
+		return p.tx.Error
+	}
+	p.tx = nil
+	return nil
+}
+
+func (p *PostgresDB) InvalidateTx() {
+	p.shouldRollback = false
+	if p.tx != nil {
+		p.tx.Rollback()
+	}
+	p.tx = nil
 }

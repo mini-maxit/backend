@@ -11,6 +11,7 @@ import (
 	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -44,6 +45,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 			continue
 		}
 	}
+	log.Info("Connected to RabbitMQ")
 
 	if err != nil {
 		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
@@ -63,50 +65,60 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
+	tx, err := db.Connect()
 
+	defer utils.TransactionPanicRecover(tx)
+
+	if err != nil {
+		log.Panicf("Failed to connect to database: %s", err.Error())
+	}
 	// Repositories
-	_, err = repository.NewLanguageRepository(db.Connect())
+	_, err = repository.NewLanguageRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create language repository: %s", err.Error())
 	}
-	userRepository, err := repository.NewUserRepository(db.Connect())
+	userRepository, err := repository.NewUserRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create user repository: %s", err.Error())
 	}
-	taskRepository, err := repository.NewTaskRepository(db.Connect())
+	taskRepository, err := repository.NewTaskRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create task repository: %s", err.Error())
 	}
-	_, err = repository.NewGroupRepository(db.Connect())
+	_, err = repository.NewGroupRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create group repository: %s", err.Error())
 	}
-	submissionRepository, err := repository.NewSubmissionRepository(db.Connect())
+	submissionRepository, err := repository.NewSubmissionRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create submission repository: %s", err.Error())
 	}
-	_, err = repository.NewSubmissionResultRepository(db.Connect())
+	_, err = repository.NewSubmissionResultRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
-	queueRepository, err := repository.NewQueueMessageRepository(db.Connect())
+	queueRepository, err := repository.NewQueueMessageRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create queue repository: %s", err.Error())
 	}
-	sessionRepository, err := repository.NewSessionRepository(db.Connect())
+	sessionRepository, err := repository.NewSessionRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create session repository: %s", err.Error())
 	}
 
+	if err := db.Commit(); err != nil {
+		log.Panicf("Failed to commit transaction: %s", err.Error())
+	}
+
 	// Services
-	userService := service.NewUserService(db, userRepository)
-	taskService := service.NewTaskService(db, cfg, taskRepository, submissionRepository)
-	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
+	userService := service.NewUserService(userRepository)
+	taskService := service.NewTaskService(cfg, taskRepository, submissionRepository)
+	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
-	sessionService := service.NewSessionService(db, sessionRepository, userRepository)
-	authService := service.NewAuthService(db, userRepository, sessionService)
+	sessionService := service.NewSessionService(sessionRepository, userRepository)
+	authService := service.NewAuthService(userRepository, sessionService)
 
 	// Routes
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
@@ -121,9 +133,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
 
-	return &Initialization{Cfg: cfg,
-		QueueListener:  queueListener,
+	return &Initialization{
+		Cfg:            cfg,
 		Db:             db,
+		QueueListener:  queueListener,
 		TaskService:    taskService,
 		SessionService: sessionService,
 		AuthRoute:      authRoute,
