@@ -112,10 +112,6 @@ func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (sch
 		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionExpired
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		logger.Log(s.session_logger, "Error committing transaction:", err.Error(), logger.Error)
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
-	}
 	return schemas.ValidateSessionResponse{Valid: true, UserId: session.UserId}, nil
 }
 
