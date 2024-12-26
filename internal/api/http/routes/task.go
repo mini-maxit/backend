@@ -15,7 +15,6 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
-	"github.com/sirupsen/logrus"
 )
 
 type TaskRoute interface {
@@ -52,13 +51,11 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query()
 	limitStr := query.Get("limit")
-	logrus.Info(limitStr)
 	if limitStr == "" {
 		limitStr = utils.DefaultPaginationLimitStr
 	}
 
 	offsetStr := query.Get("offset")
-	logrus.Info(offsetStr)
 	if offsetStr == "" {
 		offsetStr = utils.DefaultPaginationOffsetStr
 	}

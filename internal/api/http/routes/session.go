@@ -8,7 +8,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/service"
-	"github.com/sirupsen/logrus"
 )
 
 type SessionRoute interface {
@@ -97,7 +96,6 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 
 func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Request) {
 	sessionToken := r.Header.Get("Session")
-	logrus.Info("Invalidate session token: ", sessionToken)
 	if sessionToken == "" {
 		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return

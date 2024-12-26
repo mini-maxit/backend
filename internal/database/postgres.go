@@ -5,7 +5,6 @@ import (
 
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/logger"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -36,7 +35,7 @@ func (p *PostgresDB) Connect() (*gorm.DB, error) {
 	}
 	tx := p.Db.Begin()
 	if tx.Error != nil {
-		logrus.Errorf("Failed to start transaction: %s", tx.Error.Error())
+		p.logger.Errorf("Failed to start transaction: %s", tx.Error.Error())
 		return nil, tx.Error
 	}
 	p.tx = tx

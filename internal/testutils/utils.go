@@ -6,7 +6,6 @@ import (
 
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -36,7 +35,6 @@ func NewTestConfig() *config.Config {
 
 func NewTestPostgresDB(cfg *config.Config) (database.Database, error) {
 	databaseUrl := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, config.TEST_DB_NAME, cfg.DB.Password)
-	logrus.Infof("Connecting to the database: %s", databaseUrl)
 	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
 	if err != nil {
 		return nil, err

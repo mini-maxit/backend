@@ -12,7 +12,6 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
-	"github.com/sirupsen/logrus"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -46,7 +45,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 			continue
 		}
 	}
-	logrus.Printf("Connected to RabbitMQ")
+	log.Infof("Connected to RabbitMQ")
 
 	if err != nil {
 		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
