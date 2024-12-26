@@ -11,6 +11,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -27,13 +28,13 @@ type QueueServiceImpl struct {
 	channel              *amqp.Channel
 	queue                amqp.Queue
 	responseQueueName    string
-	service_logger       *logger.ServiceLogger
+	logger               *zap.SugaredLogger
 }
 
 func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
-		logger.Log(qs.service_logger, "Error marshalling message:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error marshalling message: %v", err.Error())
 		return err
 	}
 
@@ -46,29 +47,29 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 		ReplyTo:     qs.responseQueueName,
 	})
 	if err != nil {
-		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
 		return err
 	}
 
-	logger.Log(qs.service_logger, "Message published", "", logger.Info)
+	qs.logger.Info("Message published")
 	return nil
 }
 
 func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
-		logger.Log(qs.service_logger, "Error getting submission:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting submission: %v", err.Error())
 		return err
 	}
 
 	timeLimits, err := qs.taskRepository.GetTaskTimeLimits(tx, submission.TaskId)
 	if err != nil {
-		logger.Log(qs.service_logger, "Error getting task time limits:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting task time limits: %v", err.Error())
 		return err
 	}
 	memoryLimits, err := qs.taskRepository.GetTaskMemoryLimits(tx, submission.TaskId)
 	if err != nil {
-		logger.Log(qs.service_logger, "Error getting task memory limits:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error getting task memory limits: %v", err.Error())
 		return err
 	}
 
@@ -88,18 +89,20 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 	})
 	err = qs.publishMessage(msq)
 	if err != nil {
-		qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
-		logger.Log(qs.service_logger, "Error publishing message:", err.Error(), logger.Error)
+		err2 := qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
+		if err2 != nil {
+			qs.logger.Errorf("Error marking submission failed: %v. When error occured publishing message: %s", err2.Error(), err.Error())
+			return err
+		}
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
 		return err
 	}
 	err = qs.submissionRepository.MarkSubmissionProcessing(tx, submissionId)
 	if err != nil {
-
-		logger.Log(qs.service_logger, "Error marking submission processing:", err.Error(), logger.Error)
+		qs.logger.Errorf("Error marking submission processing: %v", err.Error())
 		return err
 	}
-
-	logger.Log(qs.service_logger, "Submission published", "", logger.Info)
+	qs.logger.Info("Submission published")
 	return nil
 }
 
@@ -109,7 +112,7 @@ func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int6
 		return 0, err
 	}
 
-	logger.Log(qs.service_logger, "Submission id retrieved", "", logger.Info)
+	qs.logger.Info("Submission id retrieved")
 	return queueMessage.SubmissionId, nil
 }
 
@@ -125,7 +128,7 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 	if err != nil {
 		return nil, err
 	}
-	service_logger := logger.NewNamedLogger("queue_service")
+	log := logger.NewNamedLogger("queue_service")
 	return &QueueServiceImpl{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
@@ -133,6 +136,6 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 		queue:                q,
 		channel:              channel,
 		responseQueueName:    responseQueueName,
-		service_logger:       &service_logger,
+		logger:               log,
 	}, nil
 }
