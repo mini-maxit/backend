@@ -5,7 +5,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
+	//"github.com/mini-maxit/backend/internal/config"
+	"github.com/mini-maxit/backend/internal/logger"
 )
 
 const TEST_DB_NAME = "test-maxit"
@@ -51,6 +52,8 @@ const (
 )
 
 func NewConfig() *Config {
+	config_logger := logger.NewNamedLogger("config")
+
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
 		panic("DB_HOST is not set")
@@ -66,7 +69,7 @@ func NewConfig() *Config {
 	}
 	dbPassword := os.Getenv("DB_PASSWORD")
 	if dbPassword == "" {
-		logrus.Warn("DB_PASSWORD is not set. Using empty password")
+		logger.Log(&config_logger, "DB_PASSWORD is not set. Using empty password", "", logger.Warn)
 	}
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -75,7 +78,7 @@ func NewConfig() *Config {
 
 	appPortStr := os.Getenv("APP_PORT")
 	if appPortStr == "" {
-		logrus.Warn("APP_PORT is not set. Using default port " + DEFAULT_PORT)
+		logger.Log(&config_logger, "APP_PORT is not set. Using default port "+DEFAULT_PORT, "", logger.Warn)
 		appPortStr = DEFAULT_PORT
 	}
 	appPort := validatePort(appPortStr, "application")
@@ -94,12 +97,12 @@ func NewConfig() *Config {
 
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
-		logrus.Warn("QUEUE_NAME is not set. Using default queue name " + DEFAULT_QUEUE_NAME)
+		logger.Log(&config_logger, "QUEUE_NAME is not set. Using default queue name "+DEFAULT_QUEUE_NAME, "", logger.Warn)
 		queueName = DEFAULT_QUEUE_NAME
 	}
 	responseQueueName := os.Getenv("RESPONSE_QUEUE_NAME")
 	if responseQueueName == "" {
-		logrus.Warn("RESPONSE_QUEUE_NAME is not set. Using default response queue name " + DEFAULT_RESPONSE_QUEUE_NAME)
+		logger.Log(&config_logger, "RESPONSE_QUEUE_NAME is not set. Using default response queue name "+DEFAULT_RESPONSE_QUEUE_NAME, "", logger.Warn)
 		responseQueueName = DEFAULT_RESPONSE_QUEUE_NAME
 	}
 	queueHost := os.Getenv("QUEUE_HOST")

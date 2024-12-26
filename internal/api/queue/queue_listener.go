@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
-	"github.com/sirupsen/logrus"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -33,6 +33,8 @@ type QueueListenerImpl struct {
 	channel *amqp.Channel
 	// Queue name
 	queueName string
+	// Logger
+	queue_logger *logger.ServiceLogger
 }
 
 func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService service.TaskService, queueName string) (*QueueListenerImpl, error) {
@@ -49,11 +51,14 @@ func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService 
 		return nil, err
 	}
 
+	queue_logger := logger.NewNamedLogger("queue_listener")
+
 	return &QueueListenerImpl{
 		taskService: taskService,
 		conn:        conn,
 		channel:     channel,
 		queueName:   queueName,
+		queue_logger: &queue_logger,
 	}, nil
 }
 
@@ -61,7 +66,7 @@ func (ql *QueueListenerImpl) Start() (context.CancelFunc, error) {
 	// Start the queue listener with a cancelable context
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := ql.listen(ctx); err != nil {
-		logrus.Printf("Error listening to queue: %v", err)
+		logger.Log(ql.queue_logger, "Error listening to queue:", err.Error(), logger.Error)
 	}
 
 	return cancel, nil
@@ -84,11 +89,11 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 
 	// Process messages in a goroutine
 	go func() {
-		logrus.Info("Listening for messages...")
+		logger.Log(ql.queue_logger, "Starting the message listener...", "", logger.Info)
 		for {
 			select {
 			case <-ctx.Done():
-				logrus.Println("Stopping the message listener...")
+				logger.Log(ql.queue_logger, "Stopping the message listener...", "", logger.Info)
 				return
 			case msg := <-msgs:
 				// Call the processMessage function with each message
@@ -102,19 +107,19 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 
 func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	// Placeholder for processing the message
-	logrus.Info("Received a message")
+	logger.Log(ql.queue_logger, "Received a message", "", logger.Info)
 
 	// Unmarshal the message body
 	queueMessage := schemas.ResponseMessage{}
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
-		logrus.Errorf("Failed to unmarshal the message: %s", err)
+		logger.Log(ql.queue_logger, "Failed to unmarshal the message:", err.Error(), logger.Error)
 		return
 	}
-	logrus.Infof("Received message: %v", queueMessage.MessageId)
+	logger.Log(ql.queue_logger, "Received message: "+queueMessage.MessageId, "", logger.Info)
 	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
 	if err != nil {
-		logrus.Errorf("Failed to get submission id: %s", err)
+		logger.Log(ql.queue_logger, "Failed to get submission id:", err.Error(), logger.Error)
 		return
 	}
 	if queueMessage.Result.StatusCode == InternalError {
@@ -125,8 +130,8 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	ql.submissionService.MarkSubmissionComplete(submissionId)
 	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
 	if err != nil {
-		logrus.Errorf("Failed to create user solution result: %s", err)
+		logger.Log(ql.queue_logger, "Failed to create user solution result:", err.Error(), logger.Error)
 		return
 	}
-	logrus.Infof("Succesfuly processed message: %v", queueMessage.MessageId)
+	logger.Log(ql.queue_logger, "Succesfuly processed message: " +  queueMessage.MessageId, "", logger.Info)
 }
