@@ -2,17 +2,16 @@ package middleware
 
 import (
 	"net/http"
-
-	"github.com/mini-maxit/backend/internal/logger"
+	"go.uber.org/zap"
 )
 
 // RecoveryMiddleware recovers from panics and returns a 500 error.
-func RecoveryMiddleware(next http.Handler, log *logger.ServiceLogger) http.Handler {
+func RecoveryMiddleware(next http.Handler, log *zap.SugaredLogger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
 
-				logger.Log(log, "Panic recovered:", rec.(string), logger.Error)
+				log.Errorf("Panic recovered: %v", rec)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()

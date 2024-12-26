@@ -32,70 +32,70 @@ type Initialization struct {
 }
 
 func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
-	broker_logger := logger.NewNamedLogger("connect_to_broker")
+	log := logger.NewNamedLogger("connect_to_broker")
 
 	var err error
 	var conn *amqp.Connection
 	for v := range 5 {
 		conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
 		if err != nil {
-			logger.Log(&broker_logger, "Failed to connect to RabbitMQ:", err.Error(), logger.Warn)
+			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
 			time.Sleep(2*time.Second + time.Duration(v))
 			continue
 		}
 	}
 
 	if err != nil {
-		logger.Log(&broker_logger, "Failed to connect to RabbitMQ:", err.Error(), logger.Panic)
+		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
 	}
 	channel, err := conn.Channel()
 	if err != nil {
-		logger.Log(&broker_logger, "Failed to create channel:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create channel: %s", err.Error())
 	}
 
 	return conn, channel
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
-	init_logger := logger.NewNamedLogger("initialization")
+	log := logger.NewNamedLogger("initialization")
 	conn, channel := connectToBroker(cfg)
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
-		logger.Log(&init_logger, "Failed to connect to database:", err.Error(), logger.Panic)
+		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
 
 	// Repositories
 	_, err = repository.NewLanguageRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create language repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create language repository: %s", err.Error())
 	}
 	userRepository, err := repository.NewUserRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create user repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create user repository: %s", err.Error())
 	}
 	taskRepository, err := repository.NewTaskRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create task repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create task repository: %s", err.Error())
 	}
 	_, err = repository.NewGroupRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create group repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create group repository: %s", err.Error())
 	}
 	submissionRepository, err := repository.NewSubmissionRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create submission repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create submission repository: %s", err.Error())
 	}
 	_, err = repository.NewSubmissionResultRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create submission result repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
 	queueRepository, err := repository.NewQueueMessageRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create queue repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create queue repository: %s", err.Error())
 	}
 	sessionRepository, err := repository.NewSessionRepository(db.Connect())
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create session repository:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create session repository: %s", err.Error())
 	}
 
 	// Services
@@ -103,7 +103,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	taskService := service.NewTaskService(db, cfg, taskRepository, submissionRepository)
 	queueService, err := service.NewQueueService(db, taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create queue service:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
 	sessionService := service.NewSessionService(db, sessionRepository, userRepository)
 	authService := service.NewAuthService(db, userRepository, sessionService)
@@ -118,7 +118,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
-		logger.Log(&init_logger, "Failed to create queue listener:", err.Error(), logger.Panic)
+		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
 
 	return &Initialization{Cfg: cfg,

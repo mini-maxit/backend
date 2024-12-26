@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -27,20 +28,20 @@ type UserService interface {
 type UserServiceImpl struct {
 	database       database.Database
 	userRepository repository.UserRepository
-	user_logger   *logger.ServiceLogger
+	logger         *zap.SugaredLogger
 }
 
 func (us *UserServiceImpl) GetUserByEmail(email string) (*schemas.User, error) {
 	tx := us.database.Connect()
 
 	if tx == nil {
-		logger.Log(us.user_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
+		us.logger.Error("Error connecting to database")
 		return nil, ErrDatabaseConnection
 	}
 
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
-		logger.Log(us.user_logger, "Error getting user by email:", err.Error(), logger.Error)
+		us.logger.Errorf("Error getting user by email: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
@@ -56,13 +57,13 @@ func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, err
 	tx := us.database.Connect()
 
 	if tx == nil {
-		logger.Log(us.user_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
+		us.logger.Error("Error connecting to database")
 		return nil, ErrDatabaseConnection
 	}
 
 	userModels, err := us.userRepository.GetAllUsers(tx)
 	if err != nil {
-		logger.Log(us.user_logger, "Error getting all users:", err.Error(), logger.Error)
+		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err
 	}
 
@@ -84,17 +85,17 @@ func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, err
 	return users[offset:end], nil
 }
 
-func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error){
+func (us *UserServiceImpl) GetUserById(userId int64) (*schemas.User, error) {
 	tx := us.database.Connect()
 
 	if tx == nil {
-		logger.Log(us.user_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
+		us.logger.Error("Error connecting to database")
 		return nil, ErrDatabaseConnection
 	}
 
 	userModel, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
-		logger.Log(us.user_logger, "Error getting user by id:", err.Error(), logger.Error)
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrUserNotFound
 		}
@@ -110,39 +111,38 @@ func (us *UserServiceImpl) EditUser(userId int64, updateInfo *schemas.UserEdit) 
 	tx := us.database.Connect()
 
 	if tx == nil {
-		logger.Log(us.user_logger, "Error connecting to database:", ErrDatabaseConnection.Error(), logger.Error)
+		us.logger.Error("Error connecting to database")
 		return ErrDatabaseConnection
 	}
 
 	tx = tx.Begin()
-    if tx.Error != nil {
-		logger.Log(us.user_logger, "Error connecting to database:", tx.Error.Error(), logger.Error)
-        return tx.Error
-    }
+	if tx.Error != nil {
+		us.logger.Error("Error connecting to database")
+		return tx.Error
+	}
 
 	defer utils.TransactionPanicRecover(tx)
 
 	currentModel, err := us.GetUserById(userId)
 	if err != nil {
-		logger.Log(us.user_logger, "Error getting user by id:", err.Error(), logger.Error)
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		tx.Rollback()
 		return err
 	}
 
 	us.updateModel(currentModel, updateInfo)
 
-
 	err = us.userRepository.EditUser(tx, currentModel)
 	if err != nil {
-		logger.Log(us.user_logger, "Error editing user:", err.Error(), logger.Error)
-        tx.Rollback()
-        return err
-    }
+		us.logger.Errorf("Error editing user: %v", err.Error())
+		tx.Rollback()
+		return err
+	}
 
-    if err := tx.Commit().Error; err != nil {
-		logger.Log(us.user_logger, "Error committing transaction:", err.Error(), logger.Error)
-        return err
-    }
+	if err := tx.Commit().Error; err != nil {
+		us.logger.Errorf("Error committing transaction: %v", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -176,10 +176,10 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 }
 
 func NewUserService(database database.Database, userRepository repository.UserRepository) UserService {
-	user_logger := logger.NewNamedLogger("user_service")
+	log := logger.NewNamedLogger("user_service")
 	return &UserServiceImpl{
 		database:       database,
 		userRepository: userRepository,
-		user_logger:    &user_logger,
+		logger:         log,
 	}
 }
