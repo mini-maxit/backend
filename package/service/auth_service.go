@@ -28,7 +28,7 @@ type AuthServiceImpl struct {
 	database       database.Database
 	userRepository repository.UserRepository
 	sessionService SessionService
-	logger *zap.SugaredLogger
+	logger         *zap.SugaredLogger
 }
 
 func (as *AuthServiceImpl) Login(email, password string) (*schemas.Session, error) {
@@ -126,11 +126,11 @@ func (as *AuthServiceImpl) Register(userRegister schemas.UserRegisterRequest) (*
 }
 
 func NewAuthService(database database.Database, userRepository repository.UserRepository, sessionService SessionService) AuthService {
-	logger := logger.NewNamedLogger("auth_service")
+	log := logger.NewNamedLogger("auth_service")
 	return &AuthServiceImpl{
 		database:       database,
 		userRepository: userRepository,
 		sessionService: sessionService,
-		logger: logger,
+		logger:         log,
 	}
 }

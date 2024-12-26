@@ -14,7 +14,7 @@ func NewSwaggerRoute() SwaggerRoute {
 
 func (sw *SwaggerRoute) Docs(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		utils.ReturnError(w, http.StatusNotFound, utils.CodeMethodNotAllowed, "Not found")
+		utils.ReturnError(w, http.StatusNotFound, "Not found")
 		return
 	}
 

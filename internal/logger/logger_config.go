@@ -18,10 +18,8 @@ const (
 	msgKey    = "msg"
 )
 
-
 var sugar_logger *zap.SugaredLogger
 var http_sugar_logger *zap.SugaredLogger
-
 
 // InitializeLogger sets up Zap with a custom configuration and initializes the SugaredLogger
 func InitializeLogger() {
@@ -73,9 +71,9 @@ func InitializeLogger() {
 	// Combine the cores
 	core := zapcore.NewTee(file_core, std_core)
 
-	// Initialize the sugared logger for std and file logging
-	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	sugar_logger = logger.Sugar()
+	// Initialize the sugared log for std and file logging
+	log := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	sugar_logger = log.Sugar()
 
 	// Initialize the sugared logger for http logging only to file
 	httpLogger := zap.New(http_core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))

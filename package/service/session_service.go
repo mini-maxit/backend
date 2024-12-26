@@ -32,7 +32,7 @@ type SessionServiceImpl struct {
 	database          database.Database
 	sessionRepository repository.SessionRepository
 	userRepository    repository.UserRepository
-	logger    *zap.SugaredLogger
+	logger            *zap.SugaredLogger
 }
 
 // Generates a new session token
@@ -187,11 +187,11 @@ func (s *SessionServiceImpl) InvalidateSession(sessionId string) error {
 }
 
 func NewSessionService(db database.Database, sessionRepository repository.SessionRepository, userRepository repository.UserRepository) SessionService {
-	session_logger := logger.NewNamedLogger("session_service")
+	log := logger.NewNamedLogger("session_service")
 	return &SessionServiceImpl{
 		database:          db,
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
-		logger:    session_logger,
+		logger:            log,
 	}
 }

@@ -28,20 +28,20 @@ func main() {
 	initialization := initialization.NewInitialization(cfg)
 
 	logger.InitializeLogger()
-	server_logger := logger.NewNamedLogger("server")
+	log := logger.NewNamedLogger("server")
 
 	queueListener := initialization.QueueListener
 	cancel, err := queueListener.Start()
 	if err != nil {
-		server_logger.Errorf("failed to start queue listener: %v", err.Error())
+		log.Errorf("failed to start queue listener: %v", err.Error())
 		os.Exit(1)
 	}
 
-	server := server.NewServer(initialization, server_logger)
+	server := server.NewServer(initialization, log)
 	err = server.Start()
 	if err != nil {
 		cancel() // Stop the queue listener
-		server_logger.Errorf("failed to start server: %v", err.Error())
+		log.Errorf("failed to start server: %v", err.Error())
 		os.Exit(1)
 
 	}

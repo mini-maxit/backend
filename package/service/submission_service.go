@@ -6,7 +6,6 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -25,7 +24,7 @@ type SubmissionServiceImpl struct {
 	submissionResultRepository repository.SubmissionResultRepository
 	inputOutputRepository      repository.InputOutputRepository
 	testResultRepository       repository.TestResultRepository
-	logger          *zap.SugaredLogger
+	logger                     *zap.SugaredLogger
 }
 
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(submissionId int64, errorMsg string) error {
@@ -162,11 +161,11 @@ func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultI
 }
 
 func NewSubmissionService(database database.Database, submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
-	submission_logger := logger.NewNamedLogger("submission_service")
+	log := logger.NewNamedLogger("submission_service")
 	return &SubmissionServiceImpl{
 		database:                   database,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
-		logger:          submission_logger,
+		logger:                     log,
 	}
 }

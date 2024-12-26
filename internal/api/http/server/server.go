@@ -18,8 +18,8 @@ import (
 const ApiVersion = "v1"
 
 type Server struct {
-	mux           http.Handler
-	port          uint16
+	mux    http.Handler
+	port   uint16
 	logger *zap.SugaredLogger
 }
 
@@ -49,8 +49,7 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
-func NewServer(initialization *initialization.Initialization, server_logger *zap.SugaredLogger) *Server {
-
+func NewServer(initialization *initialization.Initialization, log *zap.SugaredLogger) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
@@ -110,7 +109,7 @@ func NewServer(initialization *initialization.Initialization, server_logger *zap
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(loggingMux, server_logger)))
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(loggingMux, log)))
 
-	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: server_logger}
+	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: log}
 }

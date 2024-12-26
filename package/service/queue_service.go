@@ -30,7 +30,7 @@ type QueueServiceImpl struct {
 	channel              *amqp.Channel
 	queue                amqp.Queue
 	responseQueueName    string
-	logger *zap.SugaredLogger
+	logger               *zap.SugaredLogger
 }
 
 func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
@@ -159,7 +159,7 @@ func NewQueueService(db database.Database, taskRepository repository.TaskReposit
 	if err != nil {
 		return nil, err
 	}
-	service_logger := logger.NewNamedLogger("queue_service")
+	log := logger.NewNamedLogger("queue_service")
 	return &QueueServiceImpl{database: db,
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
@@ -167,6 +167,6 @@ func NewQueueService(db database.Database, taskRepository repository.TaskReposit
 		queue:                q,
 		channel:              channel,
 		responseQueueName:    responseQueueName,
-		logger: service_logger,
-		}, nil
+		logger:               log,
+	}, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
@@ -32,7 +31,7 @@ type TaskServiceImpl struct {
 	cfg                  *config.Config
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
-	logger          *zap.SugaredLogger
+	logger               *zap.SugaredLogger
 }
 
 func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
@@ -297,12 +296,12 @@ func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
 }
 
 func NewTaskService(db database.Database, cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
-	task_logger := logger.NewNamedLogger("task_service")
+	log := logger.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
 		database:             db,
 		cfg:                  cfg,
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
-		logger:          task_logger,
+		logger:               log,
 	}
 }

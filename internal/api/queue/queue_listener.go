@@ -52,14 +52,14 @@ func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService 
 		return nil, err
 	}
 
-	queue_logger := logger.NewNamedLogger("queue_listener")
+	log := logger.NewNamedLogger("queue_listener")
 
 	return &QueueListenerImpl{
 		taskService: taskService,
 		conn:        conn,
 		channel:     channel,
 		queueName:   queueName,
-		logger: queue_logger,
+		logger:      log,
 	}, nil
 }
 
