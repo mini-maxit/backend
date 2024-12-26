@@ -21,7 +21,7 @@ type SessionRouteImpl struct {
 
 func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		utils.ReturnError(w, http.StatusMethodNotAllowed, utils.CodeMethodNotAllowed, "Method not allowed")
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
@@ -31,13 +31,13 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, utils.CodeBadRequest, "Invalid request body. "+err.Error())
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 
 	session, err := sr.sessionService.CreateSession(nil, request.UserId)
 	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, utils.CodeInternalServerError, "Failed to create session. "+err.Error())
+		utils.ReturnError(w, http.StatusInternalServerError, "Failed to create session. "+err.Error())
 		return
 	}
 	utils.ReturnSuccess(w, http.StatusOK, session)
@@ -46,24 +46,24 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Request) {
 	sessionToken := r.Header.Get("Session")
 	if sessionToken == "" {
-		utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "Session token is empty")
+		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
 	validateSession, err := sr.sessionService.ValidateSession(sessionToken)
 	if err != nil {
 		if err == service.ErrSessionNotFound {
-			utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "Session not found")
+			utils.ReturnError(w, http.StatusUnauthorized, "Session not found")
 			return
 		}
 		if err == service.ErrSessionExpired {
-			utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "Session expired")
+			utils.ReturnError(w, http.StatusUnauthorized, "Session expired")
 			return
 		}
 		if err == service.ErrSessionUserNotFound {
-			utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "User associated with session not found")
+			utils.ReturnError(w, http.StatusUnauthorized, "User associated with session not found")
 			return
 		}
-		utils.ReturnError(w, http.StatusInternalServerError, utils.CodeInternalServerError, "Failed to validate session. "+err.Error())
+		utils.ReturnError(w, http.StatusInternalServerError, "Failed to validate session. "+err.Error())
 		return
 	}
 
@@ -71,7 +71,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 		utils.ReturnSuccess(w, http.StatusOK, validateSession)
 		return
 	} else {
-		utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "Session was invalid, without any error. If you see this, please report it to the developers.")
+		utils.ReturnError(w, http.StatusUnauthorized, "Session was invalid, without any error. If you see this, please report it to the developers.")
 		return
 	}
 
@@ -81,12 +81,12 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 	sessionToken := r.Header.Get("Session")
 	logrus.Info("Invalidate session token: ", sessionToken)
 	if sessionToken == "" {
-		utils.ReturnError(w, http.StatusUnauthorized, utils.CodeUnauthorized, "Session token is empty")
+		utils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
 	err := sr.sessionService.InvalidateSession(sessionToken)
 	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, utils.CodeInternalServerError, "Failed to invalidate session. "+err.Error())
+		utils.ReturnError(w, http.StatusInternalServerError, "Failed to invalidate session. "+err.Error())
 		return
 	}
 	utils.ReturnSuccess(w, http.StatusOK, "Session invalidated")

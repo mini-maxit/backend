@@ -121,5 +121,15 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		init_logger.Panicf("Failed to create queue listener: %s", err.Error())
 	}
 
-	return &Initialization{Cfg: cfg, Db: db, TaskService: taskService, TaskRoute: taskRoute, SessionService: sessionService, QueueListener: queueListener, SessionRoute: sessionRoute, AuthRoute: authRoute, SwaggerRoute: swaggerRoute, UserRoute: userRoute}
+
+	return &Initialization{Cfg: cfg,
+		QueueListener:  queueListener,
+		Db:             db,
+		TaskService:    taskService,
+		SessionService: sessionService,
+		AuthRoute:      authRoute,
+		SessionRoute:   sessionRoute,
+		SwaggerRoute:   swaggerRoute,
+		TaskRoute:      taskRoute,
+		UserRoute:      userRoute}
 }

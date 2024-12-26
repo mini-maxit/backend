@@ -6,6 +6,8 @@ import (
 
 	"github.com/mini-maxit/backend/internal/logger"
 	"go.uber.org/zap"
+	//"github.com/mini-maxit/backend/internal/config"
+	"github.com/mini-maxit/backend/internal/logger"
 )
 
 const TEST_DB_NAME = "test-maxit"

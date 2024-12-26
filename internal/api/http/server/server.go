@@ -50,6 +50,7 @@ func (s *Server) Start() error {
 }
 
 func NewServer(initialization *initialization.Initialization, server_logger *zap.SugaredLogger) *Server {
+
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 

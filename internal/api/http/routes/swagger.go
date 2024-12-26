@@ -18,7 +18,7 @@ func (sw *SwaggerRoute) Docs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.ReturnError(w, http.StatusNotImplemented, utils.CodeMethodNotAllowed, "Not implemented")
+	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
 	// idk what is going on the url in the index.html is not working and not getting the api sepecs correctly
 	// http.ServeFile(w, r, "docs/index.html")
 }

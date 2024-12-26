@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )

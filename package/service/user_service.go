@@ -58,7 +58,6 @@ func (us *UserServiceImpl) GetAllUsers(limit, offset int64) ([]schemas.User, err
 
 	if tx == nil {
 		us.logger.Error("Error connecting to database")
-
 		return nil, ErrDatabaseConnection
 	}
 

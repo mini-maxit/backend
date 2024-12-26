@@ -13,22 +13,15 @@ type ApiResponse[T any] struct {
 const DefaultPaginationLimitStr = "10"
 const DefaultPaginationOffsetStr = "0"
 
-const (
-	CodeInternalServerError = "INTERNAL_SERVER_ERROR"
-	CodeMethodNotAllowed    = "METHOD_NOT_ALLOWED"
-	CodeBadRequest          = "BAD_REQUEST"
-	CodeUnauthorized        = "UNAUTHORIZED"
-	CodeNotImplemented      = "NOT_IMPLEMENTED"
-)
-
 type Error struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
-func ReturnError(w http.ResponseWriter, statusCode int, code, message string) {
+func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
+	code := http.StatusText(statusCode)
 	response := ApiResponse[any]{
 		Ok:   false,
 		Data: Error{Code: code, Message: message},
@@ -36,7 +29,7 @@ func ReturnError(w http.ResponseWriter, statusCode int, code, message string) {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(response)
 	if err != nil {
-		ReturnError(w, http.StatusInternalServerError, CodeInternalServerError, err.Error())
+		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }
@@ -50,7 +43,7 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	}
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		ReturnError(w, http.StatusInternalServerError, CodeInternalServerError, err.Error())
+		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }
