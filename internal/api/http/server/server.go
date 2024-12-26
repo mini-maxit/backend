@@ -108,7 +108,7 @@ func NewServer(initialization *initialization.Initialization, server_logger *log
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(loggingMux, server_logger)))
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, initialization.Db), server_logger)))
 
 	return &Server{mux: mux, port: initialization.Cfg.App.Port, server_logger: server_logger}
 }
