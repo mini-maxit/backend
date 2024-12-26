@@ -45,7 +45,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 			continue
 		}
 	}
-	log.Infof("Connected to RabbitMQ")
+	log.Info("Connected to RabbitMQ")
 
 	if err != nil {
 		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
@@ -70,7 +70,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	defer utils.TransactionPanicRecover(tx)
 
 	if err != nil {
-		panic(fmt.Errorf("failed to connect to database: %w", err))
+		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
 	// Repositories
 	_, err = repository.NewLanguageRepository(tx)
@@ -107,7 +107,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	if err := db.Commit(); err != nil {
-		panic(fmt.Errorf("failed to commit transaction: %v", err))
+		log.Panicf("Failed to commit transaction: %s", err.Error())
 	}
 
 	// Services
