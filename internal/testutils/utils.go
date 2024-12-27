@@ -3,11 +3,13 @@ package testutils
 import (
 	"fmt"
 	"log"
+	"testing"
 
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func NewTestConfig() *config.Config {
@@ -35,7 +37,8 @@ func NewTestConfig() *config.Config {
 
 func NewTestPostgresDB(cfg *config.Config) (database.Database, error) {
 	databaseUrl := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, config.TEST_DB_NAME, cfg.DB.Password)
-	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	// db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -58,4 +61,19 @@ func NewTestPostgresDB(cfg *config.Config) (database.Database, error) {
 		log.Println("Database is empty.")
 	}
 	return &database.PostgresDB{Db: db}, nil
+}
+
+func NewTestTx(t *testing.T) *gorm.DB {
+	cfg := NewTestConfig()
+	database, err := NewTestPostgresDB(cfg)
+	if err != nil {
+		t.Fatalf("failed to create a new database: %v", err)
+	}
+
+	tx, err := database.Connect()
+	if err != nil {
+		t.Fatalf("failed to create a new database connection: %v", err)
+	}
+
+	return tx
 }
