@@ -350,7 +350,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
-	taskId, err := tr.taskService.Create(tx, task)
+	taskId, err := tr.taskService.Create(tx, &task)
 	if err != nil {
 		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))

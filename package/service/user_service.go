@@ -85,6 +85,9 @@ func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User
 func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
 	currentModel, err := us.GetUserById(tx, userId)
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrUserNotFound
+		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
 	}

@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/config"
@@ -44,24 +43,7 @@ func NewTestPostgresDB(t *testing.T, cfg *config.Config) database.Database {
 	if err != nil {
 		t.Fatalf("failed to open db connection %v", err)
 	}
-	// Check if the database has any tables
-	var tableNames []string
-	err = db.Raw("SELECT tablename FROM pg_tables WHERE schemaname = 'public'").Scan(&tableNames).Error
-	if err != nil {
-		t.Fatalf("failed to query tables: %v", err)
-	}
 
-	// If the database is not empty, drop all tables
-	if len(tableNames) > 0 {
-		log.Println("Database is not empty, dropping all tables...")
-		err = db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;").Error
-		if err != nil {
-			t.Fatalf("failed drop tables: %v", err)
-		}
-		log.Println("All tables dropped successfully.")
-	} else {
-		log.Println("Database is empty.")
-	}
 	_, err = repository.NewLanguageRepository(db)
 	if err != nil {
 		t.Fatalf("failed to create languege repository: %v", err)

@@ -86,8 +86,15 @@ case "$1" in
     cleanup_container
     exit 0
     ;;
+  all)
+    setup_container
+    sleep 7
+    generate_coverage
+    cleanup_container
+    exit 0
+    ;;
   *)
-    echo -e "\033[31mUsage: $0 {setup|run|cover|cleanup}\033[0m"
+    echo -e "\033[31mUsage: $0 {setup|run|cover|cleanup|all}\033[0m"
     exit 1
     ;;
 esac
