@@ -21,6 +21,7 @@ type UserService interface {
 	GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
+	modelToSchema(user *models.User) *schemas.User
 }
 
 type UserServiceImpl struct {

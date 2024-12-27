@@ -28,6 +28,7 @@ type Initialization struct {
 	SessionRoute routes.SessionRoute
 	SwaggerRoute routes.SwaggerRoute
 	UserRoute    routes.UserRoute
+	SubmissionRoute routes.SubmissionRoutes
 
 	QueueListener queue.QueueListener
 }
@@ -105,6 +106,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create session repository: %s", err.Error())
 	}
+	submissionResultRepository, err := repository.NewSubmissionResultRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create submission result repository: %s", err.Error())
+	}
 
 	if err := db.Commit(); err != nil {
 		log.Panicf("Failed to commit transaction: %s", err.Error())
@@ -113,12 +118,14 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	// Services
 	userService := service.NewUserService(userRepository)
 	taskService := service.NewTaskService(cfg, taskRepository, submissionRepository)
+	languageService := service.NewLanguageService()
 	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
+	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, languageService, taskService, userService)
 
 	// Routes
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
@@ -126,6 +133,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authRoute := routes.NewAuthRoute(userService, authService)
 	swaggerRoute := routes.NewSwaggerRoute()
 	userRoute := routes.NewUserRoute(userService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
@@ -143,5 +151,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SessionRoute:   sessionRoute,
 		SwaggerRoute:   swaggerRoute,
 		TaskRoute:      taskRoute,
-		UserRoute:      userRoute}
+		UserRoute:      userRoute,
+		SubmissionRoute: submissionRoute,
+	}
 }

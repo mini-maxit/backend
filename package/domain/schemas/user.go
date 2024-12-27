@@ -15,3 +15,8 @@ type UserEdit struct {
     Email    *string `json:"email,omitempty"`
     Username *string `json:"username,omitempty"`
 }
+
+type UserSession struct {
+	Id       int64  `json:"id"`
+	Role     string `json:"role"`
+}

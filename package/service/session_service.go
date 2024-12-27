@@ -95,25 +95,25 @@ func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (sch
 	if err != nil {
 		s.logger.Errorf("Error getting session by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionNotFound
+			return schemas.ValidateSessionResponse{Valid: false, User: schemas.UserSession{Id: -1, Role: ""}}, ErrSessionNotFound
 		}
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
+		return schemas.ValidateSessionResponse{Valid: false, User: schemas.UserSession{Id: -1, Role: ""}}, err
 	}
-	_, err = s.userRepository.GetUser(tx, session.UserId)
+	user, err := s.userRepository.GetUser(tx, session.UserId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionUserNotFound
+			return schemas.ValidateSessionResponse{Valid: false, User: schemas.UserSession{Id: -1, Role: ""}}, ErrSessionUserNotFound
 		}
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
+		return schemas.ValidateSessionResponse{Valid: false, User: schemas.UserSession{Id: -1, Role: ""}}, err
 	}
 
 	if session.ExpiresAt.Before(time.Now()) {
 		s.logger.Error("Session expired")
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionExpired
+		return schemas.ValidateSessionResponse{Valid: false, User: schemas.UserSession{Id: -1, Role: ""}}, ErrSessionExpired
 	}
 
-	return schemas.ValidateSessionResponse{Valid: true, UserId: session.UserId}, nil
+	return schemas.ValidateSessionResponse{Valid: true, User: schemas.UserSession{Id: user.Id, Role: user.Role}}, nil
 }
 
 func (s *SessionServiceImpl) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {

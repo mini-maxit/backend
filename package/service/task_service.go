@@ -23,6 +23,7 @@ type TaskService interface {
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
 	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
+	modelToSchema(model *models.Task) *schemas.Task
 }
 
 type TaskServiceImpl struct {
@@ -58,7 +59,7 @@ func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.T
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
 	// Handle pagination
@@ -85,7 +86,7 @@ func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int6
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
 	// Handle pagination
@@ -112,7 +113,7 @@ func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset in
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
 	// Handle pagination
@@ -193,8 +194,8 @@ func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *sc
 	}
 }
 
-func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
-	return schemas.Task{
+func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
+	return &schemas.Task{
 		Id:        model.Id,
 		Title:     model.Title,
 		CreatedBy: model.CreatedBy,

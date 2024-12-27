@@ -50,6 +50,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Connect()
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 	_, err = ar.userService.GetUserByEmail(tx, request.Email)
 	if err != nil {
@@ -99,6 +100,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Connect()
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 
 	session, err := ar.authService.Register(tx, request)

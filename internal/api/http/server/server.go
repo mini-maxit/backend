@@ -88,6 +88,13 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
 	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
 
+	// Submission routes
+	subbmissionMux := http.NewServeMux()
+	subbmissionMux.HandleFunc("/", initialization.SubmissionRoute.GetAll)
+	subbmissionMux.HandleFunc("/{id}", initialization.SubmissionRoute.GetById)
+	subbmissionMux.HandleFunc("/user/{id}", initialization.SubmissionRoute.GetAllForUser)
+	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
+
 	// Session routes
 	sessionMux := http.NewServeMux()
 	sessionMux.HandleFunc("/", initialization.SessionRoute.CreateSession)
@@ -98,11 +105,14 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
 	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
+	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
+
 
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
 	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.Db, initialization.SessionService))
+
 
 	// Logging middleware
 	httpLoger := logger.NewHttpLogger()

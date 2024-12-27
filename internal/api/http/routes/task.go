@@ -219,23 +219,9 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	limitStr := query.Get("limit")
 	offsetStr := query.Get("offset")
 
-	if limitStr == "" {
-		limitStr = utils.DefaultPaginationLimitStr
-	}
-
-	if offsetStr == "" {
-		offsetStr = utils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
 	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
 		return
 	}
 
