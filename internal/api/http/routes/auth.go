@@ -55,6 +55,10 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
+		if err == service.ErrUserNotFound {
+			utils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registerd.")
+			return
+		}
 		if err == service.ErrInvalidCredentials {
 			utils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
 			return
