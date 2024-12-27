@@ -1,9 +1,10 @@
 #!/bin/bash
 
-export POSTGRES_USER=postgres
-export POSTGRES_PASSWORD=postgres
-export POSTGRES_DB=test-maxit
-export POSTGRES_CONTAINER_NAME=maxit-testdb
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=test-maxit
+POSTGRES_CONTAINER_NAME=maxit-testdb
+BROKER_CONTAINER_NAME=maxit-testbroker
 COVERAGE_FILE="coverage.out"
 COVERAGE_HTML="coverage.html"
 
@@ -25,6 +26,11 @@ setup_container() {
     -e POSTGRES_DB=$POSTGRES_DB \
     -p 5432:5432 \
     postgres:17
+    docker rm -f $BROKER_CONTAINER_NAME 2>/dev/null || true
+  docker run -d --name $BROKER_CONTAINER_NAME \
+    -p 5672:5672 \
+    -p 15672:15672 \
+    rabbitmq:3.13-management
   echo -e "\033[32mContainer setup complete.\033[0m"
 }
 
@@ -52,6 +58,7 @@ generate_coverage() {
 cleanup_container() {
   check_docker
   docker rm -f $POSTGRES_CONTAINER_NAME 2>/dev/null || true
+  docker rm -f $BROKER_CONTAINER_NAME 2>/dev/null || true
   echo -e "\033[32mContainer cleanup complete.\033[0m"
 }
 

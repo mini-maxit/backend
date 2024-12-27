@@ -1,0 +1,230 @@
+2024-12-27T17:19:36.848+0100	INFO	queue_service	Message published
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:21:56.628+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:21:56.629+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:21:56.629+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:21:56.629+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:21:56.629+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:21:56.710+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:21:56.712+0100	ERROR	auth_service	User already exists
+2024-12-27T17:21:56.779+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:21:56.801+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:21:56.801+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:21:56.801+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:21:56.801+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:21:56.801+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:21:56.804+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:21:56.939+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:21:56.987+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:21:57.012+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:25:04.818+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:25:04.819+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:25:04.901+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:25:04.902+0100	ERROR	auth_service	User already exists
+2024-12-27T17:25:04.971+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:25:04.992+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:25:04.992+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:25:04.992+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:25:04.992+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:25:04.992+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:25:04.995+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:25:05.132+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:25:05.174+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:25:05.207+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:43:21.213+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:43:21.214+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:43:21.214+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:43:21.215+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:43:21.279+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:43:21.281+0100	ERROR	auth_service	User already exists
+2024-12-27T17:43:21.342+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:43:21.445+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:43:21.446+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:43:21.446+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:43:21.446+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:43:21.446+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:43:21.448+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:43:21.569+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:43:21.763+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:43:21.864+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:43:54.310+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:43:54.310+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:43:54.310+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:43:54.310+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:43:54.311+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:43:54.370+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:43:54.371+0100	ERROR	auth_service	User already exists
+2024-12-27T17:43:54.432+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:43:54.523+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:43:54.523+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:43:54.523+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:43:54.523+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:43:54.523+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:43:54.526+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:43:54.637+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:43:54.749+0100	INFO	queue_service	Message published
+2024-12-27T17:43:54.847+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:43:54.943+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:49:16.455+0100	ERROR	queue_service	Error getting submission: record not found
+2024-12-27T17:56:24.352+0100	ERROR	queue_service	Error getting submission: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:56:44.945+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:56:45.002+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:56:45.003+0100	ERROR	auth_service	User already exists
+2024-12-27T17:56:45.059+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:56:45.140+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:56:45.140+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:56:45.140+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:56:45.140+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:56:45.140+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:56:45.143+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:56:45.247+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:56:45.330+0100	INFO	queue_service	Message published
+2024-12-27T17:56:45.415+0100	ERROR	queue_service	Error getting submission: record not found
+2024-12-27T17:56:45.417+0100	ERROR	queue_service	Error getting submission: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
+2024-12-27T17:56:45.493+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:56:45.577+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:57:41.821+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:57:41.822+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:57:41.878+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:57:41.880+0100	ERROR	auth_service	User already exists
+2024-12-27T17:57:41.933+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:57:42.028+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:57:42.028+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:57:42.028+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:57:42.028+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:57:42.028+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:57:42.030+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:57:42.132+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:57:42.232+0100	INFO	queue_service	Message published
+2024-12-27T17:57:42.328+0100	ERROR	queue_service	Error getting submission: record not found
+2024-12-27T17:57:42.330+0100	ERROR	queue_service	Error getting submission: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
+2024-12-27T17:57:42.421+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:57:42.517+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:58:20.167+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:58:20.168+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:58:20.223+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:58:20.224+0100	ERROR	auth_service	User already exists
+2024-12-27T17:58:20.276+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:58:20.377+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:58:20.377+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:58:20.377+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:58:20.377+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:58:20.377+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:58:20.380+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:58:20.484+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:58:20.585+0100	INFO	queue_service	Message published
+2024-12-27T17:58:20.683+0100	ERROR	queue_service	Error getting submission: record not found
+2024-12-27T17:58:20.779+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:58:20.873+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:59:43.720+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:59:43.721+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:59:43.778+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:59:43.779+0100	ERROR	auth_service	User already exists
+2024-12-27T17:59:43.833+0100	INFO	auth_service	User registered successfully
+2024-12-27T17:59:43.932+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2024-12-27T17:59:43.932+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2024-12-27T17:59:43.932+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2024-12-27T17:59:43.932+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2024-12-27T17:59:43.932+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2024-12-27T17:59:43.934+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2024-12-27T17:59:44.039+0100	INFO	auth_service	User logged in successfully
+2024-12-27T17:59:44.139+0100	INFO	queue_service	Message published
+2024-12-27T17:59:44.234+0100	ERROR	queue_service	Error getting submission: record not found
+2024-12-27T17:59:44.328+0100	ERROR	session_service	Error getting session by id: record not found
+2024-12-27T17:59:44.425+0100	ERROR	session_service	Error getting session by id: record not found
