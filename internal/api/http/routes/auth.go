@@ -51,16 +51,14 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 	}
-	_, err = ar.userService.GetUserByEmail(tx, request.Email)
-	if err != nil {
-		db.Rollback()
-		utils.ReturnError(w, http.StatusUnauthorized, "Given email does not exist. Verify your email and try again.")
-		return
-	}
 
-	session, err := ar.authService.Login(tx, request.Email, request.Password)
+	session, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
+		if err == service.ErrUserNotFound {
+			utils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registerd.")
+			return
+		}
 		if err == service.ErrInvalidCredentials {
 			utils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
 			return
