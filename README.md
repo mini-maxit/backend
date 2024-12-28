@@ -41,7 +41,7 @@ All endpoints return errors in the same format. JSON as below, and sets correspo
 
 Session: The session token (required).
 
-#### `GET /task`
+#### `GET /task/`
 
 **Headers**
 
