@@ -14,19 +14,38 @@ docker compose up --build -d
 
 Quick links:
 
+- [Error format](#error)
 - [Task](#task)
 - [Session](#session)
 - [Auth](#auth)
 
 All endpoints are prefixed with `/api/v1` prefix. For example: example.com/api/v1/task
 
+## Error
+
+All endpoints return errors in the same format. JSON as below, and sets corresponding HTTP status code:
+
+```json
+{
+  "ok": false,
+  "data": {
+    "code": "Bad Request",
+    "message": "Invalid user ID."
+  }
+}
+```
+
 ## Task
 
 ### 1. **Get All Tasks**
 
+Session: The session token (required).
+
 #### `GET /task`
 
-Retrieves a list of all tasks.
+**Headers**
+
+Session: The session token (required).
 
 **Possible Responses:**
 
@@ -57,7 +76,10 @@ Retrieves a list of all tasks.
 ```json
 {
   "ok": false,
-  "error": "Error getting tasks. Database connection failed."
+  "data": {
+    "code": "Internal Server Error",
+    "message": "Error getting tasks. Database connection failed."
+  }
 }
 ```
 
@@ -85,17 +107,21 @@ Retrieves the details of a specific task by its ID.
     "id": 1,
     "title": "Example Task",
     "description_url": "http://file-storage:8888/getTaskDescription&?taskID=2", // This Url should be used to fetch the descirption file. Be aware that you can only do it on server side.
+    "created_by_name": "Name",
     "created_by": 123
   }
 }
 ```
 
-- **400 Bad Request**: Invalid or missing task ID.
+- **400 Bad Request**: Invalid task ID.
 
 ```json
 {
   "ok": false,
-  "error": "Task ID is required."
+  "data": {
+    "code": "Bad Request",
+    "message": "Invalid task ID."
+  }
 }
 ```
 
@@ -104,7 +130,10 @@ Retrieves the details of a specific task by its ID.
 ```json
 {
   "ok": false,
-  "error": "Error getting task. Task not found."
+  "data": {
+    "code": "Internal Server Error",
+    "message": "Error getting task. record not found"
+  }
 }
 ```
 
@@ -112,7 +141,7 @@ Retrieves the details of a specific task by its ID.
 
 ### 3. **Upload Task**
 
-#### `POST /task/upload`
+#### `POST /task/`
 
 Uploads a new task.
 
@@ -131,31 +160,29 @@ Uploads a new task.
 ```json
 {
   "ok": true,
-  "data": "Task uploaded successfully."
+  "data": {
+    "taskId": 6
+  }
 }
 ```
 
 - **400 Bad Request**: Invalid request parameters or file format.
-
-```json
-{
-  "ok": false,
-  "error": "Invalid file format. Only .zip and .tar.gz files are allowed."
-}
-```
 
 - **500 Internal Server Error**: An error occurred during the task upload process.
 
 ```json
 {
   "ok": false,
-  "error": "Error sending file to FileStorage service. Connection timeout."
+  "data": {
+    "code": "Internal Server Error",
+    "message": "Error sending file to FileStorage service. Connection timeout."
+  }
 }
 ```
 
 ---
 
-### 4. **Submit Solution**
+### 4. **WIP (NOT UPDATED)** Submit Solution
 
 #### `POST /task/submit`
 
@@ -171,34 +198,7 @@ Submits a solution for a task.
 
 **Possible Responses:**
 
-- **200 OK**: Solution submitted successfully.
-
-```json
-{
-  "ok": true,
-  "data": "Solution submitted successfully."
-}
-```
-
-- **400 Bad Request**: Invalid request parameters.
-
-```json
-{
-  "ok": false,
-  "error": "Task ID is required."
-}
-```
-
-- **500 Internal Server Error**: An error occurred during the submission process.
-
-```json
-{
-  "ok": false,
-  "error": "Error publishing submission to the queue. RabbitMQ not available."
-}
-```
-
----
+Unexpected behaviour <3
 
 ## Session
 
@@ -234,35 +234,10 @@ The body should be a JSON object containing the following field:
 {
   "ok": true,
   "data": {
-    "session_token": "abc123"
+    "session": "asdflkjasdlfjk",
+    "expires_at": "2024-12-19T16:19:07.756644Z",
+    "userId": 1
   }
-}
-```
-
-- 400 Bad Request: Invalid request body.
-
-```json
-{
-  "ok": false,
-  "data": "Invalid request body. <error_message>"
-}
-```
-
-- 405 Method Not Allowed: If the HTTP method is not POST.
-
-```json
-{
-  "ok": false,
-  "data": "Method not allowed"
-}
-```
-
-- 500 Internal Server Error: Failed to create the session.
-
-```json
-{
-  "ok": false,
-  "data": "Failed to create session. <error_message>"
 }
 ```
 
@@ -272,9 +247,9 @@ The body should be a JSON object containing the following field:
 
 This endpoint is used to validate an existing session.
 
-##### Request Headers:
+##### Request headers:
 
-session: The session token (required).
+Session: the session token (required).
 
 ##### Possible Responses:
 
@@ -290,52 +265,9 @@ session: The session token (required).
 }
 ```
 
-- 401 Unauthorized:
-
-If the session token is empty:
-
-```json
-{
-  "ok": false,
-  "data": "Session token is empty"
-}
-```
-
-If the session is not found:
-
-```json
-{
-  "ok": false,
-  "data": "Session not found"
-}
-```
-
-If the session is expired:
-
-```json
-{
-  "ok": false,
-  "data": "Session expired"
-}
-```
-
-If the user associated with the session is not found:
-
-```json
-{
-  "ok": false,
-  "data": "User associated with session not found"
-}
-```
+- 401 Unauthorized: ff the session token is empty or session is invalid
 
 - 500 Internal Server Error: Failed to validate the session.
-
-```json
-{
-  "ok": false,
-  "data": "Failed to validate session. <error_message>"
-}
-```
 
 ### Invalidate Session
 
@@ -345,7 +277,7 @@ This endpoint is used to invalidate an existing session.
 
 ##### Request Headers:
 
-session: The session token (required).
+Session: The session token (required).
 
 ##### Possible Responses:
 
@@ -360,21 +292,7 @@ session: The session token (required).
 
 - 401 Unauthorized: If the session token is empty.
 
-```json
-{
-  "ok": false,
-  "data": "Session token is empty"
-}
-```
-
 - 500 Internal Server Error: Failed to invalidate the session.
-
-```json
-{
-  "ok": false,
-  "data": "Failed to invalidate session. <error_message>"
-}
-```
 
 ## Auth
 
@@ -400,61 +318,26 @@ Handles user authentication by validating credentials and returning a session.
 
 - **200 OK**:
 
-  ```json
-  {
+```json
+{
+  "ok": true,
+  "data": {
     "session": "asdflkjasdlfjk",
     "expires_at": "2024-12-19T16:19:07.756644Z",
     "userId": 1
   }
-  ```
+}
+```
 
-  Returns a session with a token and expiration information.
+Returns a session with a token and expiration information.
 
-- **400 Bad Request**:
+- **400 Bad Request**: Triggered when the request body is invalid.
 
-  ```json
-  {
-    "error": "Invalid request body. [details]"
-  }
-  ```
+- **401 Unauthorized**: Triggered when the email does not exist or password is invalid.
 
-  Triggered when the request body is invalid.
+- **405 Method Not Allowed**: Triggered when a non-`POST` request is made.
 
-- **401 Unauthorized**:
-
-  ```json
-  {
-    "error": "Given email does not exist. Verify your email and try again."
-  }
-  ```
-
-  Triggered when the email does not exist.
-
-  ```json
-  {
-    "error": "Invalid credentials. Verify your email and password and try again."
-  }
-  ```
-
-  Triggered when the credentials are incorrect.
-
-- **405 Method Not Allowed**:
-
-  ```json
-  {
-    "error": "Method not allowed"
-  }
-  ```
-
-  Triggered when a non-`POST` request is made.
-
-- **500 Internal Server Error**:
-  ```json
-  {
-    "error": "Failed to login. [details]"
-  }
-  ```
-  Triggered when an unexpected server error occurs.
+- **500 Internal Server Error**: Triggered when an unexpected server error occurs.
 
 ---
 
@@ -488,48 +371,21 @@ Registers a new user and returns a session upon successful registration.
 
   ```json
   {
-    "session": "asdflkjasdlfjk",
-    "expires_at": "2024-12-19T16:19:07.756644Z",
-    "userId": 1
+    "ok": true,
+    "data": {
+      "session": "asdflkjasdlfjk",
+      "expires_at": "2024-12-19T16:19:07.756644Z",
+      "userId": 1
+    }
   }
   ```
 
   Returns a session with a token and expiration information.
 
-- **400 Bad Request**:
+- **400 Bad Request**: Triggered when the request body is invalid.
 
-  ```json
-  {
-    "error": "Invalid request body. [details]"
-  }
-  ```
+- **409 Conflict**: Triggered when the provided email is already registered.
 
-  Triggered when the request body is invalid.
+- **405 Method Not Allowed**: Triggered when a non-`POST` request is made.
 
-- **409 Conflict**:
-
-  ```json
-  {
-    "error": "Email already exists. Please login."
-  }
-  ```
-
-  Triggered when the provided email is already registered.
-
-- **405 Method Not Allowed**:
-
-  ```json
-  {
-    "error": "Method not allowed"
-  }
-  ```
-
-  Triggered when a non-`POST` request is made.
-
-- **500 Internal Server Error**:
-  ```json
-  {
-    "error": "Failed to register. [details]"
-  }
-  ```
-  Triggered when an unexpected server error occurs.
+- **500 Internal Server Error**: Triggered when an unexpected server error occurs.
