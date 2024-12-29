@@ -58,7 +58,6 @@ func (ur *UserRepositoryImpl) EditUser(tx *gorm.DB, user *schemas.User) error {
 	return err
 }
 
-
 func NewUserRepository(db *gorm.DB) (UserRepository, error) {
 	if !db.Migrator().HasTable(&models.User{}) {
 		err := db.Migrator().CreateTable(&models.User{})

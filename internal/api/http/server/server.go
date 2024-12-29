@@ -53,9 +53,6 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
-	// Swagger route
-	mux.HandleFunc("/api/v1/docs", initialization.SwaggerRoute.Docs)
-
 	// Auth routes
 	authMux := http.NewServeMux()
 	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
@@ -109,6 +106,7 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
 	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.Db, initialization.SessionService))
+	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
 	httpLoger := logger.NewHttpLogger()
