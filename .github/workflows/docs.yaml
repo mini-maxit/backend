@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - swaggerUI
   workflow_dispatch:
 
 jobs:
@@ -31,4 +30,3 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "docs: update swagger docs"
-          branch: swaggerUI
