@@ -14,7 +14,7 @@ import (
 type SubmissionRoutes interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 	GetById(w http.ResponseWriter, r *http.Request)
-	GetAllForUser(w http.ResponseWriter, r *http.Request) 
+	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
 }
@@ -67,7 +67,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
- 
+
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {

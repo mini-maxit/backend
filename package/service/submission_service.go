@@ -199,7 +199,7 @@ func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId, limit, offse
 	case "admin":
 		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId)
 		break
-	
+
 	case "teacher":
 		submissions_model, err = us.submissionRepository.GetAllForTaskTeacher(tx, taskId, user.Id)
 		break
