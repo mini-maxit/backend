@@ -72,7 +72,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
 	// Repositories
-	_, err = repository.NewLanguageRepository(tx)
+	langRepository, err := repository.NewLanguageRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create language repository: %s", err.Error())
 	}
@@ -118,6 +118,20 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
+	langService := service.NewLanguageService(langRepository)
+	tx, err = db.Connect()
+	if err != nil {
+		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
+	}
+	err = langService.InitLanguages(tx)
+	if err != nil {
+		log.Panicf("Failed to init languages: %s", err.Error())
+		tx.Rollback()
+	}
+	err = db.Commit()
+	if err != nil {
+		log.Panicf("Failed to commit transaction after lang init: %s", err.Error())
+	}
 
 	// Routes
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
