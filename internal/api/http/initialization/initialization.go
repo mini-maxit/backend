@@ -26,7 +26,6 @@ type Initialization struct {
 	AuthRoute    routes.AuthRoute
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
-	SwaggerRoute routes.SwaggerRoute
 	UserRoute    routes.UserRoute
 
 	QueueListener queue.QueueListener
@@ -124,7 +123,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
-	swaggerRoute := routes.NewSwaggerRoute()
 	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
@@ -141,7 +139,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SessionService: sessionService,
 		AuthRoute:      authRoute,
 		SessionRoute:   sessionRoute,
-		SwaggerRoute:   swaggerRoute,
 		TaskRoute:      taskRoute,
 		UserRoute:      userRoute}
 }
