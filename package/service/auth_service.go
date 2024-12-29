@@ -88,7 +88,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 		Email:        userRegister.Email,
 		Username:     userRegister.Username,
 		PasswordHash: string(hash),
-		Role:         string(models.UserRoleStudent),
+		Role:         models.UserRoleStudent,
 	}
 
 	userId, err := as.userRepository.CreateUser(tx, userModel)

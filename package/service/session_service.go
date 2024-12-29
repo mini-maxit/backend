@@ -43,12 +43,13 @@ func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Ses
 		Id:        session.Id,
 		UserId:    session.UserId,
 		ExpiresAt: session.ExpiresAt,
+		UserRole:  "invalid",
 	}
 }
 
 // Creates a new session for a given user
 func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
-	_, err := s.userRepository.GetUser(tx, userId)
+	user, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -87,7 +88,9 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 		return nil, err
 	}
 
-	return s.modelToSchema(session), nil
+	resp := s.modelToSchema(session)
+	resp.UserRole = string(user.Role)
+	return resp, nil
 }
 
 func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {

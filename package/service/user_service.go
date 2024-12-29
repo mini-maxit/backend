@@ -103,13 +103,16 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 }
 
 func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
+	if user.Role == "" {
+		us.logger.Errorf("")
+	}
 	return &schemas.User{
 		Id:       user.Id,
 		Name:     user.Name,
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Role:     string(user.Role),
 	}
 }
 

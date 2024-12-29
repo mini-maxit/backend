@@ -324,7 +324,8 @@ Handles user authentication by validating credentials and returning a session.
   "data": {
     "session": "asdflkjasdlfjk",
     "expires_at": "2024-12-19T16:19:07.756644Z",
-    "userId": 1
+    "user_id": 1,
+    "user_role": "admin"
   }
 }
 ```
@@ -375,7 +376,8 @@ Registers a new user and returns a session upon successful registration.
     "data": {
       "session": "asdflkjasdlfjk",
       "expires_at": "2024-12-19T16:19:07.756644Z",
-      "userId": 1
+      "user_id": 1,
+      "user_role": "admin"
     }
   }
   ```
