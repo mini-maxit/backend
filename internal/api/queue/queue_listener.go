@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -25,6 +27,7 @@ const (
 
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
+	database          database.Database
 	taskService       service.TaskService
 	queueService      service.QueueService
 	submissionService service.SubmissionService
@@ -33,6 +36,8 @@ type QueueListenerImpl struct {
 	channel *amqp.Channel
 	// Queue name
 	queueName string
+	// Logger
+	logger *zap.SugaredLogger
 }
 
 func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService service.TaskService, queueName string) (*QueueListenerImpl, error) {
@@ -49,11 +54,14 @@ func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService 
 		return nil, err
 	}
 
+	log := logger.NewNamedLogger("queue_listener")
+
 	return &QueueListenerImpl{
 		taskService: taskService,
 		conn:        conn,
 		channel:     channel,
 		queueName:   queueName,
+		logger:      log,
 	}, nil
 }
 
@@ -61,7 +69,7 @@ func (ql *QueueListenerImpl) Start() (context.CancelFunc, error) {
 	// Start the queue listener with a cancelable context
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := ql.listen(ctx); err != nil {
-		logrus.Printf("Error listening to queue: %v", err)
+		ql.logger.Error("Error listening to queue:", err.Error())
 	}
 
 	return cancel, nil
@@ -84,11 +92,11 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 
 	// Process messages in a goroutine
 	go func() {
-		logrus.Info("Listening for messages...")
+		ql.logger.Info("Starting the message listener...")
 		for {
 			select {
 			case <-ctx.Done():
-				logrus.Println("Stopping the message listener...")
+				ql.logger.Info("Stopping the message listener...")
 				return
 			case msg := <-msgs:
 				// Call the processMessage function with each message
@@ -102,31 +110,43 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 
 func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	// Placeholder for processing the message
-	logrus.Info("Received a message")
+	ql.logger.Info("Processing message...")
 
 	// Unmarshal the message body
 	queueMessage := schemas.ResponseMessage{}
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
-		logrus.Errorf("Failed to unmarshal the message: %s", err)
+		ql.logger.Error("Failed to unmarshal the message:", err.Error())
 		return
 	}
-	logrus.Infof("Received message: %v", queueMessage.MessageId)
-	submissionId, err := ql.queueService.GetSubmissionId(queueMessage.MessageId)
+	ql.logger.Infof("Received message: %s", queueMessage.MessageId)
+
+	tx, err := ql.database.Connect()
 	if err != nil {
-		logrus.Errorf("Failed to get submission id: %s", err)
+		ql.logger.Errorf("Failed to connect to database: %s", err)
+		return
+	}
+	submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)
+	if err != nil {
+		ql.logger.Errorf("Failed to get submission id: %s", err.Error())
 		return
 	}
 	if queueMessage.Result.StatusCode == InternalError {
-		ql.submissionService.MarkSubmissionFailed(submissionId, queueMessage.Result.Message)
+		ql.submissionService.MarkSubmissionFailed(tx, submissionId, queueMessage.Result.Message)
 		return
 	}
 
-	ql.submissionService.MarkSubmissionComplete(submissionId)
-	_, err = ql.submissionService.CreateSubmissionResult(submissionId, queueMessage)
+	err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
 	if err != nil {
-		logrus.Errorf("Failed to create user solution result: %s", err)
+		tx.Rollback()
+		ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
 		return
 	}
-	logrus.Infof("Succesfuly processed message: %v", queueMessage.MessageId)
+	_, err = ql.submissionService.CreateSubmissionResult(tx, submissionId, queueMessage)
+	if err != nil {
+		tx.Rollback()
+		ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
+		return
+	}
+	ql.logger.Infof("Succesfuly processed message: %s", queueMessage.MessageId)
 }

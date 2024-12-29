@@ -1,0 +1,370 @@
+basePath: /api/v1
+definitions:
+  ApiError:
+    properties:
+      data:
+        $ref: '#/definitions/errorStruct'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-Session:
+    properties:
+      data:
+        $ref: '#/definitions/Session'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-TaskCreateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/TaskCreateResponse'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-TaskDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-array_Task:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-string:
+    properties:
+      data:
+        type: string
+      ok:
+        type: boolean
+    type: object
+  Session:
+    properties:
+      expires_at:
+        type: string
+      session:
+        type: string
+      user_id:
+        type: integer
+      user_role:
+        type: string
+    type: object
+  Task:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  TaskCreateResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  TaskDetailed:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      created_by_name:
+        type: string
+      description_url:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  UserLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 50
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  UserRegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+      password:
+        maxLength: 50
+        minLength: 8
+        type: string
+      surname:
+        maxLength: 50
+        minLength: 3
+        type: string
+      username:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - surname
+    - username
+    type: object
+  errorStruct:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API documentation for the Mini Maxit API.
+  title: Mini Maxit API Documentation testing the workflow
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password
+      parameters:
+      - description: User Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Session'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Login a user
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with name, surname, email, username and password
+      parameters:
+      - description: User Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ApiResponse-Session'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Register a user
+      tags:
+      - auth
+  /session/invalidate:
+    post:
+      description: Invalidates a session token
+      parameters:
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Invalidate a session
+      tags:
+      - session
+  /session/validate:
+    get:
+      description: Validates a session token
+      parameters:
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Validate a session
+      tags:
+      - session
+  /task/:
+    get:
+      description: Returns all tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Task'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all tasks
+      tags:
+      - task
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a task to the FileStorage service
+      parameters:
+      - description: Name of the task
+        in: formData
+        name: taskName
+        required: true
+        type: string
+      - description: ID of the author
+        in: formData
+        name: userId
+        required: true
+        type: integer
+      - description: Overwrite flag
+        in: formData
+        name: overwrite
+        type: boolean
+      - description: Task archive
+        in: formData
+        name: archive
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-TaskCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Upload a task
+      tags:
+      - task
+  /task/{id}:
+    get:
+      description: Returns a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-TaskDetailed'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get a task
+      tags:
+      - task
+swagger: "2.0"

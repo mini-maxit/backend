@@ -4,64 +4,83 @@ import (
 	"fmt"
 
 	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
+var ErrTaskExists = fmt.Errorf("task with this title already exists")
+var ErrTaskNotFound = fmt.Errorf("task not found")
 
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
-	Create(task schemas.Task) (int64, error)
-	GetAll() ([]schemas.Task, error)
-	GetTask(taskId int64) (*schemas.TaskDetailed, error)
-	UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error
-	CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error)
+	Create(tx *gorm.DB, task *schemas.Task) (int64, error)
+	GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error)
+	GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error)
+	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
+	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
+	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
+	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
 }
 
 type TaskServiceImpl struct {
-	database             database.Database
 	cfg                  *config.Config
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
+	logger               *zap.SugaredLogger
 }
 
-func (ts *TaskServiceImpl) Create(task schemas.Task) (int64, error) {
-	// Connect to the database and start a transaction
-	db := ts.database.Connect()
-	if db == nil {
-		return 0, ErrDatabaseConnection
-	}
-	tx := db.Begin()
-
+func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error) {
 	// Create a new task
+	_, err := ts.GetTaskByTitle(tx, task.Title)
+	if err != nil && err != ErrTaskNotFound {
+		ts.logger.Errorf("Error getting task by title: %v", err.Error())
+		return 0, err
+	} else if err == nil {
+		return 0, ErrTaskExists
+	}
+
 	model := models.Task{
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 	}
 	taskId, err := ts.taskRepository.Create(tx, model)
 	if err != nil {
-		tx.Rollback()
+		ts.logger.Errorf("Error creating task: %v", err.Error())
 		return 0, err
 	}
 
-	// Commit the transaction and return the task ID
-	tx.Commit()
 	return taskId, nil
 }
 
-func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
-	// Connect to the database
-	db := ts.database.Connect()
-	if db == nil {
-		return nil, ErrDatabaseConnection
+func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
+	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrTaskNotFound
+		}
+		ts.logger.Errorf("Error getting task by title: %v", err.Error())
+		return nil, err
 	}
 
+	return &schemas.Task{
+		Id:        task.Id,
+		Title:     task.Title,
+		CreatedBy: task.CreatedBy,
+		CreatedAt: task.CreatedAt,
+	}, nil
+}
+
+func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error) {
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(db)
+	tasks, err := ts.taskRepository.GetAllTasks(tx)
 	if err != nil {
+		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
 	}
 
@@ -71,19 +90,78 @@ func (ts *TaskServiceImpl) GetAll() ([]schemas.Task, error) {
 		result = append(result, ts.modelToSchema(task))
 	}
 
-	return result, nil
-}
-
-func (ts *TaskServiceImpl) GetTask(taskId int64) (*schemas.TaskDetailed, error) {
-	// Connect to the database
-	db := ts.database.Connect()
-	if db == nil {
-		return nil, ErrDatabaseConnection
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
 	}
 
-	// Get the task
-	task, err := ts.taskRepository.GetTask(db, taskId)
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error) {
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
 	if err != nil {
+		ts.logger.Errorf("Error getting all tasks for user: %v", err.Error())
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error) {
+	// Get all tasks
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
+	if err != nil {
+		ts.logger.Error("Error getting all tasks for group")
+		return nil, err
+	}
+
+	// Convert the models to schemas
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, ts.modelToSchema(task))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(result)) {
+		return []schemas.Task{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(result)) {
+		end = int64(len(result))
+	}
+
+	return result[offset:end], nil
+}
+
+func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error) {
+	// Get the task
+	task, err := ts.taskRepository.GetTask(tx, taskId)
+	if err != nil {
+		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return nil, err
 	}
 
@@ -100,17 +178,13 @@ func (ts *TaskServiceImpl) GetTask(taskId int64) (*schemas.TaskDetailed, error) 
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTask) error {
-	// Connect to the database and start a transaction
-	db := ts.database.Connect()
-	if db == nil {
-		return ErrDatabaseConnection
-	}
-	tx := db.Begin()
-
+func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
-		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return ErrTaskNotFound
+		}
+		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
 
@@ -119,23 +193,13 @@ func (ts *TaskServiceImpl) UpdateTask(taskId int64, updateInfo schemas.UpdateTas
 	// Update the task
 	err = ts.taskRepository.UpdateTask(tx, taskId, currentTask)
 	if err != nil {
-		tx.Rollback()
+		ts.logger.Errorf("Error updating task: %v", err.Error())
 		return err
 	}
-
-	// Commit the transaction
-	tx.Commit()
 	return nil
 }
 
-func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, languageId int64, order int64) (int64, error) {
-	// Connect to the database and start a transaction
-	db := ts.database.Connect()
-	if db == nil {
-		return 0, ErrDatabaseConnection
-	}
-	tx := db.Begin()
-
+func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
 	// Create a new submission
 	submission := models.Submission{
 		TaskId:     taskId,
@@ -148,12 +212,10 @@ func (ts *TaskServiceImpl) CreateSubmission(taskId int64, userId int64, language
 	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
 
 	if err != nil {
-		tx.Rollback()
+		ts.logger.Errorf("Error creating submission: %v", err.Error())
 		return 0, err
 	}
 
-	// Commit the transaction
-	tx.Commit()
 	return submissionId, nil
 }
 
@@ -172,11 +234,12 @@ func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
 	}
 }
 
-func NewTaskService(db database.Database, cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
+func NewTaskService(cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
+	log := logger.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
-		database:             db,
 		cfg:                  cfg,
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
+		logger:               log,
 	}
 }

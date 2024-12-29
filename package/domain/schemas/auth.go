@@ -1,14 +1,14 @@
 package schemas
 
 type UserLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,gte=8,lte=50"`
 }
 
 type UserRegisterRequest struct {
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Name     string `json:"name" validate:"required,gte=3,lte=50"`
+	Surname  string `json:"surname" validate:"required,gte=3,lte=50"`
+	Email    string `json:"email" validate:"required,email"`
+	Username string `json:"username" validate:"required,gte=3,lte=30,username"`
+	Password string `json:"password" validate:"required,gte=8,lte=50"`
 }

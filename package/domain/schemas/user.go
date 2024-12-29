@@ -8,3 +8,10 @@ type User struct {
 	Username string `json:"username"`
 	Role     string `json:"role"`
 }
+
+type UserEdit struct {
+	Name     *string `json:"name,omitempty"`
+	Surname  *string `json:"surname,omitempty"`
+	Email    *string `json:"email,omitempty"`
+	Username *string `json:"username,omitempty"`
+}

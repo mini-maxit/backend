@@ -1,4 +1,4 @@
-package utils
+package httputils
 
 import (
 	"encoding/json"
@@ -10,25 +10,27 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
-func ReturnError(w http.ResponseWriter, statusCode int, data any) {
+type errorStruct struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type ApiError ApiResponse[errorStruct]
+
+func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	response := ApiResponse[any]{
+	code := http.StatusText(statusCode)
+	response := ApiError{
 		Ok:   false,
-		Data: data,
+		Data: errorStruct{Code: code, Message: message},
 	}
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(response)
 	if err != nil {
-		ReturnInternalServerError(w, err)
+		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-}
-
-func ReturnInternalServerError(w http.ResponseWriter, err error) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(err.Error()))
 }
 
 func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
@@ -40,7 +42,7 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	}
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		ReturnInternalServerError(w, err)
+		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }
