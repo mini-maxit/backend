@@ -12,20 +12,3 @@ type UserRegisterRequest struct {
 	Username string `json:"username" validate:"required,gte=3,lte=30,username"`
 	Password string `json:"password" validate:"required,gte=8,lte=50"`
 }
-
-// Structures defining the response of the API
-type UserLoginSuccessResponse struct {
-	Token string `json:"token"`
-}
-
-type UserLoginErrorResponse struct {
-	Message string `json:"message"`
-}
-
-type UserRegisterSuccessResponse struct {
-	SessionID string `json:"session_id"`
-}
-
-type UserRegisterErrorResponse struct {
-	Message string `json:"message"`
-}

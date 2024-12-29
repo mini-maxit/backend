@@ -21,3 +21,7 @@ type TaskDetailed struct {
 	CreatedByName  string    `json:"created_by_name"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+type TaskCreateResponse struct {
+	Id int64 `json:"id"`
+}

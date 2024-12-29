@@ -161,7 +161,7 @@ Uploads a new task.
 {
   "ok": true,
   "data": {
-    "taskId": 6
+    "id": 6
   }
 }
 ```

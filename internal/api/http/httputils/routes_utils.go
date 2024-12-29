@@ -1,4 +1,4 @@
-package utils
+package httputils
 
 import (
 	"encoding/json"
@@ -10,18 +10,20 @@ type ApiResponse[T any] struct {
 	Data T    `json:"data"`
 }
 
-type Error struct {
+type errorStruct struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
+
+type ApiError ApiResponse[errorStruct]
 
 func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	code := http.StatusText(statusCode)
-	response := ApiResponse[any]{
+	response := ApiError{
 		Ok:   false,
-		Data: Error{Code: code, Message: message},
+		Data: errorStruct{Code: code, Message: message},
 	}
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(response)

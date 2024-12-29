@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 )
 
@@ -28,7 +28,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		ctx := r.Context()
 		tx, err := db.Connect()
 		if err != nil {
-			utils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
 			return
 		}
 		ctx = context.WithValue(ctx, DatabaseKey, db)
@@ -41,7 +41,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 			err = db.Commit()
 			if err != nil {
 				tx.Rollback()
-				utils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
+				httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
 				return
 			}
 

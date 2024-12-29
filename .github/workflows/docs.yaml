@@ -7,7 +7,6 @@ on:
       - swaggerUI
   workflow_dispatch:
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,20 +15,20 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup go
-      uses: actions/setup-go@v5
+      - name: Setup go
+        uses: actions/setup-go@v5
 
-    - name: Install Swagger tools
-      run: |
-        go install github.com/swaggo/swag/cmd/swag@latest
-        go get -u github.com/swaggo/http-swagger
+      - name: Install Swagger tools
+        run: |
+          go install https://github.com/mini-maxit/swag/cmd/swag@latest
+          go get -u github.com/swaggo/http-swagger
 
-    - name: Init swag
-      run: cd cmd/app; swag init --output ../../docs --dir ./,../../internal/api/http/utils,../../package/domain/schemas,../../
+      - name: Init swag
+        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs -p snakecase --ot go,yaml
 
-    - uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        commit_message: "docs: update swagger docs"
-        branch: swaggerUI
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "docs: update swagger docs"
+          branch: swaggerUI
