@@ -58,11 +58,11 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 //	@Summary		Validate a session
 //	@Description	Validates a session token
 //	@Produce		json
-//	@Param			Session	header	string	true	"Session Token"
+//	@Param			Session	header		string	true	"Session Token"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		401		{object}	httputils.ApiError
 //	@Failure		500		{object}	httputils.ApiError
-//	@Success		200	{object}		httputils.ApiResponse[[]schemas.Task]
+//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Task]
 //	@Router			/session/validate [get]
 func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Request) {
 	sessionToken := r.Header.Get("Session")
@@ -114,7 +114,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 //	@Summary		Invalidate a session
 //	@Description	Invalidates a session token
 //	@Produce		json
-//	@Param			Session	header	string	true	"Session Token"
+//	@Param			Session	header		string	true	"Session Token"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		401		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
