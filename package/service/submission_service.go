@@ -16,10 +16,11 @@ type SubmissionService interface {
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
-	GetAll(tx *gorm.DB, limit int64, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
+	GetAll(tx *gorm.DB, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.UserSession) (schemas.Submission, error)
 	GetAllForUser(tx *gorm.DB, userId int64, limit, offset int64 ,user schemas.UserSession) ([]schemas.Submission, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int64 ,user schemas.UserSession) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
 }
 
 type SubmissionServiceImpl struct {
@@ -190,6 +191,47 @@ func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limi
 	return result[offset:end], nil
 }
 
+func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error) {
+	var err error
+	submissions_model := []models.Submission{}
+
+	switch user.Role {
+	case "admin":
+		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId)
+		break
+	
+	case "teacher":
+		submissions_model, err = us.submissionRepository.GetAllForTaskTeacher(tx, taskId, user.Id)
+		break
+
+	case "student":
+		submissions_model, err = us.submissionRepository.GetAllForTaskStudent(tx, taskId, user.Id)
+		break
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := []schemas.Submission{}
+	for _, submission := range submissions_model {
+		response = append(response, *us.modelToSchema(&submission))
+	}
+
+	// Handle pagination
+	if offset >= int64(len(response)) {
+		return []schemas.Submission{}, nil
+	}
+
+	end := offset + limit
+	if end > int64(len(response)) {
+		end = int64(len(response))
+	}
+
+	return response[offset:end], nil
+}
+
+
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
 	if err != nil {
@@ -253,6 +295,7 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(tx *gorm.DB, submissionI
 
 	return id, nil
 }
+
 
 func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.TestResult) error {
 	testResultModel := models.TestResult{

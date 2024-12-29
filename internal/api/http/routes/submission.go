@@ -17,15 +17,13 @@ type SubmissionRoutes interface {
 	GetAllForUser(w http.ResponseWriter, r *http.Request) 
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
-	GetAllForTaskAndUser(w http.ResponseWriter, r *http.Request)
-	GetAllForTaskAndGroup(w http.ResponseWriter, r *http.Request)
 }
 
 type SumbissionImpl struct {
 	submissionService service.SubmissionService
 }
 
-
+//TODO add filters like by user, task, group, submission time etc.
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -184,15 +182,47 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
-	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
-}
+	if r.Method != http.MethodGet {
+		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
 
-func (s *SumbissionImpl) GetAllForTaskAndUser(w http.ResponseWriter, r *http.Request) {
-	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
-}
+	taskIdStr := r.PathValue("id")
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
 
-func (s *SumbissionImpl) GetAllForTaskAndGroup(w http.ResponseWriter, r *http.Request) {
-	utils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadRequest, "Invalid task id. "+err.Error())
+		return
+	}
+
+	query := r.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+
+	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
+	if err != nil {
+		utils.ReturnError(w, http.StatusBadGateway, "Invalid limit or offset. "+err.Error())
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	submissions, err := s.submissionService.GetAllForTask(tx, taskId, limit, offset, current_user)
+	if err != nil {
+		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		return
+	}
+
+	if submissions == nil {
+		submissions = []schemas.Submission{}
+	}
+
+	utils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
 func NewSubmissionRoutes(submissionService service.SubmissionService) SubmissionRoutes {

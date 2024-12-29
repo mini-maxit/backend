@@ -17,6 +17,9 @@ type SubmissionRepository interface {
 	GetAllByUserId(tx *gorm.DB, userId int64) ([]models.Submission, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64) ([]models.Submission, error)
 	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64) ([]models.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId int64) ([]models.Submission, error)
+	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64) ([]models.Submission, error)
+	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64) ([]models.Submission, error)
 }
 
 type SubmissionRepositoryImpl struct{}
@@ -88,6 +91,46 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 		Joins("JOIN task_group ON task_group.task_id = tasks.id").
 		Joins("JOIN groups ON groups.id = task_group.group_id").
 		Where("groups.id = ? AND tasks.created_by_id = ?", groupId, teacherId).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+	err := tx.Model(&models.Submission{}).
+		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Where("tasks.id = ?", taskId).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+
+func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+	err := tx.Model(&models.Submission{}).
+		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Where("tasks.id = ? AND tasks.created_by_id = ?", taskId, teacherId).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+	err := tx.Model(&models.Submission{}).
+		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Where("tasks.id = ? AND submissions.user_id = ?", taskId, studentId).
 		Find(&submissions).Error
 
 	if err != nil {
