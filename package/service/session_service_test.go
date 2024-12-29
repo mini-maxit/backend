@@ -33,7 +33,7 @@ func TestValidateSession(t *testing.T) {
 			Email:        "test-email",
 			Username:     "test-username",
 			PasswordHash: "test-password-hash",
-			Role:         "test-role",
+			Role:         "admin",
 		})
 		assert.NoError(t, err)
 		session, err := sessionService.CreateSession(tx, userId)
@@ -69,7 +69,7 @@ func TestInvalidateSession(t *testing.T) {
 			Email:        "test-email",
 			Username:     "test-username",
 			PasswordHash: "test-password-hash",
-			Role:         "test-role",
+			Role:         "admin",
 		})
 		assert.NoError(t, err)
 		session, err := sessionService.CreateSession(tx, userId)

@@ -442,6 +442,9 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "user_role": {
+                    "type": "string"
                 }
             }
         },

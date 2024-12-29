@@ -52,6 +52,8 @@ definitions:
         type: string
       user_id:
         type: integer
+      user_role:
+        type: string
     type: object
   Task:
     properties:
