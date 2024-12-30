@@ -72,7 +72,6 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	},
 	)
 	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
-	mux.HandleFunc("/api/v1/task/submit", initialization.TaskRoute.SubmitSolution)
 	mux.HandleFunc("/api/v1/user/{id}/task", initialization.TaskRoute.GetAllForUser)
 	mux.HandleFunc("/api/v1/group/{id}/task", initialization.TaskRoute.GetAllForGroup)
 
@@ -95,6 +94,7 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	subbmissionMux.HandleFunc("/user/{id}", initialization.SubmissionRoute.GetAllForUser)
 	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
 	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
+	subbmissionMux.HandleFunc("/submit", initialization.SubmissionRoute.SubmitSolution)
 
 	// Session routes
 	sessionMux := http.NewServeMux()

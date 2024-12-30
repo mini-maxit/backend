@@ -1,7 +1,6 @@
 package repository
 
 import (
-	//"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -29,10 +28,13 @@ type SubmissionRepositoryImpl struct{}
 func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyFilters(tx, filters)
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
 
-	err := tx.Model(&models.Submission{}).Find(&submissions).Error
-	utils.ApplyFilters(tx, filters)
+	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +43,14 @@ func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, filters map[string][]str
 
 func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
-	err := tx.Model(&models.Submission{}).Where("user_id = ?", currentUserId).Find(&submissions).Error
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
+	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Where("user_id = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +59,14 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 
 func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
-	err := tx.Model(&models.Submission{}).Joins("JOIN tasks ON tasks.id = submissions.task_id").Where("tasks.created_by = ?", currentUserId).Find(&submissions).Error
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+
+	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Joins("JOIN tasks ON tasks.id = submissions.task_id").Where("tasks.created_by = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +75,11 @@ func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId 
 
 func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
 	var submission models.Submission
-	err := tx.Where("id = ?", submissionId).First(&submission).Error
+	err := tx.Where("id = ?", submissionId).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		First(&submission).Error
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +88,14 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 
 func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
-	err := tx.Model(&models.Submission{}).Where("user_id = ?", userId).Find(&submissions).Error
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
+	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Where("user_id = ?", userId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +104,13 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, fi
 
 func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
 	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
 		Joins("JOIN users ON users.id = submissions.user_id").
 		Joins("JOIN user_group ON user_group.user_id = users.id").
 		Joins("JOIN groups ON groups.id = user_group.group_id").
@@ -96,8 +125,13 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, f
 
 func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
 	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Joins("JOIN task_group ON task_group.task_id = tasks.id").
 		Joins("JOIN groups ON groups.id = task_group.group_id").
@@ -112,8 +146,13 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 
 func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
 	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ?", taskId).
 		Find(&submissions).Error
@@ -127,8 +166,13 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, fil
 
 func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
 	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND tasks.created_by_id = ?", taskId, teacherId).
 		Find(&submissions).Error
@@ -141,8 +185,13 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 
 func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	tx = utils.ApplyFilters(tx, filters)
+	
+	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
+	
 	err := tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND submissions.user_id = ?", taskId, studentId).
 		Find(&submissions).Error

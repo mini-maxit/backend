@@ -128,12 +128,12 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, languageService, taskService, userService)
 
 	// Routes
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
+	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
 	swaggerRoute := routes.NewSwaggerRoute()
 	userRoute := routes.NewUserRoute(userService)
-	submissionRoute := routes.NewSubmissionRoutes(submissionService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)

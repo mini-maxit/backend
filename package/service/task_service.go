@@ -22,7 +22,6 @@ type TaskService interface {
 	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
-	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
 	modelToSchema(model *models.Task) *schemas.Task
 }
 
@@ -166,26 +165,6 @@ func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo sche
 		return err
 	}
 	return nil
-}
-
-func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
-	// Create a new submission
-	submission := models.Submission{
-		TaskId:     taskId,
-		UserId:     userId,
-		Order:      order,
-		LanguageId: languageId,
-		Status:     "received",
-		CheckedAt:  nil,
-	}
-	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
-
-	if err != nil {
-		ts.logger.Errorf("Error creating submission: %v", err.Error())
-		return 0, err
-	}
-
-	return submissionId, nil
 }
 
 func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {

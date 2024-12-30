@@ -1,7 +1,6 @@
 package utils
 
 import (
-	// "fmt"
 	"strconv"
 
 	"gorm.io/gorm"
@@ -16,7 +15,7 @@ func TransactionPanicRecover(tx *gorm.DB) {
 	}
 }
 
-func ApplyFilters(tx *gorm.DB, filters map[string][]string) *gorm.DB {
+func ApplyFiltersAndSorting(tx *gorm.DB, filters map[string][]string, sort string) *gorm.DB {
 	for key, values := range filters {
 		switch key {
 		case "limit":
@@ -39,6 +38,8 @@ func ApplyFilters(tx *gorm.DB, filters map[string][]string) *gorm.DB {
 			}
 		}
 	}
+	if sort != "" {
+		tx = tx.Order(sort)
+	}
 	return tx
 }
-

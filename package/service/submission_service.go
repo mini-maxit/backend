@@ -15,6 +15,7 @@ type SubmissionService interface {
 	MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
+	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
 	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
 	GetAll(tx *gorm.DB, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.UserSession) (schemas.Submission, error)
@@ -61,6 +62,7 @@ func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.UserSession, f
 	for _, submission_model := range submission_models {
 		result = append(result, *us.modelToSchema(&submission_model))
 	}
+
 
 	return result, nil
 }
@@ -219,6 +221,26 @@ func (us *SubmissionServiceImpl) MarkSubmissionProcessing(tx *gorm.DB, submissio
 	}
 
 	return nil
+}
+
+func (us *SubmissionServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
+	// Create a new submission
+	submission := models.Submission{
+		TaskId:     taskId,
+		UserId:     userId,
+		Order:      order,
+		LanguageId: languageId,
+		Status:     "received",
+		CheckedAt:  nil,
+	}
+	submissionId, err := us.submissionRepository.CreateSubmission(tx, submission)
+
+	if err != nil {
+		us.logger.Errorf("Error creating submission: %v", err.Error())
+		return 0, err
+	}
+
+	return submissionId, nil
 }
 
 func (us *SubmissionServiceImpl) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {

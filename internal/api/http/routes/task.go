@@ -2,7 +2,7 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -23,7 +23,6 @@ type TaskRoute interface {
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
-	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskRouteImpl struct {
@@ -31,7 +30,6 @@ type TaskRouteImpl struct {
 
 	// Service that handles task-related operations
 	taskService  service.TaskService
-	queueService service.QueueService
 }
 
 // GetAllTasks godoc
@@ -397,154 +395,6 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnSuccess(w, http.StatusOK, map[string]interface{}{"taskId": taskId})
 }
 
-// SubmitSolution godoc
-//
-// @Tags	task
-// @Summary Submit a solution
-// @Description Uploads a solution to the FileSotrage servide
-// @Accept multipart/form-data
-// @Param taskID formData int true "ID of the task"
-// @Param solution formData file true "solution file"
-// @Param userID formData int true "ID of the user"
-// @Param languageID formData int true "Id of the language used in the soloution"
-// @Failure		405		{object}	utils.ApiResponse[schemas.ErrorResponse]
-// @Failure		400		{object}	utils.ApiResponse[schemas.ErrorResponse]
-// @Failure		500		{object}	utils.ApiResponse[schemas.ErrorResponse]
-// @Success 		200 	{object}    utils.ApiResponse[schemas.SuccessResponse]
-//
-//	@Router			/task/submit [post]
-func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	// Limit the size of the incoming request to 10 MB
-	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
-
-	// Parse the multipart form data
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "The uploaded files are too large.")
-		return
-	}
-
-	// Extract the task ID
-	taskIdStr := r.FormValue("taskID")
-	if taskIdStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
-		return
-	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
-		return
-	}
-
-	// Extract the uploaded file
-	file, handler, err := r.FormFile("solution")
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No solution file found.")
-		return
-	}
-	defer file.Close()
-
-	// Extract user ID
-	userIDStr := r.FormValue("userID")
-	if userIDStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
-		return
-	}
-	userId, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
-		return
-	}
-
-	// Extract language
-	languageStr := r.FormValue("languageID")
-	if languageStr == "" {
-		utils.ReturnError(w, http.StatusBadRequest, "Language ID is required.")
-		return
-	}
-	languageId, err := strconv.ParseInt(languageStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid language ID.")
-		return
-	}
-
-	// Create a multipart writer for the HTTP request to FileStorage service
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// Add form fields
-	writer.WriteField("taskID", taskIdStr)
-	writer.WriteField("userID", userIDStr)
-
-	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
-	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, "Error creating form file for FileStorage. "+err.Error())
-		return
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, "Error copying file to FileStorage request. "+err.Error())
-		return
-	}
-
-	writer.Close()
-
-	// Send the request to FileStorage service
-	client := &http.Client{}
-	resp, err := client.Post(tr.fileStorageUrl+"/submit", writer.FormDataContentType(), body)
-	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
-		return
-	}
-	defer resp.Body.Close()
-
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil && len(resBody) == 0 {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
-		return
-	}
-	// Handle response from FileStorage
-	if resp.StatusCode != http.StatusOK {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(resBody)))
-		return
-	}
-
-	respJson := schemas.SubmitResponse{}
-	err = json.Unmarshal(resBody, &respJson)
-	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error parsing response from FileStorage. %s", err.Error()))
-		return
-	}
-
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
-	if err != nil {
-		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
-		return
-	}
-
-	// Create the submission with the correct order
-	submissionId, err := tr.taskService.CreateSubmission(tx, taskId, userId, languageId, respJson.SubmissionNumber)
-	if err != nil {
-		db.Rollback()
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
-		return
-	}
-
-	err = tr.queueService.PublishSubmission(tx, submissionId)
-	if err != nil {
-		db.Rollback()
-		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()))
-		return
-	}
-
-	utils.ReturnSuccess(w, http.StatusOK, "Solution submitted successfully")
-}
-
-func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, queueService service.QueueService) TaskRoute {
-	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService, queueService: queueService}
+func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, /*queueService service.QueueService*/) TaskRoute {
+	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService/*, queueService: queueService*/}
 }
