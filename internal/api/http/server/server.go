@@ -94,6 +94,7 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	subbmissionMux.HandleFunc("/{id}", initialization.SubmissionRoute.GetById)
 	subbmissionMux.HandleFunc("/user/{id}", initialization.SubmissionRoute.GetAllForUser)
 	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
+	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
 
 	// Session routes
 	sessionMux := http.NewServeMux()

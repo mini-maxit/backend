@@ -1,7 +1,9 @@
 package repository
 
 import (
+	//"github.com/mini-maxit/backend/internal/api/http/utils"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -11,30 +13,35 @@ type SubmissionRepository interface {
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error
-	GetAll(tx *gorm.DB) ([]models.Submission, error)
-	GetAllForStudent(tx *gorm.DB, currentUserId int64) ([]models.Submission, error)
-	GetAllForTeacher(tx *gorm.DB, currentUserId int64) ([]models.Submission, error)
-	GetAllByUserId(tx *gorm.DB, userId int64) ([]models.Submission, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64) ([]models.Submission, error)
-	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64) ([]models.Submission, error)
-	GetAllForTask(tx *gorm.DB, taskId int64) ([]models.Submission, error)
-	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64) ([]models.Submission, error)
-	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64) ([]models.Submission, error)
+	GetAll(tx *gorm.DB, filters map[string][]string) ([]models.Submission, error)
+	GetAllForStudent(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForTeacher(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllByUserId(tx *gorm.DB, userId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, filters map[string][]string) ([]models.Submission, error)
+	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, filters map[string][]string) ([]models.Submission, error)
 }
 
 type SubmissionRepositoryImpl struct{}
 
-func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+
+	tx = utils.ApplyFilters(tx, filters)
+
 	err := tx.Model(&models.Submission{}).Find(&submissions).Error
+	utils.ApplyFilters(tx, filters)
 	if err != nil {
 		return nil, err
 	}
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).Where("user_id = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -42,8 +49,9 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).Joins("JOIN tasks ON tasks.id = submissions.task_id").Where("tasks.created_by = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -60,8 +68,9 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 	return &submission, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).Where("user_id = ?", userId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -69,8 +78,9 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64) ([
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).
 		Joins("JOIN users ON users.id = submissions.user_id").
 		Joins("JOIN user_group ON user_group.user_id = users.id").
@@ -84,8 +94,9 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64) (
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Joins("JOIN task_group ON task_group.task_id = tasks.id").
@@ -99,8 +110,9 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ?", taskId).
@@ -113,8 +125,9 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64) ([]
 }
 
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND tasks.created_by_id = ?", taskId, teacherId).
@@ -126,8 +139,9 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
+	tx = utils.ApplyFilters(tx, filters)
 	err := tx.Model(&models.Submission{}).
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND submissions.user_id = ?", taskId, studentId).

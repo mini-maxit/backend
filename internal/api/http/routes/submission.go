@@ -23,7 +23,6 @@ type SumbissionImpl struct {
 	submissionService service.SubmissionService
 }
 
-//TODO add filters like by user, task, group, submission time etc.
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		utils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -38,19 +37,15 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
-
-	qurry := r.URL.Query()
-	limitStr := qurry.Get("limit")
-	offsetStr := qurry.Get("offset")
-
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
-		return
+	
+	filters := map[string][]string{}
+	for key, value := range r.URL.Query() {
+		filters[key] = value
 	}
-
-	submissions, err := s.submissionService.GetAll(tx, limit, offset, current_user)
+	
+	submissions, err := s.submissionService.GetAll(tx, current_user, filters)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
 		return
 	}
@@ -78,6 +73,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 	submissionIdStr := r.PathValue("id")
 	submissionId, err := strconv.ParseInt(submissionIdStr, 10, 64)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusBadRequest, "Invalid submission id. "+err.Error())
 		return
 	}
@@ -86,6 +82,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 
 	submission, err := s.submissionService.GetById(tx, submissionId, user)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submission. "+err.Error())
 		return
 	}
@@ -115,17 +112,14 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
 
-	qurry := r.URL.Query()
-	limitStr := qurry.Get("limit")
-	offsetStr := qurry.Get("offset")
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
-		return
+	filters := map[string][]string{}
+	for key, value := range r.URL.Query() {
+		filters[key] = value
 	}
 
-	submissions, err := s.submissionService.GetAllForUser(tx, userId, limit, offset, current_user)
+	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, filters)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
 		return
 	}
@@ -159,17 +153,14 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
 
-	qurry := r.URL.Query()
-	limitStr := qurry.Get("limit")
-	offsetStr := qurry.Get("offset")
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
-		return
+	filters := map[string][]string{}
+	for key, value := range r.URL.Query() {
+		filters[key] = value
 	}
 
-	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, limit, offset, current_user)
+	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, filters)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
 		return
 	}
@@ -195,15 +186,6 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
-
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadGateway, "Invalid limit or offset. "+err.Error())
-	}
-
 	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
@@ -212,8 +194,14 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submissions, err := s.submissionService.GetAllForTask(tx, taskId, limit, offset, current_user)
+	filters := map[string][]string{}
+	for key, value := range r.URL.Query() {
+		filters[key] = value
+	}
+
+	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, filters)
 	if err != nil {
+		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
 		return
 	}

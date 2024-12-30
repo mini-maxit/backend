@@ -16,11 +16,11 @@ type SubmissionService interface {
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
-	GetAll(tx *gorm.DB, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
+	GetAll(tx *gorm.DB, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.UserSession) (schemas.Submission, error)
-	GetAllForUser(tx *gorm.DB, userId int64, limit, offset int64 ,user schemas.UserSession) ([]schemas.Submission, error)
-	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
-	GetAllForTask(tx *gorm.DB, taskId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error)
+	GetAllForUser(tx *gorm.DB, userId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error)
 }
 
 type SubmissionServiceImpl struct {
@@ -36,19 +36,19 @@ type SubmissionServiceImpl struct {
 
 var ErrPermissionDenied = errors.New("User is not allowed to view this submission")
 
-func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, limit int64, offset int64, user schemas.UserSession) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error) {
 	submission_models := []models.Submission{}
 	var err error
 
 	switch user.Role {
 	case "admin":
-		submission_models, err = us.submissionRepository.GetAll(tx)
+		submission_models, err = us.submissionRepository.GetAll(tx, filters)
 		break
 	case "student":
-		submission_models, err = us.submissionRepository.GetAllForStudent(tx, user.Id)
+		submission_models, err = us.submissionRepository.GetAllForStudent(tx, user.Id, filters)
 		break
 	case "teacher":
-		submission_models, err = us.submissionRepository.GetAllForTeacher(tx, user.Id)
+		submission_models, err = us.submissionRepository.GetAllForTeacher(tx, user.Id, filters)
 		break
 	}
 
@@ -62,17 +62,7 @@ func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, limit int64, offset int64, 
 		result = append(result, *us.modelToSchema(&submission_model))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Submission{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
 func (us *SubmissionServiceImpl) GetById(tx *gorm.DB, submissionId int64, user schemas.UserSession) (schemas.Submission, error) {
@@ -105,8 +95,8 @@ func (us *SubmissionServiceImpl) GetById(tx *gorm.DB, submissionId int64, user s
 	return *us.modelToSchema(submission_model), nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, offset int64 ,user schemas.UserSession) ([]schemas.Submission, error) {
-	submission_models, err := us.submissionRepository.GetAllByUserId(tx, userId)
+func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error) {
+	submission_models, err := us.submissionRepository.GetAllByUserId(tx, userId, filters)
 	if err != nil {
 		us.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
@@ -138,34 +128,24 @@ func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, limit,
 		result = append(result, *us.modelToSchema(&submission_model))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Submission{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int64 ,user schemas.UserSession) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error) {
 	var err error
 	submission_models := []models.Submission{}
 
 	switch user.Role {
 	case "admin":
 		// Admin is allowed to view all submissions
-		submission_models, err = us.submissionRepository.GetAllForGroup(tx, groupId)
+		submission_models, err = us.submissionRepository.GetAllForGroup(tx, groupId, filters)
 		break
 	case "student":
 		// Student is only allowed to view their own submissions
 		return []schemas.Submission{}, ErrPermissionDenied
 	case "teacher":
 		// Teacher is only allowed to view submissions for tasks they created
-		submission_models, err = us.submissionRepository.GetAllForGroupTeacher(tx, groupId, user.Id)
+		submission_models, err = us.submissionRepository.GetAllForGroupTeacher(tx, groupId, user.Id, filters)
 	}
 
 	if err != nil {
@@ -178,34 +158,24 @@ func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limi
 		result = append(result, *us.modelToSchema(&submission_model))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Submission{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId, limit, offset int64, user schemas.UserSession) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId int64, user schemas.UserSession, filters map[string][]string) ([]schemas.Submission, error) {
 	var err error
 	submissions_model := []models.Submission{}
 
 	switch user.Role {
 	case "admin":
-		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId)
+		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId, filters)
 		break
 
 	case "teacher":
-		submissions_model, err = us.submissionRepository.GetAllForTaskTeacher(tx, taskId, user.Id)
+		submissions_model, err = us.submissionRepository.GetAllForTaskTeacher(tx, taskId, user.Id, filters)
 		break
 
 	case "student":
-		submissions_model, err = us.submissionRepository.GetAllForTaskStudent(tx, taskId, user.Id)
+		submissions_model, err = us.submissionRepository.GetAllForTaskStudent(tx, taskId, user.Id, filters)
 		break
 	}
 
@@ -213,24 +183,13 @@ func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId, limit, offse
 		return nil, err
 	}
 
-	response := []schemas.Submission{}
+	result := []schemas.Submission{}
 	for _, submission := range submissions_model {
-		response = append(response, *us.modelToSchema(&submission))
+		result = append(result, *us.modelToSchema(&submission))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(response)) {
-		return []schemas.Submission{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(response)) {
-		end = int64(len(response))
-	}
-
-	return response[offset:end], nil
+	return result, nil
 }
-
 
 func (us *SubmissionServiceImpl) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
 	err := us.submissionRepository.MarkSubmissionFailed(tx, submissionId, errorMsg)
@@ -295,7 +254,6 @@ func (us *SubmissionServiceImpl) CreateSubmissionResult(tx *gorm.DB, submissionI
 
 	return id, nil
 }
-
 
 func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.TestResult) error {
 	testResultModel := models.TestResult{
