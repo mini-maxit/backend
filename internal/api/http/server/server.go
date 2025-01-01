@@ -12,6 +12,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/package/domain/models"
 	"go.uber.org/zap"
 )
 
@@ -62,14 +63,14 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	taskMux := http.NewServeMux()
 	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			initialization.TaskRoute.UploadTask(w, r)
+			middleware.RBACHandle(initialization.TaskRoute.UploadTask, models.UserRoleTeacher).ServeHTTP(w, r)
 		} else if r.Method == "GET" {
-			initialization.TaskRoute.GetAllTasks(w, r)
+			middleware.RBACHandle(initialization.TaskRoute.GetAllTasks, models.UserRoleStudent).ServeHTTP(w, r)
 		}
 	},
 	)
-	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
-	taskMux.HandleFunc("/submit", initialization.TaskRoute.SubmitSolution)
+	taskMux.Handle("/{id}", middleware.RBACHandle(initialization.TaskRoute.GetTask, models.UserRoleStudent))
+	taskMux.Handle("/submit", middleware.RBACHandle(initialization.TaskRoute.SubmitSolution, models.UserRoleStudent))
 
 	// User routes
 	userMux := http.NewServeMux()

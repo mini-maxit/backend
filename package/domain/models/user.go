@@ -13,34 +13,34 @@ type User struct {
 	Email        string   `gorm:"NOT NULL;UNIQUE"`
 	Username     string   `gorm:"NOT NULL;UNIQUE"`
 	PasswordHash string   `gorm:"NOT NULL"`
-	Role         UserRole `gorm:"NOT NULL;default:'student'"` // student, teacher, admin
+	Role         UserRole `gorm:"NOT NULL;default:3"` // student=1, teacher=2, admin=3
 }
 
-type UserRole string
+type UserRole uint
 
 func (ur *UserRole) Scan(value interface{}) error {
-	valueString, ok := value.(string)
+	valueInt, ok := value.(int64)
 	if !ok {
-		return fmt.Errorf("UserRole must be a string")
+		return fmt.Errorf("UserRole must be uint, got %T", value)
 	}
-	role := UserRole(valueString)
+	role := UserRole(valueInt)
 	availableRoles := []UserRole{UserRoleStudent, UserRoleTeacher, UserRoleAdmin}
 	if !slices.Contains(availableRoles, role) {
-		return fmt.Errorf("invalid UserRole: %s. Available roles: %s", role, availableRoles)
+		return fmt.Errorf("invalid UserRole: %d Available roles: %v", role, availableRoles)
 	}
 	*ur = role
 	return nil
 }
 
 func (ur UserRole) Value() (driver.Value, error) {
-	if ur == "" {
+	if ur == 0 {
 		return nil, nil
 	}
-	return string(ur), nil
+	return uint(ur), nil
 }
 
 const (
-	UserRoleStudent UserRole = "student"
-	UserRoleTeacher UserRole = "teacher"
-	UserRoleAdmin   UserRole = "admin"
+	UserRoleStudent UserRole = iota + 1
+	UserRoleTeacher
+	UserRoleAdmin
 )

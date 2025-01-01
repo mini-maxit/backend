@@ -11,7 +11,7 @@ import (
 
 func SessionValidationMiddleware(next http.Handler, db database.Database, sessionService service.SessionService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionHeader := r.Header.Get("Session")
+		sessionHeader := r.Header.Get(SessionHeader)
 		if sessionHeader == "" {
 			httputils.ReturnError(w, http.StatusUnauthorized, "Session header is not set, could not authorize")
 			return
@@ -34,10 +34,16 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate session. "+err.Error())
 			return
 		}
+		session, err := sessionService.GetSession(tx, sessionHeader)
+		if err != nil {
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get session. "+err.Error())
+			return
+		}
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, SessionKey, sessionHeader)
 		ctx = context.WithValue(ctx, UserIDKey, sessionResponse.UserId)
+		ctx = context.WithValue(ctx, UserRoleKey, session.UserRole)
 		rWithSession := r.WithContext(ctx)
 
 		next.ServeHTTP(w, rWithSession)

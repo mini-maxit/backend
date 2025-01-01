@@ -9,4 +9,10 @@ const (
 	UserIDKey ContextKey = "userId"
 	// DatabaseKey is the key used to store the database connection in the context.
 	DatabaseKey ContextKey = "database"
+	// UserRoleKey is the key used to store the user role in the context.
+	UserRoleKey ContextKey = "userRole"
+)
+
+const (
+	SessionHeader = "Session"
 )

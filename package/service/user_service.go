@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -103,8 +104,8 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 }
 
 func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
-	if user.Role == "" {
-		us.logger.Errorf("")
+	if user.Role == 0 {
+		us.logger.Errorf("User role is not set")
 	}
 	return &schemas.User{
 		Id:       user.Id,
@@ -112,7 +113,7 @@ func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     string(user.Role),
+		Role:     utils.UserRoleToString(user.Role),
 	}
 }
 

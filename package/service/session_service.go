@@ -18,10 +18,12 @@ var (
 	ErrSessionExpired      = fmt.Errorf("session expired")
 	ErrSessionUserNotFound = fmt.Errorf("session user not found")
 	ErrSessionRefresh      = fmt.Errorf("session refresh failed")
+	ErrShouldNotHappen     = fmt.Errorf("should not happen, please contact support")
 )
 
 type SessionService interface {
 	CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error)
+	GetSession(tx *gorm.DB, sessionId string) (*schemas.Session, error)
 	ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error)
 	InvalidateSession(tx *gorm.DB, sessionId string) error
 }
@@ -43,8 +45,30 @@ func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Ses
 		Id:        session.Id,
 		UserId:    session.UserId,
 		ExpiresAt: session.ExpiresAt,
-		UserRole:  "invalid",
+		UserRole:  0,
 	}
+}
+
+func (s *SessionServiceImpl) GetSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
+	session, err := s.sessionRepository.GetSession(tx, sessionId)
+	if err != nil {
+		s.logger.Errorf("Error getting session by id: %v", err.Error())
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrSessionNotFound
+		}
+		return nil, err
+	}
+	user, err := s.userRepository.GetUser(tx, session.UserId)
+	if err != nil {
+		s.logger.Errorf("Error getting user by id: %v", err.Error())
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrShouldNotHappen
+		}
+		return nil, err
+	}
+	schema := s.modelToSchema(session)
+	schema.UserRole = user.Role
+	return schema, nil
 }
 
 // Creates a new session for a given user
@@ -89,7 +113,7 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 	}
 
 	resp := s.modelToSchema(session)
-	resp.UserRole = string(user.Role)
+	resp.UserRole = models.UserRole(user.Role)
 	return resp, nil
 }
 

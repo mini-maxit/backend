@@ -1,12 +1,16 @@
 package schemas
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/models"
+)
 
 type Session struct {
-	Id        string    `json:"session"`
-	UserId    int64     `json:"user_id"`
-	UserRole  string    `json:"user_role"`
-	ExpiresAt time.Time `json:"expires_at"`
+	Id        string          `json:"session"`
+	UserId    int64           `json:"user_id"`
+	UserRole  models.UserRole `json:"user_role"`
+	ExpiresAt time.Time       `json:"expires_at"`
 }
 
 type ValidateSessionResponse struct {
