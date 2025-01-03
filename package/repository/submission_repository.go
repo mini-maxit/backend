@@ -43,9 +43,9 @@ func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, filters map[string][]str
 
 func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -59,7 +59,7 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 
 func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
 
 	err := tx.Model(&models.Submission{}).
@@ -88,9 +88,9 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 
 func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -104,9 +104,9 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, fi
 
 func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -125,9 +125,9 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, f
 
 func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -146,9 +146,9 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 
 func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -166,9 +166,9 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, fil
 
 func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
@@ -185,9 +185,9 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 
 func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, filters map[string][]string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
-	
+
 	tx = utils.ApplyFiltersAndSorting(tx, filters, "submitted_at desc")
-	
+
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").

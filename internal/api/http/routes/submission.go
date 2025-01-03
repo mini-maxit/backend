@@ -49,12 +49,12 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
-	
+
 	filters := map[string][]string{}
 	for key, value := range r.URL.Query() {
 		filters[key] = value
 	}
-	
+
 	submissions, err := s.submissionService.GetAll(tx, current_user, filters)
 	if err != nil {
 		db.Rollback()
