@@ -7,7 +7,10 @@ import (
 	_ "github.com/mini-maxit/backend/docs"
 	"github.com/mini-maxit/backend/internal/api/http/server"
 	"github.com/mini-maxit/backend/internal/config"
+<<<<<<< HEAD
 	"github.com/mini-maxit/backend/internal/initialization"
+=======
+>>>>>>> 38a5d33 (chore)
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -27,6 +30,10 @@ func main() {
 
 	init := initialization.NewInitialization(cfg)
 
+<<<<<<< HEAD
+=======
+	utils.InitializeLogger()
+>>>>>>> 38a5d33 (chore)
 	log := utils.NewNamedLogger("server")
 
 	queueListener := init.QueueListener
