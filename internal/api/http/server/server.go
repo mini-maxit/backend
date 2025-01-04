@@ -11,7 +11,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
@@ -109,7 +109,7 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
-	httpLoger := logger.NewHttpLogger()
+	httpLoger := utils.NewHttpLogger()
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes

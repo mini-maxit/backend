@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -132,7 +132,7 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 	if err != nil {
 		return nil, err
 	}
-	log := logger.NewNamedLogger("queue_service")
+	log := utils.NewNamedLogger("queue_service")
 	return &QueueServiceImpl{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,

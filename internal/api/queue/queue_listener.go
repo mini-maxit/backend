@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -54,7 +54,7 @@ func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, taskService 
 		return nil, err
 	}
 
-	log := logger.NewNamedLogger("queue_listener")
+	log := utils.NewNamedLogger("queue_listener")
 
 	return &QueueListenerImpl{
 		taskService: taskService,

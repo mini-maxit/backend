@@ -8,7 +8,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/queue"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -32,7 +31,7 @@ type Initialization struct {
 }
 
 func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
-	log := logger.NewNamedLogger("connect_to_broker")
+	log := utils.NewNamedLogger("connect_to_broker")
 
 	var err error
 	var conn *amqp.Connection
@@ -58,7 +57,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
-	log := logger.NewNamedLogger("initialization")
+	log := utils.NewNamedLogger("initialization")
 	conn, channel := connectToBroker(cfg)
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {

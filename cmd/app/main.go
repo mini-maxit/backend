@@ -8,7 +8,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/server"
 	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 // @title			Mini Maxit API Documentation testing the workflow
@@ -27,8 +27,8 @@ func main() {
 
 	initialization := initialization.NewInitialization(cfg)
 
-	logger.InitializeLogger()
-	log := logger.NewNamedLogger("server")
+	utils.InitializeLogger()
+	log := utils.NewNamedLogger("server")
 
 	queueListener := initialization.QueueListener
 	cancel, err := queueListener.Start()

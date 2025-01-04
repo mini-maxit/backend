@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -99,7 +99,7 @@ func (us *SubmissionServiceImpl) createTestResult(tx *gorm.DB, submissionResultI
 }
 
 func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository) SubmissionService {
-	log := logger.NewNamedLogger("submission_service")
+	log := utils.NewNamedLogger("submission_service")
 	return &SubmissionServiceImpl{
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,

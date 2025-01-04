@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	//"github.com/mini-maxit/backend/internal/config"
 )
@@ -52,7 +52,7 @@ const (
 )
 
 func NewConfig() *Config {
-	log := logger.NewNamedLogger("config")
+	log := utils.NewNamedLogger("config")
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {

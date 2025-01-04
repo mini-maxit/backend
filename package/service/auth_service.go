@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -116,7 +115,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 }
 
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
-	log := logger.NewNamedLogger("auth_service")
+	log := utils.NewNamedLogger("auth_service")
 	return &AuthServiceImpl{
 		userRepository: userRepository,
 		sessionService: sessionService,
