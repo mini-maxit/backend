@@ -29,7 +29,11 @@ type AuthServiceImpl struct {
 }
 
 func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
+	validate, err := utils.NewValidator()
+	if err != nil {
+		as.logger.Errorf("Error creating validator: %v", err.Error())
+		return nil, err
+	}
 	if err := validate.Struct(userLogin); err != nil {
 		as.logger.Errorf("Error validating user login request: %v", err.Error())
 		return nil, err
@@ -60,7 +64,11 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 }
 
 func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
+	validate, err := utils.NewValidator()
+	if err != nil {
+		as.logger.Errorf("Error creating validator: %v", err.Error())
+		return nil, err
+	}
 	if err := validate.Struct(userRegister); err != nil {
 		as.logger.Errorf("Error validating user register request: %v", err.Error())
 		return nil, err

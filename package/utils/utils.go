@@ -22,8 +22,11 @@ func usernameValidator(fl validator.FieldLevel) bool {
 	return re.MatchString(username)
 }
 
-func NewValidator() *validator.Validate {
+func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	validate.RegisterValidation("username", usernameValidator)
-	return validate
+	err := validate.RegisterValidation("username", usernameValidator)
+	if err != nil {
+		return nil, err
+	}
+	return validate, nil
 }

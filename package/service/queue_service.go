@@ -83,10 +83,14 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 		TimeLimits:      timeLimits,
 		MemoryLimits:    memoryLimits,
 	}
-	qs.queueRepository.CreateQueueMessage(tx, models.QueueMessage{
+	_, err = qs.queueRepository.CreateQueueMessage(tx, models.QueueMessage{
 		Id:           msq.MessageId,
 		SubmissionId: submissionId,
 	})
+	if err != nil {
+		qs.logger.Errorf("Error creating queue message: %v", err.Error())
+		return err
+	}
 	err = qs.publishMessage(msq)
 	if err != nil {
 		err2 := qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
