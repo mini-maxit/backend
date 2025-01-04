@@ -5,9 +5,9 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/mini-maxit/backend/docs"
-	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/server"
 	"github.com/mini-maxit/backend/internal/config"
+	"github.com/mini-maxit/backend/internal/initialization"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -25,19 +25,18 @@ func main() {
 	}
 	cfg := config.NewConfig()
 
-	initialization := initialization.NewInitialization(cfg)
+	init := initialization.NewInitialization(cfg)
 
-	utils.InitializeLogger()
 	log := utils.NewNamedLogger("server")
 
-	queueListener := initialization.QueueListener
+	queueListener := init.QueueListener
 	cancel, err := queueListener.Start()
 	if err != nil {
 		log.Errorf("failed to start queue listener: %v", err.Error())
 		os.Exit(1)
 	}
 
-	server := server.NewServer(initialization, log)
+	server := server.NewServer(init, log)
 	err = server.Start()
 	if err != nil {
 		cancel() // Stop the queue listener
