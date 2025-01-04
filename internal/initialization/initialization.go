@@ -22,10 +22,10 @@ type Initialization struct {
 	TaskService    service.TaskService
 	SessionService service.SessionService
 
-	AuthRoute    routes.AuthRoute
-	TaskRoute    routes.TaskRoute
-	SessionRoute routes.SessionRoute
-	UserRoute    routes.UserRoute
+	AuthRoute       routes.AuthRoute
+	TaskRoute       routes.TaskRoute
+	SessionRoute    routes.SessionRoute
+	UserRoute       routes.UserRoute
 	SubmissionRoute routes.SubmissionRoutes
 
 	QueueListener queue.QueueListener
@@ -152,15 +152,15 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	return &Initialization{
-		Cfg:            cfg,
-		Db:             db,
-		QueueListener:  queueListener,
-		TaskService:    taskService,
-		SessionService: sessionService,
-		AuthRoute:      authRoute,
-		SessionRoute:   sessionRoute,
-		TaskRoute:      taskRoute,
-		UserRoute:      userRoute,
+		Cfg:             cfg,
+		Db:              db,
+		QueueListener:   queueListener,
+		TaskService:     taskService,
+		SessionService:  sessionService,
+		AuthRoute:       authRoute,
+		SessionRoute:    sessionRoute,
+		TaskRoute:       taskRoute,
+		UserRoute:       userRoute,
 		SubmissionRoute: submissionRoute,
 	}
 }
