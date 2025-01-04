@@ -17,7 +17,7 @@ jobs:
       - name: Install golang
         run: sudo apt-get install golang
       - name: Install dependency tools
-        run: sudo snap install golangci-lint | go install golang.org/x/tools/cmd/goimports@latest
+        run: sudo snap install golangci-lint --classic | go install golang.org/x/tools/cmd/goimports@latest
 
       - name: Set up pre-commit Cache
         uses: pre-commit/action@v3.0.1
