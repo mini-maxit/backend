@@ -108,6 +108,7 @@ func (ql *QueueListenerImpl) listen(ctx context.Context) error {
 	return nil
 }
 
+// TODO Implement better requeue mechanism, to try for a few times before dropping the message and marking as dropped
 func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	// Placeholder for processing the message
 	ql.logger.Info("Processing message...")
