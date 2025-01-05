@@ -7,7 +7,7 @@ import (
 
 type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID
-	Create(tx *gorm.DB, task models.Task) (int64, error)
+	Create(tx *gorm.DB, task *models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
 	GetAllTasks(tx *gorm.DB) ([]models.Task, error)
 	GetAllForUser(tx *gorm.DB, userId int64) ([]models.Task, error)
@@ -21,8 +21,8 @@ type TaskRepository interface {
 type TaskRepositoryImpl struct {
 }
 
-func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task models.Task) (int64, error) {
-	err := tx.Model(&models.Task{}).Create(&task).Error
+func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task *models.Task) (int64, error) {
+	err := tx.Model(models.Task{}).Create(&task).Error
 	if err != nil {
 		return 0, err
 	}

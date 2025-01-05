@@ -17,36 +17,31 @@ type userServiceTest struct {
 	config      *config.Config
 	ur          repository.UserRepository
 	userService UserService
-	savePoint   string
 }
 
-func newUserServiceTest(t *testing.T) *userServiceTest {
-	tx := testutils.NewTestTx(t)
+func newUserServiceTest() *userServiceTest {
+	tx := &gorm.DB{}
 	config := testutils.NewTestConfig()
-	ur, err := repository.NewUserRepository(tx)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	ur := testutils.NewMockUserRepository()
 	us := NewUserService(ur)
-	savePoint := "savepoint"
-	tx.SavePoint(savePoint)
 	return &userServiceTest{
 		tx:          tx,
 		config:      config,
 		ur:          ur,
 		userService: us,
-		savePoint:   savePoint,
 	}
 }
 
-func (ust *userServiceTest) RollbackToSavepoint() {
-	ust.tx.RollbackTo(ust.savePoint)
-}
-
 func TestGetUserByEmail(t *testing.T) {
-	ust := newUserServiceTest(t)
-	defer ust.tx.Rollback()
+	ust := newUserServiceTest()
 
+	t.Run("User does not exist", func(t *testing.T) {
+		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
+		assert.ErrorIs(t, err, ErrUserNotFound)
+		assert.Nil(t, user)
+	})
+
+	ust = newUserServiceTest()
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
 			Name:         "Test User",
@@ -69,20 +64,19 @@ func TestGetUserByEmail(t *testing.T) {
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
 		assert.Equal(t, user.Username, userResp.Username)
-		ust.RollbackToSavepoint()
 	})
 
-	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
-		assert.ErrorIs(t, err, ErrUserNotFound)
-		assert.Nil(t, user)
-	})
 }
 
 func TestGetUserById(t *testing.T) {
-	ust := newUserServiceTest(t)
-	defer ust.tx.Rollback()
+	ust := newUserServiceTest()
 
+	t.Run("User does not exist", func(t *testing.T) {
+		user, err := ust.userService.GetUserById(ust.tx, 0)
+		assert.ErrorIs(t, err, ErrUserNotFound)
+		assert.Nil(t, user)
+	})
+	ust = newUserServiceTest()
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
 			Name:         "Test User",
@@ -105,19 +99,17 @@ func TestGetUserById(t *testing.T) {
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
 		assert.Equal(t, user.Username, userResp.Username)
-		ust.RollbackToSavepoint()
 	})
 
-	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.GetUserById(ust.tx, 0)
-		assert.ErrorIs(t, err, ErrUserNotFound)
-		assert.Nil(t, user)
-	})
 }
 
 func TestEditUser(t *testing.T) {
-	ust := newUserServiceTest(t)
-	defer ust.tx.Rollback()
+	ust := newUserServiceTest()
+
+	t.Run("User does not exist", func(t *testing.T) {
+		err := ust.userService.EditUser(ust.tx, 0, &schemas.UserEdit{})
+		assert.ErrorIs(t, err, ErrUserNotFound)
+	})
 
 	t.Run("Success", func(t *testing.T) {
 		user := &models.User{
@@ -144,11 +136,40 @@ func TestEditUser(t *testing.T) {
 		}
 		assert.Equal(t, userId, userResp.Id)
 		assert.Equal(t, newName, userResp.Name)
-		ust.RollbackToSavepoint()
+	})
+}
+
+func TestGetAllUsers(t *testing.T) {
+	ust := newUserServiceTest()
+
+	t.Run("No users", func(t *testing.T) {
+		users, err := ust.userService.GetAllUsers(ust.tx, 1, 0)
+		assert.NoError(t, err)
+		assert.Empty(t, users)
 	})
 
-	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.EditUser(ust.tx, 0, &schemas.UserEdit{})
-		assert.ErrorIs(t, err, ErrUserNotFound)
+	t.Run("Users exist", func(t *testing.T) {
+		user := &models.User{
+			Name:         "Test User",
+			Surname:      "Test Surname",
+			Email:        "email@email.com",
+			Username:     "testuser",
+			PasswordHash: "password",
+		}
+		_, err := ust.ur.CreateUser(ust.tx, user)
+		if !assert.NoError(t, err) {
+			t.FailNow()
+		}
+		users, err := ust.userService.GetAllUsers(ust.tx, 1, 0)
+		assert.NoError(t, err)
+		if !assert.Len(t, users, 1) {
+			t.FailNow()
+		}
+		assert.Equal(t, user.Email, users[0].Email)
+		assert.Equal(t, user.Name, users[0].Name)
+		assert.Equal(t, user.Surname, users[0].Surname)
+		assert.Equal(t, user.Username, users[0].Username)
+		assert.Equal(t, user.Id, users[0].Id)
+		assert.Equal(t, string(user.Role), users[0].Role)
 	})
 }

@@ -49,7 +49,7 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 	}
-	taskId, err := ts.taskRepository.Create(tx, model)
+	taskId, err := ts.taskRepository.Create(tx, &model)
 	if err != nil {
 		ts.logger.Errorf("Error creating task: %v", err.Error())
 		return 0, err
@@ -209,7 +209,7 @@ func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId in
 		Status:     "received",
 		CheckedAt:  nil,
 	}
-	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
+	submissionId, err := ts.submissionRepository.CreateSubmission(tx, &submission)
 
 	if err != nil {
 		ts.logger.Errorf("Error creating submission: %v", err.Error())
