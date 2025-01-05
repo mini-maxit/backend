@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -29,7 +28,7 @@ type TaskService interface {
 }
 
 type TaskServiceImpl struct {
-	cfg            *config.Config
+	fileStorageUrl string
 	taskRepository repository.TaskRepository
 	logger         *zap.SugaredLogger
 }
@@ -148,7 +147,7 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 	result := &schemas.TaskDetailed{
 		Id:             task.Id,
 		Title:          task.Title,
-		DescriptionURL: fmt.Sprintf("%s/getTaskDescription?taskID=%d", ts.cfg.FileStorageUrl, task.Id),
+		DescriptionURL: fmt.Sprintf("%s/getTaskDescription?taskID=%d", ts.fileStorageUrl, task.Id),
 		CreatedBy:      task.CreatedBy,
 		CreatedByName:  task.Author.Name,
 		CreatedAt:      task.CreatedAt,
@@ -193,10 +192,10 @@ func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
 	}
 }
 
-func NewTaskService(cfg *config.Config, taskRepository repository.TaskRepository) TaskService {
+func NewTaskService(fileStorageUrl string, taskRepository repository.TaskRepository) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
-		cfg:            cfg,
+		fileStorageUrl: fileStorageUrl,
 		taskRepository: taskRepository,
 		logger:         log,
 	}

@@ -130,7 +130,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 	return session, nil
 }
 
-// NewAuthService initializes struct which implements [AuthService]
+// NewAuthService creates new instance of [AuthServiceImpl]
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
 	log := utils.NewNamedLogger("auth_service")
 	return &AuthServiceImpl{

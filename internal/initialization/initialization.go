@@ -120,20 +120,20 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg, taskRepository)
+	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository)
 	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
-	languageService := service.NewLanguageService(langRepository)
-	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, languageService, taskService, userService)
+	langService := service.NewLanguageService(langRepository)
+	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, langService, taskService, userService)
 	tx, err = db.Connect()
 	if err != nil {
 		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
 	}
-	err = languageService.InitLanguages(tx)
+	err = langService.InitLanguages(tx, cfg.EnabledLanguages)
 	if err != nil {
 		log.Panicf("Failed to init languages: %s", err.Error())
 		tx.Rollback()

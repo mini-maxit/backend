@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -15,7 +14,6 @@ import (
 
 type taskServiceTest struct {
 	tx          *gorm.DB
-	config      *config.Config
 	ur          repository.UserRepository
 	tr          repository.TaskRepository
 	taskService TaskService
@@ -27,11 +25,10 @@ func newTaskServiceTest() *taskServiceTest {
 	config := testutils.NewTestConfig()
 	ur := testutils.NewMockUserRepository()
 	tr := testutils.NewMockTaskRepository()
-	ts := NewTaskService(config, tr)
+	ts := NewTaskService(config.FileStorageUrl, tr)
 
 	return &taskServiceTest{
 		tx:          tx,
-		config:      config,
 		ur:          ur,
 		tr:          tr,
 		taskService: ts,

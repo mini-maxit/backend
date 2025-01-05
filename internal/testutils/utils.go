@@ -22,7 +22,7 @@ func NewTestConfig() *config.Config {
 			Password: "postgres",
 			Name:     "test-maxit",
 		},
-		App: config.AppConfig{
+		Api: config.ApiConfig{
 			Port: 8080,
 		},
 		BrokerConfig: config.BrokerConfig{

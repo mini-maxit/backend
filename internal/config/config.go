@@ -2,11 +2,14 @@ package config
 
 import (
 	"os"
+	"slices"
 	"strconv"
+	"strings"
 
+	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
-	//"github.com/mini-maxit/backend/internal/config"
 )
 
 const TEST_DB_NAME = "test-maxit"
@@ -14,9 +17,11 @@ const TEST_DB_NAME = "test-maxit"
 type Config struct {
 	FileStorageUrl string
 	DB             DBConfig
-	App            AppConfig
+	Api            ApiConfig
 	BrokerConfig   BrokerConfig
 	Dump           bool
+
+	EnabledLanguages []schemas.LanguageConfig
 }
 
 type DBConfig struct {
@@ -27,7 +32,7 @@ type DBConfig struct {
 	Name     string
 }
 
-type AppConfig struct {
+type ApiConfig struct {
 	Port uint16
 }
 
@@ -47,11 +52,101 @@ type BrokerConfig struct {
 }
 
 const (
-	DEFAULT_PORT                = "8080"
-	DEFAULT_QUEUE_NAME          = "worker_queue"
-	DEFAULT_RESPONSE_QUEUE_NAME = "worker_response_queue"
+	DefaultApiPort           = "8080"
+	DefaultQueueName         = "worker_queue"
+	DefaultResponseQueueName = "worker_response_queue"
 )
 
+// DefaultLanguages is a list of languages that is enabled by default
+var DefaultLanguages = []schemas.LanguageConfig{
+	{
+		Type:    models.LangTypeC,
+		Version: "99",
+	},
+	{
+		Type:    models.LangTypeC,
+		Version: "11",
+	},
+	{
+		Type:    models.LangTypeC,
+		Version: "18",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "11",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "14",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "17",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "20",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "23",
+	},
+}
+
+// AvailableLanguages is a list of languages that is acrively supported by the system and can be used if enabled.
+var AvailableLanguages = []schemas.LanguageConfig{
+	{
+		Type:    models.LangTypeC,
+		Version: "99",
+	},
+	{
+		Type:    models.LangTypeC,
+		Version: "11",
+	},
+	{
+		Type:    models.LangTypeC,
+		Version: "18",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "11",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "14",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "17",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "20",
+	},
+	{
+		Type:    models.LangTypeCPP,
+		Version: "23",
+	},
+}
+
+// NewConfig creates new Config instance
+//
+// It reads environment variables and returns Config instance
+// Available environment variables:
+// - DB_HOST - database host
+// - DB_PORT - database port
+// - DB_USER - database user
+// - DB_PASSWORD - database password
+// - DB_NAME - database name
+// - APP_PORT - application port
+// - FILE_STORAGE_HOST - file storage host
+// - QUEUE_NAME - queue name for sending tasks
+// - RESPONSE_QUEUE_NAME - queue name for receiving responses
+// - QUEUE_HOST - broker host
+// - QUEUE_PORT - broker port
+// - QUEUE_USER - broker user
+// - QUEUE_PASSWORD - broker password
+// - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23"
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
@@ -79,8 +174,8 @@ func NewConfig() *Config {
 
 	appPortStr := os.Getenv("APP_PORT")
 	if appPortStr == "" {
-		log.Warnf("APP_PORT is not set. Using default port %s", DEFAULT_PORT)
-		appPortStr = DEFAULT_PORT
+		log.Warnf("APP_PORT is not set. Using default port %s", DefaultApiPort)
+		appPortStr = DefaultApiPort
 	}
 	appPort := validatePort(appPortStr, "application", log)
 
@@ -98,13 +193,13 @@ func NewConfig() *Config {
 
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
-		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", DEFAULT_QUEUE_NAME)
-		queueName = DEFAULT_QUEUE_NAME
+		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", DefaultQueueName)
+		queueName = DefaultQueueName
 	}
 	responseQueueName := os.Getenv("RESPONSE_QUEUE_NAME")
 	if responseQueueName == "" {
-		log.Warnf("RESPONSE_QUEUE_NAME is not set. Using default response queue name %s", DEFAULT_RESPONSE_QUEUE_NAME)
-		responseQueueName = DEFAULT_RESPONSE_QUEUE_NAME
+		log.Warnf("RESPONSE_QUEUE_NAME is not set. Using default response queue name %s", DefaultResponseQueueName)
+		responseQueueName = DefaultResponseQueueName
 	}
 	queueHost := os.Getenv("QUEUE_HOST")
 	if queueHost == "" {
@@ -136,7 +231,7 @@ func NewConfig() *Config {
 			Password: dbPassword,
 			Name:     dbName,
 		},
-		App: AppConfig{
+		Api: ApiConfig{
 			Port: appPort,
 		},
 		BrokerConfig: BrokerConfig{
@@ -147,8 +242,9 @@ func NewConfig() *Config {
 			User:              queueUser,
 			Password:          queuePassword,
 		},
-		FileStorageUrl: fileStorageUrl,
-		Dump:           dump,
+		FileStorageUrl:   fileStorageUrl,
+		Dump:             dump,
+		EnabledLanguages: parseLanguages(os.Getenv("LANGUAGES"), log),
 	}
 }
 
@@ -158,4 +254,26 @@ func validatePort(port string, which string, log *zap.SugaredLogger) uint16 {
 		log.Panicf("invalid %s port number %s", which, port)
 	}
 	return uint16(p)
+}
+
+func parseLanguages(input string, log *zap.SugaredLogger) []schemas.LanguageConfig {
+	if input == "" {
+		log.Warn("LANGUAGES is not set. Using default languages")
+		return DefaultLanguages
+	}
+	langs := make([]schemas.LanguageConfig, 0)
+	languages := strings.Split(input, ",")
+	for _, lang := range languages {
+		parts := strings.Split(lang, ":")
+		if len(parts) != 2 {
+			log.Panicf("invalid language format in config: %s. For available options refer to documentation", lang)
+		}
+		language := schemas.LanguageConfig{Type: models.LanguageType(parts[0]), Version: parts[1]}
+		if !slices.Contains(AvailableLanguages, language) {
+			log.Panicf("language %s is not available. Available languages: %v, for more refer to documentation", lang, AvailableLanguages)
+		}
+		langs = append(langs, language)
+	}
+
+	return langs
 }
