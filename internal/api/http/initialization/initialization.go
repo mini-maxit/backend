@@ -26,7 +26,6 @@ type Initialization struct {
 	AuthRoute    routes.AuthRoute
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
-	SwaggerRoute routes.SwaggerRoute
 	UserRoute    routes.UserRoute
 	SubmissionRoute routes.SubmissionRoutes
 
@@ -144,7 +143,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
-	swaggerRoute := routes.NewSwaggerRoute()
 	userRoute := routes.NewUserRoute(userService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService)
 
@@ -162,7 +160,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SessionService: sessionService,
 		AuthRoute:      authRoute,
 		SessionRoute:   sessionRoute,
-		SwaggerRoute:   swaggerRoute,
 		TaskRoute:      taskRoute,
 		UserRoute:      userRoute,
 		SubmissionRoute: submissionRoute,

@@ -358,7 +358,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	httputils.ReturnSuccess(w, http.StatusOK, map[string]interface{}{"taskId": taskId})
+	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
 func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, /*queueService service.QueueService*/) TaskRoute {
