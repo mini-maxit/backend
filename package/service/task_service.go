@@ -149,6 +149,9 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrTaskNotFound
+		}
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
