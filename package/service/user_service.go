@@ -18,7 +18,7 @@ var (
 
 type UserService interface {
 	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
-	GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error)
+	GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
 	modelToSchema(user *models.User) *schemas.User
@@ -43,8 +43,8 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 	return user, nil
 }
 
-func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error) {
-	userModels, err := us.userRepository.GetAllUsers(tx)
+func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]schemas.User, error) {
+	userModels, err := us.userRepository.GetAllUsers(tx, queryParams)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err
@@ -55,17 +55,7 @@ func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]sche
 		users = append(users, *us.modelToSchema(&userModel))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(users)) {
-		return []schemas.User{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(users)) {
-		end = int64(len(users))
-	}
-
-	return users[offset:end], nil
+	return users, nil
 }
 
 func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {

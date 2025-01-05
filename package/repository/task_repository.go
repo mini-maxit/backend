@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/mini-maxit/backend/package/utils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"gorm.io/gorm"
 )
@@ -9,9 +10,9 @@ type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
-	GetAllTasks(tx *gorm.DB) ([]models.Task, error)
-	GetAllForUser(tx *gorm.DB, userId int64) ([]models.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64) ([]models.Task, error)
+	GetAllTasks(tx *gorm.DB, queryParams map[string][]string) ([]models.Task, error)
+	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]models.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error
@@ -37,8 +38,9 @@ func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, 
 	return task, nil
 }
 
-func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB) ([]models.Task, error) {
+func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB, queryParams map[string][]string) ([]models.Task, error) {
 	tasks := []models.Task{}
+	tx = utils.ApplyQueryParams(tx, queryParams)
 	err := tx.Model(&models.Task{}).Find(&tasks).Error
 	if err != nil {
 		return nil, err
@@ -46,8 +48,9 @@ func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB) ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64) ([]models.Task, error) {
+func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]models.Task, error) {
 	var tasks []models.Task
+	tx = utils.ApplyQueryParams(tx, queryParams)
 
 	err := tx.Model(&models.Task{}).
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
@@ -64,8 +67,9 @@ func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64) ([]models
 	return tasks, nil
 }
 
-func (tr * TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64) ([]models.Task, error) {
+func (tr * TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]models.Task, error) {
 	var tasks []models.Task
+	tx = utils.ApplyQueryParams(tx, queryParams)
 
 	err := tx.Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
 		Where("task_groups.group_id = ?", groupId).

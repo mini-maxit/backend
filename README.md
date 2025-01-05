@@ -17,6 +17,8 @@ Quick links:
 - [Task](#task)
 - [Session](#session)
 - [Auth](#auth)
+- [Submission](#submission)
+- [User](#user)
 
 All endpoints are prefixed with `/api/v1` prefix. For example: example.com/api/v1/task
 
@@ -27,6 +29,20 @@ All endpoints are prefixed with `/api/v1` prefix. For example: example.com/api/v
 #### `GET /task`
 
 Retrieves a list of all tasks.
+
+**Request Parameters:**
+- **Query Parameters:**
+  - **Filtering Options:**
+    - `id` (optional) - Filter tasks by ID.
+    - `title` (optional) - Filter tasks by title.
+    - `created_by` (optional) - Filter tasks by user ID.
+    - `created_at` (optional) - Filter tasks by creation date.
+    - `order` (optional) - Sort tasks by order.
+  - **Pagination Options:**
+    - `offset` (optional) - The number of tasks to skip. Default is 0.
+    - `limit` (optional) - The number of tasks per page. Default is 10.
+  - **Sorting Options:**
+    - `sort` (optional) - The field to sort by. Default is `created_at desc`.
 
 **Possible Responses:**
 
@@ -73,6 +89,18 @@ Retrieves the details of a specific task by its ID.
 
 - **Path Parameter**:
   `id` (required) - The ID of the task to retrieve.
+- **Query Parameters:**
+  - **Filtering Options:**
+    - `id` (optional) - Filter tasks by ID.
+    - `title` (optional) - Filter tasks by title.
+    - `created_by` (optional) - Filter tasks by user ID.
+    - `created_at` (optional) - Filter tasks by creation date.
+    - `order` (optional) - Sort tasks by order.
+  - **Pagination Options:**
+    - `offset` (optional) - The number of tasks to skip. Default is 0.
+    - `limit` (optional) - The number of tasks per page. Default is 10.
+  - **Sorting Options:**
+    - `sort` (optional) - The field to sort by. Default is `created_at desc`.
 
 **Possible Responses:**
 
@@ -533,3 +561,789 @@ Registers a new user and returns a session upon successful registration.
   }
   ```
   Triggered when an unexpected server error occurs.
+
+
+## Submission
+
+### **Get All Submissions**
+
+#### `GET /submission`
+
+Retrieves a list of all submissions.
+
+**Role-based Access:**
+
+- **Admin**: Retrieves all submissions.
+- **Teacher**: Retrieves submissions for tasks created by the teacher.
+- **Student**: Retrieves only the student's own submissions.
+
+**Request Parameters:**
+
+- **Query Parameters:**
+  - **Filtering Options:**
+    - `task_id` (optional) - Filter submissions by task ID.
+    - `user_id` (optional) - Filter submissions by user ID.
+    - `order` (optional) - Sort submissions by order.
+    - `language_id` (optional) - Filter submissions by language ID.
+    - `status` (optional) - Filter submissions by status.
+    - `submitted_at` (optional) - Filter submissions by submission date.
+    - `check_at` (optional) - Filter submissions by check date.
+
+  - **Pagination Options:**
+    - `offset` (optional) - The number of submissions to skip. Default is 0.
+    - `limit` (optional) - The number of submissions per page. Default is 10.
+
+  - **Sorting Options:**
+    - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the list of submissions.
+
+```json
+{
+    "ok": true,
+    "data": [
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        }
+    ]
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the submissions.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting submissions. Database connection failed."
+}
+```
+
+---
+
+### **Get Submission by ID**
+
+#### `GET /submission/{id}`
+
+Retrieves the details of a specific submission by its ID.
+
+**Role-based Access:**
+
+- **Admin**: Can view all submissions.
+- **Teacher**: Can view submissions for tasks created by the teacher.
+- **Student**: Can view only the student's own submissions.
+
+- **Path Parameter**:
+  `id` (required) - The ID of the submission to retrieve.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the submission details.
+
+```json
+{
+    "ok": true,
+    "data": [
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        }
+    ]
+}
+```
+
+- **400 Bad Request**: Invalid or missing submission ID.
+
+```json
+{
+  "ok": false,
+  "error": "Submission ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the submission.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting submission. Submission not found."
+}
+```
+
+---
+
+### **Get All Submissions for User**
+
+#### `GET /submission/user/{id}`
+
+Retrieves a list of all submissions for a specific user.
+
+**Role-based Access:**
+
+- **Admin**: Can view all submissions for the specified user.
+- **Teacher**: Can view submissions for tasks created by the teacher.
+- **Student**: Can view only the student's own submissions.
+
+**Request Parameters:**
+
+  - **Path Parameter**:
+    `id` (required) - The ID of the user whose submissions to retrieve.
+
+  - **Query Parameters:**
+    - **Filtering Options:**
+      - `task_id` (optional) - Filter submissions by task ID.
+      - `user_id` (optional) - Filter submissions by user ID.
+      - `order` (optional) - Sort submissions by order.
+      - `language_id` (optional) - Filter submissions by language ID.
+      - `status` (optional) - Filter submissions by status.
+      - `submitted_at` (optional) - Filter submissions by submission date.
+      - `check_at` (optional) - Filter submissions by check date.
+
+    - **Pagination Options:**
+      - `offset` (optional) - The number of submissions to skip. Default is 0.
+      - `limit` (optional) - The number of submissions per page. Default is 10.
+
+    - **Sorting Options:**
+      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the list of submissions.
+
+```json
+{
+    "ok": true,
+    "data": [
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        },
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        }
+    ]
+}
+```
+
+- **400 Bad Request**: Invalid or missing user ID.
+
+```json
+{
+  "ok": false,
+  "error": "User ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the submissions.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting submissions. Database connection failed."
+}
+```
+
+---
+
+### **Get All Submissions for Group**
+
+#### `GET /submission/group/{id}`
+
+Retrieves a list of all submissions for a specific group.
+
+**Role-based Access:**
+
+- **Admin**: Can view all submissions for the specified group.
+- **Teacher**: Can view submissions for tasks created by the teacher.
+- **Student**: Cannot view group submissions.
+
+**Request Parameters:**
+
+  - **Path Parameter**:
+    `id` (required) - The ID of the group whose submissions to retrieve.
+
+  - **Query Parameters:**
+    - **Filtering Options:**
+      - `task_id` (optional) - Filter submissions by task ID.
+      - `user_id` (optional) - Filter submissions by user ID.
+      - `order` (optional) - Sort submissions by order.
+      - `language_id` (optional) - Filter submissions by language ID.
+      - `status` (optional) - Filter submissions by status.
+      - `submitted_at` (optional) - Filter submissions by submission date.
+      - `check_at` (optional) - Filter submissions by check date.
+
+    - **Pagination Options:**
+      - `offset` (optional) - The number of submissions to skip. Default is 0.
+      - `limit` (optional) - The number of submissions per page. Default is 10.
+
+    - **Sorting Options:**
+      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the list of submissions.
+
+```json
+{
+    "ok": true,
+    "data": [
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        },
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        }
+    ]
+}
+```
+
+- **400 Bad Request**: Invalid or missing group ID.
+
+```json
+{
+  "ok": false,
+  "error": "Group ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the submissions.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting submissions. Database connection failed."
+}
+```
+
+---
+
+### **Get All Submissions for Task**
+
+#### `GET /submission/task/{id}`
+
+Retrieves a list of all submissions for a specific task.
+
+**Role-based Access:**
+
+- **Admin**: Can view all submissions for the specified task.
+- **Teacher**: Can view submissions for tasks created by the teacher.
+- **Student**: Can view only the student's own submissions.
+
+**Request Parameters:**
+
+**Request Parameters:**
+
+  - **Path Parameter**:
+    `id` (required) - The ID of the task whose submissions to retrieve.
+
+  - **Query Parameters:**
+    - **Filtering Options:**
+      - `task_id` (optional) - Filter submissions by task ID.
+      - `user_id` (optional) - Filter submissions by user ID.
+      - `order` (optional) - Sort submissions by order.
+      - `language_id` (optional) - Filter submissions by language ID.
+      - `status` (optional) - Filter submissions by status.
+      - `submitted_at` (optional) - Filter submissions by submission date.
+      - `check_at` (optional) - Filter submissions by check date.
+
+    - **Pagination Options:**
+      - `offset` (optional) - The number of submissions to skip. Default is 0.
+      - `limit` (optional) - The number of submissions per page. Default is 10.
+
+    - **Sorting Options:**
+      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the list of submissions.
+
+```json
+{
+    "ok": true,
+    "data": [
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        },
+        {
+            "id": 3,
+            "task_id": 1,
+            "user_id": 1,
+            "order": 1,
+            "language_id": 1,
+            "status": "afsdf",
+            "status_message": "",
+            "submitted_at": "0001-01-01T00:00:00Z",
+            "checked_at": null,
+            "language": {
+                "language": "CPP",
+                "version": "20"
+            },
+            "task": {
+                "id": 1,
+                "title": "dasf",
+                "created_by": 1,
+                "created_at": "2025-01-05T15:00:00Z"
+            },
+            "user": {
+                "id": 1,
+                "name": "name",
+                "surname": "surname",
+                "email": "adfadfa@email.com",
+                "username": "userfadfadname",
+                "role": "student"
+            }
+        }
+    ]
+}
+```
+
+- **400 Bad Request**: Invalid or missing task ID.
+
+```json
+{
+  "ok": false,
+  "error": "Task ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the submissions.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting submissions. Database connection failed."
+}
+```
+
+---
+
+### **Submit Solution**
+
+#### `POST /submission/submit`
+
+Submits a solution for a task.
+
+**Request Parameters:**
+
+- **Form Data**:
+  - `taskID` (required): The ID of the task for which the solution is being submitted.
+  - `userID` (required): The ID of the user submitting the solution.
+  - `languageID` (required): The programming language ID of the solution.
+  - `solution` (required): The solution file.
+
+**Possible Responses:**
+
+- **200 OK**: Solution submitted successfully.
+
+```json
+{
+  "ok": true,
+  "data": "Solution submitted successfully."
+}
+```
+
+- **400 Bad Request**: Invalid request parameters.
+
+```json
+{
+  "ok": false,
+  "error": "Task ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred during the submission process.
+
+```json
+{
+  "ok": false,
+  "error": "Error publishing submission to the queue. RabbitMQ not available."
+}
+```
+
+## User
+
+### **Get All Users**
+
+#### `GET /user`
+
+Retrieves a list of all users.
+
+**Request Parameters:**
+
+- **Query Parameters:**
+  - **Filtering Options:**
+    - `id` (optional) - Filter users by ID.
+    - `name` (optional) - Filter users by name.
+    - `surname` (optional) - Filter users by surname.
+    - `email` (optional) - Filter users by email.
+    - `username` (optional) - Filter users by username.
+    - `role` (optional) - Filter users by role.
+  - **Pagination Options:**
+    - `offset` (optional) - The number of users to skip. Default is 0.
+    - `limit` (optional) - The number of users per page. Default is 10.
+  - **Sorting Options:**
+    - `sort` (optional) - The field to sort by. Default is `id asc`.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the list of users.
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "John",
+      "surname": "Doe",
+      "email": "john.doe@example.com",
+      "username": "johndoe",
+      "role": "student"
+    },
+    {
+      "id": 2,
+      "name": "Jane",
+      "surname": "Smith",
+      "email": "jane.smith@example.com",
+      "username": "janesmith",
+      "role": "teacher"
+    }
+  ]
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the users.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting users. Database connection failed."
+}
+```
+
+---
+
+### **Get User by ID**
+
+#### `GET /user/{id}`
+
+Retrieves the details of a specific user by their ID.
+
+**Request Parameters:**
+
+- **Path Parameter**:
+  `id` (required) - The ID of the user to retrieve.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the user details.
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "name": "John",
+    "surname": "Doe",
+    "email": "john.doe@example.com",
+    "username": "johndoe",
+    "role": "student"
+  }
+}
+```
+
+- **400 Bad Request**: Invalid or missing user ID.
+
+```json
+{
+  "ok": false,
+  "error": "User ID is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the user.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting user. User not found."
+}
+```
+
+---
+
+### **Get User by Email**
+
+#### `GET /user/email`
+
+Retrieves the details of a specific user by their email.
+
+**Request Parameters:**
+
+- **Query Parameter**:
+  `email` (required) - The email of the user to retrieve.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully retrieved the user details.
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "name": "John",
+    "surname": "Doe",
+    "email": "john.doe@example.com",
+    "username": "johndoe",
+    "role": "student"
+  }
+}
+```
+
+- **400 Bad Request**: Invalid or missing email.
+
+```json
+{
+  "ok": false,
+  "error": "Email is required."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while retrieving the user.
+
+```json
+{
+  "ok": false,
+  "error": "Error getting user. User not found."
+}
+```
+
+---
+
+### **Edit User**
+
+#### `PUT /user/{id}`
+
+Edits the details of a specific user.
+
+**Request Parameters:**
+
+- **Path Parameter**:
+  `id` (required) - The ID of the user to edit.
+
+- **Request Body**:
+  - `name` (optional): The new name of the user.
+  - `surname` (optional): The new surname of the user.
+  - `email` (optional): The new email of the user.
+  - `username` (optional): The new username of the user.
+
+**Possible Responses:**
+
+- **200 OK**: Successfully edited the user.
+
+```json
+{
+  "ok": true,
+  "data": "Update successful"
+}
+```
+
+- **400 Bad Request**: Invalid request parameters.
+
+```json
+{
+  "ok": false,
+  "error": "Invalid request body."
+}
+```
+
+- **500 Internal Server Error**: An error occurred while editing the user.
+
+```json
+{
+  "ok": false,
+  "error": "Error occurred during editing."
+}
+```

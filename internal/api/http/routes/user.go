@@ -32,14 +32,11 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
+	utils.SetDefaultQueryParams(&query, utils.UserDefaultSortOrder)
 
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
-
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
-		return
+	queryParams := map[string][]string{}
+	for key, value := range query {
+		queryParams[key] = value
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
@@ -49,7 +46,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := u.userService.GetAllUsers(tx, limit, offset)
+	users, err := u.userService.GetAllUsers(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting users. %s", err.Error()))

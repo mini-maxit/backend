@@ -48,26 +48,11 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	if limitStr == "" {
-		limitStr = utils.DefaultPaginationLimitStr
-	}
+	utils.SetDefaultQueryParams(&query, utils.TaskDefaultSortOrder)
 
-	offsetStr := query.Get("offset")
-	if offsetStr == "" {
-		offsetStr = utils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit.")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset.")
-		return
+	queryParams := map[string][]string{}
+	for key, value := range query {
+		queryParams[key] = value
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
@@ -77,7 +62,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := tr.taskService.GetAll(tx, limit, offset)
+	tasks, err := tr.taskService.GetAll(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
@@ -151,27 +136,11 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
+	utils.SetDefaultQueryParams(&query, utils.TaskDefaultSortOrder)
 
-	if limitStr == "" {
-		limitStr = utils.DefaultPaginationLimitStr
-	}
-
-	if offsetStr == "" {
-		offsetStr = utils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
+	queryParams := map[string][]string{}
+	for key, value := range query {
+		queryParams[key] = value
 	}
 
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
@@ -186,7 +155,7 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 	}
 
-	tasks, err := tr.taskService.GetAllForUser(tx, userId, limit, offset)
+	tasks, err := tr.taskService.GetAllForUser(tx, userId, queryParams)
 	if err != nil {
 		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
@@ -214,13 +183,11 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	}
 
 	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
+	utils.SetDefaultQueryParams(&query, utils.TaskDefaultSortOrder)
 
-	limit, offset, err := utils.GetLimitAndOffset(limitStr, offsetStr)
-	if err != nil {
-		utils.ReturnError(w, http.StatusBadRequest, "Invalid limit or offset. "+err.Error())
-		return
+	queryParams := map[string][]string{}
+	for key, value := range query {
+		queryParams[key] = value
 	}
 
 	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
@@ -236,7 +203,7 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, limit, offset)
+	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, queryParams)
 	if err != nil {
 		db.Rollback()
 		utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))

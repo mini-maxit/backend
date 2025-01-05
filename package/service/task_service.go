@@ -17,9 +17,9 @@ var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task schemas.Task) (int64, error)
-	GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error)
-	GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, queryParams map[string][]string) ([]schemas.Task, error)
+	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]schemas.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
 	modelToSchema(model *models.Task) *schemas.Task
@@ -47,9 +47,9 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error)
 	return taskId, nil
 }
 
-func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, queryParams map[string][]string) ([]schemas.Task, error) {
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(tx)
+	tasks, err := ts.taskRepository.GetAllTasks(tx, queryParams)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -61,22 +61,12 @@ func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.T
 		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]schemas.Task, error) {
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId, queryParams)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks for user: %v", err.Error())
 		return nil, err
@@ -88,22 +78,12 @@ func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int6
 		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]schemas.Task, error) {
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, queryParams)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err
@@ -115,17 +95,7 @@ func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset in
 		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
 func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error) {

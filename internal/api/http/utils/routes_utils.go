@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"net/url"
 )
 
 type ApiResponse[T any] struct {
@@ -46,22 +46,14 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	}
 }
 
-func GetLimitAndOffset(limitStr string, offsetStr string) (int64, int64, error) {
-	if limitStr == "" {
-		limitStr = DefaultPaginationLimitStr
+func SetDefaultQueryParams(query *url.Values, sort string) {
+	if query.Get("limit") == "" {
+		query.Set("limit", DefaultPaginationLimitStr)
 	}
-	if offsetStr == "" {
-		offsetStr = DefaultPaginationOffsetStr
+	if query.Get("offset") == "" {
+		query.Set("offset", DefaultPaginationOffsetStr)
 	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		return 0, 0, err
+	if query.Get("sort") == "" {
+		query.Set("sort", sort)
 	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return limit, offset, nil
 }
