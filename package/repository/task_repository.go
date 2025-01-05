@@ -13,6 +13,7 @@ type TaskRepository interface {
 	GetAllTasks(tx *gorm.DB, queryParams map[string][]string) ([]models.Task, error)
 	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]models.Task, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]models.Task, error)
+	GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error
@@ -27,6 +28,15 @@ func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task models.Task) (int64, erro
 		return 0, err
 	}
 	return task.Id, nil
+}
+
+func (tr *TaskRepositoryImpl) GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error) {
+	task := &models.Task{}
+	err := tx.Model(&models.Task{}).Where("title = ?", title).First(task).Error
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {

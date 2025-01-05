@@ -13,14 +13,17 @@ import (
 )
 
 var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
+var ErrTaskExists = fmt.Errorf("task with this title already exists")
+var ErrTaskNotFound = fmt.Errorf("task not found")
 
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
-	Create(tx *gorm.DB, task schemas.Task) (int64, error)
+	Create(tx *gorm.DB, task *schemas.Task) (int64, error)
 	GetAll(tx *gorm.DB, queryParams map[string][]string) ([]schemas.Task, error)
 	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]schemas.Task, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
+	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
 	modelToSchema(model *models.Task) *schemas.Task
 }
@@ -32,8 +35,16 @@ type TaskServiceImpl struct {
 	logger               *zap.SugaredLogger
 }
 
-func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error) {
+func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error) {
 	// Create a new task
+	_, err := ts.GetTaskByTitle(tx, task.Title)
+	if err != nil && err != ErrTaskNotFound {
+		ts.logger.Errorf("Error getting task by title: %v", err.Error())
+		return 0, err
+	} else if err == nil {
+		return 0, ErrTaskExists
+	}
+
 	model := models.Task{
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
@@ -45,6 +56,22 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task schemas.Task) (int64, error)
 	}
 
 	return taskId, nil
+}
+
+
+func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
+	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrTaskNotFound
+		}
+		ts.logger.Errorf("Error getting task by title: %v", err.Error())
+		return nil, err
+	}
+
+	result := ts.modelToSchema(task)
+
+	return result, nil
 }
 
 func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, queryParams map[string][]string) ([]schemas.Task, error) {

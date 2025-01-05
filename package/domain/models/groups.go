@@ -7,7 +7,7 @@ type Group struct {
 
 type UserGroup struct {
 	UserId  int64 `gorm:"primaryKey;"`
-	GroupId int64  `gorm:"primaryKey;"`
+	GroupId int64 `gorm:"primaryKey;"`
 }
 
 type TaskGroup struct {

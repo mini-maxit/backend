@@ -7,9 +7,9 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 type AuthService interface {
-	Login(tx *gorm.DB, email, password string) (*schemas.Session, error)
+	Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error)
 	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
@@ -28,14 +28,24 @@ type AuthServiceImpl struct {
 	logger         *zap.SugaredLogger
 }
 
-func (as *AuthServiceImpl) Login(tx *gorm.DB, email, password string) (*schemas.Session, error) {
-	user, err := as.userRepository.GetUserByEmail(tx, email)
-	if err != nil {
-		as.logger.Errorf("Error getting user by email: %v", err.Error())
-		return nil, ErrUserNotFound
+func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
+	validate := utils.NewValidator()
+	if err := validate.Struct(userLogin); err != nil {
+		as.logger.Errorf("Error validating user login request: %v", err.Error())
+		return nil, err
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
+	user, err := as.userRepository.GetUserByEmail(tx, userLogin.Email)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		as.logger.Errorf("Error getting user by email: %v", err.Error())
+		return nil, err
+
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userLogin.Password)) != nil {
 		as.logger.Errorf("Error comparing password hash: %v", ErrInvalidCredentials.Error())
 		return nil, ErrInvalidCredentials
 	}
@@ -50,7 +60,8 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, email, password string) (*schemas.
 }
 
 func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	if err := validator.Validate(userRegister); err != nil {
+	validate := utils.NewValidator()
+	if err := validate.Struct(userRegister); err != nil {
 		as.logger.Errorf("Error validating user register request: %v", err.Error())
 		return nil, err
 	}
@@ -77,7 +88,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 		Email:        userRegister.Email,
 		Username:     userRegister.Username,
 		PasswordHash: string(hash),
-		Role:         string(models.UserRoleStudent),
+		Role:         models.UserRoleStudent,
 	}
 
 	userId, err := as.userRepository.CreateUser(tx, userModel)

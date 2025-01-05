@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/service"
 )
@@ -13,25 +13,25 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionHeader := r.Header.Get("Session")
 		if sessionHeader == "" {
-			utils.ReturnError(w, http.StatusUnauthorized, "Session header is not set, could not authorize")
+			httputils.ReturnError(w, http.StatusUnauthorized, "Session header is not set, could not authorize")
 			return
 		}
 		tx, err := db.Connect()
 		if err != nil {
-			utils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
 		}
 		sessionResponse, err := sessionService.ValidateSession(tx, sessionHeader)
 		if err != nil {
 			if err == service.ErrSessionNotFound {
-				utils.ReturnError(w, http.StatusUnauthorized, "Session not found")
+				httputils.ReturnError(w, http.StatusUnauthorized, "Session not found")
 				return
 			}
 			if err == service.ErrSessionExpired {
-				utils.ReturnError(w, http.StatusUnauthorized, "Session expired")
+				httputils.ReturnError(w, http.StatusUnauthorized, "Session expired")
 				return
 			}
-			utils.ReturnError(w, http.StatusInternalServerError, "Failed to validate session. "+err.Error())
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate session. "+err.Error())
 			return
 		}
 

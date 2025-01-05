@@ -1,9 +1,10 @@
 package utils
 
 import (
+	"regexp"
 	"strconv"
-
-	"github.com/mini-maxit/backend/internal/api/http/utils"
+	"github.com/go-playground/validator/v10"
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +26,7 @@ func ApplyQueryParams(tx *gorm.DB, queryParams map[string][]string) *gorm.DB {
 				if err == nil {
 					tx = tx.Limit(limit)
 				} else {
-					limit, _ := strconv.Atoi(utils.DefaultPaginationLimitStr)
+					limit, _ := strconv.Atoi(httputils.DefaultPaginationLimitStr)
 					tx = tx.Limit(limit)
 				}
 			}
@@ -35,7 +36,7 @@ func ApplyQueryParams(tx *gorm.DB, queryParams map[string][]string) *gorm.DB {
 				if err == nil {
 					tx = tx.Offset(offset)
 				} else {
-					offset, _ := strconv.Atoi(utils.DefaultPaginationOffsetStr)
+					offset, _ := strconv.Atoi(httputils.DefaultPaginationOffsetStr)
 					tx = tx.Offset(offset)
 				}
 			}
@@ -51,4 +52,16 @@ func ApplyQueryParams(tx *gorm.DB, queryParams map[string][]string) *gorm.DB {
 	}
 
 	return tx
+}
+
+func usernameValidator(fl validator.FieldLevel) bool {
+	username := fl.Field().String()
+	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
+	return re.MatchString(username)
+}
+
+func NewValidator() *validator.Validate {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	validate.RegisterValidation("username", usernameValidator)
+	return validate
 }

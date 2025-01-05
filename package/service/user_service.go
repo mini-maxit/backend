@@ -76,6 +76,9 @@ func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User
 func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
 	currentModel, err := us.GetUserById(tx, userId)
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrUserNotFound
+		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
 	}
@@ -91,13 +94,16 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 }
 
 func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
+	if user.Role == "" {
+		us.logger.Errorf("")
+	}
 	return &schemas.User{
 		Id:       user.Id,
 		Name:     user.Name,
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     user.Role,
+		Role:     string(user.Role),
 	}
 }
 

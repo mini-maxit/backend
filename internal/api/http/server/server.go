@@ -71,12 +71,13 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 		}
 	},
 	)
-	mux.HandleFunc("/api/v1/task/{id}", initialization.TaskRoute.GetTask)
-	mux.HandleFunc("/api/v1/user/{id}/task", initialization.TaskRoute.GetAllForUser)
-	mux.HandleFunc("/api/v1/group/{id}/task", initialization.TaskRoute.GetAllForGroup)
+	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
+	taskMux.HandleFunc("/user/{id}/task", initialization.TaskRoute.GetAllForUser)
 
 	// User routes
-	mux.HandleFunc("/api/v1/user/{id}", func(w http.ResponseWriter, r *http.Request) {
+	userMux := http.NewServeMux()
+	userMux.HandleFunc("/", initialization.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			initialization.UserRoute.GetUserById(w, r)
 		} else if r.Method == http.MethodPut {
@@ -84,8 +85,9 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 		}
 	},
 	)
-	mux.HandleFunc("/api/v1/user", initialization.UserRoute.GetAllUsers)
-	mux.HandleFunc("/api/v1/user/email", initialization.UserRoute.GetUserByEmail)
+	userMux.HandleFunc("/user", initialization.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/email", initialization.UserRoute.GetUserByEmail)
+	userMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForUser)
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()
@@ -95,6 +97,11 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
 	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
 	subbmissionMux.HandleFunc("/submit", initialization.SubmissionRoute.SubmitSolution)
+
+
+	// Group routes
+	groupMux := http.NewServeMux()
+	groupMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForGroup)
 
 	// Session routes
 	sessionMux := http.NewServeMux()
@@ -107,13 +114,14 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
 	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
 	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
-
+	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
+	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
 
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
 	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.Db, initialization.SessionService))
-
+	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
 	httpLoger := logger.NewHttpLogger()
@@ -121,6 +129,5 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, initialization.Db), log)))
-
 	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: log}
 }
