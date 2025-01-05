@@ -53,9 +53,6 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
-	// Swagger route
-	mux.HandleFunc("/api/v1/docs", initialization.SwaggerRoute.Docs)
-
 	// Auth routes
 	authMux := http.NewServeMux()
 	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
@@ -97,7 +94,6 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
 	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
 	subbmissionMux.HandleFunc("/submit", initialization.SubmissionRoute.SubmitSolution)
-
 
 	// Group routes
 	groupMux := http.NewServeMux()

@@ -11,8 +11,8 @@ type Submission struct {
 	Status        string         `json:"status"`
 	StatusMessage string         `json:"status_message"`
 	SubmittedAt   time.Time      `json:"submitted_at"`
-	CheckedAt     *time.Time     `json:"checked_at"`
-	Language 	LanguageConfig `json:"language"`
-	Task 		Task 			`json:"task"`
-	User 		User 			`json:"user"`
+	CheckedAt     time.Time      `json:"checked_at"`
+	Language      LanguageConfig `json:"language"`
+	Task          Task           `json:"task"`
+	User          User           `json:"user"`
 }

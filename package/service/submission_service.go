@@ -29,9 +29,9 @@ type SubmissionServiceImpl struct {
 	submissionResultRepository repository.SubmissionResultRepository
 	inputOutputRepository      repository.InputOutputRepository
 	testResultRepository       repository.TestResultRepository
-	userService 			  UserService
-	taskService 			  TaskService
-	languageService 		  LanguageService
+	userService                UserService
+	taskService                TaskService
+	languageService            LanguageService
 	logger                     *zap.SugaredLogger
 }
 
@@ -62,7 +62,6 @@ func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.UserSession, q
 	for _, submission_model := range submission_models {
 		result = append(result, *us.modelToSchema(&submission_model))
 	}
-
 
 	return result, nil
 }
@@ -231,7 +230,6 @@ func (us *SubmissionServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, use
 		Order:      order,
 		LanguageId: languageId,
 		Status:     "received",
-		CheckedAt:  nil,
 	}
 	submissionId, err := us.submissionRepository.CreateSubmission(tx, submission)
 
@@ -292,9 +290,9 @@ func NewSubmissionService(submissionRepository repository.SubmissionRepository, 
 	return &SubmissionServiceImpl{
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
-		languageService: languageService,
-		taskService: taskService,
-		userService: userService,
+		languageService:            languageService,
+		taskService:                taskService,
+		userService:                userService,
 		logger:                     log,
 	}
 }
@@ -310,8 +308,8 @@ func (us *SubmissionServiceImpl) modelToSchema(submission *models.Submission) *s
 		StatusMessage: submission.StatusMessage,
 		SubmittedAt:   submission.SubmittedAt,
 		CheckedAt:     submission.CheckedAt,
-		Language: 	   *us.languageService.modelToSchema(&submission.Language),
-		Task: 		   *us.taskService.modelToSchema(&submission.Task),
-		User: 		   *us.userService.modelToSchema(&submission.User),
+		Language:      *us.languageService.modelToSchema(&submission.Language),
+		Task:          *us.taskService.modelToSchema(&submission.Task),
+		User:          *us.userService.modelToSchema(&submission.User),
 	}
 }
