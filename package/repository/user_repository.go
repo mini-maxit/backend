@@ -48,7 +48,7 @@ func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models
 func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]models.User, error) {
 	users := &[]models.User{}
 	tx = utils.ApplyQueryParams(tx, queryParams)
-	
+
 	err := tx.Model(&models.User{}).Find(users).Error
 	if err != nil {
 		return nil, err
