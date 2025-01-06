@@ -26,10 +26,11 @@ type Initialization struct {
 	SessionService service.SessionService
 
 	AuthRoute       routes.AuthRoute
-	TaskRoute       routes.TaskRoute
+	GroupRoute      routes.GroupRoute
 	SessionRoute    routes.SessionRoute
-	UserRoute       routes.UserRoute
 	SubmissionRoute routes.SubmissionRoutes
+	TaskRoute       routes.TaskRoute
+	UserRoute       routes.UserRoute
 
 	QueueListener queue.QueueListener
 
@@ -71,8 +72,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	tx, err := db.Connect()
 
-	defer utils.TransactionPanicRecover(tx)
-
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
@@ -89,7 +88,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create task repository: %s", err.Error())
 	}
-	_, err = repository.NewGroupRepository(tx)
+	groupRepository, err := repository.NewGroupRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create group repository: %s", err.Error())
 	}
@@ -127,6 +126,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
+	groupService := service.NewGroupService(groupRepository)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, langService, taskService, userService)
 	tx, err = db.Connect()
@@ -144,11 +144,12 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	// Routes
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
-	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
-	userRoute := routes.NewUserRoute(userService)
+	groupRoute := routes.NewGroupRoute(groupService)
+	sessionRoute := routes.NewSessionRoute(sessionService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService)
+	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
+	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
@@ -206,15 +207,19 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	return &Initialization{
-		Cfg:             cfg,
-		Db:              db,
-		QueueListener:   queueListener,
-		TaskService:     taskService,
-		SessionService:  sessionService,
+		Cfg: cfg,
+		Db:  db,
+
+		TaskService:    taskService,
+		SessionService: sessionService,
+
 		AuthRoute:       authRoute,
+		GroupRoute:      groupRoute,
 		SessionRoute:    sessionRoute,
+		SubmissionRoute: submissionRoute,
 		TaskRoute:       taskRoute,
 		UserRoute:       userRoute,
-		SubmissionRoute: submissionRoute,
+
+		QueueListener: queueListener,
 	}
 }

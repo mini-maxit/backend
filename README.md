@@ -22,8 +22,9 @@ If you set `DUMP=true` in the .env file, and start application using provided de
 
 # Endpoints
 
-Quick links:
+You can check automaticaly generated markdown documentation [here](./docs/swagger.md). Documentation is generated from swagger specification, which in turn is generated from code comments.
 
+<<<<<<< HEAD
 - [Error format](#error)
 - [Task](#task)
 - [Session](#session)
@@ -1255,3 +1256,6 @@ Edits the details of a specific user.
   "error": "Error occurred during editing."
 }
 ```
+=======
+If you prefer swagger specification you can access it [here](https://mini-maxit.github.io/backend/)
+>>>>>>> b803d81 (feat: group related routes)

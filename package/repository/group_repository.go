@@ -6,16 +6,18 @@ import (
 )
 
 type GroupRepository interface {
-	CreateGroup(tx *gorm.DB, group models.Group) (int64, error)
+	CreateGroup(tx *gorm.DB, group *models.Group) (int64, error)
 	GetGroup(tx *gorm.DB, groupId int64) (*models.Group, error)
 	DeleteGroup(tx *gorm.DB, groupId int64) error
+	Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error)
+	GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error)
 }
 
 type GroupRepositoryImpl struct {
 }
 
-func (gr *GroupRepositoryImpl) CreateGroup(tx *gorm.DB, group models.Group) (int64, error) {
-	err := tx.Create(&group).Error
+func (gr *GroupRepositoryImpl) CreateGroup(tx *gorm.DB, group *models.Group) (int64, error) {
+	err := tx.Create(group).Error
 	if err != nil {
 		return 0, err
 	}
@@ -37,6 +39,24 @@ func (gr *GroupRepositoryImpl) DeleteGroup(tx *gorm.DB, groupId int64) error {
 		return err
 	}
 	return nil
+}
+
+func (gr *GroupRepositoryImpl) Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error) {
+	err := tx.Model(&models.Group{}).Where("id = ?", groupId).Updates(group).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return gr.GetGroup(tx, groupId)
+}
+
+func (gr *GroupRepositoryImpl) GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error) {
+	var groups []models.Group
+	err := tx.Offset(offset).Limit(limit).Order(sort).Find(&groups).Error
+	if err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func NewGroupRepository(db *gorm.DB) (GroupRepository, error) {

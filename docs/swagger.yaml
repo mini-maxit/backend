@@ -7,6 +7,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-Group:
+    properties:
+      data:
+        $ref: '#/definitions/Group'
+      ok:
+        type: boolean
+    type: object
   ApiResponse-Session:
     properties:
       data:
@@ -28,6 +35,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-array_Group:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Group'
+        type: array
+      ok:
+        type: boolean
+    type: object
   ApiResponse-array_Task:
     properties:
       data:
@@ -37,12 +53,46 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-int64:
+    properties:
+      data:
+        type: integer
+      ok:
+        type: boolean
+    type: object
   ApiResponse-string:
     properties:
       data:
         type: string
       ok:
         type: boolean
+    type: object
+  CreateGroup:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  EditGroup:
+    properties:
+      name:
+        type: string
+    type: object
+  Group:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
     type: object
   Session:
     properties:
@@ -139,6 +189,166 @@ info:
   title: Mini Maxit API Documentation testing the workflow
   version: "1.0"
 paths:
+  /group/:
+    get:
+      description: Get all groups
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: string
+      - description: Offset
+        in: query
+        name: offset
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all groups
+      tags:
+      - group
+    post:
+      consumes:
+      - application/json
+      description: Create a group
+      parameters:
+      - description: Create Group
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-int64'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Create a group
+      tags:
+      - group
+  /group/{id}:
+    get:
+      description: Get a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get a group
+      tags:
+      - group
+    put:
+      consumes:
+      - application/json
+      description: Edit a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Edit Group
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EditGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Edit a group
+      tags:
+      - group
   /login:
     post:
       consumes:
