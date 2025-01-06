@@ -29,7 +29,7 @@ jobs:
         run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
 
       - name: Convert swagger to markdown
-        run: swagger generate markdown -f docs/swagger-flattened.json --output docs/swagger.md
+        run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
