@@ -36,7 +36,7 @@ func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) *go
 				tx = tx.Order(sortFieldParts[0] + " " + sortFieldParts[1])
 			} else {
 				tx = tx.Order(sortFieldParts[0] + " " + httputils.DefaultSortOrder)
-			}	
+			}
 		}
 	}
 	return tx
