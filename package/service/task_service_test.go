@@ -131,7 +131,7 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest(t)
-
+	queryParams := map[string][]string{"limit": {"10"}, "offset": {"0"}, "sort": {"id:asc"}}
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
@@ -141,14 +141,14 @@ func TestGetAllTasks(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAll(tst.tx, nil)
+		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		tst.rollbackToSavePoint()
 	})
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAll(tst.tx, nil)
+		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 		tst.rollbackToSavePoint()
