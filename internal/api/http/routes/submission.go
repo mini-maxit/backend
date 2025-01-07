@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
@@ -30,8 +30,8 @@ type SubmissionRoutes interface {
 
 type SumbissionImpl struct {
 	submissionService service.SubmissionService
-	fileStorageUrl	string
-	queueService service.QueueService
+	fileStorageUrl    string
+	queueService      service.QueueService
 }
 
 // Get requests
@@ -48,15 +48,10 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.SubmissionDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
 
 	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
 	if err != nil {
@@ -93,9 +88,9 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	submission, err := s.submissionService.GetById(tx, submissionId, user)
+	submission, err := s.submissionService.GetById(tx, submissionId, current_user)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submission. "+err.Error())
@@ -125,15 +120,10 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.SubmissionDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
 
 	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -169,15 +159,10 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.SubmissionDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
 	if err != nil {
@@ -207,7 +192,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.UserSession)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {
@@ -216,12 +201,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.SubmissionDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
 
 	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
 	if err != nil {
@@ -274,16 +254,9 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	defer file.Close()
 
 	// Extract user ID
-	userIDStr := r.FormValue("userID")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
-		return
-	}
-	userId, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
-		return
-	}
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	userId := current_user.Id
+	userIDStr := strconv.FormatInt(userId, 10)
 
 	// Extract language
 	languageStr := r.FormValue("languageID")
@@ -374,7 +347,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorageUrl string, queueService service.QueueService) SubmissionRoutes {
 	return &SumbissionImpl{
 		submissionService: submissionService,
-		fileStorageUrl: fileStorageUrl,
-		queueService: queueService,
+		fileStorageUrl:    fileStorageUrl,
+		queueService:      queueService,
 	}
 }

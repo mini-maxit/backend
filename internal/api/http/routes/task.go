@@ -47,12 +47,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.TaskDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
@@ -135,12 +130,7 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.TaskDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
 
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
@@ -182,12 +172,7 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	}
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.TaskDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
 
 	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
 	if err != nil {
@@ -361,6 +346,6 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
-func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, /*queueService service.QueueService*/) TaskRoute {
-	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService/*, queueService: queueService*/}
+func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
+	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
 }

@@ -12,23 +12,23 @@ type SubmissionRepository interface {
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error
-	GetAll(tx *gorm.DB, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForStudent(tx *gorm.DB, currentUserId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForTeacher(tx *gorm.DB, currentUserId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllByUserId(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForTask(tx *gorm.DB, taskId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, queryParams map[string][]string) ([]models.Submission, error)
-	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, queryParams map[string][]string) ([]models.Submission, error)
+	GetAll(tx *gorm.DB, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllByUserId(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error)
+	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error)
 }
 
 type SubmissionRepositoryImpl struct{}
 
-func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -41,10 +41,10 @@ func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, queryParams map[string][
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -57,10 +57,10 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -86,10 +86,10 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 	return &submission, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -102,10 +102,10 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, qu
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -123,10 +123,10 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, q
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -144,10 +144,10 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -164,10 +164,10 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, que
 }
 
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").
@@ -183,10 +183,10 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, queryParams map[string][]string) ([]models.Submission, error) {
+func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyQueryParams(tx, queryParams)
+	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 
 	err := tx.Model(&models.Submission{}).
 		Preload("Language").

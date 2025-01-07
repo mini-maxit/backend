@@ -2,6 +2,14 @@ package models
 
 import "time"
 
+const (
+	StatusReceived string = "received"
+	StatusSentForEvaluation string = "sent for evaluation"
+	StatusEvaluated string = "evaluated"
+	StatusLost string = "lost"
+)
+
+
 type Submission struct {
 	Id            int64          `gorm:"primaryKey;autoIncrement"`
 	TaskId        int64          `gorm:"not null; foreignKey:TaskID"`

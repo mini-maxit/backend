@@ -11,5 +11,5 @@ type Session struct {
 
 type ValidateSessionResponse struct {
 	Valid  bool  `json:"valid"`
-	User UserSession `json:"user"`
+	User User `json:"user"`
 }

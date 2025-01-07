@@ -44,7 +44,11 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 }
 
 func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]schemas.User, error) {
-	userModels, err := us.userRepository.GetAllUsers(tx, queryParams)
+	limit := queryParams["limit"][0]
+	offset := queryParams["offset"][0]
+	sort := queryParams["sort"][0]
+
+	userModels, err := us.userRepository.GetAllUsers(tx, limit, offset, sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err

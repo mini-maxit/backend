@@ -63,7 +63,7 @@ Session: The session token (required).
     - `offset` (optional) - The number of tasks to skip. Default is 0.
     - `limit` (optional) - The number of tasks per page. Default is 10.
   - **Sorting Options:**
-    - `sort` (optional) - The field to sort by. Default is `created_at desc`.
+    - `sort` (optional) - The field to sort by. Default is `created_at:asc`.
 
 **Possible Responses:**
 
@@ -124,7 +124,7 @@ Retrieves the details of a specific task by its ID.
     - `offset` (optional) - The number of tasks to skip. Default is 0.
     - `limit` (optional) - The number of tasks per page. Default is 10.
   - **Sorting Options:**
-    - `sort` (optional) - The field to sort by. Default is `created_at desc`.
+    - `sort` (optional) - The field to sort by. Default is `created_at:asc`.
 
 **Possible Responses:**
 
@@ -480,7 +480,7 @@ Retrieves a list of all submissions.
     - `limit` (optional) - The number of submissions per page. Default is 10.
 
   - **Sorting Options:**
-    - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+    - `sort` (optional) - The field to sort by. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -642,7 +642,7 @@ Retrieves a list of all submissions for a specific user.
       - `limit` (optional) - The number of submissions per page. Default is 10.
 
     - **Sorting Options:**
-      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+      - `sort` (optional) - The field to sort by. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -766,7 +766,7 @@ Retrieves a list of all submissions for a specific group.
       - `limit` (optional) - The number of submissions per page. Default is 10.
 
     - **Sorting Options:**
-      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+      - `sort` (optional) - The field to sort by. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -892,7 +892,7 @@ Retrieves a list of all submissions for a specific task.
       - `limit` (optional) - The number of submissions per page. Default is 10.
 
     - **Sorting Options:**
-      - `sort` (optional) - The field to sort by. Default is `submitted_at desc`.
+      - `sort` (optional) - The field to sort by. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -1049,7 +1049,7 @@ Retrieves a list of all users.
     - `offset` (optional) - The number of users to skip. Default is 0.
     - `limit` (optional) - The number of users per page. Default is 10.
   - **Sorting Options:**
-    - `sort` (optional) - The field to sort by. Default is `id asc`.
+    - `sort` (optional) - The field to sort by. Default is `id:asc`.
 
 **Possible Responses:**
 

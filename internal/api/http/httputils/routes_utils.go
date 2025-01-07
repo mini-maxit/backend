@@ -2,6 +2,7 @@ package httputils
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -48,7 +49,7 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	}
 }
 
-func SetDefaultQueryParams(query *url.Values, sort string) {
+func SetDefaultQueryParams(query *url.Values, field string) {
 	if query.Get("limit") == "" {
 		query.Set("limit", DefaultPaginationLimitStr)
 	}
@@ -56,6 +57,16 @@ func SetDefaultQueryParams(query *url.Values, sort string) {
 		query.Set("offset", DefaultPaginationOffsetStr)
 	}
 	if query.Get("sort") == "" {
+		sort := fmt.Sprintf("%s:%s", field, DefaultSortOrder)
 		query.Set("sort", sort)
 	}
+}
+
+func GetQueryParams(query *url.Values, field string) map[string][]string {
+	queryParams := map[string][]string{}
+	SetDefaultQueryParams(query, field)
+	for key, value := range *query {
+		queryParams[key] = value
+	}
+	return queryParams
 }

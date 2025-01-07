@@ -32,12 +32,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	httputils.SetDefaultQueryParams(&query, httputils.UserDefaultSortOrder)
-
-	queryParams := map[string][]string{}
-	for key, value := range query {
-		queryParams[key] = value
-	}
+	queryParams := httputils.GetQueryParams(&query, httputils.UserDefaultSortField)
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
