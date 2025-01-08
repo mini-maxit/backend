@@ -1,0 +1,516 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the API documentation for the Mini Maxit API.",
+        "title": "Mini Maxit API Documentation testing the workflow",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/login": {
+            "post": {
+                "description": "Logs in a user with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login a user",
+                "parameters": [
+                    {
+                        "description": "User Login Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "description": "Registers a user with name, surname, email, username and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a user",
+                "parameters": [
+                    {
+                        "description": "User Register Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/task": {
+            "post": {
+                "description": "Uploads a task to the FileStorage service",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Upload a task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the task",
+                        "name": "taskName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the author",
+                        "name": "userId",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Overwrite flag",
+                        "name": "overwrite",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Task archive",
+                        "name": "archive",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/task/submit": {
+            "post": {
+                "description": "Uploads a solution to the FileSotrage servide",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Submit a solution",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the task",
+                        "name": "taskID",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "solution file",
+                        "name": "solution",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "userID",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Id of the language used in the soloution",
+                        "name": "languageID",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/task/{id}": {
+            "get": {
+                "description": "Returns a task by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Get a task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks": {
+            "get": {
+                "description": "Returns all tasks",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Get all tasks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task"
+                    }
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.ErrorResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SuccessResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginErrorResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserLoginSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterErrorResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_utils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_UserRegisterSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.Task": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "integer"
+                },
+                "created_by_name": {
+                    "type": "string"
+                },
+                "description_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserLoginErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserLoginSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserRegisterErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.UserRegisterSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

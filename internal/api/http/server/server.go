@@ -69,10 +69,11 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	},
 	)
 	taskMux.HandleFunc("/{id}", init.TaskRoute.GetTask)
-	taskMux.HandleFunc("/submit", init.TaskRoute.SubmitSolution)
+	taskMux.HandleFunc("/user/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// User routes
 	userMux := http.NewServeMux()
+	userMux.HandleFunc("/", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			init.UserRoute.GetUserById(w, r)
@@ -84,6 +85,15 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	userMux.HandleFunc("/", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
 	userMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForUser)
+
+	// Submission routes
+	subbmissionMux := http.NewServeMux()
+	subbmissionMux.HandleFunc("/", init.SubmissionRoute.GetAll)
+	subbmissionMux.HandleFunc("/{id}", init.SubmissionRoute.GetById)
+	subbmissionMux.HandleFunc("/user/{id}", init.SubmissionRoute.GetAllForUser)
+	subbmissionMux.HandleFunc("/group/{id}", init.SubmissionRoute.GetAllForGroup)
+	subbmissionMux.HandleFunc("/task/{id}", init.SubmissionRoute.GetAllForTask)
+	subbmissionMux.HandleFunc("/submit", init.SubmissionRoute.SubmitSolution)
 
 	// Group routes
 	groupMux := http.NewServeMux()
@@ -99,6 +109,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
 	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
+	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
 

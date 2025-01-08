@@ -26,6 +26,7 @@ type Initialization struct {
 	TaskRoute    routes.TaskRoute
 	SessionRoute routes.SessionRoute
 	UserRoute    routes.UserRoute
+	SubmissionRoute routes.SubmissionRoutes
 
 	QueueListener queue.QueueListener
 }
@@ -103,6 +104,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create session repository: %s", err.Error())
 	}
+	submissionResultRepository, err := repository.NewSubmissionResultRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create submission result repository: %s", err.Error())
+	}
 
 	if err := db.Commit(); err != nil {
 		log.Panicf("Failed to commit transaction: %s", err.Error())
@@ -117,12 +122,13 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
-	langService := service.NewLanguageService(langRepository)
+	languageService := service.NewLanguageService(langRepository)
+	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, languageService, taskService, userService)
 	tx, err = db.Connect()
 	if err != nil {
 		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
 	}
-	err = langService.InitLanguages(tx)
+	err = languageService.InitLanguages(tx)
 	if err != nil {
 		log.Panicf("Failed to init languages: %s", err.Error())
 		tx.Rollback()
@@ -133,10 +139,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	// Routes
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService, queueService)
+	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
 	authRoute := routes.NewAuthRoute(userService, authService)
 	userRoute := routes.NewUserRoute(userService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
@@ -153,5 +160,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		AuthRoute:      authRoute,
 		SessionRoute:   sessionRoute,
 		TaskRoute:      taskRoute,
-		UserRoute:      userRoute}
+		UserRoute:      userRoute,
+		SubmissionRoute: submissionRoute,
+	}
 }
