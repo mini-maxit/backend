@@ -2,7 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -23,15 +22,13 @@ type TaskRoute interface {
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
-	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskRouteImpl struct {
 	fileStorageUrl string
 
 	// Service that handles task-related operations
-	taskService  service.TaskService
-	queueService service.QueueService
+	taskService service.TaskService
 }
 
 // GetAllTasks godoc
@@ -49,29 +46,6 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	if limitStr == "" {
-		limitStr = httputils.DefaultPaginationLimitStr
-	}
-
-	offsetStr := query.Get("offset")
-	if offsetStr == "" {
-		offsetStr = httputils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid limit.")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset.")
-		return
-	}
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {
@@ -79,7 +53,15 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := tr.taskService.GetAll(tx, limit, offset)
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	tasks, err := tr.taskService.GetAll(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
@@ -152,30 +134,6 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
-
-	if limitStr == "" {
-		limitStr = httputils.DefaultPaginationLimitStr
-	}
-
-	if offsetStr == "" {
-		offsetStr = httputils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
-	}
-
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
@@ -188,7 +146,15 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 	}
 
-	tasks, err := tr.taskService.GetAllForUser(tx, userId, limit, offset)
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForUser(tx, userId, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
@@ -215,30 +181,6 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	query := r.URL.Query()
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
-
-	if limitStr == "" {
-		limitStr = httputils.DefaultPaginationLimitStr
-	}
-
-	if offsetStr == "" {
-		offsetStr = httputils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
-	}
-
 	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
@@ -252,7 +194,15 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, limit, offset)
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
@@ -358,8 +308,18 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add form fields
-	writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
-	writer.WriteField("overwrite", strconv.FormatBool(overwrite))
+	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing task ID to form. %s", err.Error()))
+		return
+	}
+	err = writer.WriteField("overwrite", strconv.FormatBool(overwrite))
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing overwrite flag to form. %s", err.Error()))
+		return
+	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("archive", handler.Filename)
@@ -411,138 +371,6 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
-func (tr *TaskRouteImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	// Limit the size of the incoming request to 10 MB
-	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
-
-	// Parse the multipart form data
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "The uploaded files are too large.")
-		return
-	}
-
-	// Extract the task ID
-	taskIdStr := r.FormValue("taskID")
-	if taskIdStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
-		return
-	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
-		return
-	}
-
-	// Extract the uploaded file
-	file, handler, err := r.FormFile("solution")
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No solution file found.")
-		return
-	}
-	defer file.Close()
-
-	// Extract user ID
-	userIDStr := r.FormValue("userID")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID is required.")
-		return
-	}
-	userId, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
-		return
-	}
-
-	// Extract language
-	languageStr := r.FormValue("languageID")
-	if languageStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Language ID is required.")
-		return
-	}
-	languageId, err := strconv.ParseInt(languageStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid language ID.")
-		return
-	}
-
-	// Create a multipart writer for the HTTP request to FileStorage service
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// Add form fields
-	writer.WriteField("taskID", taskIdStr)
-	writer.WriteField("userID", userIDStr)
-
-	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error creating form file for FileStorage. "+err.Error())
-		return
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error copying file to FileStorage request. "+err.Error())
-		return
-	}
-
-	writer.Close()
-
-	// Send the request to FileStorage service
-	client := &http.Client{}
-	resp, err := client.Post(tr.fileStorageUrl+"/submit", writer.FormDataContentType(), body)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
-		return
-	}
-	defer resp.Body.Close()
-
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil && len(resBody) == 0 {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
-		return
-	}
-	// Handle response from FileStorage
-	if resp.StatusCode != http.StatusOK {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(resBody)))
-		return
-	}
-
-	respJson := schemas.SubmitResponse{}
-	err = json.Unmarshal(resBody, &respJson)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error parsing response from FileStorage. %s", err.Error()))
-		return
-	}
-
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
-		return
-	}
-
-	// Create the submission with the correct order
-	submissionId, err := tr.taskService.CreateSubmission(tx, taskId, userId, languageId, respJson.SubmissionNumber)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
-		return
-	}
-
-	err = tr.queueService.PublishSubmission(tx, submissionId)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()))
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, "Solution submitted successfully")
-}
-
-func NewTaskRoute(fileStorageUrl string, taskService service.TaskService, queueService service.QueueService) TaskRoute {
-	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService, queueService: queueService}
+func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
+	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
 }

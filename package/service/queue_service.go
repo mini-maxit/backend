@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -83,10 +83,15 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 		TimeLimits:      timeLimits,
 		MemoryLimits:    memoryLimits,
 	}
-	qs.queueRepository.CreateQueueMessage(tx, models.QueueMessage{
+	qm := &models.QueueMessage{
 		Id:           msq.MessageId,
 		SubmissionId: submissionId,
-	})
+	}
+	_, err = qs.queueRepository.CreateQueueMessage(tx, qm)
+	if err != nil {
+		qs.logger.Errorf("Error creating queue message: %v", err.Error())
+		return err
+	}
 	err = qs.publishMessage(msq)
 	if err != nil {
 		err2 := qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
@@ -128,7 +133,7 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 	if err != nil {
 		return nil, err
 	}
-	log := logger.NewNamedLogger("queue_service")
+	log := utils.NewNamedLogger("queue_service")
 	return &QueueServiceImpl{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,

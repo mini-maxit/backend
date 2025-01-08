@@ -141,9 +141,10 @@ func TestEditUser(t *testing.T) {
 
 func TestGetAllUsers(t *testing.T) {
 	ust := newUserServiceTest()
+	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
-		users, err := ust.userService.GetAllUsers(ust.tx, 1, 0)
+		users, err := ust.userService.GetAllUsers(ust.tx, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, users)
 	})
@@ -160,7 +161,7 @@ func TestGetAllUsers(t *testing.T) {
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
-		users, err := ust.userService.GetAllUsers(ust.tx, 1, 0)
+		users, err := ust.userService.GetAllUsers(ust.tx, queryParams)
 		assert.NoError(t, err)
 		if !assert.Len(t, users, 1) {
 			t.FailNow()

@@ -18,7 +18,6 @@ type taskServiceTest struct {
 	config      *config.Config
 	ur          repository.UserRepository
 	tr          repository.TaskRepository
-	sr          repository.SubmissionRepository
 	taskService TaskService
 	counter     int64
 }
@@ -28,15 +27,13 @@ func newTaskServiceTest() *taskServiceTest {
 	config := testutils.NewTestConfig()
 	ur := testutils.NewMockUserRepository()
 	tr := testutils.NewMockTaskRepository()
-	sr := testutils.NewMockSubmissionRepository()
-	ts := NewTaskService(config, tr, sr)
+	ts := NewTaskService(config, tr)
 
 	return &taskServiceTest{
 		tx:          tx,
 		config:      config,
 		ur:          ur,
 		tr:          tr,
-		sr:          sr,
 		taskService: ts,
 	}
 }
@@ -114,9 +111,9 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-
+	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAll(tst.tx, 10, 0)
+		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -130,11 +127,10 @@ func TestGetAllTasks(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAll(tst.tx, 10, 0)
+		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 	})
-
 }
 
 func TestGetTask(t *testing.T) {
@@ -158,7 +154,6 @@ func TestGetTask(t *testing.T) {
 
 func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
-
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{

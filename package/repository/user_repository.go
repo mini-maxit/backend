@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +12,7 @@ type UserRepository interface {
 	CreateUser(tx *gorm.DB, user *models.User) (int64, error)
 	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
 	GetUserByEmail(tx *gorm.DB, email string) (*models.User, error)
-	GetAllUsers(tx *gorm.DB) ([]models.User, error)
+	GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error)
 	EditUser(tx *gorm.DB, user *schemas.User) error
 }
 
@@ -44,9 +45,14 @@ func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models
 	return user, nil
 }
 
-func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB) ([]models.User, error) {
+func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
 	users := &[]models.User{}
-	err := tx.Model(&models.User{}).Find(users).Error
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.User{}).Find(users).Error
 	if err != nil {
 		return nil, err
 	}

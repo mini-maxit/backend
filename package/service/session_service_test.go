@@ -36,7 +36,7 @@ func TestValidateSession(t *testing.T) {
 		validateSession, err := sst.ss.ValidateSession(sst.tx, "test-session-id")
 		assert.ErrorIs(t, err, ErrSessionNotFound)
 		assert.False(t, validateSession.Valid)
-		assert.Equal(t, int64(-1), validateSession.UserId)
+		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
 	})
 	t.Run("Session found", func(t *testing.T) {
 		userId, err := sst.ur.CreateUser(sst.tx, &models.User{
@@ -54,7 +54,7 @@ func TestValidateSession(t *testing.T) {
 		validateSession, err := sst.ss.ValidateSession(sst.tx, session.Id)
 		assert.NoError(t, err)
 		assert.True(t, validateSession.Valid)
-		assert.Equal(t, userId, validateSession.UserId)
+		assert.Equal(t, userId, validateSession.User.Id)
 	})
 }
 
@@ -82,6 +82,6 @@ func TestInvalidateSession(t *testing.T) {
 		validateSession, err := sst.ss.ValidateSession(sst.tx, session.Id)
 		assert.ErrorIs(t, err, ErrSessionNotFound)
 		assert.False(t, validateSession.Valid)
-		assert.Equal(t, int64(-1), validateSession.UserId)
+		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
 	})
 }

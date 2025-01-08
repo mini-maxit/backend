@@ -3,10 +3,10 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -18,9 +18,10 @@ var (
 
 type UserService interface {
 	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
-	GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error)
+	GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
+	modelToSchema(user *models.User) *schemas.User
 }
 
 type UserServiceImpl struct {
@@ -42,8 +43,12 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 	return user, nil
 }
 
-func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]schemas.User, error) {
-	userModels, err := us.userRepository.GetAllUsers(tx)
+func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
+
+	userModels, err := us.userRepository.GetAllUsers(tx, limit, offset, sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err
@@ -54,17 +59,7 @@ func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, limit, offset int64) ([]sche
 		users = append(users, *us.modelToSchema(&userModel))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(users)) {
-		return []schemas.User{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(users)) {
-		end = int64(len(users))
-	}
-
-	return users[offset:end], nil
+	return users, nil
 }
 
 func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
@@ -135,7 +130,7 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 }
 
 func NewUserService(userRepository repository.UserRepository) UserService {
-	log := logger.NewNamedLogger("user_service")
+	log := utils.NewNamedLogger("user_service")
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		logger:         log,
