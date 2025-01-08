@@ -37,7 +37,7 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, SessionKey, sessionHeader)
-		ctx = context.WithValue(ctx, UserIDKey, sessionResponse.UserId)
+		ctx = context.WithValue(ctx, UserKey, sessionResponse.User)
 		rWithSession := r.WithContext(ctx)
 
 		next.ServeHTTP(w, rWithSession)

@@ -31,31 +31,6 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-
-	limitStr := query.Get("limit")
-	offsetStr := query.Get("offset")
-
-	if limitStr == "" {
-		limitStr = httputils.DefaultPaginationLimitStr
-	}
-
-	if offsetStr == "" {
-		offsetStr = httputils.DefaultPaginationOffsetStr
-	}
-
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
-		return
-	}
-
-	offset, err := strconv.ParseInt(offsetStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-		return
-	}
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {
@@ -63,7 +38,15 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := u.userService.GetAllUsers(tx, limit, offset)
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.UserDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	users, err := u.userService.GetAllUsers(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting users. %s", err.Error()))

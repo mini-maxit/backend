@@ -4,12 +4,14 @@ import (
 	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type LanguageService interface {
 	InitLanguages(tx *gorm.DB) error
+	modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig
 }
 
 type LanguageServiceImpl struct {
@@ -76,6 +78,13 @@ func (l *LanguageServiceImpl) InitLanguages(tx *gorm.DB) error {
 
 	}
 	return nil
+}
+
+func (l *LanguageServiceImpl) modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
+	return &schemas.LanguageConfig{
+		Language: string(language.Type),
+		Version: language.Version,
+	}
 }
 
 func NewLanguageService(languageRepository repository.LanguageRepository) LanguageService {

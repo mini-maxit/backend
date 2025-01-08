@@ -19,13 +19,13 @@ var ErrTaskNotFound = fmt.Errorf("task not found")
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task *schemas.Task) (int64, error)
-	GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error)
-	GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error)
+	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
 	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
-	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
+	modelToSchema(model *models.Task) *schemas.Task
 }
 
 type TaskServiceImpl struct {
@@ -58,6 +58,7 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error
 	return taskId, nil
 }
 
+
 func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
 	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
 	if err != nil {
@@ -68,17 +69,19 @@ func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.T
 		return nil, err
 	}
 
-	return &schemas.Task{
-		Id:        task.Id,
-		Title:     task.Title,
-		CreatedBy: task.CreatedBy,
-		CreatedAt: task.CreatedAt,
-	}, nil
+	result := ts.modelToSchema(task)
+
+	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error) {
+
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
+
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(tx)
+	tasks, err := ts.taskRepository.GetAllTasks(tx, limit, offset, sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -87,25 +90,19 @@ func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, limit, offset int64) ([]schemas.T
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error) {
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
+
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForUser(tx, userId)
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId, limit, offset, sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks for user: %v", err.Error())
 		return nil, err
@@ -114,25 +111,19 @@ func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId, limit, offset int6
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset int64) ([]schemas.Task, error) {
+func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error) {
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
+
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, limit, offset, sort)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err
@@ -141,20 +132,10 @@ func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId, limit, offset in
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, ts.modelToSchema(task))
+		result = append(result, *ts.modelToSchema(&task))
 	}
 
-	// Handle pagination
-	if offset >= int64(len(result)) {
-		return []schemas.Task{}, nil
-	}
-
-	end := offset + limit
-	if end > int64(len(result)) {
-		end = int64(len(result))
-	}
-
-	return result[offset:end], nil
+	return result, nil
 }
 
 func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error) {
@@ -199,34 +180,14 @@ func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo sche
 	return nil
 }
 
-func (ts *TaskServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
-	// Create a new submission
-	submission := models.Submission{
-		TaskId:     taskId,
-		UserId:     userId,
-		Order:      order,
-		LanguageId: languageId,
-		Status:     "received",
-		CheckedAt:  nil,
-	}
-	submissionId, err := ts.submissionRepository.CreateSubmission(tx, submission)
-
-	if err != nil {
-		ts.logger.Errorf("Error creating submission: %v", err.Error())
-		return 0, err
-	}
-
-	return submissionId, nil
-}
-
 func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
 	if updateInfo.Title != "" {
 		currentModel.Title = updateInfo.Title
 	}
 }
 
-func (ts *TaskServiceImpl) modelToSchema(model models.Task) schemas.Task {
-	return schemas.Task{
+func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
+	return &schemas.Task{
 		Id:        model.Id,
 		Title:     model.Title,
 		CreatedBy: model.CreatedBy,

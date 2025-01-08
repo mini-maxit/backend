@@ -7,7 +7,7 @@ import (
 
 type QueueMessageRepository interface {
 	// CreateQueueMessage creates a new queue message and returns the message ID
-	CreateQueueMessage(tx *gorm.DB, queueMessage models.QueueMessage) (string, error)
+	CreateQueueMessage(tx *gorm.DB, queueMessage *models.QueueMessage) (string, error)
 	GetQueueMessage(tx *gorm.DB, messageId string) (*models.QueueMessage, error)
 	DeleteQueueMessage(tx *gorm.DB, messageId string) error
 }
@@ -15,7 +15,7 @@ type QueueMessageRepository interface {
 type QueueMessageRepositoryImpl struct {
 }
 
-func (qm *QueueMessageRepositoryImpl) CreateQueueMessage(tx *gorm.DB, queueMessage models.QueueMessage) (string, error) {
+func (qm *QueueMessageRepositoryImpl) CreateQueueMessage(tx *gorm.DB, queueMessage *models.QueueMessage) (string, error) {
 	err := tx.Create(queueMessage).Error
 	if err != nil {
 		return "", err

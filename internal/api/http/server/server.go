@@ -69,10 +69,11 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	},
 	)
 	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
-	taskMux.HandleFunc("/submit", initialization.TaskRoute.SubmitSolution)
+	taskMux.HandleFunc("/user/{id}/task", initialization.TaskRoute.GetAllForUser)
 
 	// User routes
 	userMux := http.NewServeMux()
+	userMux.HandleFunc("/", initialization.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			initialization.UserRoute.GetUserById(w, r)
@@ -81,9 +82,18 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 		}
 	},
 	)
-	userMux.HandleFunc("/", initialization.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/user", initialization.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/email", initialization.UserRoute.GetUserByEmail)
 	userMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForUser)
+
+	// Submission routes
+	subbmissionMux := http.NewServeMux()
+	subbmissionMux.HandleFunc("/", initialization.SubmissionRoute.GetAll)
+	subbmissionMux.HandleFunc("/{id}", initialization.SubmissionRoute.GetById)
+	subbmissionMux.HandleFunc("/user/{id}", initialization.SubmissionRoute.GetAllForUser)
+	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
+	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
+	subbmissionMux.HandleFunc("/submit", initialization.SubmissionRoute.SubmitSolution)
 
 	// Group routes
 	groupMux := http.NewServeMux()
@@ -99,6 +109,7 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
 	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
+	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
 
