@@ -17,9 +17,6 @@ func (ur *MockUserRepository) CreateUser(tx *gorm.DB, user *models.User) (int64,
 	if tx == nil {
 		return 0, gorm.ErrInvalidDB
 	}
-	if _, ok := ur.users[user.Email]; ok {
-		return 0, gorm.ErrRecordNotFound
-	}
 	ur.users[user.Email] = user
 	ur.counter++
 	user.Id = ur.counter

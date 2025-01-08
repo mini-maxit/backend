@@ -1,6 +1,7 @@
 package service
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -39,14 +40,15 @@ func TestValidateSession(t *testing.T) {
 		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
 	})
 	t.Run("Session found", func(t *testing.T) {
-		userId, err := sst.ur.CreateUser(sst.tx, &models.User{
+		user := &models.User{
 			Name:         "test-name",
 			Surname:      "test-surname",
 			Email:        "test-email",
 			Username:     "test-username",
 			PasswordHash: "test-password-hash",
-			Role:         "admin",
-		})
+			Role:         models.UserRoleAdmin,
+		}
+		userId, err := sst.ur.CreateUser(sst.tx, user)
 		assert.NoError(t, err)
 		session, err := sst.ss.CreateSession(sst.tx, userId)
 		assert.NoError(t, err)
@@ -55,6 +57,11 @@ func TestValidateSession(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, validateSession.Valid)
 		assert.Equal(t, userId, validateSession.User.Id)
+		assert.Equal(t, user.Name, validateSession.User.Name)
+		assert.Equal(t, user.Surname, validateSession.User.Surname)
+		assert.Equal(t, user.Email, validateSession.User.Email)
+		assert.Equal(t, user.Username, validateSession.User.Username)
+		assert.Equal(t, string(user.Role), validateSession.User.Role)
 	})
 }
 
@@ -83,5 +90,6 @@ func TestInvalidateSession(t *testing.T) {
 		assert.ErrorIs(t, err, ErrSessionNotFound)
 		assert.False(t, validateSession.Valid)
 		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
+		assert.True(t, reflect.DeepEqual(InvalidUser, validateSession.User))
 	})
 }

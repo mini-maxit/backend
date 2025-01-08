@@ -72,3 +72,114 @@
 2025-01-08T15:44:52.430+0100	ERROR	user_service
 2025-01-08T15:44:52.430+0100	ERROR	user_service
 2025-01-08T15:44:52.430+0100	ERROR	user_service
+2025-01-08T15:51:12.669+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2025-01-08T15:51:12.669+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:51:12.670+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:51:12.719+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:51:12.719+0100	ERROR	auth_service	User already exists
+2025-01-08T15:51:12.766+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:51:12.766+0100	ERROR	auth_service	Error getting user by email: invalid db
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:51:12.767+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2025-01-08T15:51:12.862+0100	INFO	auth_service	User logged in successfully
+2025-01-08T15:51:12.862+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:51:12.862+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:51:12.862+0100	ERROR	user_service	Error getting user by email: record not found
+2025-01-08T15:51:12.862+0100	ERROR	user_service
+2025-01-08T15:51:12.862+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:51:12.862+0100	ERROR	user_service
+2025-01-08T15:51:12.862+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:51:12.862+0100	ERROR	user_service	Error getting user by id: user not found
+2025-01-08T15:51:12.862+0100	ERROR	user_service
+2025-01-08T15:51:12.862+0100	ERROR	user_service
+2025-01-08T15:51:12.862+0100	ERROR	user_service
+2025-01-08T15:52:00.478+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:52:00.479+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:52:00.528+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:52:00.528+0100	ERROR	auth_service	User already exists
+2025-01-08T15:52:00.575+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:52:00.575+0100	ERROR	auth_service	Error getting user by email: invalid db
+2025-01-08T15:52:00.575+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:52:00.575+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:52:00.576+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:52:00.576+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:52:00.576+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:52:00.576+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2025-01-08T15:52:00.671+0100	INFO	auth_service	User logged in successfully
+2025-01-08T15:52:00.671+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:52:00.671+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:52:00.671+0100	ERROR	user_service	Error getting user by email: record not found
+2025-01-08T15:52:00.671+0100	ERROR	user_service
+2025-01-08T15:52:00.671+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:52:00.671+0100	ERROR	user_service
+2025-01-08T15:52:00.671+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:52:00.671+0100	ERROR	user_service	Error getting user by id: user not found
+2025-01-08T15:52:00.671+0100	ERROR	user_service
+2025-01-08T15:52:00.671+0100	ERROR	user_service
+2025-01-08T15:52:00.671+0100	ERROR	user_service
+2025-01-08T15:52:27.965+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag
+2025-01-08T15:52:27.965+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'gte' tag
+2025-01-08T15:52:27.965+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Name' Error:Field validation for 'Name' failed on the 'lte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'required' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'gte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Surname' Error:Field validation for 'Surname' failed on the 'lte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'required' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'gte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'lte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Username' Error:Field validation for 'Username' failed on the 'username' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:52:27.966+0100	ERROR	auth_service	Error validating user register request: Key: 'UserRegisterRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:52:28.014+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:52:28.014+0100	ERROR	auth_service	User already exists
+2025-01-08T15:52:28.062+0100	INFO	auth_service	User registered successfully
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error getting user by email: invalid db
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'required' tag
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'required' tag
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'gte' tag
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error validating user login request: Key: 'UserLoginRequest.Password' Error:Field validation for 'Password' failed on the 'lte' tag
+2025-01-08T15:52:28.062+0100	ERROR	auth_service	Error comparing password hash: invalid credentials
+2025-01-08T15:52:28.158+0100	INFO	auth_service	User logged in successfully
+2025-01-08T15:52:28.158+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:52:28.158+0100	ERROR	session_service	Error getting session by id: record not found
+2025-01-08T15:52:28.158+0100	ERROR	user_service	Error getting user by email: record not found
+2025-01-08T15:52:28.158+0100	ERROR	user_service
+2025-01-08T15:52:28.158+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:52:28.158+0100	ERROR	user_service
+2025-01-08T15:52:28.158+0100	ERROR	user_service	Error getting user by id: record not found
+2025-01-08T15:52:28.158+0100	ERROR	user_service	Error getting user by id: user not found
+2025-01-08T15:52:28.158+0100	ERROR	user_service
+2025-01-08T15:52:28.158+0100	ERROR	user_service
+2025-01-08T15:52:28.158+0100	ERROR	user_service
