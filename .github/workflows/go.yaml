@@ -22,27 +22,27 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgres:17
-        # Provide the password for postgres
-        env:
-          POSTGRES_DB: test-maxit
-          POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-      rabbitmq:
-        image: rabbitmq:3.13-management
-        ports:
-          - 5672:5672
+    # services:
+    #   # Label used to access the service container
+    #   postgres:
+    #     # Docker Hub image
+    #     image: postgres:17
+    #     # Provide the password for postgres
+    #     env:
+    #       POSTGRES_DB: test-maxit
+    #       POSTGRES_PASSWORD: postgres
+    #     # Set health checks to wait until postgres has started
+    #     options: >-
+    #       --health-cmd pg_isready
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+    #     ports:
+    #       - 5432:5432
+    #   rabbitmq:
+    #     image: rabbitmq:3.13-management
+    #     ports:
+    #       - 5672:5672
     steps:
       - uses: actions/checkout@v4
 

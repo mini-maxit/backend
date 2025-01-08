@@ -227,7 +227,7 @@ func (us *SubmissionServiceImpl) MarkSubmissionProcessing(tx *gorm.DB, submissio
 
 func (us *SubmissionServiceImpl) CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
 	// Create a new submission
-	submission := models.Submission{
+	submission := &models.Submission{
 		TaskId:     taskId,
 		UserId:     userId,
 		Order:      order,

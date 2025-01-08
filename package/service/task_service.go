@@ -29,10 +29,9 @@ type TaskService interface {
 }
 
 type TaskServiceImpl struct {
-	cfg                  *config.Config
-	taskRepository       repository.TaskRepository
-	submissionRepository repository.SubmissionRepository
-	logger               *zap.SugaredLogger
+	cfg            *config.Config
+	taskRepository repository.TaskRepository
+	logger         *zap.SugaredLogger
 }
 
 func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error) {
@@ -49,7 +48,7 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 	}
-	taskId, err := ts.taskRepository.Create(tx, model)
+	taskId, err := ts.taskRepository.Create(tx, &model)
 	if err != nil {
 		ts.logger.Errorf("Error creating task: %v", err.Error())
 		return 0, err
@@ -194,12 +193,11 @@ func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
 	}
 }
 
-func NewTaskService(cfg *config.Config, taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository) TaskService {
+func NewTaskService(cfg *config.Config, taskRepository repository.TaskRepository) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &TaskServiceImpl{
-		cfg:                  cfg,
-		taskRepository:       taskRepository,
-		submissionRepository: submissionRepository,
-		logger:               log,
+		cfg:            cfg,
+		taskRepository: taskRepository,
+		logger:         log,
 	}
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/config"
@@ -17,46 +18,33 @@ type taskServiceTest struct {
 	config      *config.Config
 	ur          repository.UserRepository
 	tr          repository.TaskRepository
-	sr          repository.SubmissionRepository
 	taskService TaskService
-	savePoint   string
+	counter     int64
 }
 
-func newTaskServiceTest(t *testing.T) *taskServiceTest {
-	tx := testutils.NewTestTx(t)
+func newTaskServiceTest() *taskServiceTest {
+	tx := &gorm.DB{}
 	config := testutils.NewTestConfig()
-	ur, err := repository.NewUserRepository(tx)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	tr, err := repository.NewTaskRepository(tx)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	sr, err := repository.NewSubmissionRepository(tx)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
-	ts := NewTaskService(config, tr, sr)
-	savePoint := "savepoint"
-	tx.SavePoint(savePoint)
+	ur := testutils.NewMockUserRepository()
+	tr := testutils.NewMockTaskRepository()
+	ts := NewTaskService(config, tr)
+
 	return &taskServiceTest{
 		tx:          tx,
 		config:      config,
 		ur:          ur,
 		tr:          tr,
-		sr:          sr,
 		taskService: ts,
-		savePoint:   savePoint,
 	}
 }
 
 func (tst *taskServiceTest) createUser(t *testing.T) int64 {
+	tst.counter++
 	userId, err := tst.ur.CreateUser(tst.tx, &models.User{
-		Name:         "Test User",
-		Surname:      "Test Surname",
-		Email:        "email@email.com",
-		Username:     "testuser",
+		Name:         fmt.Sprintf("Test User %d", tst.counter),
+		Surname:      fmt.Sprintf("Test Surname %d", tst.counter),
+		Email:        fmt.Sprintf("email%d@email.com", tst.counter),
+		Username:     fmt.Sprintf("testuser%d", tst.counter),
 		PasswordHash: "password",
 	})
 	if !assert.NoError(t, err) {
@@ -65,12 +53,8 @@ func (tst *taskServiceTest) createUser(t *testing.T) int64 {
 	return userId
 }
 
-func (tst *taskServiceTest) rollbackToSavePoint() {
-	tst.tx.RollbackTo(tst.savePoint)
-}
-
 func TestCreateTask(t *testing.T) {
-	tst := newTaskServiceTest(t)
+	tst := newTaskServiceTest()
 
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
@@ -80,9 +64,10 @@ func TestCreateTask(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tst.rollbackToSavePoint()
 	})
 
+	// We want to have clear task repository for this state, and this is the quickest way
+	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
 		userId := tst.createUser(t)
 		taskId, err := tst.taskService.Create(tst.tx, &schemas.Task{
@@ -97,13 +82,11 @@ func TestCreateTask(t *testing.T) {
 		})
 		assert.ErrorIs(t, err, ErrTaskExists)
 		assert.Equal(t, int64(0), taskId)
-		tst.rollbackToSavePoint()
 	})
-	tst.tx.Rollback()
 }
 
 func TestGetTaskByTitle(t *testing.T) {
-	tst := newTaskServiceTest(t)
+	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
@@ -117,21 +100,24 @@ func TestGetTaskByTitle(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
-		tst.rollbackToSavePoint()
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		task, err := tst.taskService.GetTaskByTitle(tst.tx, "Nonexistent Task")
 		assert.ErrorIs(t, err, ErrTaskNotFound)
 		assert.Nil(t, task)
-		tst.rollbackToSavePoint()
 	})
-	tst.tx.Rollback()
 }
 
 func TestGetAllTasks(t *testing.T) {
-	tst := newTaskServiceTest(t)
+	tst := newTaskServiceTest()
 	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	t.Run("No tasks", func(t *testing.T) {
+		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
+		assert.NoError(t, err)
+		assert.Empty(t, tasks)
+	})
+
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
@@ -144,21 +130,11 @@ func TestGetAllTasks(t *testing.T) {
 		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		tst.rollbackToSavePoint()
 	})
-
-	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
-		assert.NoError(t, err)
-		assert.Empty(t, tasks)
-		tst.rollbackToSavePoint()
-	})
-
-	tst.tx.Rollback()
 }
 
 func TestGetTask(t *testing.T) {
-	tst := newTaskServiceTest(t)
+	tst := newTaskServiceTest()
 
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
@@ -173,14 +149,11 @@ func TestGetTask(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
-		tst.rollbackToSavePoint()
 	})
-	tst.tx.Rollback()
 }
 
 func TestUpdateTask(t *testing.T) {
-	tst := newTaskServiceTest(t)
-
+	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
@@ -199,7 +172,6 @@ func TestUpdateTask(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, updatedTask.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
-		tst.rollbackToSavePoint()
 	})
 	t.Run("Nonexistent task", func(t *testing.T) {
 		updatedTask := schemas.UpdateTask{
@@ -207,7 +179,5 @@ func TestUpdateTask(t *testing.T) {
 		}
 		err := tst.taskService.UpdateTask(tst.tx, 0, updatedTask)
 		assert.ErrorIs(t, err, ErrTaskNotFound)
-		tst.rollbackToSavePoint()
 	})
-	tst.tx.Rollback()
 }

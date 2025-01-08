@@ -8,7 +8,7 @@ import (
 
 type SubmissionRepository interface {
 	GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error)
-	CreateSubmission(tx *gorm.DB, submission models.Submission) (int64, error)
+	CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error)
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error
@@ -228,8 +228,8 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, st
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) CreateSubmission(tx *gorm.DB, submission models.Submission) (int64, error) {
-	err := tx.Create(&submission).Error
+func (us *SubmissionRepositoryImpl) CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error) {
+	err := tx.Create(submission).Error
 	if err != nil {
 		return 0, err
 	}
