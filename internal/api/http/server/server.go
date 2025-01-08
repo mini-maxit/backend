@@ -82,7 +82,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 		}
 	},
 	)
-	userMux.HandleFunc("/", init.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/user", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
 	userMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForUser)
 
