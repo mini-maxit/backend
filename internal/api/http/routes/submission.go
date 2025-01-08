@@ -295,8 +295,16 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	writer := multipart.NewWriter(body)
 
 	// Add form fields
-	writer.WriteField("taskID", taskIdStr)
-	writer.WriteField("userID", userIDStr)
+	err = writer.WriteField("taskID", taskIdStr)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error writing taskID to FileStorage request. "+err.Error())
+		return
+	}
+	err = writer.WriteField("userID", userIDStr)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error writing userID to FileStorage request. "+err.Error())
+		return
+	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
