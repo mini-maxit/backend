@@ -56,7 +56,6 @@ func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) (*g
 	return tx, nil
 }
 
-
 func usernameValidator(fl validator.FieldLevel) bool {
 	username := fl.Field().String()
 	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)

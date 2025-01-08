@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/mini-maxit/backend/package/utils"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -83,7 +83,7 @@ func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, of
 	return tasks, nil
 }
 
-func (tr * TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {

@@ -58,7 +58,6 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error
 	return taskId, nil
 }
 
-
 func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
 	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
 	if err != nil {

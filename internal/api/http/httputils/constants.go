@@ -3,7 +3,7 @@ package httputils
 import "fmt"
 
 type QueryError struct {
-	Filed string
+	Filed  string
 	Detail string
 }
 

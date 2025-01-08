@@ -117,12 +117,12 @@ func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (sch
 	}
 
 	current_user := schemas.User{
-		Id: current_user_model.Id,
-		Email: current_user_model.Email,
+		Id:       current_user_model.Id,
+		Email:    current_user_model.Email,
 		Username: current_user_model.Username,
-		Role: string(current_user_model.Role),
-		Name: current_user_model.Name,
-		Surname: current_user_model.Surname,
+		Role:     string(current_user_model.Role),
+		Name:     current_user_model.Name,
+		Surname:  current_user_model.Surname,
 	}
 
 	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
