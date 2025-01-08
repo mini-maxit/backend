@@ -18,7 +18,7 @@ var (
 
 type UserService interface {
 	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
-	GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]schemas.User, error)
+	GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
 	modelToSchema(user *models.User) *schemas.User
@@ -43,10 +43,10 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 	return user, nil
 }
 
-func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string][]string) ([]schemas.User, error) {
-	limit := queryParams["limit"][0]
-	offset := queryParams["offset"][0]
-	sort := queryParams["sort"][0]
+func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
 
 	userModels, err := us.userRepository.GetAllUsers(tx, limit, offset, sort)
 	if err != nil {

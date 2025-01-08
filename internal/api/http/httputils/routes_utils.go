@@ -62,11 +62,15 @@ func SetDefaultQueryParams(query *url.Values, field string) {
 	}
 }
 
-func GetQueryParams(query *url.Values, field string) map[string][]string {
-	queryParams := map[string][]string{}
+func GetQueryParams(query *url.Values, field string) (map[string]string, error) {
+	queryParams := map[string]string{}
 	SetDefaultQueryParams(query, field)
 	for key, value := range *query {
-		queryParams[key] = value
+		if(len(value) > 1) {
+			err := QueryError{Filed: key, Detail: MultipleQueryValues}
+			return nil, err
+		}
+		queryParams[key] = value[0]
 	}
-	return queryParams
+	return queryParams, nil
 }

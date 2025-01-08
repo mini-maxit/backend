@@ -50,8 +50,11 @@ func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, 
 
 func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
 	tasks := []models.Task{}
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	err := tx.Model(&models.Task{}).Find(&tasks).Error
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Model(&models.Task{}).Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +63,12 @@ func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB, limit, offset, sort strin
 
 func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
 	var tasks []models.Task
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Task{}).
+	err = tx.Model(&models.Task{}).
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
 		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
 		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
@@ -79,9 +85,12 @@ func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, of
 
 func (tr * TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
 	var tasks []models.Task
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
+	err = tx.Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
 		Where("task_groups.group_id = ?", groupId).
 		Find(&tasks).Error
 

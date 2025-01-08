@@ -24,7 +24,7 @@ func TestValidateSession(t *testing.T) {
 		validateSession, err := sessionService.ValidateSession(tx, "test-session-id")
 		assert.ErrorIs(t, err, ErrSessionNotFound)
 		assert.False(t, validateSession.Valid)
-		assert.Equal(t, int64(-1), validateSession.User.Id)
+		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
 	})
 	t.Run("Session found", func(t *testing.T) {
 		userId, err := userRepo.CreateUser(tx, &models.User{
@@ -80,7 +80,7 @@ func TestInvalidateSession(t *testing.T) {
 		validateSession, err := sessionService.ValidateSession(tx, session.Id)
 		assert.ErrorIs(t, err, ErrSessionNotFound)
 		assert.False(t, validateSession.Valid)
-		assert.Equal(t, int64(-1), validateSession.User.Id)
+		assert.Equal(t, InvalidUser.Id, validateSession.User.Id)
 	})
 	tx.Rollback()
 }

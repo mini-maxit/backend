@@ -28,9 +28,12 @@ type SubmissionRepositoryImpl struct{}
 func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -44,9 +47,12 @@ func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, limit, offset, sort stri
 func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -60,9 +66,12 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -89,9 +98,12 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -105,9 +117,12 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, li
 func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -126,9 +141,12 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, l
 func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -147,9 +165,12 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -167,9 +188,12 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, lim
 func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -186,9 +210,12 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.Submission{}).
+	err = tx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").

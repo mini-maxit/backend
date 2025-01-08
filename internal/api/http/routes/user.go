@@ -31,13 +31,18 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.UserDefaultSortField)
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.UserDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

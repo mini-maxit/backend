@@ -51,7 +51,12 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
 	if err != nil {
@@ -123,7 +128,12 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -162,7 +172,12 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
 	if err != nil {
@@ -201,7 +216,12 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
 	if err != nil {

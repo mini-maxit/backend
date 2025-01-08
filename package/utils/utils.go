@@ -19,15 +19,29 @@ func TransactionPanicRecover(tx *gorm.DB) {
 	}
 }
 
-func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) *gorm.DB {
-	limit, _ := strconv.Atoi(limitStr)
-	offset, _ := strconv.Atoi(offsetStr)
-	if limit > 0 {
-		tx = tx.Limit(limit)
+func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) (*gorm.DB, error) {
+	limit, err := strconv.ParseInt(limitStr, 10, 32)
+	if err != nil {
+		return nil, err
 	}
-	if offset > 0 {
-		tx = tx.Offset(offset)
+	offset, err := strconv.ParseInt(offsetStr, 10, 32)
+	if err != nil {
+		return nil, err
 	}
+
+	if limit >= 0 {
+		tx = tx.Limit(int(limit))
+	} else {
+		err := httputils.QueryError{Filed: "limit", Detail: "limit must be grater or equal to 0"}
+		return nil, err
+	}
+	if offset >= 0 {
+		tx = tx.Offset(int(offset))
+	} else {
+		err := httputils.QueryError{Filed: "offset", Detail: "offset must be grater or equal to 0"}
+		return nil, err
+	}
+
 	if sortBy != "" {
 		sortFields := strings.Split(sortBy, ",")
 		for _, sortField := range sortFields {
@@ -39,7 +53,7 @@ func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) *go
 			}
 		}
 	}
-	return tx
+	return tx, nil
 }
 
 

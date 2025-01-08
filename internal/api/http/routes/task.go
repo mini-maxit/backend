@@ -46,13 +46,18 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.Connect()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -129,9 +134,6 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
-
 	userId, err := strconv.ParseInt(userIdStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
@@ -142,6 +144,14 @@ func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Connect()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+	}
+
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	tasks, err := tr.taskService.GetAllForUser(tx, userId, queryParams)
@@ -171,9 +181,6 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	query := r.URL.Query()
-	queryParams := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
-
 	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
@@ -184,6 +191,14 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	tx, err := db.Connect()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	query := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&query, httputils.TaskDefaultSortField)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

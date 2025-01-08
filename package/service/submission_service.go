@@ -17,11 +17,11 @@ type SubmissionService interface {
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
 	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
-	GetAll(tx *gorm.DB, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error)
+	GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.User) (schemas.Submission, error)
-	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error)
-	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error)
+	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
 }
 
 type SubmissionServiceImpl struct {
@@ -37,13 +37,13 @@ type SubmissionServiceImpl struct {
 
 var ErrPermissionDenied = errors.New("User is not allowed to view this submission")
 
-func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
 	submission_models := []models.Submission{}
 	var err error
 
-	limit := queryParams["limit"][0]
-	offset := queryParams["offset"][0]
-	sort := queryParams["sort"][0]
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
 
 	switch user.Role {
 	case "admin":
@@ -94,10 +94,10 @@ func (us *SubmissionServiceImpl) GetById(tx *gorm.DB, submissionId int64, user s
 	return *us.modelToSchema(submission_model), nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error) {
-	limit := queryParams["limit"][0]
-	offset := queryParams["offset"][0]
-	sort := queryParams["sort"][0]
+func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
 
 	submission_models, err := us.submissionRepository.GetAllByUserId(tx, userId, limit, offset, sort)
 	if err != nil {
@@ -131,13 +131,13 @@ func (us *SubmissionServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, user s
 	return result, nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
 	var err error
 	submission_models := []models.Submission{}
 
-	limit := queryParams["limit"][0]
-	offset := queryParams["offset"][0]
-	sort := queryParams["sort"][0]
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
 
 	switch user.Role {
 	case "admin":
@@ -164,13 +164,13 @@ func (us *SubmissionServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, user
 	return result, nil
 }
 
-func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string][]string) ([]schemas.Submission, error) {
+func (us *SubmissionServiceImpl) GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
 	var err error
 	submissions_model := []models.Submission{}
 
-	limit := queryParams["limit"][0]
-	offset := queryParams["offset"][0]
-	sort := queryParams["sort"][0]
+	limit := queryParams["limit"]
+	offset := queryParams["offset"]
+	sort := queryParams["sort"]
 
 	switch user.Role {
 	case "admin":

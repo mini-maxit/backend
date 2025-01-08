@@ -47,9 +47,12 @@ func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models
 
 func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
 	users := &[]models.User{}
-	tx = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
 
-	err := tx.Model(&models.User{}).Find(users).Error
+	err = tx.Model(&models.User{}).Find(users).Error
 	if err != nil {
 		return nil, err
 	}
