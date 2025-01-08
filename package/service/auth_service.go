@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
@@ -29,7 +28,11 @@ type AuthServiceImpl struct {
 }
 
 func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
+	validate, err := utils.NewValidator()
+	if err != nil {
+		as.logger.Errorf("Error creating validator: %v", err.Error())
+		return nil, err
+	}
 	if err := validate.Struct(userLogin); err != nil {
 		as.logger.Errorf("Error validating user login request: %v", err.Error())
 		return nil, err
@@ -60,7 +63,11 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 }
 
 func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
+	validate, err := utils.NewValidator()
+	if err != nil {
+		as.logger.Errorf("Error creating validator: %v", err.Error())
+		return nil, err
+	}
 	if err := validate.Struct(userRegister); err != nil {
 		as.logger.Errorf("Error validating user register request: %v", err.Error())
 		return nil, err
@@ -108,7 +115,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 }
 
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
-	log := logger.NewNamedLogger("auth_service")
+	log := utils.NewNamedLogger("auth_service")
 	return &AuthServiceImpl{
 		userRepository: userRepository,
 		sessionService: sessionService,

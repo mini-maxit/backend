@@ -8,7 +8,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/queue"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -23,17 +22,17 @@ type Initialization struct {
 	TaskService    service.TaskService
 	SessionService service.SessionService
 
-	AuthRoute    routes.AuthRoute
-	TaskRoute    routes.TaskRoute
-	SessionRoute routes.SessionRoute
-	UserRoute    routes.UserRoute
+	AuthRoute       routes.AuthRoute
+	TaskRoute       routes.TaskRoute
+	SessionRoute    routes.SessionRoute
+	UserRoute       routes.UserRoute
 	SubmissionRoute routes.SubmissionRoutes
 
 	QueueListener queue.QueueListener
 }
 
 func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
-	log := logger.NewNamedLogger("connect_to_broker")
+	log := utils.NewNamedLogger("connect_to_broker")
 
 	var err error
 	var conn *amqp.Connection
@@ -59,7 +58,7 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
-	log := logger.NewNamedLogger("initialization")
+	log := utils.NewNamedLogger("initialization")
 	conn, channel := connectToBroker(cfg)
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
@@ -153,15 +152,15 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	return &Initialization{
-		Cfg:            cfg,
-		Db:             db,
-		QueueListener:  queueListener,
-		TaskService:    taskService,
-		SessionService: sessionService,
-		AuthRoute:      authRoute,
-		SessionRoute:   sessionRoute,
-		TaskRoute:      taskRoute,
-		UserRoute:      userRoute,
+		Cfg:             cfg,
+		Db:              db,
+		QueueListener:   queueListener,
+		TaskService:     taskService,
+		SessionService:  sessionService,
+		AuthRoute:       authRoute,
+		SessionRoute:    sessionRoute,
+		TaskRoute:       taskRoute,
+		UserRoute:       userRoute,
 		SubmissionRoute: submissionRoute,
 	}
 }

@@ -3,10 +3,10 @@ package service
 import (
 	"errors"
 
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -130,7 +130,7 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 }
 
 func NewUserService(userRepository repository.UserRepository) UserService {
-	log := logger.NewNamedLogger("user_service")
+	log := utils.NewNamedLogger("user_service")
 	return &UserServiceImpl{
 		userRepository: userRepository,
 		logger:         log,

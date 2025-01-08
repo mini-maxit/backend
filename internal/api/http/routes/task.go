@@ -28,7 +28,7 @@ type TaskRouteImpl struct {
 	fileStorageUrl string
 
 	// Service that handles task-related operations
-	taskService  service.TaskService
+	taskService service.TaskService
 }
 
 // GetAllTasks godoc
@@ -308,8 +308,18 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add form fields
-	writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
-	writer.WriteField("overwrite", strconv.FormatBool(overwrite))
+	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing task ID to form. %s", err.Error()))
+		return
+	}
+	err = writer.WriteField("overwrite", strconv.FormatBool(overwrite))
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing overwrite flag to form. %s", err.Error()))
+		return
+	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("archive", handler.Filename)

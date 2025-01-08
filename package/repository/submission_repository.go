@@ -184,7 +184,6 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, lim
 	return submissions, nil
 }
 
-
 func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 

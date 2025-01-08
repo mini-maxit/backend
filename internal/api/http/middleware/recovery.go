@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+
 	"go.uber.org/zap"
 )
 

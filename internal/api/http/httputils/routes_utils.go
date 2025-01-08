@@ -66,7 +66,7 @@ func GetQueryParams(query *url.Values, field string) (map[string]string, error) 
 	queryParams := map[string]string{}
 	SetDefaultQueryParams(query, field)
 	for key, value := range *query {
-		if(len(value) > 1) {
+		if len(value) > 1 {
 			err := QueryError{Filed: key, Detail: MultipleQueryValues}
 			return nil, err
 		}

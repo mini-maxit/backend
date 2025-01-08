@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ type PostgresDB struct {
 }
 
 func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
-	log := logger.NewNamedLogger("database")
+	log := utils.NewNamedLogger("database")
 	databaseUrl := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Name, cfg.DB.Password)
 	log.Infof("Connecting to the database: %s", databaseUrl)
 	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})

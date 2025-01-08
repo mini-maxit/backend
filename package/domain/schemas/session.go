@@ -10,6 +10,6 @@ type Session struct {
 }
 
 type ValidateSessionResponse struct {
-	Valid  bool  `json:"valid"`
-	User User `json:"user"`
+	Valid bool `json:"valid"`
+	User  User `json:"user"`
 }

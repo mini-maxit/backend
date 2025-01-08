@@ -3,12 +3,11 @@ package models
 import "time"
 
 const (
-	StatusReceived string = "received"
+	StatusReceived          string = "received"
 	StatusSentForEvaluation string = "sent for evaluation"
-	StatusEvaluated string = "evaluated"
-	StatusLost string = "lost"
+	StatusEvaluated         string = "evaluated"
+	StatusLost              string = "lost"
 )
-
 
 type Submission struct {
 	Id            int64          `gorm:"primaryKey;autoIncrement"`

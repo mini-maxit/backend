@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/internal/initialization"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
@@ -49,61 +49,61 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
-func NewServer(initialization *initialization.Initialization, log *zap.SugaredLogger) *Server {
+func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
 	// Auth routes
 	authMux := http.NewServeMux()
-	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
-	authMux.HandleFunc("/register", initialization.AuthRoute.Register)
+	authMux.HandleFunc("/login", init.AuthRoute.Login)
+	authMux.HandleFunc("/register", init.AuthRoute.Register)
 
 	// Task routes
 	taskMux := http.NewServeMux()
 	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			initialization.TaskRoute.UploadTask(w, r)
+			init.TaskRoute.UploadTask(w, r)
 		} else if r.Method == "GET" {
-			initialization.TaskRoute.GetAllTasks(w, r)
+			init.TaskRoute.GetAllTasks(w, r)
 		}
 	},
 	)
-	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
-	taskMux.HandleFunc("/user/{id}/task", initialization.TaskRoute.GetAllForUser)
+	taskMux.HandleFunc("/{id}", init.TaskRoute.GetTask)
+	taskMux.HandleFunc("/user/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// User routes
 	userMux := http.NewServeMux()
-	userMux.HandleFunc("/", initialization.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			initialization.UserRoute.GetUserById(w, r)
+			init.UserRoute.GetUserById(w, r)
 		} else if r.Method == http.MethodPut {
-			initialization.UserRoute.EditUser(w, r)
+			init.UserRoute.EditUser(w, r)
 		}
 	},
 	)
-	userMux.HandleFunc("/user", initialization.UserRoute.GetAllUsers)
-	userMux.HandleFunc("/email", initialization.UserRoute.GetUserByEmail)
-	userMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForUser)
+	userMux.HandleFunc("/user", init.UserRoute.GetAllUsers)
+	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
+	userMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()
-	subbmissionMux.HandleFunc("/", initialization.SubmissionRoute.GetAll)
-	subbmissionMux.HandleFunc("/{id}", initialization.SubmissionRoute.GetById)
-	subbmissionMux.HandleFunc("/user/{id}", initialization.SubmissionRoute.GetAllForUser)
-	subbmissionMux.HandleFunc("/group/{id}", initialization.SubmissionRoute.GetAllForGroup)
-	subbmissionMux.HandleFunc("/task/{id}", initialization.SubmissionRoute.GetAllForTask)
-	subbmissionMux.HandleFunc("/submit", initialization.SubmissionRoute.SubmitSolution)
+	subbmissionMux.HandleFunc("/", init.SubmissionRoute.GetAll)
+	subbmissionMux.HandleFunc("/{id}", init.SubmissionRoute.GetById)
+	subbmissionMux.HandleFunc("/user/{id}", init.SubmissionRoute.GetAllForUser)
+	subbmissionMux.HandleFunc("/group/{id}", init.SubmissionRoute.GetAllForGroup)
+	subbmissionMux.HandleFunc("/task/{id}", init.SubmissionRoute.GetAllForTask)
+	subbmissionMux.HandleFunc("/submit", init.SubmissionRoute.SubmitSolution)
 
 	// Group routes
 	groupMux := http.NewServeMux()
-	groupMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForGroup)
+	groupMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForGroup)
 
 	// Session routes
 	sessionMux := http.NewServeMux()
-	sessionMux.HandleFunc("/", initialization.SessionRoute.CreateSession)
-	sessionMux.HandleFunc("/validate", initialization.SessionRoute.ValidateSession)
-	sessionMux.HandleFunc("/invalidate", initialization.SessionRoute.InvalidateSession)
+	sessionMux.HandleFunc("/", init.SessionRoute.CreateSession)
+	sessionMux.HandleFunc("/validate", init.SessionRoute.ValidateSession)
+	sessionMux.HandleFunc("/invalidate", init.SessionRoute.InvalidateSession)
 
 	// Secure routes (require authentication)
 	secureMux := http.NewServeMux()
@@ -116,14 +116,14 @@ func NewServer(initialization *initialization.Initialization, log *zap.SugaredLo
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.Db, initialization.SessionService))
+	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.Db, init.SessionService))
 	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
-	httpLoger := logger.NewHttpLogger()
+	httpLoger := utils.NewHttpLogger()
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, initialization.Db), log)))
-	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: log}
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db), log)))
+	return &Server{mux: mux, port: init.Cfg.App.Port, logger: log}
 }

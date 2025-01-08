@@ -1,4 +1,4 @@
-package logger
+package utils
 
 import (
 	"os"
@@ -8,8 +8,8 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-const logPath = "./logger/logs/services/log.txt"
-const httpLogPath = "./logger/logs/http/log.txt"
+const logPath = "logs/services/log.txt"
+const httpLogPath = "logs/http/log.txt"
 
 const (
 	timeKey   = "time"
@@ -21,12 +21,10 @@ const (
 var sugar_logger *zap.SugaredLogger
 var http_sugar_logger *zap.SugaredLogger
 
-// InitializeLogger sets up Zap with a custom configuration and initializes the SugaredLogger
 func InitializeLogger() {
-	// Configure log rotation with lumberjack
 	w := zapcore.AddSync(&lumberjack.Logger{
 		Filename: logPath,
-		MaxAge:   1,
+		MaxAge:   28,
 		Compress: true,
 	})
 
@@ -38,7 +36,6 @@ func InitializeLogger() {
 		Compress: true,
 	})
 
-	// Encoder configuration for Console format
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        timeKey,
 		LevelKey:       levelKey,
@@ -49,7 +46,6 @@ func InitializeLogger() {
 		EncodeDuration: zapcore.StringDurationEncoder,
 	}
 
-	// Create the core
 	file_core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
 		w,
@@ -68,14 +64,11 @@ func InitializeLogger() {
 		zap.InfoLevel,
 	)
 
-	// Combine the cores
 	core := zapcore.NewTee(file_core, std_core)
 
-	// Initialize the sugared log for std and file logging
 	log := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	sugar_logger = log.Sugar()
 
-	// Initialize the sugared logger for http logging only to file
 	httpLogger := zap.New(http_core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	http_sugar_logger = httpLogger.Sugar()
 }

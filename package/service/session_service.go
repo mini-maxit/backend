@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -117,12 +117,12 @@ func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (sch
 	}
 
 	current_user := schemas.User{
-		Id: current_user_model.Id,
-		Email: current_user_model.Email,
+		Id:       current_user_model.Id,
+		Email:    current_user_model.Email,
 		Username: current_user_model.Username,
-		Role: string(current_user_model.Role),
-		Name: current_user_model.Name,
-		Surname: current_user_model.Surname,
+		Role:     string(current_user_model.Role),
+		Name:     current_user_model.Name,
+		Surname:  current_user_model.Surname,
 	}
 
 	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
@@ -152,7 +152,7 @@ func (s *SessionServiceImpl) InvalidateSession(tx *gorm.DB, sessionId string) er
 }
 
 func NewSessionService(sessionRepository repository.SessionRepository, userRepository repository.UserRepository) SessionService {
-	log := logger.NewNamedLogger("session_service")
+	log := utils.NewNamedLogger("session_service")
 	return &SessionServiceImpl{
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
