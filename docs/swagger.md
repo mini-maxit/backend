@@ -3,7 +3,7 @@
 
 # Mini Maxit API Documentation testing the workflow
 This is the API documentation for the Mini Maxit API.
-  
+
 
 ## Informations
 
@@ -13,7 +13,7 @@ This is the API documentation for the Mini Maxit API.
 
 ### Contact
 
-  
+
 
 ## Content negotiation
 
@@ -35,7 +35,7 @@ This is the API documentation for the Mini Maxit API.
 |---------|---------|--------|---------|
 | POST | /api/v1/login | [post login](#post-login) | Login a user |
 | POST | /api/v1/register | [post register](#post-register) | Register a user |
-  
+
 
 
 ###  group
@@ -46,7 +46,7 @@ This is the API documentation for the Mini Maxit API.
 | GET | /api/v1/group/{id} | [get group ID](#get-group-id) | Get a group |
 | POST | /api/v1/group | [post group](#post-group) | Create a group |
 | PUT | /api/v1/group/{id} | [put group ID](#put-group-id) | Edit a group |
-  
+
 
 
 ###  session
@@ -55,7 +55,7 @@ This is the API documentation for the Mini Maxit API.
 |---------|---------|--------|---------|
 | GET | /api/v1/session/validate | [get session validate](#get-session-validate) | Validate a session |
 | POST | /api/v1/session/invalidate | [post session invalidate](#post-session-invalidate) | Invalidate a session |
-  
+
 
 
 ###  task
@@ -65,7 +65,7 @@ This is the API documentation for the Mini Maxit API.
 | GET | /api/v1/task | [get task](#get-task) | Get all tasks |
 | GET | /api/v1/task/{id} | [get task ID](#get-task-id) | Get a task |
 | POST | /api/v1/task | [post task](#post-task) | Upload a task |
-  
+
 
 
 ## Paths
@@ -104,8 +104,8 @@ Get all groups
 Status: OK
 
 ###### <span id="get-group-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseArrayGroup](#api-response-array-group)
 
@@ -113,8 +113,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-group-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -122,8 +122,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="get-group-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -131,8 +131,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="get-group-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -140,8 +140,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-group-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -179,8 +179,8 @@ Get a group
 Status: OK
 
 ###### <span id="get-group-id-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseGroup](#api-response-group)
 
@@ -188,8 +188,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-group-id-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -197,8 +197,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="get-group-id-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -206,8 +206,8 @@ Status: Unauthorized
 Status: Not Found
 
 ###### <span id="get-group-id-404-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -215,8 +215,8 @@ Status: Not Found
 Status: Method Not Allowed
 
 ###### <span id="get-group-id-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -224,8 +224,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-group-id-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -261,8 +261,8 @@ Validates a session token
 Status: OK
 
 ###### <span id="get-session-validate-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseArrayTask](#api-response-array-task)
 
@@ -270,8 +270,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-session-validate-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -279,8 +279,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="get-session-validate-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -288,8 +288,8 @@ Status: Unauthorized
 Status: Internal Server Error
 
 ###### <span id="get-session-validate-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -317,8 +317,8 @@ Returns all tasks
 Status: OK
 
 ###### <span id="get-task-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseArrayTask](#api-response-array-task)
 
@@ -326,8 +326,8 @@ Status: OK
 Status: Internal Server Error
 
 ###### <span id="get-task-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -363,8 +363,8 @@ Returns a task by ID
 Status: OK
 
 ###### <span id="get-task-id-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseTaskDetailed](#api-response-task-detailed)
 
@@ -372,8 +372,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-task-id-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -381,8 +381,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="get-task-id-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -390,8 +390,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-task-id-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -431,8 +431,8 @@ Create a group
 Status: OK
 
 ###### <span id="post-group-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseInt64](#api-response-int64)
 
@@ -440,8 +440,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-group-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -449,8 +449,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="post-group-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -458,8 +458,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="post-group-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -467,8 +467,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-group-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -507,8 +507,8 @@ Logs in a user with email and password
 Status: OK
 
 ###### <span id="post-login-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseSession](#api-response-session)
 
@@ -516,8 +516,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-login-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -525,8 +525,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="post-login-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -534,8 +534,8 @@ Status: Unauthorized
 Status: Internal Server Error
 
 ###### <span id="post-login-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -574,8 +574,8 @@ Registers a user with name, surname, email, username and password
 Status: Created
 
 ###### <span id="post-register-201-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseSession](#api-response-session)
 
@@ -583,8 +583,8 @@ Status: Created
 Status: Bad Request
 
 ###### <span id="post-register-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -592,8 +592,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="post-register-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -601,8 +601,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-register-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -639,8 +639,8 @@ Invalidates a session token
 Status: OK
 
 ###### <span id="post-session-invalidate-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseString](#api-response-string)
 
@@ -648,8 +648,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-session-invalidate-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -657,8 +657,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="post-session-invalidate-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -666,8 +666,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="post-session-invalidate-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -675,8 +675,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-session-invalidate-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -718,8 +718,8 @@ Uploads a task to the FileStorage service
 Status: OK
 
 ###### <span id="post-task-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseTaskCreateResponse](#api-response-task-create-response)
 
@@ -727,8 +727,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-task-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -736,8 +736,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="post-task-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -745,8 +745,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-task-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -788,8 +788,8 @@ Edit a group
 Status: OK
 
 ###### <span id="put-group-id-200-schema"></span> Schema
-   
-  
+
+
 
 [APIResponseGroup](#api-response-group)
 
@@ -797,8 +797,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="put-group-id-400-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -806,8 +806,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="put-group-id-401-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -815,8 +815,8 @@ Status: Unauthorized
 Status: Not Found
 
 ###### <span id="put-group-id-404-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -824,8 +824,8 @@ Status: Not Found
 Status: Method Not Allowed
 
 ###### <span id="put-group-id-405-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -833,8 +833,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="put-group-id-500-schema"></span> Schema
-   
-  
+
+
 
 [APIError](#api-error)
 
@@ -843,7 +843,7 @@ Status: Internal Server Error
 ### <span id="api-error"></span> ApiError
 
 
-  
+
 
 
 
@@ -859,7 +859,7 @@ Status: Internal Server Error
 ### <span id="api-response-group"></span> ApiResponse-Group
 
 
-  
+
 
 
 
@@ -875,7 +875,7 @@ Status: Internal Server Error
 ### <span id="api-response-session"></span> ApiResponse-Session
 
 
-  
+
 
 
 
@@ -891,7 +891,7 @@ Status: Internal Server Error
 ### <span id="api-response-task-create-response"></span> ApiResponse-TaskCreateResponse
 
 
-  
+
 
 
 
@@ -907,7 +907,7 @@ Status: Internal Server Error
 ### <span id="api-response-task-detailed"></span> ApiResponse-TaskDetailed
 
 
-  
+
 
 
 
@@ -923,7 +923,7 @@ Status: Internal Server Error
 ### <span id="api-response-array-group"></span> ApiResponse-array_Group
 
 
-  
+
 
 
 
@@ -939,7 +939,7 @@ Status: Internal Server Error
 ### <span id="api-response-array-task"></span> ApiResponse-array_Task
 
 
-  
+
 
 
 
@@ -955,7 +955,7 @@ Status: Internal Server Error
 ### <span id="api-response-int64"></span> ApiResponse-int64
 
 
-  
+
 
 
 
@@ -971,7 +971,7 @@ Status: Internal Server Error
 ### <span id="api-response-string"></span> ApiResponse-string
 
 
-  
+
 
 
 
@@ -987,7 +987,7 @@ Status: Internal Server Error
 ### <span id="create-group"></span> CreateGroup
 
 
-  
+
 
 
 
@@ -1002,7 +1002,7 @@ Status: Internal Server Error
 ### <span id="edit-group"></span> EditGroup
 
 
-  
+
 
 
 
@@ -1017,7 +1017,7 @@ Status: Internal Server Error
 ### <span id="group"></span> Group
 
 
-  
+
 
 
 
@@ -1036,7 +1036,7 @@ Status: Internal Server Error
 ### <span id="session"></span> Session
 
 
-  
+
 
 
 
@@ -1054,7 +1054,7 @@ Status: Internal Server Error
 ### <span id="task"></span> Task
 
 
-  
+
 
 
 
@@ -1072,7 +1072,7 @@ Status: Internal Server Error
 ### <span id="task-create-response"></span> TaskCreateResponse
 
 
-  
+
 
 
 
@@ -1087,7 +1087,7 @@ Status: Internal Server Error
 ### <span id="task-detailed"></span> TaskDetailed
 
 
-  
+
 
 
 
@@ -1107,7 +1107,7 @@ Status: Internal Server Error
 ### <span id="user-login-request"></span> UserLoginRequest
 
 
-  
+
 
 
 
@@ -1123,7 +1123,7 @@ Status: Internal Server Error
 ### <span id="user-register-request"></span> UserRegisterRequest
 
 
-  
+
 
 
 
@@ -1142,7 +1142,7 @@ Status: Internal Server Error
 ### <span id="error-struct"></span> errorStruct
 
 
-  
+
 
 
 
@@ -1152,5 +1152,3 @@ Status: Internal Server Error
 |------|------|---------|:--------:| ------- |-------------|---------|
 | code | string| `string` |  | |  |  |
 | message | string| `string` |  | |  |  |
-
-
