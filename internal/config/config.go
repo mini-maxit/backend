@@ -16,6 +16,7 @@ type Config struct {
 	DB             DBConfig
 	App            AppConfig
 	BrokerConfig   BrokerConfig
+	Dump           bool
 }
 
 type DBConfig struct {
@@ -124,6 +125,9 @@ func NewConfig() *Config {
 		log.Panic("QUEUE_PASSWORD is not set")
 	}
 
+	dumpStr := os.Getenv("DUMP")
+	dump := dumpStr == "true"
+
 	return &Config{
 		DB: DBConfig{
 			Host:     dbHost,
@@ -144,6 +148,7 @@ func NewConfig() *Config {
 			Password:          queuePassword,
 		},
 		FileStorageUrl: fileStorageUrl,
+		Dump:           dump,
 	}
 }
 

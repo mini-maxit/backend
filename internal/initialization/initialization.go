@@ -2,12 +2,15 @@ package initialization
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/api/queue"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -29,6 +32,8 @@ type Initialization struct {
 	SubmissionRoute routes.SubmissionRoutes
 
 	QueueListener queue.QueueListener
+
+	Dump func(w http.ResponseWriter, r *http.Request)
 }
 
 func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
@@ -149,6 +154,55 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
+	}
+
+	if cfg.Dump {
+		tx, err := db.Connect()
+		if err != nil {
+			log.Panicf("Failed to connect to database to init dump: %s", err.Error())
+		}
+		session, err := authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "AdminName",
+			Surname:  "AdminSurname",
+			Email:    "admin@admin.com",
+			Username: "admin",
+			Password: "adminadmin",
+		})
+		if err != nil {
+			log.Panicf("Failed to create admin: %s", err.Error())
+		}
+		err = userService.ChangeRole(tx, session.UserId, models.UserRoleAdmin)
+		if err != nil {
+			log.Panicf("Failed to change admin role: %s", err.Error())
+		}
+		session, err = authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "TeacherName",
+			Surname:  "TeacherSurname",
+			Email:    "teacher@teacher.com",
+			Username: "teacher",
+			Password: "teacherteacher",
+		})
+		if err != nil {
+			log.Panicf("Failed to create teacher: %s", err.Error())
+		}
+		err = userService.ChangeRole(tx, session.UserId, models.UserRoleTeacher)
+		if err != nil {
+			log.Panicf("Failed to change teacher role: %s", err.Error())
+		}
+		session, err = authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "StudentName",
+			Surname:  "StudentSurname",
+			Email:    "student@student.com",
+			Username: "student",
+			Password: "studentstudent",
+		})
+		if err != nil {
+			log.Panicf("Failed to create student: %s", err.Error())
+		}
+		err = userService.ChangeRole(tx, session.UserId, models.UserRoleStudent)
+		if err != nil {
+			log.Panicf("Failed to change student role: %s", err.Error())
+		}
 	}
 
 	return &Initialization{

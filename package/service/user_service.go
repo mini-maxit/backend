@@ -21,6 +21,7 @@ type UserService interface {
 	GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
+	ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error
 	modelToSchema(user *models.User) *schemas.User
 }
 
@@ -92,6 +93,25 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 	err = us.userRepository.EditUser(tx, currentModel)
 	if err != nil {
 		us.logger.Errorf("Error editing user: %v", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (us *UserServiceImpl) ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error {
+	user, err := us.userRepository.GetUser(tx, userId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrUserNotFound
+		}
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
+		return err
+	}
+	schema := us.modelToSchema(user)
+	schema.Role = string(role)
+	err = us.userRepository.EditUser(tx, schema)
+	if err != nil {
+		us.logger.Errorf("Error changing user role: %v", err.Error())
 		return err
 	}
 	return nil

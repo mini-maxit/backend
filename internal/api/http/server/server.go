@@ -69,7 +69,6 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	},
 	)
 	taskMux.HandleFunc("/{id}", init.TaskRoute.GetTask)
-	taskMux.HandleFunc("/user/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// User routes
 	userMux := http.NewServeMux()
