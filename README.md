@@ -10,6 +10,16 @@ You also need to have local image of file-storage build and stored. The tag for 
 docker compose up --build -d
 ```
 
+## You might need it
+
+### DUMP=true
+
+If you set `DUMP=true` in the .env file, and start application using provided dev docker compose the app will start with some values present in database. For now this includes:
+
+- Admin user. Email=`admin@admin.com` Password=`adminadmin`
+- Teacher user. Email=`teacher@teacher.com` Password=`teacherteacher`
+- Student user. Email=`student@student.com` Password=`studentstudent`
+
 # Endpoints
 
 Quick links:
@@ -52,6 +62,7 @@ Session: The session token (required).
 Session: The session token (required).
 
 **Request Parameters:**
+
 - **Query Parameters:**
   - **Filtering Options:**
     - `id` (optional) - Filter tasks by ID.
@@ -63,7 +74,7 @@ Session: The session token (required).
     - `offset` (optional) - The number of tasks to skip. Default is 0.
     - `limit` (optional) - The number of tasks per page. Default is 10.
   - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `created_at:asc`.
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `created_at:asc`.
 
 **Possible Responses:**
 
@@ -124,7 +135,7 @@ Retrieves the details of a specific task by its ID.
     - `offset` (optional) - The number of tasks to skip. Default is 0.
     - `limit` (optional) - The number of tasks per page. Default is 10.
   - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `created_at:asc`.
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `created_at:asc`.
 
 **Possible Responses:**
 
@@ -448,7 +459,6 @@ Registers a new user and returns a session upon successful registration.
   ```
   Triggered when an unexpected server error occurs.
 
-
 ## Submission
 
 ### **Get All Submissions**
@@ -466,7 +476,9 @@ Retrieves a list of all submissions.
 **Request Parameters:**
 
 - **Query Parameters:**
+
   - **Filtering Options:**
+
     - `task_id` (optional) - Filter submissions by task ID.
     - `user_id` (optional) - Filter submissions by user ID.
     - `order` (optional) - Sort submissions by order.
@@ -476,11 +488,12 @@ Retrieves a list of all submissions.
     - `check_at` (optional) - Filter submissions by check date.
 
   - **Pagination Options:**
+
     - `offset` (optional) - The number of submissions to skip. Default is 0.
     - `limit` (optional) - The number of submissions per page. Default is 10.
 
   - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -488,38 +501,38 @@ Retrieves a list of all submissions.
 
 ```json
 {
-    "ok": true,
-    "data": [
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        }
-    ]
+  "ok": true,
+  "data": [
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    }
+  ]
 }
 ```
 
@@ -555,38 +568,38 @@ Retrieves the details of a specific submission by its ID.
 
 ```json
 {
-    "ok": true,
-    "data": [
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        }
-    ]
+  "ok": true,
+  "data": [
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    }
+  ]
 }
 ```
 
@@ -624,25 +637,28 @@ Retrieves a list of all submissions for a specific user.
 
 **Request Parameters:**
 
-  - **Path Parameter**:
-    `id` (required) - The ID of the user whose submissions to retrieve.
+- **Path Parameter**:
+  `id` (required) - The ID of the user whose submissions to retrieve.
 
-  - **Query Parameters:**
-    - **Filtering Options:**
-      - `task_id` (optional) - Filter submissions by task ID.
-      - `user_id` (optional) - Filter submissions by user ID.
-      - `order` (optional) - Sort submissions by order.
-      - `language_id` (optional) - Filter submissions by language ID.
-      - `status` (optional) - Filter submissions by status.
-      - `submitted_at` (optional) - Filter submissions by submission date.
-      - `check_at` (optional) - Filter submissions by check date.
+- **Query Parameters:**
 
-    - **Pagination Options:**
-      - `offset` (optional) - The number of submissions to skip. Default is 0.
-      - `limit` (optional) - The number of submissions per page. Default is 10.
+  - **Filtering Options:**
 
-    - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
+    - `task_id` (optional) - Filter submissions by task ID.
+    - `user_id` (optional) - Filter submissions by user ID.
+    - `order` (optional) - Sort submissions by order.
+    - `language_id` (optional) - Filter submissions by language ID.
+    - `status` (optional) - Filter submissions by status.
+    - `submitted_at` (optional) - Filter submissions by submission date.
+    - `check_at` (optional) - Filter submissions by check date.
+
+  - **Pagination Options:**
+
+    - `offset` (optional) - The number of submissions to skip. Default is 0.
+    - `limit` (optional) - The number of submissions per page. Default is 10.
+
+  - **Sorting Options:**
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -650,67 +666,67 @@ Retrieves a list of all submissions for a specific user.
 
 ```json
 {
-    "ok": true,
-    "data": [
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        },
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        }
-    ]
+  "ok": true,
+  "data": [
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    },
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    }
+  ]
 }
 ```
 
@@ -748,25 +764,28 @@ Retrieves a list of all submissions for a specific group.
 
 **Request Parameters:**
 
-  - **Path Parameter**:
-    `id` (required) - The ID of the group whose submissions to retrieve.
+- **Path Parameter**:
+  `id` (required) - The ID of the group whose submissions to retrieve.
 
-  - **Query Parameters:**
-    - **Filtering Options:**
-      - `task_id` (optional) - Filter submissions by task ID.
-      - `user_id` (optional) - Filter submissions by user ID.
-      - `order` (optional) - Sort submissions by order.
-      - `language_id` (optional) - Filter submissions by language ID.
-      - `status` (optional) - Filter submissions by status.
-      - `submitted_at` (optional) - Filter submissions by submission date.
-      - `check_at` (optional) - Filter submissions by check date.
+- **Query Parameters:**
 
-    - **Pagination Options:**
-      - `offset` (optional) - The number of submissions to skip. Default is 0.
-      - `limit` (optional) - The number of submissions per page. Default is 10.
+  - **Filtering Options:**
 
-    - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
+    - `task_id` (optional) - Filter submissions by task ID.
+    - `user_id` (optional) - Filter submissions by user ID.
+    - `order` (optional) - Sort submissions by order.
+    - `language_id` (optional) - Filter submissions by language ID.
+    - `status` (optional) - Filter submissions by status.
+    - `submitted_at` (optional) - Filter submissions by submission date.
+    - `check_at` (optional) - Filter submissions by check date.
+
+  - **Pagination Options:**
+
+    - `offset` (optional) - The number of submissions to skip. Default is 0.
+    - `limit` (optional) - The number of submissions per page. Default is 10.
+
+  - **Sorting Options:**
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -774,67 +793,67 @@ Retrieves a list of all submissions for a specific group.
 
 ```json
 {
-    "ok": true,
-    "data": [
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        },
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        }
-    ]
+  "ok": true,
+  "data": [
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    },
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    }
+  ]
 }
 ```
 
@@ -874,25 +893,28 @@ Retrieves a list of all submissions for a specific task.
 
 **Request Parameters:**
 
-  - **Path Parameter**:
-    `id` (required) - The ID of the task whose submissions to retrieve.
+- **Path Parameter**:
+  `id` (required) - The ID of the task whose submissions to retrieve.
 
-  - **Query Parameters:**
-    - **Filtering Options:**
-      - `task_id` (optional) - Filter submissions by task ID.
-      - `user_id` (optional) - Filter submissions by user ID.
-      - `order` (optional) - Sort submissions by order.
-      - `language_id` (optional) - Filter submissions by language ID.
-      - `status` (optional) - Filter submissions by status.
-      - `submitted_at` (optional) - Filter submissions by submission date.
-      - `check_at` (optional) - Filter submissions by check date.
+- **Query Parameters:**
 
-    - **Pagination Options:**
-      - `offset` (optional) - The number of submissions to skip. Default is 0.
-      - `limit` (optional) - The number of submissions per page. Default is 10.
+  - **Filtering Options:**
 
-    - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
+    - `task_id` (optional) - Filter submissions by task ID.
+    - `user_id` (optional) - Filter submissions by user ID.
+    - `order` (optional) - Sort submissions by order.
+    - `language_id` (optional) - Filter submissions by language ID.
+    - `status` (optional) - Filter submissions by status.
+    - `submitted_at` (optional) - Filter submissions by submission date.
+    - `check_at` (optional) - Filter submissions by check date.
+
+  - **Pagination Options:**
+
+    - `offset` (optional) - The number of submissions to skip. Default is 0.
+    - `limit` (optional) - The number of submissions per page. Default is 10.
+
+  - **Sorting Options:**
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `submitted_at:asc`.
 
 **Possible Responses:**
 
@@ -900,67 +922,67 @@ Retrieves a list of all submissions for a specific task.
 
 ```json
 {
-    "ok": true,
-    "data": [
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        },
-        {
-            "id": 3,
-            "task_id": 1,
-            "user_id": 1,
-            "order": 1,
-            "language_id": 1,
-            "status": "afsdf",
-            "status_message": "",
-            "submitted_at": "0001-01-01T00:00:00Z",
-            "checked_at": null,
-            "language": {
-                "language": "CPP",
-                "version": "20"
-            },
-            "task": {
-                "id": 1,
-                "title": "dasf",
-                "created_by": 1,
-                "created_at": "2025-01-05T15:00:00Z"
-            },
-            "user": {
-                "id": 1,
-                "name": "name",
-                "surname": "surname",
-                "email": "adfadfa@email.com",
-                "username": "userfadfadname",
-                "role": "student"
-            }
-        }
-    ]
+  "ok": true,
+  "data": [
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    },
+    {
+      "id": 3,
+      "task_id": 1,
+      "user_id": 1,
+      "order": 1,
+      "language_id": 1,
+      "status": "afsdf",
+      "status_message": "",
+      "submitted_at": "0001-01-01T00:00:00Z",
+      "checked_at": null,
+      "language": {
+        "language": "CPP",
+        "version": "20"
+      },
+      "task": {
+        "id": 1,
+        "title": "dasf",
+        "created_by": 1,
+        "created_at": "2025-01-05T15:00:00Z"
+      },
+      "user": {
+        "id": 1,
+        "name": "name",
+        "surname": "surname",
+        "email": "adfadfa@email.com",
+        "username": "userfadfadname",
+        "role": "student"
+      }
+    }
+  ]
 }
 ```
 
@@ -1049,7 +1071,7 @@ Retrieves a list of all users.
     - `offset` (optional) - The number of users to skip. Default is 0.
     - `limit` (optional) - The number of users per page. Default is 10.
   - **Sorting Options:**
-      - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `id:asc`.
+    - `sort` (optional) - Comma separated list of fields to sort by and their order separated by a column. Default is `id:asc`.
 
 **Possible Responses:**
 
