@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const TEST_DB_NAME = "test-maxit"
-
 type Config struct {
 	FileStorageUrl string
 	DB             DBConfig
@@ -52,9 +50,9 @@ type BrokerConfig struct {
 }
 
 const (
-	DefaultApiPort           = "8080"
-	DefaultQueueName         = "worker_queue"
-	DefaultResponseQueueName = "worker_response_queue"
+	defaultApiPort           = "8080"
+	defaultQueueName         = "worker_queue"
+	defaultResponseQueueName = "worker_response_queue"
 )
 
 // DefaultLanguages is a list of languages that is enabled by default
@@ -131,22 +129,35 @@ var AvailableLanguages = []schemas.LanguageConfig{
 
 // NewConfig creates new Config instance
 //
-// It reads environment variables and returns Config instance
-// Available environment variables:
-// - DB_HOST - database host
-// - DB_PORT - database port
-// - DB_USER - database user
-// - DB_PASSWORD - database password
-// - DB_NAME - database name
-// - APP_PORT - application port
-// - FILE_STORAGE_HOST - file storage host
-// - QUEUE_NAME - queue name for sending tasks
-// - RESPONSE_QUEUE_NAME - queue name for receiving responses
-// - QUEUE_HOST - broker host
-// - QUEUE_PORT - broker port
-// - QUEUE_USER - broker user
-// - QUEUE_PASSWORD - broker password
-// - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23"
+// It reads environment variables and returns Config instance. Available environment variables:
+//
+//   - DB_HOST database host. Required
+//
+//   - DB_PORT - database port. Required
+//
+//   - DB_USER - database user. Required
+//
+//   - DB_PASSWORD - database password. Required
+//
+//   - DB_NAME - database name. Required
+//
+//   - API_PORT - application port. Default is 8080
+//
+//   - FILE_STORAGE_HOST - file storage host. Required
+//
+//   - QUEUE_NAME - queue name for sending tasks. Default is "worker_queue"
+//
+//   - RESPONSE_QUEUE_NAME - queue name for receiving responses. Default is "worker_response_queue"
+//
+//   - QUEUE_HOST - broker host. Required
+//
+//   - QUEUE_PORT - broker port. Required
+//
+//   - QUEUE_USER - broker user. Required
+//
+//   - QUEUE_PASSWORD - broker password. Required
+//
+//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will exapnd to [DefaultLanguages]
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
@@ -174,8 +185,8 @@ func NewConfig() *Config {
 
 	appPortStr := os.Getenv("APP_PORT")
 	if appPortStr == "" {
-		log.Warnf("APP_PORT is not set. Using default port %s", DefaultApiPort)
-		appPortStr = DefaultApiPort
+		log.Warnf("API_PORT is not set. Using default port %s", defaultApiPort)
+		appPortStr = defaultApiPort
 	}
 	appPort := validatePort(appPortStr, "application", log)
 
@@ -193,13 +204,13 @@ func NewConfig() *Config {
 
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
-		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", DefaultQueueName)
-		queueName = DefaultQueueName
+		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", defaultQueueName)
+		queueName = defaultQueueName
 	}
 	responseQueueName := os.Getenv("RESPONSE_QUEUE_NAME")
 	if responseQueueName == "" {
-		log.Warnf("RESPONSE_QUEUE_NAME is not set. Using default response queue name %s", DefaultResponseQueueName)
-		responseQueueName = DefaultResponseQueueName
+		log.Warnf("RESPONSE_QUEUE_NAME is not set. Using default response queue name %s", defaultResponseQueueName)
+		responseQueueName = defaultResponseQueueName
 	}
 	queueHost := os.Getenv("QUEUE_HOST")
 	if queueHost == "" {
