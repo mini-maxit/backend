@@ -35,7 +35,7 @@ type SubmissionServiceImpl struct {
 	logger                     *zap.SugaredLogger
 }
 
-var ErrPermissionDenied = errors.New("User is not allowed to view this submission")
+var ErrPermissionDenied = errors.New("user is not allowed to view this submission")
 
 func (us *SubmissionServiceImpl) GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
 	submission_models := []models.Submission{}
