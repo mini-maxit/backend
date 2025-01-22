@@ -8,7 +8,7 @@ import (
 type LanguageRepository interface {
 	GetLanguages(tx *gorm.DB) ([]models.LanguageConfig, error)
 	GetLanguage(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error)
-	CreateLanguage(tx *gorm.DB, language models.LanguageConfig) error
+	CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error
 	DeleteLanguage(tx *gorm.DB, languageId int64) error
 }
 
@@ -28,8 +28,8 @@ func (l *LanguageRepositoryImpl) GetLanguage(tx *gorm.DB, languageId int64) (*mo
 	panic("implement me")
 }
 
-func (l *LanguageRepositoryImpl) CreateLanguage(tx *gorm.DB, language models.LanguageConfig) error {
-	err := tx.Model(&models.LanguageConfig{}).Create(&language).Error
+func (l *LanguageRepositoryImpl) CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error {
+	err := tx.Model(models.LanguageConfig{}).Create(&language).Error
 	return err
 }
 

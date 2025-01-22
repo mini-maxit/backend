@@ -1,6 +1,8 @@
 package schemas
 
+import "github.com/mini-maxit/backend/package/domain/models"
+
 type LanguageConfig struct {
-	Language string `json:"language"`
-	Version  string `json:"version"`
+	Type    models.LanguageType `json:"language"`
+	Version string              `json:"version"`
 }

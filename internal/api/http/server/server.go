@@ -124,5 +124,5 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db), log)))
-	return &Server{mux: mux, port: init.Cfg.App.Port, logger: log}
+	return &Server{mux: mux, port: init.Cfg.Api.Port, logger: log}
 }

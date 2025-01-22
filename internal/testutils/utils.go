@@ -22,7 +22,7 @@ func NewTestConfig() *config.Config {
 			Password: "postgres",
 			Name:     "test-maxit",
 		},
-		App: config.AppConfig{
+		Api: config.ApiConfig{
 			Port: 8080,
 		},
 		BrokerConfig: config.BrokerConfig{
@@ -37,7 +37,7 @@ func NewTestConfig() *config.Config {
 }
 
 func NewTestPostgresDB(t *testing.T, cfg *config.Config) database.Database {
-	databaseUrl := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, config.TEST_DB_NAME, cfg.DB.Password)
+	databaseUrl := fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Name, cfg.DB.Password)
 	db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	// db, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
 	if err != nil {

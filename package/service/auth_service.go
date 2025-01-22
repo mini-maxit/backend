@@ -16,17 +16,32 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
+// AuthService defines the methods for authentication-related operations.
 type AuthService interface {
+	// Login logs user in using provided credentials
+	//
+	// Method should check if such user exists, and if he does create valid session and return it.
+	// Possible errors: ErrInvalidCredentials, ErrUserNotFound, validator.ValidationErrors,
+	// errors returned by SessionService, repository.UserRepository.
 	Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error)
+
+	// Register registers user if he is not registered yet
+	//
+	// Method validates provided user data, checks if user with provided email already exists,
+	// creates new user, creates session for him and returns it.
+	// Possible errors: ErrUserAlreadyExists, errors returned by SessionService,
+	// repostiroy.UserRepository, bcrypt lib.
 	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
+// AuthServiceImpl implements AuthService interface
 type AuthServiceImpl struct {
 	userRepository repository.UserRepository
 	sessionService SessionService
 	logger         *zap.SugaredLogger
 }
 
+// Login implements Login method of [AuthService] interface
 func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
@@ -62,6 +77,7 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 	return session, nil
 }
 
+// Register implements Register method of [AuthService] interface
 func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
@@ -114,6 +130,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 	return session, nil
 }
 
+// NewAuthService creates new instance of [AuthServiceImpl]
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
 	log := utils.NewNamedLogger("auth_service")
 	return &AuthServiceImpl{
