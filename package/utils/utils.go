@@ -70,3 +70,24 @@ func NewValidator() (*validator.Validate, error) {
 	}
 	return validate, nil
 }
+
+func GetLimit(str string) (int, error) {
+	limit, err := strconv.ParseInt(str, 10, 32)
+	if err != nil {
+		return 0, nil
+	}
+	return int(limit), nil
+}
+
+func GetOffset(str string) (int, error) {
+	offset, err := strconv.ParseInt(str, 10, 32)
+	if err != nil {
+		return 0, nil
+	}
+	return int(offset), nil
+}
+
+func GetSort(str string) string {
+	return ""
+	// return str
+}

@@ -21,12 +21,17 @@ jobs:
 
       - name: Install Swagger tools
         run: |
-          go install https://github.com/mini-maxit/swag/cmd/swag@latest
+          go install github.com/mini-maxit/swag/cmd/swag@latest
           go get -u github.com/swaggo/http-swagger
+          go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
       - name: Init swag
-        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs -p snakecase --ot go,yaml
+        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
+
+      - name: Convert swagger to markdown
+        run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "docs: update swagger docs"
+          file_pattern: "docs/*"
