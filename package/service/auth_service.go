@@ -34,15 +34,15 @@ type AuthService interface {
 	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
-// AuthServiceImpl implements AuthService interface
-type AuthServiceImpl struct {
+// authService implements AuthService interface
+type authService struct {
 	userRepository repository.UserRepository
 	sessionService SessionService
 	logger         *zap.SugaredLogger
 }
 
 // Login implements Login method of [AuthService] interface
-func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
+func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
 		as.logger.Errorf("Error creating validator: %v", err.Error())
@@ -78,7 +78,7 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 }
 
 // Register implements Register method of [AuthService] interface
-func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
+func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
 		as.logger.Errorf("Error creating validator: %v", err.Error())
@@ -130,10 +130,10 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 	return session, nil
 }
 
-// NewAuthService creates new instance of [AuthServiceImpl]
+// NewAuthService creates new instance of [authService]
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
 	log := utils.NewNamedLogger("auth_service")
-	return &AuthServiceImpl{
+	return &authService{
 		userRepository: userRepository,
 		sessionService: sessionService,
 		logger:         log,

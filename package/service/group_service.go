@@ -24,11 +24,11 @@ var (
 	ErrInvalidOffsetParam = fmt.Errorf("invalid offset parameter")
 )
 
-type GroupServiceImpl struct {
+type groupService struct {
 	groupRepository repository.GroupRepository
 }
 
-func (gs *GroupServiceImpl) CreateGroup(tx *gorm.DB, group *schemas.Group) (int64, error) {
+func (gs *groupService) CreateGroup(tx *gorm.DB, group *schemas.Group) (int64, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
 		return -1, err
@@ -50,11 +50,11 @@ func (gs *GroupServiceImpl) CreateGroup(tx *gorm.DB, group *schemas.Group) (int6
 	return groupId, nil
 }
 
-func (gs *GroupServiceImpl) DeleteGroup(tx *gorm.DB, groupId int64) error {
+func (gs *groupService) DeleteGroup(tx *gorm.DB, groupId int64) error {
 	return gs.groupRepository.DeleteGroup(tx, groupId)
 }
 
-func (gs *GroupServiceImpl) Edit(tx *gorm.DB, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
+func (gs *groupService) Edit(tx *gorm.DB, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
 	validate, err := utils.NewValidator()
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (gs *GroupServiceImpl) Edit(tx *gorm.DB, groupId int64, editInfo *schemas.E
 
 }
 
-func (gs *GroupServiceImpl) GetAllGroup(tx *gorm.DB, queryParams map[string]string) ([]schemas.Group, error) {
+func (gs *groupService) GetAllGroup(tx *gorm.DB, queryParams map[string]string) ([]schemas.Group, error) {
 	limit, err := utils.GetLimit(queryParams["limit"])
 	if err != nil {
 		return nil, ErrInvalidLimitParam
@@ -103,7 +103,7 @@ func (gs *GroupServiceImpl) GetAllGroup(tx *gorm.DB, queryParams map[string]stri
 	return result, nil
 }
 
-func (gs *GroupServiceImpl) GetGroup(tx *gorm.DB, groupId int64) (*schemas.Group, error) {
+func (gs *groupService) GetGroup(tx *gorm.DB, groupId int64) (*schemas.Group, error) {
 	group, err := gs.groupRepository.GetGroup(tx, groupId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -115,13 +115,13 @@ func (gs *GroupServiceImpl) GetGroup(tx *gorm.DB, groupId int64) (*schemas.Group
 	return gs.modelToSchema(group), nil
 }
 
-func (gs *GroupServiceImpl) updateModel(model *models.Group, editInfo *schemas.EditGroup) {
+func (gs *groupService) updateModel(model *models.Group, editInfo *schemas.EditGroup) {
 	if editInfo.Name != nil {
 		model.Name = *editInfo.Name
 	}
 }
 
-func (gs *GroupServiceImpl) modelToSchema(model *models.Group) *schemas.Group {
+func (gs *groupService) modelToSchema(model *models.Group) *schemas.Group {
 	return &schemas.Group{
 		Id:        model.Id,
 		Name:      model.Name,
@@ -132,7 +132,7 @@ func (gs *GroupServiceImpl) modelToSchema(model *models.Group) *schemas.Group {
 }
 
 func NewGroupService(groupRepository repository.GroupRepository) GroupService {
-	return &GroupServiceImpl{
+	return &groupService{
 		groupRepository: groupRepository,
 	}
 }

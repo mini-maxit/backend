@@ -12,10 +12,10 @@ type LanguageRepository interface {
 	DeleteLanguage(tx *gorm.DB, languageId int64) error
 }
 
-type LanguageRepositoryImpl struct {
+type languageRepository struct {
 }
 
-func (l *LanguageRepositoryImpl) GetLanguages(tx *gorm.DB) ([]models.LanguageConfig, error) {
+func (l *languageRepository) GetLanguages(tx *gorm.DB) ([]models.LanguageConfig, error) {
 	tasks := []models.LanguageConfig{}
 	err := tx.Model(&models.LanguageConfig{}).Find(&tasks).Error
 	if err != nil {
@@ -24,16 +24,16 @@ func (l *LanguageRepositoryImpl) GetLanguages(tx *gorm.DB) ([]models.LanguageCon
 	return tasks, nil
 }
 
-func (l *LanguageRepositoryImpl) GetLanguage(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error) {
+func (l *languageRepository) GetLanguage(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error) {
 	panic("implement me")
 }
 
-func (l *LanguageRepositoryImpl) CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error {
+func (l *languageRepository) CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error {
 	err := tx.Model(models.LanguageConfig{}).Create(&language).Error
 	return err
 }
 
-func (l *LanguageRepositoryImpl) DeleteLanguage(tx *gorm.DB, languageId int64) error {
+func (l *languageRepository) DeleteLanguage(tx *gorm.DB, languageId int64) error {
 	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Delete(&models.LanguageConfig{}).Error
 	return err
 }
@@ -45,5 +45,5 @@ func NewLanguageRepository(db *gorm.DB) (LanguageRepository, error) {
 			return nil, err
 		}
 	}
-	return &LanguageRepositoryImpl{}, nil
+	return &languageRepository{}, nil
 }

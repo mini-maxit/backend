@@ -23,9 +23,9 @@ type SubmissionRepository interface {
 	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error)
 }
 
-type SubmissionRepositoryImpl struct{}
+type submissionRepository struct{}
 
-func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -44,7 +44,7 @@ func (us *SubmissionRepositoryImpl) GetAll(tx *gorm.DB, limit, offset, sort stri
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -63,7 +63,7 @@ func (us *SubmissionRepositoryImpl) GetAllForStudent(tx *gorm.DB, currentUserId 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -82,7 +82,7 @@ func (us *SubmissionRepositoryImpl) GetAllForTeacher(tx *gorm.DB, currentUserId 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
+func (us *submissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
 	var submission models.Submission
 	err := tx.Where("id = ?", submissionId).
 		Preload("Language").
@@ -95,7 +95,7 @@ func (us *SubmissionRepositoryImpl) GetSubmission(tx *gorm.DB, submissionId int6
 	return &submission, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllByUserId(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -114,7 +114,7 @@ func (us *SubmissionRepositoryImpl) GetAllByUserId(tx *gorm.DB, userId int64, li
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -138,7 +138,7 @@ func (us *SubmissionRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, l
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -162,7 +162,7 @@ func (us *SubmissionRepositoryImpl) GetAllForGroupTeacher(tx *gorm.DB, groupId, 
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForTask(tx *gorm.DB, taskId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -184,7 +184,7 @@ func (us *SubmissionRepositoryImpl) GetAllForTask(tx *gorm.DB, taskId int64, lim
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -206,7 +206,7 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskTeacher(tx *gorm.DB, taskId, te
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -228,7 +228,7 @@ func (us *SubmissionRepositoryImpl) GetAllForTaskStudent(tx *gorm.DB, taskId, st
 	return submissions, nil
 }
 
-func (us *SubmissionRepositoryImpl) CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error) {
+func (us *submissionRepository) CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error) {
 	err := tx.Create(submission).Error
 	if err != nil {
 		return 0, err
@@ -236,17 +236,17 @@ func (us *SubmissionRepositoryImpl) CreateSubmission(tx *gorm.DB, submission *mo
 	return submission.Id, nil
 }
 
-func (us *SubmissionRepositoryImpl) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
+func (us *submissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionId).Update("status", "processing").Error
 	return err
 }
 
-func (us *SubmissionRepositoryImpl) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
+func (us *submissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionId).Update("status", "completed").Error
 	return err
 }
 
-func (us *SubmissionRepositoryImpl) MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error {
+func (us *submissionRepository) MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error {
 	err := db.Model(&models.Submission{}).Where("id = ?", submissionId).Updates(map[string]interface{}{
 		"status":         "failed",
 		"status_message": errorMsg,
@@ -261,5 +261,5 @@ func NewSubmissionRepository(db *gorm.DB) (SubmissionRepository, error) {
 			return nil, err
 		}
 	}
-	return &SubmissionRepositoryImpl{}, nil
+	return &submissionRepository{}, nil
 }

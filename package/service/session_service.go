@@ -26,19 +26,19 @@ type SessionService interface {
 	InvalidateSession(tx *gorm.DB, sessionId string) error
 }
 
-type SessionServiceImpl struct {
+type sessionService struct {
 	sessionRepository repository.SessionRepository
 	userRepository    repository.UserRepository
 	logger            *zap.SugaredLogger
 }
 
 // Generates a new session token
-func (s *SessionServiceImpl) generateSessionToken() string {
+func (s *sessionService) generateSessionToken() string {
 	return uuid.New().String()
 }
 
 // Converts a session model to a session schema
-func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Session {
+func (s *sessionService) modelToSchema(session *models.Session) *schemas.Session {
 	return &schemas.Session{
 		Id:        session.Id,
 		UserId:    session.UserId,
@@ -48,7 +48,7 @@ func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Ses
 }
 
 // Creates a new session for a given user
-func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
+func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
 	user, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -93,7 +93,7 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 	return resp, nil
 }
 
-func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
+func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
 	session, err := s.sessionRepository.GetSession(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error getting session by id: %v", err.Error())
@@ -128,7 +128,7 @@ func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (sch
 	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
 }
 
-func (s *SessionServiceImpl) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
+func (s *sessionService) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
 	err := s.sessionRepository.UpdateExpiration(tx, sessionId, time.Now().Add(time.Hour*24))
 	if err != nil {
 		s.logger.Errorf("Error updating session expiration: %v", err.Error())
@@ -142,7 +142,7 @@ func (s *SessionServiceImpl) RefreshSession(tx *gorm.DB, sessionId string) (*sch
 	return s.modelToSchema(session), nil
 }
 
-func (s *SessionServiceImpl) InvalidateSession(tx *gorm.DB, sessionId string) error {
+func (s *sessionService) InvalidateSession(tx *gorm.DB, sessionId string) error {
 	err := s.sessionRepository.DeleteSession(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error deleting session: %v", err.Error())
@@ -153,7 +153,7 @@ func (s *SessionServiceImpl) InvalidateSession(tx *gorm.DB, sessionId string) er
 
 func NewSessionService(sessionRepository repository.SessionRepository, userRepository repository.UserRepository) SessionService {
 	log := utils.NewNamedLogger("session_service")
-	return &SessionServiceImpl{
+	return &sessionService{
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
 		logger:            log,

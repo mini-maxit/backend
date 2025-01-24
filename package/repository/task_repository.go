@@ -19,10 +19,10 @@ type TaskRepository interface {
 	UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error
 }
 
-type TaskRepositoryImpl struct {
+type taskRepository struct {
 }
 
-func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task *models.Task) (int64, error) {
+func (tr *taskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) {
 	err := tx.Model(models.Task{}).Create(&task).Error
 	if err != nil {
 		return 0, err
@@ -30,7 +30,7 @@ func (tr *TaskRepositoryImpl) Create(tx *gorm.DB, task *models.Task) (int64, err
 	return task.Id, nil
 }
 
-func (tr *TaskRepositoryImpl) GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error) {
+func (tr *taskRepository) GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error) {
 	task := &models.Task{}
 	err := tx.Model(&models.Task{}).Where("title = ?", title).First(task).Error
 	if err != nil {
@@ -39,7 +39,7 @@ func (tr *TaskRepositoryImpl) GetTaskByTitle(tx *gorm.DB, title string) (*models
 	return task, nil
 }
 
-func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {
+func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {
 	task := &models.Task{}
 	err := tx.Preload("Author").Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
 	if err != nil {
@@ -48,7 +48,7 @@ func (tr *TaskRepositoryImpl) GetTask(tx *gorm.DB, taskId int64) (*models.Task, 
 	return task, nil
 }
 
-func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
 	tasks := []models.Task{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -61,7 +61,7 @@ func (tr *TaskRepositoryImpl) GetAllTasks(tx *gorm.DB, limit, offset, sort strin
 	return tasks, nil
 }
 
-func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -83,7 +83,7 @@ func (tr *TaskRepositoryImpl) GetAllForUser(tx *gorm.DB, userId int64, limit, of
 	return tasks, nil
 }
 
-func (tr *TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -101,7 +101,7 @@ func (tr *TaskRepositoryImpl) GetAllForGroup(tx *gorm.DB, groupId int64, limit, 
 	return tasks, nil
 }
 
-func (tr *TaskRepositoryImpl) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *taskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
 	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
@@ -115,7 +115,7 @@ func (tr *TaskRepositoryImpl) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]fl
 	return timeLimits, nil
 }
 
-func (tr *TaskRepositoryImpl) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
 	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
@@ -129,7 +129,7 @@ func (tr *TaskRepositoryImpl) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]
 	return memoryLimits, nil
 }
 
-func (tr *TaskRepositoryImpl) UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error {
+func (tr *taskRepository) UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error {
 	err := tx.Model(&models.Task{}).Where("id = ?", taskId).Updates(task).Error
 	if err != nil {
 		return err
@@ -148,5 +148,5 @@ func NewTaskRepository(db *gorm.DB) (TaskRepository, error) {
 		}
 	}
 
-	return &TaskRepositoryImpl{}, nil
+	return &taskRepository{}, nil
 }
