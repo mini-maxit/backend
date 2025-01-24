@@ -5,23 +5,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type TestResult interface {
+type TestRepository interface {
 	CreateTestResults(tx *gorm.DB, testResult models.TestResult) error
 }
 
-type TestResultRepository struct{}
+type testResultRepository struct{}
 
-func (tr *TestResultRepository) CreateTestResults(tx *gorm.DB, testResult models.TestResult) error {
+func (tr *testResultRepository) CreateTestResults(tx *gorm.DB, testResult models.TestResult) error {
 	err := tx.Create(&testResult).Error
 	return err
 }
 
-func NewTestResultRepository(db *gorm.DB) (TestResult, error) {
+func NewTestResultRepository(db *gorm.DB) (TestRepository, error) {
 	if !db.Migrator().HasTable(&models.TestResult{}) {
 		err := db.Migrator().CreateTable(&models.TestResult{})
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &TestResultRepository{}, nil
+	return &testResultRepository{}, nil
 }

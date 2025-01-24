@@ -22,14 +22,14 @@ type LanguageService interface {
 	modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig
 }
 
-// LanguageServiceImpl implements [LanguageService] interface
-type LanguageServiceImpl struct {
+// languageService implements [LanguageService] interface
+type languageService struct {
 	languageRepository repository.LanguageRepository
 	logger             *zap.SugaredLogger
 }
 
 // InitLanguages implements InitLanguages method of [LanguageService] interface
-func (l *LanguageServiceImpl) InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error {
+func (l *languageService) InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error {
 	existingLanguages, err := l.languageRepository.GetLanguages(tx)
 	if err != nil {
 		l.logger.Errorf("Error getting existing languages: %v", err.Error())
@@ -59,7 +59,7 @@ func (l *LanguageServiceImpl) InitLanguages(tx *gorm.DB, enabledLanguages []sche
 	return nil
 }
 
-func (l *LanguageServiceImpl) modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
+func (l *languageService) modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
 	return &schemas.LanguageConfig{
 		Type:    language.Type,
 		Version: language.Version,
@@ -68,7 +68,7 @@ func (l *LanguageServiceImpl) modelToSchema(language *models.LanguageConfig) *sc
 
 func NewLanguageService(languageRepository repository.LanguageRepository) LanguageService {
 	log := utils.NewNamedLogger("language_service")
-	return &LanguageServiceImpl{
+	return &languageService{
 		languageRepository: languageRepository,
 		logger:             log,
 	}

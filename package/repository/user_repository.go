@@ -16,10 +16,10 @@ type UserRepository interface {
 	EditUser(tx *gorm.DB, user *schemas.User) error
 }
 
-type UserRepositoryImpl struct {
+type userRepository struct {
 }
 
-func (ur *UserRepositoryImpl) CreateUser(tx *gorm.DB, user *models.User) (int64, error) {
+func (ur *userRepository) CreateUser(tx *gorm.DB, user *models.User) (int64, error) {
 	err := tx.Model(&models.User{}).Create(user).Error
 	if err != nil {
 		return 0, err
@@ -27,7 +27,7 @@ func (ur *UserRepositoryImpl) CreateUser(tx *gorm.DB, user *models.User) (int64,
 	return user.Id, nil
 }
 
-func (ur *UserRepositoryImpl) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
+func (ur *userRepository) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
 	user := &models.User{}
 	err := tx.Model(&models.User{}).Where("id = ?", userId).First(user).Error
 	if err != nil {
@@ -36,7 +36,7 @@ func (ur *UserRepositoryImpl) GetUser(tx *gorm.DB, userId int64) (*models.User, 
 	return user, nil
 }
 
-func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models.User, error) {
+func (ur *userRepository) GetUserByEmail(tx *gorm.DB, email string) (*models.User, error) {
 	user := &models.User{}
 	err := tx.Model(&models.User{}).Where("email = ?", email).First(user).Error
 	if err != nil {
@@ -45,7 +45,7 @@ func (ur *UserRepositoryImpl) GetUserByEmail(tx *gorm.DB, email string) (*models
 	return user, nil
 }
 
-func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
+func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
 	users := &[]models.User{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -59,7 +59,7 @@ func (ur *UserRepositoryImpl) GetAllUsers(tx *gorm.DB, limit, offset, sort strin
 	return *users, nil
 }
 
-func (ur *UserRepositoryImpl) EditUser(tx *gorm.DB, user *schemas.User) error {
+func (ur *userRepository) EditUser(tx *gorm.DB, user *schemas.User) error {
 	err := tx.Model(&models.User{}).Where("id = ?", user.Id).Updates(user).Error
 	return err
 }
@@ -72,5 +72,5 @@ func NewUserRepository(db *gorm.DB) (UserRepository, error) {
 		}
 	}
 
-	return &UserRepositoryImpl{}, nil
+	return &userRepository{}, nil
 }

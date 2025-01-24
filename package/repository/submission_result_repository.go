@@ -9,10 +9,10 @@ type SubmissionResultRepository interface {
 	CreateSubmissionResult(tx *gorm.DB, solutionResult models.SubmissionResult) (int64, error)
 }
 
-type SubmissionResultRepositoryImpl struct{}
+type submissionResultRepository struct{}
 
 // Store the result of the solution in the database
-func (usr *SubmissionResultRepositoryImpl) CreateSubmissionResult(tx *gorm.DB, submissionResult models.SubmissionResult) (int64, error) {
+func (usr *submissionResultRepository) CreateSubmissionResult(tx *gorm.DB, submissionResult models.SubmissionResult) (int64, error) {
 	if err := tx.Create(&submissionResult).Error; err != nil {
 		return 0, err
 	}
@@ -25,6 +25,6 @@ func NewSubmissionResultRepository(db *gorm.DB) (SubmissionResultRepository, err
 			return nil, err
 		}
 	}
-	return &SubmissionResultRepositoryImpl{}, nil
+	return &submissionResultRepository{}, nil
 
 }

@@ -25,12 +25,12 @@ type UserService interface {
 	modelToSchema(user *models.User) *schemas.User
 }
 
-type UserServiceImpl struct {
+type userService struct {
 	userRepository repository.UserRepository
 	logger         *zap.SugaredLogger
 }
 
-func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
+func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUserByEmail(tx, email)
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
@@ -44,7 +44,7 @@ func (us *UserServiceImpl) GetUserByEmail(tx *gorm.DB, email string) (*schemas.U
 	return user, nil
 }
 
-func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
+func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
 	limit := queryParams["limit"]
 	offset := queryParams["offset"]
 	sort := queryParams["sort"]
@@ -63,7 +63,7 @@ func (us *UserServiceImpl) GetAllUsers(tx *gorm.DB, queryParams map[string]strin
 	return users, nil
 }
 
-func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
+func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -78,7 +78,7 @@ func (us *UserServiceImpl) GetUserById(tx *gorm.DB, userId int64) (*schemas.User
 	return user, nil
 }
 
-func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
+func (us *userService) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
 	currentModel, err := us.GetUserById(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -98,7 +98,7 @@ func (us *UserServiceImpl) EditUser(tx *gorm.DB, userId int64, updateInfo *schem
 	return nil
 }
 
-func (us *UserServiceImpl) ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error {
+func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error {
 	user, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -117,7 +117,7 @@ func (us *UserServiceImpl) ChangeRole(tx *gorm.DB, userId int64, role models.Use
 	return nil
 }
 
-func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
+func (us *userService) modelToSchema(user *models.User) *schemas.User {
 	if user.Role == "" {
 		us.logger.Errorf("")
 	}
@@ -131,7 +131,7 @@ func (us *UserServiceImpl) modelToSchema(user *models.User) *schemas.User {
 	}
 }
 
-func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *schemas.UserEdit) {
+func (us *userService) updateModel(curretnModel *schemas.User, updateInfo *schemas.UserEdit) {
 	if updateInfo.Email != nil {
 		curretnModel.Email = *updateInfo.Email
 	}
@@ -151,7 +151,7 @@ func (us *UserServiceImpl) updateModel(curretnModel *schemas.User, updateInfo *s
 
 func NewUserService(userRepository repository.UserRepository) UserService {
 	log := utils.NewNamedLogger("user_service")
-	return &UserServiceImpl{
+	return &userService{
 		userRepository: userRepository,
 		logger:         log,
 	}

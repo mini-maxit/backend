@@ -27,13 +27,13 @@ type TaskService interface {
 	modelToSchema(model *models.Task) *schemas.Task
 }
 
-type TaskServiceImpl struct {
+type taskService struct {
 	fileStorageUrl string
 	taskRepository repository.TaskRepository
 	logger         *zap.SugaredLogger
 }
 
-func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error) {
+func (ts *taskService) Create(tx *gorm.DB, task *schemas.Task) (int64, error) {
 	// Create a new task
 	_, err := ts.GetTaskByTitle(tx, task.Title)
 	if err != nil && err != ErrTaskNotFound {
@@ -56,7 +56,7 @@ func (ts *TaskServiceImpl) Create(tx *gorm.DB, task *schemas.Task) (int64, error
 	return taskId, nil
 }
 
-func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
+func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
 	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -71,7 +71,7 @@ func (ts *TaskServiceImpl) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.T
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error) {
 
 	limit := queryParams["limit"]
 	offset := queryParams["offset"]
@@ -93,7 +93,7 @@ func (ts *TaskServiceImpl) GetAll(tx *gorm.DB, queryParams map[string]string) ([
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error) {
 	limit := queryParams["limit"]
 	offset := queryParams["offset"]
 	sort := queryParams["sort"]
@@ -114,7 +114,7 @@ func (ts *TaskServiceImpl) GetAllForUser(tx *gorm.DB, userId int64, queryParams 
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error) {
 	limit := queryParams["limit"]
 	offset := queryParams["offset"]
 	sort := queryParams["sort"]
@@ -135,7 +135,7 @@ func (ts *TaskServiceImpl) GetAllForGroup(tx *gorm.DB, groupId int64, queryParam
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
@@ -156,7 +156,7 @@ func (ts *TaskServiceImpl) GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDeta
 	return result, nil
 }
 
-func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
+func (ts *taskService) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -177,13 +177,13 @@ func (ts *TaskServiceImpl) UpdateTask(tx *gorm.DB, taskId int64, updateInfo sche
 	return nil
 }
 
-func (ts *TaskServiceImpl) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
+func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
 	if updateInfo.Title != "" {
 		currentModel.Title = updateInfo.Title
 	}
 }
 
-func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
+func (ts *taskService) modelToSchema(model *models.Task) *schemas.Task {
 	return &schemas.Task{
 		Id:        model.Id,
 		Title:     model.Title,
@@ -194,7 +194,7 @@ func (ts *TaskServiceImpl) modelToSchema(model *models.Task) *schemas.Task {
 
 func NewTaskService(fileStorageUrl string, taskRepository repository.TaskRepository) TaskService {
 	log := utils.NewNamedLogger("task_service")
-	return &TaskServiceImpl{
+	return &taskService{
 		fileStorageUrl: fileStorageUrl,
 		taskRepository: taskRepository,
 		logger:         log,

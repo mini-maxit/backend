@@ -21,7 +21,7 @@ type QueueService interface {
 	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
 }
 
-type QueueServiceImpl struct {
+type queueService struct {
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
 	queueRepository      repository.QueueMessageRepository
@@ -31,7 +31,7 @@ type QueueServiceImpl struct {
 	logger               *zap.SugaredLogger
 }
 
-func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
+func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling message: %v", err.Error())
@@ -55,7 +55,7 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) error {
+func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err.Error())
@@ -111,7 +111,7 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 	return nil
 }
 
-func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
+func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
 	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
 	if err != nil {
 		return 0, err
@@ -121,7 +121,7 @@ func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int6
 	return queueMessage.SubmissionId, nil
 }
 
-func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
+func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*queueService, error) {
 	q, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
@@ -134,7 +134,7 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 		return nil, err
 	}
 	log := utils.NewNamedLogger("queue_service")
-	return &QueueServiceImpl{
+	return &queueService{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
 		queueRepository:      queueMessageRepository,
