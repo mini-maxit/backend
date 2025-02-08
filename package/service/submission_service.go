@@ -22,6 +22,7 @@ type SubmissionService interface {
 	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
 	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error)
+	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 }
 
 type submissionService struct {
@@ -276,6 +277,16 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 	}
 
 	return id, nil
+}
+
+func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
+	languages, err := ss.languageService.GetAll(tx)
+	if err != nil {
+		ss.logger.Errorf("Error getting all languages: %v", err.Error())
+		return nil, err
+	}
+
+	return languages, nil
 }
 
 func (us *submissionService) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.TestResult) error {

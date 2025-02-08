@@ -36,5 +36,7 @@ services:
       timeout: 10s
       retries: 5
   file-storage:
+    ports:
+      - "8888:8888"
     image: maxit/file-storage
     pull_policy: never

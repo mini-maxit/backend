@@ -160,7 +160,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if cfg.Dump {
 		tx, err := db.Connect()
 		if err != nil {
-			log.Panicf("Failed to connect to database to init dump: %s", err.Error())
+			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 		}
 		session, err := authService.Register(tx, schemas.UserRegisterRequest{
 			Name:     "AdminName",
@@ -170,11 +170,12 @@ func NewInitialization(cfg *config.Config) *Initialization {
 			Password: "adminadmin",
 		})
 		if err != nil {
-			log.Panicf("Failed to create admin: %s", err.Error())
-		}
-		err = userService.ChangeRole(tx, session.UserId, models.UserRoleAdmin)
-		if err != nil {
-			log.Panicf("Failed to change admin role: %s", err.Error())
+			log.Warnf("Failed to create admin: %s", err.Error())
+		} else {
+			err = userService.ChangeRole(tx, session.UserId, models.UserRoleAdmin)
+			if err != nil {
+				log.Warnf("Failed to change admin role: %s", err.Error())
+			}
 		}
 		session, err = authService.Register(tx, schemas.UserRegisterRequest{
 			Name:     "TeacherName",
@@ -184,11 +185,12 @@ func NewInitialization(cfg *config.Config) *Initialization {
 			Password: "teacherteacher",
 		})
 		if err != nil {
-			log.Panicf("Failed to create teacher: %s", err.Error())
-		}
-		err = userService.ChangeRole(tx, session.UserId, models.UserRoleTeacher)
-		if err != nil {
-			log.Panicf("Failed to change teacher role: %s", err.Error())
+			log.Warnf("Failed to create teacher: %s", err.Error())
+		} else {
+			err = userService.ChangeRole(tx, session.UserId, models.UserRoleTeacher)
+			if err != nil {
+				log.Warnf("Failed to change teacher role: %s", err.Error())
+			}
 		}
 		session, err = authService.Register(tx, schemas.UserRegisterRequest{
 			Name:     "StudentName",
@@ -198,11 +200,12 @@ func NewInitialization(cfg *config.Config) *Initialization {
 			Password: "studentstudent",
 		})
 		if err != nil {
-			log.Panicf("Failed to create student: %s", err.Error())
-		}
-		err = userService.ChangeRole(tx, session.UserId, models.UserRoleStudent)
-		if err != nil {
-			log.Panicf("Failed to change student role: %s", err.Error())
+			log.Warnf("Failed to create student: %s", err.Error())
+		} else {
+			err = userService.ChangeRole(tx, session.UserId, models.UserRoleStudent)
+			if err != nil {
+				log.Warnf("Failed to change student role: %s", err.Error())
+			}
 		}
 	}
 

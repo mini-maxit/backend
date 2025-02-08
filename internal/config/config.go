@@ -58,72 +58,88 @@ const (
 // DefaultLanguages is a list of languages that is enabled by default
 var DefaultLanguages = []schemas.LanguageConfig{
 	{
-		Type:    models.LangTypeC,
-		Version: "99",
+		Type:          models.LangTypeC,
+		Version:       "99",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeC,
-		Version: "11",
+		Type:          models.LangTypeC,
+		Version:       "11",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeC,
-		Version: "18",
+		Type:          models.LangTypeC,
+		Version:       "18",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "11",
+		Type:          models.LangTypeCPP,
+		Version:       "11",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "14",
+		Type:          models.LangTypeCPP,
+		Version:       "14",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "17",
+		Type:          models.LangTypeCPP,
+		Version:       "17",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "20",
+		Type:          models.LangTypeCPP,
+		Version:       "20",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "23",
+		Type:          models.LangTypeCPP,
+		Version:       "23",
+		FileExtension: "cpp",
 	},
 }
 
 // AvailableLanguages is a list of languages that is acrively supported by the system and can be used if enabled.
 var AvailableLanguages = []schemas.LanguageConfig{
 	{
-		Type:    models.LangTypeC,
-		Version: "99",
+		Type:          models.LangTypeC,
+		Version:       "99",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeC,
-		Version: "11",
+		Type:          models.LangTypeC,
+		Version:       "11",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeC,
-		Version: "18",
+		Type:          models.LangTypeC,
+		Version:       "18",
+		FileExtension: "c",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "11",
+		Type:          models.LangTypeCPP,
+		Version:       "11",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "14",
+		Type:          models.LangTypeCPP,
+		Version:       "14",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "17",
+		Type:          models.LangTypeCPP,
+		Version:       "17",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "20",
+		Type:          models.LangTypeCPP,
+		Version:       "20",
+		FileExtension: "cpp",
 	},
 	{
-		Type:    models.LangTypeCPP,
-		Version: "23",
+		Type:          models.LangTypeCPP,
+		Version:       "23",
+		FileExtension: "cpp",
 	},
 }
 

@@ -23,6 +23,7 @@ type SubmissionRoutes interface {
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
+	GetAvailableLanguages(w http.ResponseWriter, r *http.Request)
 
 	// Post requests
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
@@ -235,6 +236,21 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
+func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.Connect()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+	languages, err := s.submissionService.GetAvailableLanguages(tx)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get available languages. "+err.Error())
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, languages)
 }
 
 // Post requests

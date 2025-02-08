@@ -19,6 +19,7 @@ type LanguageService interface {
 	// If language is already present in the database, and is not disabled it skips it. Otherwise, it enables it.
 	// If language is not in enabled languages, but is present in the database, it is marked as disabled.
 	InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error
+	GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig
 }
 
@@ -45,8 +46,9 @@ func (l *languageService) InitLanguages(tx *gorm.DB, enabledLanguages []schemas.
 		}
 		if !found {
 			langModel := &models.LanguageConfig{
-				Type:    newLang.Type,
-				Version: newLang.Version,
+				Type:          newLang.Type,
+				Version:       newLang.Version,
+				FileExtension: newLang.FileExtension,
 			}
 			err = l.languageRepository.CreateLanguage(tx, langModel)
 			if err != nil {
@@ -59,10 +61,25 @@ func (l *languageService) InitLanguages(tx *gorm.DB, enabledLanguages []schemas.
 	return nil
 }
 
+func (l *languageService) GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
+	languages, err := l.languageRepository.GetLanguages(tx)
+	if err != nil {
+		l.logger.Errorf("Error getting languages: %v", err.Error())
+		return nil, err
+	}
+	var result []schemas.LanguageConfig
+	for _, language := range languages {
+		result = append(result, *l.modelToSchema(&language))
+	}
+	return result, nil
+}
+
 func (l *languageService) modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
 	return &schemas.LanguageConfig{
-		Type:    language.Type,
-		Version: language.Version,
+		Id:            language.Id,
+		Type:          language.Type,
+		Version:       language.Version,
+		FileExtension: language.FileExtension,
 	}
 }
 

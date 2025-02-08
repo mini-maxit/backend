@@ -93,6 +93,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	subbmissionMux.HandleFunc("/group/{id}", init.SubmissionRoute.GetAllForGroup)
 	subbmissionMux.HandleFunc("/task/{id}", init.SubmissionRoute.GetAllForTask)
 	subbmissionMux.HandleFunc("/submit", init.SubmissionRoute.SubmitSolution)
+	subbmissionMux.HandleFunc("/languages", init.SubmissionRoute.GetAvailableLanguages)
 
 	// Group routes
 	groupMux := http.NewServeMux()
