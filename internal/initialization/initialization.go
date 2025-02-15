@@ -119,7 +119,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository)
+	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository, userRepository, groupRepository)
 	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())

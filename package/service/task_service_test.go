@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -25,7 +26,8 @@ func newTaskServiceTest() *taskServiceTest {
 	config := testutils.NewTestConfig()
 	ur := testutils.NewMockUserRepository()
 	tr := testutils.NewMockTaskRepository()
-	ts := NewTaskService(config.FileStorageUrl, tr)
+	gr := testutils.NewMockGroupRepository()
+	ts := NewTaskService(config.FileStorageUrl, tr, ur, gr)
 
 	return &taskServiceTest{
 		tx:          tx,
@@ -52,10 +54,14 @@ func (tst *taskServiceTest) createUser(t *testing.T) int64 {
 
 func TestCreateTask(t *testing.T) {
 	tst := newTaskServiceTest()
+	current_user := schemas.User{
+		Id: 1,
+		Role: "admin",
+	}
 
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
-		taskId, err := tst.taskService.Create(tst.tx, &schemas.Task{
+		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		})
@@ -67,30 +73,34 @@ func TestCreateTask(t *testing.T) {
 	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
 		userId := tst.createUser(t)
-		taskId, err := tst.taskService.Create(tst.tx, &schemas.Task{
+		taskId, err := tst.taskService.Create(tst.tx, current_user,&schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		})
 		assert.NoError(t, err)
 		assert.NotEqual(t, int64(0), taskId)
-		taskId, err = tst.taskService.Create(tst.tx, &schemas.Task{
+		taskId, err = tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		})
-		assert.ErrorIs(t, err, ErrTaskExists)
+		assert.ErrorIs(t, err, errors.ErrTaskExists)
 		assert.Equal(t, int64(0), taskId)
 	})
 }
 
 func TestGetTaskByTitle(t *testing.T) {
 	tst := newTaskServiceTest()
+	current_user := schemas.User{
+		Id: 1,
+		Role: "admin",
+	}
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, task)
+		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
 		taskResp, err := tst.taskService.GetTaskByTitle(tst.tx, task.Title)
@@ -101,16 +111,21 @@ func TestGetTaskByTitle(t *testing.T) {
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		task, err := tst.taskService.GetTaskByTitle(tst.tx, "Nonexistent Task")
-		assert.ErrorIs(t, err, ErrTaskNotFound)
+		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
+	current_user := schemas.User{
+		Id: 1,
+		Role: "admin",
+	}
+
 	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
+		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -121,10 +136,10 @@ func TestGetAllTasks(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: userId,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, task)
+		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
+		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 	})
@@ -132,6 +147,10 @@ func TestGetAllTasks(t *testing.T) {
 
 func TestGetTask(t *testing.T) {
 	tst := newTaskServiceTest()
+	current_user := schemas.User{
+		Id: 1,
+		Role: "admin",
+	}
 
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
@@ -139,10 +158,10 @@ func TestGetTask(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: userId,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, task)
+		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		taskResp, err := tst.taskService.GetTask(tst.tx, taskId)
+		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -151,13 +170,17 @@ func TestGetTask(t *testing.T) {
 
 func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
+	current_user := schemas.User{
+		Id: 1,
+		Role: "admin",
+	}
 	t.Run("Success", func(t *testing.T) {
 		userId := tst.createUser(t)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, task)
+		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
 		updatedTask := schemas.UpdateTask{
@@ -165,7 +188,7 @@ func TestUpdateTask(t *testing.T) {
 		}
 		err = tst.taskService.UpdateTask(tst.tx, taskId, updatedTask)
 		assert.NoError(t, err)
-		taskResp, err := tst.taskService.GetTask(tst.tx, taskId)
+		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, updatedTask.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -175,6 +198,6 @@ func TestUpdateTask(t *testing.T) {
 			Title: "Updated Task",
 		}
 		err := tst.taskService.UpdateTask(tst.tx, 0, updatedTask)
-		assert.ErrorIs(t, err, ErrTaskNotFound)
+		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }

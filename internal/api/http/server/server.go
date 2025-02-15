@@ -11,6 +11,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/initialization"
+	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
@@ -60,15 +61,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Task routes
 	taskMux := http.NewServeMux()
-	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			init.TaskRoute.UploadTask(w, r)
-		} else if r.Method == "GET" {
-			init.TaskRoute.GetAllTasks(w, r)
-		}
-	},
-	)
-	taskMux.HandleFunc("/{id}", init.TaskRoute.GetTask)
+	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
 
 	// User routes
 	userMux := http.NewServeMux()
@@ -83,7 +76,6 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	)
 	userMux.HandleFunc("/user", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
-	userMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()

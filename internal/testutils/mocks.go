@@ -215,6 +215,46 @@ func (tr *MockTaskRepository) UpdateTask(tx *gorm.DB, taskId int64, task *models
 	return gorm.ErrRecordNotFound
 }
 
+func (tr *MockTaskRepository) DeleteTask(tx *gorm.DB, taskId int64) error {
+	if _, ok := tr.tasks[taskId]; ok {
+		delete(tr.tasks, taskId)
+		return nil
+	}
+	return gorm.ErrRecordNotFound
+}
+
+func (tr *MockTaskRepository) AssignTaskToUser(tx *gorm.DB, taskId, userId int64) error {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) AssignTaskToGroup(tx *gorm.DB, taskId, groupId int64) error {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) UnAssignTaskFromUser(tx *gorm.DB, taskId, userId int64) error {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) UnAssignTaskFromGroup(tx *gorm.DB, taskId, groupId int64) error {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) IsTaskAssignedToGroup(tx *gorm.DB, taskId, groupId int64) (bool, error) {
+	panic("implement me")
+}
+
+func (tr *MockTaskRepository) IsTaskAssignedToUser(tx *gorm.DB, taskId, userId int64) (bool, error) {
+	panic("implement me")
+}
+
 func NewMockTaskRepository() *MockTaskRepository {
 	return &MockTaskRepository{
 		tasks:   make(map[int64]*models.Task),
@@ -270,5 +310,51 @@ func NewMockSubmissionRepository() *MockSubmissionRepository {
 	return &MockSubmissionRepository{
 		submissions: make(map[int64]*models.Submission),
 		counter:     0,
+	}
+}
+
+type MockGroupRepository struct {
+	groups map[int64]*models.Group
+	counter int64
+}
+
+func (gr *MockGroupRepository) CreateGroup(tx *gorm.DB, group *models.Group) (int64, error) {
+	gr.counter++
+	group.Id = gr.counter
+	gr.groups[group.Id] = group
+	return group.Id, nil
+}
+
+func (gr *MockGroupRepository) DeleteGroup(tx *gorm.DB, groupId int64) error {
+	if _, ok := gr.groups[groupId]; ok {
+		delete(gr.groups, groupId)
+		return nil
+	}
+	return gorm.ErrRecordNotFound
+}
+
+func (gr *MockGroupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error) {
+	panic("implement me")
+}
+
+func (gr *MockGroupRepository) GetAllGroup(*gorm.DB, int, int, string) ([]models.Group, error) {
+	groups := make([]models.Group, 0, len(gr.groups))
+	for _, group := range gr.groups {
+		groups = append(groups, *group)
+	}
+	return groups, nil
+}
+
+func (gr *MockGroupRepository) GetGroup(tx *gorm.DB, groupId int64) (*models.Group, error) {
+	if group, ok := gr.groups[groupId]; ok {
+		return group, nil
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func NewMockGroupRepository() *MockGroupRepository {
+	return &MockGroupRepository{
+		groups: make(map[int64]*models.Group),
+		counter: 0,
 	}
 }
