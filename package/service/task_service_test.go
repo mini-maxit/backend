@@ -55,7 +55,7 @@ func (tst *taskServiceTest) createUser(t *testing.T) int64 {
 func TestCreateTask(t *testing.T) {
 	tst := newTaskServiceTest()
 	current_user := schemas.User{
-		Id: 1,
+		Id:   1,
 		Role: "admin",
 	}
 
@@ -73,7 +73,7 @@ func TestCreateTask(t *testing.T) {
 	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
 		userId := tst.createUser(t)
-		taskId, err := tst.taskService.Create(tst.tx, current_user,&schemas.Task{
+		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: userId,
 		})
@@ -91,7 +91,7 @@ func TestCreateTask(t *testing.T) {
 func TestGetTaskByTitle(t *testing.T) {
 	tst := newTaskServiceTest()
 	current_user := schemas.User{
-		Id: 1,
+		Id:   1,
 		Role: "admin",
 	}
 	t.Run("Success", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestGetTaskByTitle(t *testing.T) {
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
 	current_user := schemas.User{
-		Id: 1,
+		Id:   1,
 		Role: "admin",
 	}
 
@@ -148,7 +148,7 @@ func TestGetAllTasks(t *testing.T) {
 func TestGetTask(t *testing.T) {
 	tst := newTaskServiceTest()
 	current_user := schemas.User{
-		Id: 1,
+		Id:   1,
 		Role: "admin",
 	}
 
@@ -171,7 +171,7 @@ func TestGetTask(t *testing.T) {
 func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
 	current_user := schemas.User{
-		Id: 1,
+		Id:   1,
 		Role: "admin",
 	}
 	t.Run("Success", func(t *testing.T) {

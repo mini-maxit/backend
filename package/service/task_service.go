@@ -5,9 +5,9 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
-	"github.com/mini-maxit/backend/package/errors"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -31,11 +31,11 @@ type TaskService interface {
 }
 
 type taskService struct {
-	fileStorageUrl string
-	taskRepository repository.TaskRepository
-	userRepository repository.UserRepository
+	fileStorageUrl  string
+	taskRepository  repository.TaskRepository
+	userRepository  repository.UserRepository
 	groupRepository repository.GroupRepository
-	logger         *zap.SugaredLogger
+	logger          *zap.SugaredLogger
 }
 
 func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *schemas.Task) (int64, error) {
@@ -82,7 +82,7 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 }
 
 func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{ models.UserRoleAdmin})
+	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
@@ -129,7 +129,7 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams ma
 	return result, nil
 }
 
-func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User ,taskId int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
@@ -232,7 +232,7 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) &&  task.CreatedBy != current_user.Id {
+	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -330,7 +330,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 		if !isAssigned {
 			return errors.ErrTaskNotAssigned
 		}
-	
+
 		err = ts.taskRepository.UnAssignTaskFromUser(tx, taskId, userId)
 		if err != nil {
 			ts.logger.Errorf("Error unassigning task from user: %v", err.Error())
@@ -442,10 +442,10 @@ func (ts *taskService) modelToSchema(model *models.Task) *schemas.Task {
 func NewTaskService(fileStorageUrl string, taskRepository repository.TaskRepository, userRepository repository.UserRepository, groupRepository repository.GroupRepository) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		fileStorageUrl: fileStorageUrl,
-		taskRepository: taskRepository,
-		userRepository: userRepository,
+		fileStorageUrl:  fileStorageUrl,
+		taskRepository:  taskRepository,
+		userRepository:  userRepository,
 		groupRepository: groupRepository,
-		logger:         log,
+		logger:          log,
 	}
 }

@@ -57,21 +57,21 @@ func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, erro
 }
 
 func (tr *taskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
-    var tasks []models.Task
+	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
 		return nil, err
 	}
 
-    err = tx.Model(&models.Task{}).
-        Joins("JOIN task_user ON task_user.task_id = tasks.id").
-        Where("task_user.user_id = ?", userId).
-        Find(&tasks).Error
+	err = tx.Model(&models.Task{}).
+		Joins("JOIN task_user ON task_user.task_id = tasks.id").
+		Where("task_user.user_id = ?", userId).
+		Find(&tasks).Error
 
-    if err != nil {
-        return nil, err
-    }
-    return tasks, nil
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func (tr *taskRepository) AssignTaskToUser(tx *gorm.DB, taskId, userId int64) error {

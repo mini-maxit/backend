@@ -314,7 +314,7 @@ func NewMockSubmissionRepository() *MockSubmissionRepository {
 }
 
 type MockGroupRepository struct {
-	groups map[int64]*models.Group
+	groups  map[int64]*models.Group
 	counter int64
 }
 
@@ -354,7 +354,7 @@ func (gr *MockGroupRepository) GetGroup(tx *gorm.DB, groupId int64) (*models.Gro
 
 func NewMockGroupRepository() *MockGroupRepository {
 	return &MockGroupRepository{
-		groups: make(map[int64]*models.Group),
+		groups:  make(map[int64]*models.Group),
 		counter: 0,
 	}
 }

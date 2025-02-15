@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
-	"github.com/mini-maxit/backend/internal/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
+	"github.com/mini-maxit/backend/internal/initialization"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
