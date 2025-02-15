@@ -25,7 +25,7 @@ func (s *sessionRepository) CreateSession(tx *gorm.DB, session *models.Session) 
 
 func (s *sessionRepository) GetSession(tx *gorm.DB, sessionId string) (*models.Session, error) {
 	session := &models.Session{}
-	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).First(session).Error
+	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).Take(session).Error
 	if err != nil {
 		return nil, err
 	}

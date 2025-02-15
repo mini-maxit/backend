@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/package/utils"
@@ -11,7 +12,7 @@ import (
 )
 
 type PostgresDB struct {
-	Db             *gorm.DB
+	db             *gorm.DB
 	tx             *gorm.DB
 	shouldRollback bool
 	logger         *zap.SugaredLogger
@@ -25,23 +26,31 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PostgresDB{Db: db, logger: log}, nil
+	sqlDb, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	sqlDb.SetConnMaxIdleTime(1 * time.Minute)
+	sqlDb.SetConnMaxLifetime(10 * time.Minute)
+	sqlDb.SetMaxIdleConns(10)
+	sqlDb.SetMaxOpenConns(100)
+	return &PostgresDB{db: db, logger: log}, nil
 
 }
 
-func (p *PostgresDB) DB() *gorm.DB {
-	return p.Db
+func (p *PostgresDB) Db() *gorm.DB {
+	return p.db
 }
 
 func (p *PostgresDB) NewSession() Database {
-	return &PostgresDB{Db: p.Db.Session(&gorm.Session{}), logger: p.logger}
+	return &PostgresDB{db: p.db.Session(&gorm.Session{}), logger: p.logger}
 }
 
 func (p *PostgresDB) Connect() (*gorm.DB, error) {
 	if p.tx != nil {
 		return p.tx, nil
 	}
-	tx := p.Db.Begin()
+	tx := p.db.Begin()
 	if tx.Error != nil {
 		p.logger.Errorf("Failed to start transaction: %s", tx.Error.Error())
 		return nil, tx.Error

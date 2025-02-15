@@ -35,18 +35,20 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		ctx = context.WithValue(ctx, DatabaseKey, session)
 		rWithDatabase := r.WithContext(ctx)
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
-		next.ServeHTTP(wrappedWriter, rWithDatabase)
-		if session.ShouldRollback() {
-			session.InvalidateTx()
-		} else {
-			err = session.Commit()
-			if err != nil {
+		defer func() {
+			if session.ShouldRollback() {
 				tx.Rollback()
-				httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
-				return
+			} else {
+				err := tx.Commit().Error
+				if err != nil {
+					tx.Rollback()
+					httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
+					return
+				}
 			}
-
-		}
+			session = nil
+		}()
+		next.ServeHTTP(wrappedWriter, rWithDatabase)
 	})
 
 }
