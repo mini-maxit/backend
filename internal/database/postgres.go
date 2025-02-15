@@ -29,6 +29,14 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 
 }
 
+func (p *PostgresDB) DB() *gorm.DB {
+	return p.Db
+}
+
+func (p *PostgresDB) NewSession() Database {
+	return &PostgresDB{Db: p.Db.Session(&gorm.Session{}), logger: p.logger}
+}
+
 func (p *PostgresDB) Connect() (*gorm.DB, error) {
 	if p.tx != nil {
 		return p.tx, nil
