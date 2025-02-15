@@ -338,9 +338,9 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 // @Description	Submit a solution to a task, the solution is uploaded to the FileStorage service and a submission is created in the database. The submission is then published to the queue for processing. The response contains the submission ID. Fails if user has no access to provided task.
 // @Accept		multipart/form-data
 // @Produce		json
-// @Param 		taskID	form	int	true	"Task ID"
-// @Param 		solution form	file true	"Solution file"
-// @Param 		languageID	form	int	true	"Language ID"
+// @Param 		taskID	formData	int	true	"Task ID"
+// @Param 		solution formData	file true	"Solution file"
+// @Param 		languageID	formData	int	true	"Language ID"
 // @Param Session header string true "Session Token"
 // @Success		200	{object}	httputils.ApiResponse[schemas.SubmitResponse]
 // @Failure		400	{object}	httputils.ApiError
