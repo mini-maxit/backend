@@ -44,6 +44,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-array_Submission:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Submission'
+        type: array
+      ok:
+        type: boolean
+    type: object
   ApiResponse-array_Task:
     properties:
       data:
@@ -94,6 +103,17 @@ definitions:
       updated_at:
         type: string
     type: object
+  LanguageConfig:
+    properties:
+      file_extension:
+        type: string
+      id:
+        type: integer
+      language:
+        $ref: '#/definitions/models.LanguageType'
+      version:
+        type: string
+    type: object
   Session:
     properties:
       expires_at:
@@ -104,6 +124,33 @@ definitions:
         type: integer
       user_role:
         type: string
+    type: object
+  Submission:
+    properties:
+      checked_at:
+        type: string
+      id:
+        type: integer
+      language:
+        $ref: '#/definitions/LanguageConfig'
+      language_id:
+        type: integer
+      order:
+        type: integer
+      status:
+        type: string
+      status_message:
+        type: string
+      submitted_at:
+        type: string
+      task:
+        $ref: '#/definitions/Task'
+      task_id:
+        type: integer
+      user:
+        $ref: '#/definitions/User'
+      user_id:
+        type: integer
     type: object
   Task:
     properties:
@@ -134,6 +181,21 @@ definitions:
       id:
         type: integer
       title:
+        type: string
+    type: object
+  User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+      surname:
+        type: string
+      username:
         type: string
     type: object
   UserLoginRequest:
@@ -182,6 +244,14 @@ definitions:
       message:
         type: string
     type: object
+  models.LanguageType:
+    enum:
+    - c
+    - cpp
+    type: string
+    x-enum-varnames:
+    - LangTypeC
+    - LangTypeCPP
 host: localhost:8080
 info:
   contact: {}
@@ -483,6 +553,43 @@ paths:
       summary: Validate a session
       tags:
       - session
+  /submissions:
+    get:
+      description: Depending on the user role, this endpoint will return all submissions
+        for the current user if user is student, all submissions to owned tasks if
+        user is teacher, and all submissions in database if user is admin
+      parameters:
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all submissions for the current user
+      tags:
+      - submission
   /task/:
     get:
       description: Returns all tasks

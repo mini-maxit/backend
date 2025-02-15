@@ -461,6 +461,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/submissions": {
+            "get": {
+                "description": "Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all submissions for the current user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit the number of returned submissions",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset the returned submissions",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
         "/task/": {
             "get": {
                 "description": "Returns all tasks",
@@ -673,6 +726,20 @@ const docTemplate = `{
                 }
             }
         },
+        "ApiResponse-array_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Submission"
+                    }
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
         "ApiResponse-array_Task": {
             "type": "object",
             "properties": {
@@ -750,6 +817,23 @@ const docTemplate = `{
                 }
             }
         },
+        "LanguageConfig": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "$ref": "#/definitions/models.LanguageType"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "Session": {
             "type": "object",
             "properties": {
@@ -764,6 +848,47 @@ const docTemplate = `{
                 },
                 "user_role": {
                     "type": "string"
+                }
+            }
+        },
+        "Submission": {
+            "type": "object",
+            "properties": {
+                "checked_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "$ref": "#/definitions/LanguageConfig"
+                },
+                "language_id": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "task": {
+                    "$ref": "#/definitions/Task"
+                },
+                "task_id": {
+                    "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -811,6 +936,29 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -877,6 +1025,17 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.LanguageType": {
+            "type": "string",
+            "enum": [
+                "c",
+                "cpp"
+            ],
+            "x-enum-varnames": [
+                "LangTypeC",
+                "LangTypeCPP"
+            ]
         }
     }
 }`
