@@ -313,7 +313,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 // @Summary		Get all available languages
 // @Description	Get all available languages for submitting solutions. Temporary solutioon, while all tasks have same languages
 // @Produce		json
-// @Success		200	{object}	httputils.ApiResponse[[]schemas.Language]
+// @Success		200	{object}	httputils.ApiResponse[[]schemas.LanguageConfig]
 // @Failure		500	{object}	httputils.ApiError
 // @Router		/submission/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
