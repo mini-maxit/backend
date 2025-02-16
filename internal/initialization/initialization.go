@@ -70,7 +70,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
 	}
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
@@ -129,7 +129,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupService := service.NewGroupService(groupRepository)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, langService, taskService, userService)
-	tx, err = db.Connect()
+	tx, err = db.BeginTransaction()
 	if err != nil {
 		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
 	}
@@ -158,7 +158,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	if cfg.Dump {
-		tx, err := db.Connect()
+		tx, err := db.BeginTransaction()
 		if err != nil {
 			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 		}
@@ -207,6 +207,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 				log.Warnf("Failed to change student role: %s", err.Error())
 			}
 		}
+		err = db.Commit()
+		if err != nil {
+			log.Warnf("Failed to commit transaction after dump: %s", err.Error())
+		}
+
 	}
 
 	return &Initialization{

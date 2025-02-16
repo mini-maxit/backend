@@ -34,7 +34,7 @@ func (s *sessionRepository) GetSession(tx *gorm.DB, sessionId string) (*models.S
 
 func (s *sessionRepository) GetSessionByUserId(tx *gorm.DB, userId int64) (*models.Session, error) {
 	session := &models.Session{}
-	err := tx.Model(&models.Session{}).Where("user_id = ?", userId).First(session).Error
+	err := tx.Model(&models.Session{}).Preload("User").Where("user_id = ?", userId).Take(session).Error
 	if err != nil {
 		return nil, err
 	}

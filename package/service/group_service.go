@@ -14,7 +14,7 @@ type GroupService interface {
 	CreateGroup(tx *gorm.DB, group *schemas.Group) (int64, error)
 	DeleteGroup(tx *gorm.DB, groupId int64) error
 	Edit(tx *gorm.DB, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
-	GetAllGroup(tx *gorm.DB, queryParams map[string]string) ([]schemas.Group, error)
+	GetAllGroup(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.Group, error)
 	GetGroup(tx *gorm.DB, groupId int64) (*schemas.Group, error)
 }
 
@@ -80,17 +80,11 @@ func (gs *groupService) Edit(tx *gorm.DB, groupId int64, editInfo *schemas.EditG
 
 }
 
-func (gs *groupService) GetAllGroup(tx *gorm.DB, queryParams map[string]string) ([]schemas.Group, error) {
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, ErrInvalidLimitParam
-	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, ErrInvalidOffsetParam
-	}
-	sort := utils.GetSort(queryParams["sort"])
-	groups, err := gs.groupRepository.GetAllGroup(tx, offset, limit, sort)
+func (gs *groupService) GetAllGroup(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.Group, error) {
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
+	groups, err := gs.groupRepository.GetAllGroup(tx, int(offset), int(limit), sort)
 	if err != nil {
 		return nil, err
 	}

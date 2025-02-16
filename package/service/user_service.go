@@ -18,7 +18,7 @@ var (
 
 type UserService interface {
 	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
-	GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error)
+	GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
 	ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error
@@ -44,12 +44,12 @@ func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User,
 	return user, nil
 }
 
-func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error) {
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
 
-	userModels, err := us.userRepository.GetAllUsers(tx, limit, offset, sort)
+	userModels, err := us.userRepository.GetAllUsers(tx, int(limit), int(offset), sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err

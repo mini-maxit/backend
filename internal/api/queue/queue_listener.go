@@ -126,7 +126,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 	}
 	ql.logger.Infof("Received message: %s", queueMessage.MessageId)
 
-	tx, err := ql.database.Connect()
+	tx, err := ql.database.BeginTransaction()
 	if err != nil {
 		ql.logger.Errorf("Failed to connect to database: %s", err)
 		err := msg.Reject(true)

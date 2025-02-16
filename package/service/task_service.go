@@ -18,9 +18,9 @@ var ErrTaskNotFound = fmt.Errorf("task not found")
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task *schemas.Task) (int64, error)
-	GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error)
-	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.Task, error)
+	GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]interface{}) ([]schemas.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, taskId int64) (*schemas.TaskDetailed, error)
 	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
@@ -71,14 +71,14 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 	return result, nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.Task, error) {
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(tx, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllTasks(tx, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -93,13 +93,13 @@ func (ts *taskService) GetAll(tx *gorm.DB, queryParams map[string]string) ([]sch
 	return result, nil
 }
 
-func (ts *taskService) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]string) ([]schemas.Task, error) {
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+func (ts *taskService) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[string]interface{}) ([]schemas.Task, error) {
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForUser(tx, userId, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllForUser(tx, userId, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks for user: %v", err.Error())
 		return nil, err
@@ -114,13 +114,13 @@ func (ts *taskService) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[
 	return result, nil
 }
 
-func (ts *taskService) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]string) ([]schemas.Task, error) {
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+func (ts *taskService) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error) {
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err

@@ -17,7 +17,7 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			return
 		}
 		session := db.NewSession()
-		tx, err := session.Connect()
+		tx, err := session.BeginTransaction()
 		if err != nil {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return

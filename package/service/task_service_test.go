@@ -108,7 +108,7 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
 		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)
