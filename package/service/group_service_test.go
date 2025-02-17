@@ -21,7 +21,6 @@ type groupServiceTest struct {
 	counter      int64
 }
 
-
 func newGroupServiceTest() *groupServiceTest {
 	tx := &gorm.DB{}
 	ur := testutils.NewMockUserRepository()
@@ -125,7 +124,6 @@ func TestDeleteGroup(t *testing.T) {
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
-
 
 func TestGetAllGroup(t *testing.T) {
 	gst := newGroupServiceTest()
