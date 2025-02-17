@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func newTaskServiceTest() *taskServiceTest {
 	}
 }
 
-func (tst *taskServiceTest) createUser(t *testing.T, role models.UserRole) schemas.User {
+func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
 	tst.counter++
 	userId, err := tst.ur.CreateUser(tst.tx, &models.User{
 		Name:         fmt.Sprintf("Test User %d", tst.counter),
@@ -60,7 +61,7 @@ func (tst *taskServiceTest) createUser(t *testing.T, role models.UserRole) schem
 
 	user := schemas.User{
 		Id:   user_model.Id,
-		Role: user_model.Role.String(),
+		Role: user_model.Role,
 	}
 	return user
 }
@@ -69,7 +70,7 @@ func TestCreateTask(t *testing.T) {
 	tst := newTaskServiceTest()
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -81,7 +82,7 @@ func TestCreateTask(t *testing.T) {
 	// We want to have clear task repository for this state, and this is the quickest way
 	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -97,7 +98,7 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleStudent)
+		current_user := tst.createUser(t, types.UserRoleStudent)
 		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
 			Title:     "Test Student Task",
 			CreatedBy: current_user.Id,
@@ -110,7 +111,7 @@ func TestCreateTask(t *testing.T) {
 func TestGetTaskByTitle(t *testing.T) {
 	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -136,14 +137,14 @@ func TestGetAllTasks(t *testing.T) {
 
 	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -157,7 +158,7 @@ func TestGetAllTasks(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleStudent)
+		current_user := tst.createUser(t, types.UserRoleStudent)
 		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Nil(t, tasks)
@@ -166,7 +167,7 @@ func TestGetAllTasks(t *testing.T) {
 
 func TestGetTask(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, models.UserRoleAdmin)
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: admin_user.Id,
@@ -178,7 +179,7 @@ func TestGetTask(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
@@ -186,7 +187,7 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err = tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
@@ -204,7 +205,7 @@ func TestGetTask(t *testing.T) {
 		assert.NoError(t, err)
 		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
 		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
@@ -214,7 +215,7 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Success with created task", func(t *testing.T) {
-		teacher_user := tst.createUser(t, models.UserRoleTeacher)
+		teacher_user := tst.createUser(t, types.UserRoleTeacher)
 		task := &schemas.Task{
 			Title:     "Test Task 2",
 			CreatedBy: teacher_user.Id,
@@ -229,7 +230,7 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Nil(t, taskResp)
@@ -238,7 +239,7 @@ func TestGetTask(t *testing.T) {
 
 func TestAssignTaskToUsers(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, models.UserRoleAdmin)
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: admin_user.Id,
@@ -250,19 +251,19 @@ func TestAssignTaskToUsers(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, 0, []int64{student_user.Id})
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err := tst.taskService.AssignTaskToUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
@@ -270,7 +271,7 @@ func TestAssignTaskToUsers(t *testing.T) {
 
 func TestAssignTaskToGroups(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, models.UserRoleAdmin)
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: admin_user.Id,
@@ -307,7 +308,7 @@ func TestAssignTaskToGroups(t *testing.T) {
 		}
 		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
 		assert.NoError(t, err)
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
 		err = tst.taskService.AssignTaskToGroups(tst.tx, student_user, taskId, []int64{groupId})
@@ -318,7 +319,7 @@ func TestAssignTaskToGroups(t *testing.T) {
 func TestGetAllAssignedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
 	query_params := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
-	admin_user := tst.createUser(t, models.UserRoleAdmin)
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: admin_user.Id,
@@ -330,14 +331,14 @@ func TestGetAllAssignedTasks(t *testing.T) {
 	}
 
 	t.Run("No tasks", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		tasks, err := tst.taskService.GetAllAssignedTasks(tst.tx, student_user, query_params)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		student_user := tst.createUser(t, models.UserRoleStudent)
+		student_user := tst.createUser(t, types.UserRoleStudent)
 		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 		group := &models.Group{
@@ -359,7 +360,7 @@ func TestGetAllAssignedTasks(t *testing.T) {
 func TestDeleteTask(t *testing.T) {
 	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -374,14 +375,14 @@ func TestDeleteTask(t *testing.T) {
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		err := tst.taskService.DeleteTask(tst.tx, current_user, 0)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleStudent)
-		admin_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleStudent)
+		admin_user := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,
@@ -397,7 +398,7 @@ func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, models.UserRoleAdmin)
+		current_user := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: current_user.Id,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -39,7 +40,7 @@ type taskService struct {
 }
 
 func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *schemas.Task) (int64, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return 0, err
@@ -89,7 +90,7 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 }
 
 func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
@@ -144,8 +145,8 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 		return nil, err
 	}
 
-	switch models.UserRole(current_user.Role) {
-	case models.UserRoleStudent:
+	switch types.UserRole(current_user.Role) {
+	case types.UserRoleStudent:
 		// Check if the task is assigned to the user
 		isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskId, current_user.Id)
 		if err != nil {
@@ -155,7 +156,7 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 		if !isAssigned {
 			return nil, errors.ErrNotAuthorized
 		}
-	case models.UserRoleTeacher:
+	case types.UserRoleTeacher:
 		// Check if the task is created by the user
 		if task.CreatedBy != current_user.Id {
 			return nil, errors.ErrNotAuthorized
@@ -176,7 +177,7 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 }
 
 func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleStudent})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleStudent})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
@@ -202,7 +203,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 }
 
 func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
@@ -228,7 +229,7 @@ func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User
 }
 
 func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
@@ -239,7 +240,7 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -256,7 +257,8 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 			return err
 		}
 		if isAssigned {
-			return errors.ErrTaskAlreadyAssigned
+			ts.logger.Errorf("Error task already assigned to user %d", userId)
+			continue
 		}
 
 		err = ts.taskRepository.AssignTaskToUser(tx, taskId, userId)
@@ -270,7 +272,7 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 }
 
 func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
@@ -281,7 +283,7 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -298,7 +300,8 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 			return err
 		}
 		if isAssigned {
-			return errors.ErrTaskAlreadyAssigned
+			ts.logger.Errorf("Error task already assigned to group %d", groupId)
+			continue
 		}
 
 		err = ts.taskRepository.AssignTaskToGroup(tx, taskId, groupId)
@@ -312,7 +315,7 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 }
 
 func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
@@ -323,7 +326,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -349,7 +352,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 }
 
 func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
@@ -360,7 +363,7 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -386,7 +389,7 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 }
 
 func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleTeacher, models.UserRoleAdmin})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
@@ -397,7 +400,7 @@ func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
-	if current_user.Role == string(models.UserRoleTeacher) && task.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && task.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 

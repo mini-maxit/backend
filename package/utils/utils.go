@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"gorm.io/gorm"
 )
@@ -90,8 +90,8 @@ func GetOffset(str string) (int, error) {
 	return int(offset), nil
 }
 
-func ValidateUserRole(role string, acceptedRoles []models.UserRole) error {
-	if !slices.Contains(acceptedRoles, models.UserRole(role)) {
+func ValidateRoleAccess(current_role types.UserRole, acceptedRoles []types.UserRole) error {
+	if !slices.Contains(acceptedRoles, current_role) {
 		return errors.ErrNotAuthorized
 	}
 	return nil

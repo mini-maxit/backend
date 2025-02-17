@@ -5,6 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -34,7 +35,7 @@ type groupService struct {
 }
 
 func (gs *groupService) CreateGroup(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return 0, err
 	}
@@ -61,7 +62,7 @@ func (gs *groupService) CreateGroup(tx *gorm.DB, current_user schemas.User, grou
 }
 
 func (gs *groupService) DeleteGroup(tx *gorm.DB, current_user schemas.User, groupId int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func (gs *groupService) DeleteGroup(tx *gorm.DB, current_user schemas.User, grou
 		return err
 	}
 
-	if current_user.Role == models.UserRoleTeacher.String() && group.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -79,7 +80,7 @@ func (gs *groupService) DeleteGroup(tx *gorm.DB, current_user schemas.User, grou
 }
 
 func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 		}
 		return nil, err
 	}
-	if current_user.Role == models.UserRoleTeacher.String() && model.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && model.CreatedBy != current_user.Id {
 		return nil, errors.ErrNotAuthorized
 	}
 
@@ -113,7 +114,7 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 }
 
 func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Group, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +132,13 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 	var groups []models.Group
 
 	switch current_user.Role {
-	case models.UserRoleAdmin.String():
+	case types.UserRoleAdmin:
 		groups, err = gs.groupRepository.GetAllGroup(tx, offset, limit, sort)
 		if err != nil {
 			return nil, err
 		}
 
-	case models.UserRoleTeacher.String():
+	case types.UserRoleTeacher:
 		groups, err = gs.groupRepository.GetAllGroupForTeacher(tx, current_user.Id, offset, limit, sort)
 		if err != nil {
 			return nil, err
@@ -153,7 +154,7 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 }
 
 func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.Group, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId
 		return nil, err
 	}
 
-	if current_user.Role == models.UserRoleTeacher.String() && group.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
 		return nil, errors.ErrNotAuthorized
 	}
 
@@ -174,7 +175,7 @@ func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId
 }
 
 func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
@@ -184,7 +185,7 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 		return err
 	}
 
-	if current_user.Role == models.UserRoleTeacher.String() && group.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
 		return errors.ErrNotAuthorized
 	}
 
@@ -204,7 +205,7 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 }
 
 func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error) {
-	err := utils.ValidateUserRole(current_user.Role, []models.UserRole{models.UserRoleAdmin, models.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +215,7 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 		return nil, err
 	}
 
-	if current_user.Role == models.UserRoleTeacher.String() && group.CreatedBy != current_user.Id {
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
 		return nil, errors.ErrNotAuthorized
 	}
 

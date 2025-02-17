@@ -171,6 +171,6 @@ func TestGetAllUsers(t *testing.T) {
 		assert.Equal(t, user.Surname, users[0].Surname)
 		assert.Equal(t, user.Username, users[0].Username)
 		assert.Equal(t, user.Id, users[0].Id)
-		assert.Equal(t, string(user.Role), users[0].Role)
+		assert.Equal(t, user.Role, users[0].Role)
 	})
 }

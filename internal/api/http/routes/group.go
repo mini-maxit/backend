@@ -71,7 +71,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
@@ -124,7 +124,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
@@ -174,7 +174,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
@@ -240,7 +240,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
@@ -291,7 +291,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
 		return
@@ -331,7 +331,7 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if err == errors.ErrNotAuthorized {
-			status = http.StatusUnauthorized
+			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to get group users. "+err.Error())
 		return

@@ -120,7 +120,7 @@ func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas
 		Id:       current_user_model.Id,
 		Email:    current_user_model.Email,
 		Username: current_user_model.Username,
-		Role:     string(current_user_model.Role),
+		Role:     current_user_model.Role,
 		Name:     current_user_model.Name,
 		Surname:  current_user_model.Surname,
 	}

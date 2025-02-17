@@ -9,8 +9,8 @@ import (
 	"github.com/mini-maxit/backend/internal/api/queue"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -172,7 +172,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create admin: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, models.UserRoleAdmin)
+			err = userService.ChangeRole(tx, session.UserId, types.UserRoleAdmin)
 			if err != nil {
 				log.Warnf("Failed to change admin role: %s", err.Error())
 			}
@@ -187,7 +187,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create teacher: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, models.UserRoleTeacher)
+			err = userService.ChangeRole(tx, session.UserId, types.UserRoleTeacher)
 			if err != nil {
 				log.Warnf("Failed to change teacher role: %s", err.Error())
 			}
@@ -202,7 +202,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create student: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, models.UserRoleStudent)
+			err = userService.ChangeRole(tx, session.UserId, types.UserRoleStudent)
 			if err != nil {
 				log.Warnf("Failed to change student role: %s", err.Error())
 			}
