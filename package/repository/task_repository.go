@@ -64,8 +64,11 @@ func (tr *taskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, 
 	}
 
 	err = tx.Model(&models.Task{}).
-		Joins("JOIN task_user ON task_user.task_id = tasks.id").
-		Where("task_user.user_id = ?", userId).
+		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
+		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
+		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Where("task_users.user_id = ? OR user_groups.user_id = ?", userId, userId).
+		Distinct().
 		Find(&tasks).Error
 
 	if err != nil {
@@ -130,21 +133,27 @@ func (tr *taskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, o
 
 func (tr *taskRepository) IsTaskAssignedToUser(tx *gorm.DB, taskId, userId int64) (bool, error) {
 	var count int64
+
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN task_user ON task_user.task_id = tasks.id").
-		Where("task_user.task_id = ? AND task_user.user_id = ?", taskId, userId).
+		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
+		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
+		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Where("task_users.task_id = ? AND task_users.user_id = ? OR task_groups.task_id = ? AND user_groups.user_id = ?", taskId, userId, taskId, userId).
+		Distinct().
 		Count(&count).Error
+
 	if err != nil {
 		return false, err
 	}
+
 	return count > 0, nil
 }
 
 func (tr *taskRepository) IsTaskAssignedToGroup(tx *gorm.DB, taskId, groupId int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN task_group ON task_group.task_id = tasks.id").
-		Where("task_group.task_id = ? AND task_group.group_id = ?", taskId, groupId).
+		Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
+		Where("task_groups.task_id = ? AND task_groups.group_id = ?", taskId, groupId).
 		Count(&count).Error
 	if err != nil {
 		return false, err

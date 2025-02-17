@@ -126,7 +126,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	sessionService := service.NewSessionService(sessionRepository, userRepository)
 	authService := service.NewAuthService(userRepository, sessionService)
-	groupService := service.NewGroupService(groupRepository)
+	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, langService, taskService, userService)
 	tx, err = db.Connect()

@@ -40,6 +40,14 @@ type TaskRouteImpl struct {
 	taskService service.TaskService
 }
 
+type usersRequest struct {
+	UserIds []int64 `json:"userIds"`
+}
+
+type groupsRequest struct {
+	GroupIds []int64 `json:"groupIds"`
+}
+
 func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -490,9 +498,9 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var userIds []int64
+	request := usersRequest{}
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&userIds)
+	err = decoder.Decode(&request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
 		return
@@ -507,7 +515,7 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, userIds)
+	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error assigning task. %s", err.Error()))
@@ -534,9 +542,9 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var groupIds []int64
+	request := groupsRequest{}
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&groupIds)
+	err = decoder.Decode(&request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
 		return
@@ -551,7 +559,7 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, groupIds)
+	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error assigning task. %s", err.Error()))
@@ -578,9 +586,9 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var userIds []int64
+	request := usersRequest{}
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&userIds)
+	err = decoder.Decode(&request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
 		return
@@ -595,7 +603,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	err = tr.taskService.UnAssignTaskFromUsers(tx, current_user, taskId, userIds)
+	err = tr.taskService.UnAssignTaskFromUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -626,9 +634,9 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	var groupIds []int64
+	request := groupsRequest{}
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&groupIds)
+	err = decoder.Decode(&request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
 		return
@@ -643,7 +651,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	err = tr.taskService.UnAssignTaskFromGroups(tx, current_user, taskId, groupIds)
+	err = tr.taskService.UnAssignTaskFromGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -687,8 +695,8 @@ func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
 	mux.HandleFunc("/{id}/assign/users", route.AssignTaskToUsers)
 	mux.HandleFunc("/{id}/assign/groups", route.AssignTaskToGroups)
 	mux.HandleFunc("/{id}/unassign/users", route.UnAssignTaskFromUsers)
-	mux.HandleFunc("/{id}/usassign/groups", route.UnAssignTaskFromGroups)
-	mux.HandleFunc("/{id}/group", route.GetAllForGroup)
+	mux.HandleFunc("/{id}/unassign/groups", route.UnAssignTaskFromGroups)
+	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
 	mux.HandleFunc("/assigned", route.GetAllAssingedTasks)
 	mux.HandleFunc("/created", route.GetAllCreatedTasks)
 }

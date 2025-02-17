@@ -89,21 +89,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Group routes
 	groupMux := http.NewServeMux()
-	groupMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForGroup)
-	groupMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			init.GroupRoute.CreateGroup(w, r)
-		} else if r.Method == http.MethodGet {
-			init.GroupRoute.GetAllGroup(w, r)
-		}
-	})
-	groupMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			init.GroupRoute.GetGroup(w, r)
-		} else if r.Method == http.MethodPut {
-			init.GroupRoute.EditGroup(w, r)
-		}
-	})
+	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
 	// Session routes
 	sessionMux := http.NewServeMux()

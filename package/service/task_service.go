@@ -53,9 +53,16 @@ func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *sche
 		return 0, errors.ErrTaskExists
 	}
 
+	author, err := ts.userRepository.GetUser(tx, current_user.Id)
+	if err != nil {
+		ts.logger.Errorf("Error getting user: %v", err.Error())
+		return 0, err
+	}
+
 	model := models.Task{
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
+		Author:    *author,
 	}
 	taskId, err := ts.taskRepository.Create(tx, &model)
 	if err != nil {
@@ -328,7 +335,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 			return err
 		}
 		if !isAssigned {
-			return errors.ErrTaskNotAssigned
+			return errors.ErrTaskNotAssignedToUser
 		}
 
 		err = ts.taskRepository.UnAssignTaskFromUser(tx, taskId, userId)
@@ -365,7 +372,7 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 			return err
 		}
 		if !isAssigned {
-			return errors.ErrTaskNotAssigned
+			return errors.ErrTaskNotAssignedToGroup
 		}
 
 		err = ts.taskRepository.UnAssignTaskFromGroup(tx, taskId, groupId)

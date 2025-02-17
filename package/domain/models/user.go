@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql/driver"
 	"fmt"
 	"slices"
 )
@@ -32,11 +31,8 @@ func (ur *UserRole) Scan(value interface{}) error {
 	return nil
 }
 
-func (ur UserRole) Value() (driver.Value, error) {
-	if ur == "" {
-		return nil, nil
-	}
-	return string(ur), nil
+func (ur UserRole) String() string {
+	return string(ur)
 }
 
 const (
