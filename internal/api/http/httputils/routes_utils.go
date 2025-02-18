@@ -80,22 +80,24 @@ func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
 	}
 	queryParams["offset"] = offset
 
-	if queryParams["sort"] == nil {
-		queryParams["sort"] = DefaultSortOrderField
-	}
-	sortFields := queryParams["sort"]
-	sortFieldsParts := strings.Split(sortFields.(string), ",")
-	for _, sortField := range sortFieldsParts {
-		sortFieldParts := strings.Split(sortField, ":")
-		if len(sortFieldParts) == 2 {
-			if sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc" {
-				return nil, fmt.Errorf("invalid sort order. expected asc or desc, got %s", sortFieldParts[1])
+	if queryParams["sort"] != nil {
+		sortFields := queryParams["sort"]
+		sortFieldsParts := strings.Split(sortFields.(string), ",")
+		for _, sortField := range sortFieldsParts {
+			sortFieldParts := strings.Split(sortField, ":")
+			if len(sortFieldParts) == 2 {
+				if sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc" {
+					return nil, fmt.Errorf("invalid sort order. expected asc or desc, got %s", sortFieldParts[1])
+				}
+			} else {
+				return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
 			}
-		} else {
-			return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
 		}
+
+		queryParams["sort"] = sortFields
+	} else {
+		queryParams["sort"] = ""
 	}
-	queryParams["sort"] = sortFields
 	return queryParams, nil
 }
 
