@@ -82,6 +82,9 @@ func (ts *taskService) GetAll(tx *gorm.DB, queryParams map[string]interface{}) (
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
+	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllTasks(tx, int(limit), int(offset), sort)
@@ -103,6 +106,9 @@ func (ts *taskService) GetAllForUser(tx *gorm.DB, userId int64, queryParams map[
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
+	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForUser(tx, userId, int(limit), int(offset), sort)
@@ -124,6 +130,9 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, groupId int64, queryParams ma
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
+	}
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)

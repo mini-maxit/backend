@@ -47,7 +47,7 @@ func (us *submissionService) GetAll(tx *gorm.DB, user schemas.User, queryParams 
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "created_at desc"
+		sort = "submitted_at desc"
 	}
 
 	switch user.Role {
@@ -103,6 +103,9 @@ func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUse
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "submitted_at desc"
+	}
 
 	submission_models, err := us.submissionRepository.GetAllByUserId(tx, userId, int(limit), int(offset), sort)
 	if err != nil {
@@ -170,6 +173,9 @@ func (us *submissionService) GetAllForGroup(tx *gorm.DB, groupId int64, user sch
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "submitted_at desc"
+	}
 
 	switch user.Role {
 	case "admin":
@@ -203,6 +209,9 @@ func (us *submissionService) GetAllForTask(tx *gorm.DB, taskId int64, user schem
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "submitted_at desc"
+	}
 
 	switch user.Role {
 	case "admin":
