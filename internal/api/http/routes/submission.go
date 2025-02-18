@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -448,6 +449,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
 		return
 	}
+	log.Printf("Submission created with ID: %d", submissionId)
 
 	err = s.queueService.PublishSubmission(tx, submissionId)
 	if err != nil {

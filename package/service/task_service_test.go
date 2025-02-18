@@ -25,7 +25,8 @@ func newTaskServiceTest() *taskServiceTest {
 	config := testutils.NewTestConfig()
 	ur := testutils.NewMockUserRepository()
 	tr := testutils.NewMockTaskRepository()
-	ts := NewTaskService(config.FileStorageUrl, tr)
+	// io := testutils.NewIORepository()
+	ts := NewTaskService(config.FileStorageUrl, tr, nil)
 
 	return &taskServiceTest{
 		tx:          tx,

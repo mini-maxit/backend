@@ -17,6 +17,9 @@ import (
 // @host			localhost:8080
 // @BasePath		/api/v1
 func main() {
+	utils.InitializeLogger()
+	log := utils.NewNamedLogger("server")
+
 	if _, ok := os.LookupEnv("DEBUG"); ok {
 		err := godotenv.Load("././.env")
 		if err != nil {
@@ -27,11 +30,9 @@ func main() {
 
 	init := initialization.NewInitialization(cfg)
 
-	utils.InitializeLogger()
-	log := utils.NewNamedLogger("server")
-
 	queueListener := init.QueueListener
-	cancel, err := queueListener.Start()
+	log.Info("Starting queue listener...")
+	err := queueListener.Start()
 	if err != nil {
 		log.Errorf("failed to start queue listener: %v", err.Error())
 		os.Exit(1)
@@ -40,11 +41,17 @@ func main() {
 	server := server.NewServer(init, log)
 	err = server.Start()
 	if err != nil {
-		cancel() // Stop the queue listener
+		err := queueListener.Shutdown()
+		if err != nil {
+			log.Errorf("failed to shutdown queue listener: %v", err.Error())
+		}
 		log.Errorf("failed to start server: %v", err.Error())
 		os.Exit(1)
 
 	}
 
-	cancel() // Stop the queue listener on graceful shutdown
+	err = queueListener.Shutdown()
+	if err != nil {
+		log.Errorf("failed to shutdown queue listener: %v", err.Error())
+	}
 }

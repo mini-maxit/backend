@@ -265,7 +265,23 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+	filePath, err := httputils.SaveMultiPartFile(file, handler)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error saving multipart file. %s", err.Error()))
+		return
+	}
 
+	_, err = tr.taskService.ParseInputOutput(filePath)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, fmt.Sprintf("Error parsing input output. %s", err.Error()))
+		return
+	}
+
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("failed to seek archive after input count: %v", err))
+		return
+	}
 	// Create a multipart writer for the HTTP request to FileStorage service
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -285,6 +301,12 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))
+		return
+	}
+	err = tr.taskService.CreateInputOutput(tx, taskId, filePath)
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating input output. %s", err.Error()))
 		return
 	}
 

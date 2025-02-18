@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -16,7 +17,7 @@ type SubmissionService interface {
 	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
 	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
 	CreateSubmission(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
-	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error)
+	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.User) (schemas.Submission, error)
 	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
@@ -105,6 +106,7 @@ func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUse
 		us.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
 	}
+	log.Print(submission_models)
 
 	switch currentUser.Role {
 	case "admin":
@@ -245,7 +247,7 @@ func (us *submissionService) CreateSubmission(tx *gorm.DB, taskId int64, userId 
 	return submissionId, nil
 }
 
-func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.ResponseMessage) (int64, error) {
+func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.QueueResponseMessage) (int64, error) {
 	submission, err := us.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		us.logger.Errorf("Error getting submission: %v", err.Error())
@@ -269,11 +271,13 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 			us.logger.Errorf("Error getting input output id: %v", err.Error())
 			return -1, err
 		}
+		us.logger.Infof("InputOutputId: %v", inputOutputId)
 		err = us.createTestResult(tx, id, inputOutputId, testResult)
 		if err != nil {
 			us.logger.Errorf("Error creating test result: %v", err.Error())
 			return -1, err
 		}
+		us.logger.Infof("Test result created: %v", testResult)
 	}
 
 	return id, nil
@@ -289,25 +293,56 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 	return languages, nil
 }
 
-func (us *submissionService) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.TestResult) error {
+func (us *submissionService) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.QueueTestResult) error {
 	testResultModel := models.TestResult{
 		SubmissionResultId: submissionResultId,
 		InputOutputId:      inputOutputId,
 		Passed:             testResult.Passed,
 		ErrorMessage:       testResult.ErrorMessage,
 	}
+	us.logger.Infof("TestResult: %v", testResultModel)
 	return us.testResultRepository.CreateTestResults(tx, testResultModel)
 }
 
-func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository, languageService LanguageService, taskService TaskService, userService UserService) SubmissionService {
+func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository, inputOutputRepository repository.InputOutputRepository, testResultRepository repository.TestRepository, languageService LanguageService, taskService TaskService, userService UserService) SubmissionService {
 	log := utils.NewNamedLogger("submission_service")
 	return &submissionService{
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
+		inputOutputRepository:      inputOutputRepository,
+		testResultRepository:       testResultRepository,
 		languageService:            languageService,
 		taskService:                taskService,
 		userService:                userService,
 		logger:                     log,
+	}
+}
+
+func (us *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
+	var result []schemas.TestResult
+	for _, testResult := range testResults {
+		result = append(result, schemas.TestResult{
+			ID:                 testResult.ID,
+			SubmissionResultId: testResult.SubmissionResultId,
+			InputOutputId:      testResult.InputOutputId,
+			Passed:             testResult.Passed,
+			ErrorMessage:       testResult.ErrorMessage,
+		})
+	}
+	return result
+}
+
+func (us *submissionService) resultModelToSchema(result *models.SubmissionResult) *schemas.SubmissionResult {
+	if result == nil {
+		return nil
+	}
+	return &schemas.SubmissionResult{
+		Id:           result.Id,
+		SubmissionId: result.SubmissionId,
+		Code:         result.Code,
+		Message:      result.Message,
+		CreatedAt:    result.CreatedAt,
+		TestResults:  us.testResultsModelToSchema(result.TestResult),
 	}
 }
 
@@ -325,5 +360,6 @@ func (us *submissionService) modelToSchema(submission *models.Submission) *schem
 		Language:      *us.languageService.modelToSchema(&submission.Language),
 		Task:          *us.taskService.modelToSchema(&submission.Task),
 		User:          *us.userService.modelToSchema(&submission.User),
+		Result:        us.resultModelToSchema(submission.Result),
 	}
 }

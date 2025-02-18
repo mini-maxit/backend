@@ -107,6 +107,8 @@ func (us *submissionRepository) GetAllByUserId(tx *gorm.DB, userId int64, limit,
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResult").
 		Where("user_id = ?", userId).Find(&submissions).Error
 	if err != nil {
 		return nil, err

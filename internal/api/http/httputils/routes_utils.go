@@ -3,8 +3,11 @@ package httputils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -94,4 +97,25 @@ func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
 	}
 	queryParams["sort"] = sortFields
 	return queryParams, nil
+}
+
+// SaveMultiPartFile saves an uploaded multipart file to a temporary directory and returns the file path.
+func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (string, error) {
+
+	tempDir := os.TempDir()
+
+	filePath := fmt.Sprintf("%s/%s", tempDir, handler.Filename)
+
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, file)
+	if err != nil {
+		return "", err
+	}
+
+	return filePath, nil
 }

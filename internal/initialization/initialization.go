@@ -100,6 +100,14 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
+	inputOutputRepository, err := repository.NewInputOutputRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create input output repository: %s", err.Error())
+	}
+	testResultRepository, err := repository.NewTestResultRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create test result repository: %s", err.Error())
+	}
 	queueRepository, err := repository.NewQueueMessageRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create queue repository: %s", err.Error())
@@ -119,7 +127,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository)
+	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository, inputOutputRepository)
 	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
@@ -128,7 +136,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authService := service.NewAuthService(userRepository, sessionService)
 	groupService := service.NewGroupService(groupRepository)
 	langService := service.NewLanguageService(langRepository)
-	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, langService, taskService, userService)
+	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, langService, taskService, userService)
 	tx, err = db.BeginTransaction()
 	if err != nil {
 		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
@@ -152,7 +160,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
-	queueListener, err := queue.NewQueueListener(conn, channel, taskService, cfg.BrokerConfig.ResponseQueueName)
+	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
