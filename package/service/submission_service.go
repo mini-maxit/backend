@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"log"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -21,6 +20,7 @@ type SubmissionService interface {
 	GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
 	GetById(tx *gorm.DB, submissionId int64, user schemas.User) (schemas.Submission, error)
 	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
+	GetAllForUserShort(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]interface{}) ([]schemas.SubmissionShort, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
 	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error)
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
@@ -46,6 +46,9 @@ func (us *submissionService) GetAll(tx *gorm.DB, user schemas.User, queryParams 
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
+	}
 
 	switch user.Role {
 	case "admin":
@@ -106,7 +109,6 @@ func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUse
 		us.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
 	}
-	log.Print(submission_models)
 
 	switch currentUser.Role {
 	case "admin":
@@ -129,6 +131,33 @@ func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUse
 	var result []schemas.Submission
 	for _, submission_model := range submission_models {
 		result = append(result, *us.modelToSchema(&submission_model))
+	}
+
+	return result, nil
+}
+
+func (us *submissionService) GetAllForUserShort(tx *gorm.DB, userId int64, currentUser schemas.User, queryParams map[string]interface{}) ([]schemas.SubmissionShort, error) {
+	submission_models, err := us.GetAllForUser(tx, userId, currentUser, queryParams)
+	if err != nil {
+		return nil, err
+	}
+	result := []schemas.SubmissionShort{}
+	for _, submission := range submission_models {
+		passed := true
+		how_many := len(submission.Result.TestResults)
+		for _, test_result := range submission.Result.TestResults {
+			if !test_result.Passed {
+				passed = false
+				how_many--
+			}
+		}
+		result = append(result, schemas.SubmissionShort{
+			Id:            submission.Id,
+			TaskId:        submission.TaskId,
+			UserId:        submission.UserId,
+			Passed:        passed,
+			HowManyPassed: int64(how_many),
+		})
 	}
 
 	return result, nil
@@ -271,13 +300,11 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 			us.logger.Errorf("Error getting input output id: %v", err.Error())
 			return -1, err
 		}
-		us.logger.Infof("InputOutputId: %v", inputOutputId)
 		err = us.createTestResult(tx, id, inputOutputId, testResult)
 		if err != nil {
 			us.logger.Errorf("Error creating test result: %v", err.Error())
 			return -1, err
 		}
-		us.logger.Infof("Test result created: %v", testResult)
 	}
 
 	return id, nil
@@ -300,7 +327,6 @@ func (us *submissionService) createTestResult(tx *gorm.DB, submissionResultId in
 		Passed:             testResult.Passed,
 		ErrorMessage:       testResult.ErrorMessage,
 	}
-	us.logger.Infof("TestResult: %v", testResultModel)
 	return us.testResultRepository.CreateTestResults(tx, testResultModel)
 }
 

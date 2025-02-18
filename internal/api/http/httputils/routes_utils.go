@@ -89,7 +89,7 @@ func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
 		sortFieldParts := strings.Split(sortField, ":")
 		if len(sortFieldParts) == 2 {
 			if sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc" {
-				return nil, fmt.Errorf("invalid sort how value. expected asc or desc, got %s", sortFieldParts[1])
+				return nil, fmt.Errorf("invalid sort order. expected asc or desc, got %s", sortFieldParts[1])
 			}
 		} else {
 			return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)

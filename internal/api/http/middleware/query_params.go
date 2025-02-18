@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
@@ -17,7 +16,6 @@ func QueryParamsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Printf("Query params: %+v", queryParams)
 		ctx := context.WithValue(r.Context(), QueryParamsKey, queryParams)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

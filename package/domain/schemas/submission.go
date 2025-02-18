@@ -18,6 +18,14 @@ type Submission struct {
 	Result        *SubmissionResult `json:"result"`
 }
 
+type SubmissionShort struct {
+	Id            int64 `json:"id"`
+	TaskId        int64 `json:"task_id"`
+	UserId        int64 `json:"user_id"`
+	Passed        bool  `json:"passed"`
+	HowManyPassed int64 `json:"how_many_passed"`
+}
+
 type SubmissionResult struct {
 	Id           int64        `json:"id"`
 	SubmissionId int64        `json:"submission_id"`
