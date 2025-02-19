@@ -110,10 +110,13 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	task, err := tr.taskService.GetAllCreatedTasks(tx, current_user, queryParams)
-
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 
@@ -261,10 +264,16 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, queryParams)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	tasks, err := tr.taskService.GetAllForGroup(tx, current_user, groupId, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 
@@ -518,7 +527,11 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
 		return
 	}
 
@@ -562,7 +575,11 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
 		return
 	}
 

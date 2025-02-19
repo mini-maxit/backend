@@ -1,14 +1,18 @@
 package types
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"slices"
 )
 
 type UserRole string
 
-func (ur UserRole) String() string {
-	return string(ur)
+func (ur UserRole) Value() (driver.Value, error) {
+	if ur == "" {
+		return nil, nil
+	}
+	return string(ur), nil
 }
 
 const (
