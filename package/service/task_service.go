@@ -96,9 +96,15 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 		return nil, err
 	}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	// Get all tasks
 	tasks, err := ts.taskRepository.GetAllTasks(tx, limit, offset, sort)
@@ -123,9 +129,15 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, gr
 		return nil, err
 	}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	group, err := ts.groupRepository.GetGroup(tx, groupId)
 	if err != nil {
@@ -199,9 +211,15 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 		return nil, err
 	}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	tasks, err := ts.taskRepository.GetAllAssignedTasks(tx, current_user.Id, limit, offset, sort)
 	if err != nil {
@@ -225,9 +243,15 @@ func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User
 		return nil, err
 	}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	tasks, err := ts.taskRepository.GetAllCreatedTasks(tx, current_user.Id, limit, offset, sort)
 	if err != nil {

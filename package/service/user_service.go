@@ -46,9 +46,15 @@ func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User,
 }
 
 func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]string) ([]schemas.User, error) {
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	userModels, err := us.userRepository.GetAllUsers(tx, limit, offset, sort)
 	if err != nil {

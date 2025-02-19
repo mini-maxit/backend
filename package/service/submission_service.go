@@ -42,9 +42,15 @@ func (us *submissionService) GetAll(tx *gorm.DB, user schemas.User, queryParams 
 	submission_models := []models.Submission{}
 	var err error
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	switch user.Role {
 	case "admin":
@@ -96,9 +102,15 @@ func (us *submissionService) GetById(tx *gorm.DB, submissionId int64, user schem
 }
 
 func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]string) ([]schemas.Submission, error) {
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	submission_models, err := us.submissionRepository.GetAllByUserId(tx, userId, limit, offset, sort)
 	if err != nil {
@@ -136,9 +148,15 @@ func (us *submissionService) GetAllForGroup(tx *gorm.DB, groupId int64, user sch
 	var err error
 	submission_models := []models.Submission{}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	switch user.Role {
 	case "admin":
@@ -169,9 +187,15 @@ func (us *submissionService) GetAllForTask(tx *gorm.DB, taskId int64, user schem
 	var err error
 	submissions_model := []models.Submission{}
 
-	limit := queryParams["limit"]
-	offset := queryParams["offset"]
-	sort := queryParams["sort"]
+	limit, err := utils.GetLimit(queryParams["limit"])
+	if err != nil {
+		return nil, err
+	}
+	offset, err := utils.GetOffset(queryParams["offset"])
+	if err != nil {
+		return nil, err
+	}
+	sort := utils.GetSort(queryParams["sort"])
 
 	switch user.Role {
 	case "admin":

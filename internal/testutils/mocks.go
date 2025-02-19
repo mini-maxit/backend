@@ -46,7 +46,7 @@ func (ur *MockUserRepository) GetUserByEmail(tx *gorm.DB, email string) (*models
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (ur *MockUserRepository) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
+func (ur *MockUserRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
 	if tx == nil {
 		return nil, gorm.ErrInvalidDB
 	}
@@ -154,7 +154,7 @@ func (tr *MockTaskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, 
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
 	tasks := make([]models.Task, 0, len(tr.tasks))
 	for _, task := range tr.tasks {
 		tasks = append(tasks, *task)
@@ -162,7 +162,7 @@ func (tr *MockTaskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort strin
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	panic("implement me")
 	// var tasks []models.Task
 	// for _, task := range tr.tasks {
@@ -173,7 +173,7 @@ func (tr *MockTaskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, of
 	// return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error) {
 	panic("implement me")
 	// var tasks []models.Task
 	// for _, task := range tr.tasks {
@@ -281,7 +281,7 @@ func (tr *MockTaskRepository) UnAssignTaskFromGroup(tx *gorm.DB, taskId, groupId
 	return gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	for _, taskUser := range tr.taskUsers {
 		if taskUser.UserId == userId {
@@ -313,7 +313,7 @@ func (tr *MockTaskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, lim
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	for _, task := range tr.tasks {
 		if task.CreatedBy == userId {

@@ -22,24 +22,15 @@ func TransactionPanicRecover(tx *gorm.DB) {
 	}
 }
 
-func ApplyPaginationAndSort(tx *gorm.DB, limitStr, offsetStr, sortBy string) (*gorm.DB, error) {
-	limit, err := strconv.ParseInt(limitStr, 10, 32)
-	if err != nil {
-		return nil, err
-	}
-	offset, err := strconv.ParseInt(offsetStr, 10, 32)
-	if err != nil {
-		return nil, err
-	}
-
+func ApplyPaginationAndSort(tx *gorm.DB, limit, offset int, sortBy string) (*gorm.DB, error) {
 	if limit >= 0 {
-		tx = tx.Limit(int(limit))
+		tx = tx.Limit(limit)
 	} else {
 		err := httputils.QueryError{Filed: "limit", Detail: "limit must be grater or equal to 0"}
 		return nil, err
 	}
 	if offset >= 0 {
-		tx = tx.Offset(int(offset))
+		tx = tx.Offset(offset)
 	} else {
 		err := httputils.QueryError{Filed: "offset", Detail: "offset must be grater or equal to 0"}
 		return nil, err

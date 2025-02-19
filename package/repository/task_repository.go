@@ -10,16 +10,16 @@ type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task *models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
-	GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error)
-	GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error)
+	GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error)
 	IsTaskAssignedToUser(tx *gorm.DB, taskId, userId int64) (bool, error)
 	IsTaskAssignedToGroup(tx *gorm.DB, taskId, groupId int64) (bool, error)
 	AssignTaskToUser(tx *gorm.DB, taskId, userId int64) error
 	AssignTaskToGroup(tx *gorm.DB, taskId, groupId int64) error
 	UnAssignTaskFromUser(tx *gorm.DB, taskId, userId int64) error
 	UnAssignTaskFromGroup(tx *gorm.DB, taskId, groupId int64) error
-	GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error)
+	GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error)
 	GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
@@ -56,7 +56,7 @@ func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, erro
 	return task, nil
 }
 
-func (tr *taskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -117,7 +117,7 @@ func (tr *taskRepository) UnAssignTaskFromGroup(tx *gorm.DB, taskId, groupId int
 	return nil
 }
 
-func (tr *taskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -161,7 +161,7 @@ func (tr *taskRepository) IsTaskAssignedToGroup(tx *gorm.DB, taskId, groupId int
 	return count > 0, nil
 }
 
-func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
 	tasks := []models.Task{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -174,7 +174,7 @@ func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) (
 	return tasks, nil
 }
 
-func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {

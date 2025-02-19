@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -55,7 +56,11 @@ func (gr *groupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group)
 
 func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error) {
 	var groups []models.Group
-	err := tx.Offset(offset).Limit(limit).Order(sort).Find(&groups).Error
+	tx, err := utils.ApplyPaginationAndSort(tx, offset, limit, sort)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +68,14 @@ func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort 
 }
 
 func (gr *groupRepository) GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error) {
+	tx, err := utils.ApplyPaginationAndSort(tx, offset, limit, sort)
+	if err != nil {
+		return nil, err
+	}
+
 	var groups []models.Group
-	err := tx.Model(&models.Group{}).
+	err = tx.Model(&models.Group{}).
 		Where("created_by = ?", teacherId).
-		Offset(offset).
-		Limit(limit).
-		Order(sort).
 		Find(&groups).Error
 	if err != nil {
 		return nil, err
