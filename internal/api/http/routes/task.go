@@ -463,7 +463,9 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			task
 //	@Summary		Update a task
-// @Description	NOT IMPLEMENTED Updates a task by ID
+//
+// @Description	    NOT IMPLEMENTED Updates a task by ID
+//
 //	@Produce		json
 //	@Param			id	path	int	true	"Task ID"
 //	@Failure		501	{object}	httputils.ApiError

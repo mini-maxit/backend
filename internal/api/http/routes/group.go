@@ -39,7 +39,7 @@ type GroupRouteImpl struct {
 //	@Failure		405 {object} httputils.ApiError
 //	@Failure		500 {object} httputils.ApiError
 //	@Success		200 {object} int64
-//	@Router			/group/ [post]  
+//	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
