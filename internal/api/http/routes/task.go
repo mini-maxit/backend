@@ -230,6 +230,19 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
+// GetAllForGroup godoc
+//
+//	@Tags			task
+//	@Summary		Get all tasks for a group
+//	@Description	Returns all tasks for a group by ID
+//	@Produce		json
+//	@Param			id	path		int	true	"Group ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Router			/task/group/{id} [get]
 func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -446,10 +459,32 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
+// UpdateTask godoc
+//
+//	@Tags			task
+//	@Summary		Update a task
+// @Description	NOT IMPLEMENTED Updates a task by ID
+//	@Produce		json
+//	@Param			id	path	int	true	"Task ID"
+//	@Failure		501	{object}	httputils.ApiError
+//	@Router			/task/ [put]
 func (tr *TaskRouteImpl) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
 }
 
+// DeleteTask godoc
+//
+//	@Tags			task
+//	@Summary		Delete a task
+//	@Description	Deletes a task by ID
+//	@Produce		json
+//	@Param			id	path	int	true	"Task ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id} [delete]
 func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -490,6 +525,20 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, "Task deleted successfully")
 }
 
+// AssignTaskToUsers godoc
+//
+//	@Tags			task
+//	@Summary		Assign a task to users
+//	@Description	Assigns a task to users by task ID and user IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			userIds	body	[]int	true	"User IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/assign/users [post]
 func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -538,6 +587,20 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
 }
 
+// AssignTaskToGroups godoc
+//
+//	@Tags			task
+//	@Summary		Assign a task to groups
+//	@Description	Assigns a task to groups by task ID and group IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			groupIds	body	[]int	true	"Group IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/assign/groups [post]
 func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -586,6 +649,20 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
 }
 
+// UnAssignTaskFromUsers godoc
+//
+//	@Tags			task
+//	@Summary		Unassign a task from users
+//	@Description	Unassigns a task from users by task ID and user IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			userIds	body	[]int	true	"User IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/unassign/users [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -634,6 +711,20 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
 }
 
+// UnAssignTaskFromGroups godoc
+//
+//	@Tags			task
+//	@Summary		Unassign a task from groups
+//	@Description	Unassigns a task from groups by task ID and group IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			groupIds	body	[]int	true	"Group IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/unassign/groups [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
