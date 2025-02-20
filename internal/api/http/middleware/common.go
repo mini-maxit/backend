@@ -11,4 +11,6 @@ const (
 	UserKey ContextKey = "user"
 	// DatabaseKey is the key used to store the database connection in the context.
 	DatabaseKey ContextKey = "database"
+	// QueryParamsKey is the key used to store the query parameters of current request in the context.
+	QueryParamsKey ContextKey = "queryParams"
 )

@@ -25,7 +25,8 @@ func newTaskServiceTest() *taskServiceTest {
 	config := testutils.NewTestConfig()
 	ur := testutils.NewMockUserRepository()
 	tr := testutils.NewMockTaskRepository()
-	ts := NewTaskService(config.FileStorageUrl, tr)
+	// io := testutils.NewIORepository()
+	ts := NewTaskService(config.FileStorageUrl, tr, nil)
 
 	return &taskServiceTest{
 		tx:          tx,
@@ -108,7 +109,7 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
 		tasks, err := tst.taskService.GetAll(tst.tx, queryParams)
 		assert.NoError(t, err)

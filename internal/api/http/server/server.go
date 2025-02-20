@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
+	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/initialization"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -87,13 +88,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()
-	subbmissionMux.HandleFunc("/", init.SubmissionRoute.GetAll)
-	subbmissionMux.HandleFunc("/{id}", init.SubmissionRoute.GetById)
-	subbmissionMux.HandleFunc("/user/{id}", init.SubmissionRoute.GetAllForUser)
-	subbmissionMux.HandleFunc("/group/{id}", init.SubmissionRoute.GetAllForGroup)
-	subbmissionMux.HandleFunc("/task/{id}", init.SubmissionRoute.GetAllForTask)
-	subbmissionMux.HandleFunc("/submit", init.SubmissionRoute.SubmitSolution)
-	subbmissionMux.HandleFunc("/languages", init.SubmissionRoute.GetAvailableLanguages)
+	routes.RegisterSubmissionRoutes(subbmissionMux, init.SubmissionRoute)
 
 	// Group routes
 	groupMux := http.NewServeMux()
@@ -138,6 +133,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db), log)))
+	httpLoger.Infof("Query params middleware")
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.QueryParamsMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db)), log)))
 	return &Server{mux: mux, port: init.Cfg.Api.Port, logger: log}
 }

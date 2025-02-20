@@ -25,7 +25,7 @@ func (qm *queueMessageRepository) CreateQueueMessage(tx *gorm.DB, queueMessage *
 
 func (qm *queueMessageRepository) GetQueueMessage(tx *gorm.DB, messageId string) (*models.QueueMessage, error) {
 	queueMessage := &models.QueueMessage{}
-	err := tx.Model(&models.QueueMessage{}).Where("message_id = ?", messageId).First(queueMessage).Error
+	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageId).First(queueMessage).Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (qm *queueMessageRepository) GetQueueMessage(tx *gorm.DB, messageId string)
 }
 
 func (qm *queueMessageRepository) DeleteQueueMessage(tx *gorm.DB, messageId string) error {
-	err := tx.Model(&models.QueueMessage{}).Where("message_id = ?", messageId).Delete(&models.QueueMessage{}).Error
+	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageId).Delete(&models.QueueMessage{}).Error
 	if err != nil {
 		return err
 	}

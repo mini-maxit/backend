@@ -21,6 +21,7 @@ type SubmissionRoutes interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 	GetById(w http.ResponseWriter, r *http.Request)
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
+	GetAllForUserShort(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
 	GetAvailableLanguages(w http.ResponseWriter, r *http.Request)
@@ -55,7 +56,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -63,13 +64,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	query := r.URL.Query()
-	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
 	if err != nil {
@@ -104,7 +99,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -159,31 +154,86 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-
-	query := r.URL.Query()
-	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		switch err {
+		case service.ErrPermissionDenied:
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		}
 		return
 	}
 
 	if submissions == nil {
 		submissions = []schemas.Submission{}
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
+// GetAllForUserShort godoc
+//
+// @Tags			submission
+// @Summary		Get all submissions for a user
+// @Description Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.
+// @Produce		json
+// @Param 		id	path	int	true	"User ID"
+// @Param 		limit	query	int false	"Limit the number of returned submissions"
+// @Param 		offset	query	int false	"Offset the returned submissions"
+// @Param Session header string true "Session Token"
+// @Success		200	{object}	httputils.ApiResponse[[]schemas.Submission]
+// @Failure		400	{object}	httputils.ApiError
+// @Failure		403	{object}	httputils.ApiError
+// @Failure		500	{object}	httputils.ApiError
+// @Router		/submission/user/{id}/short [get]
+func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userIdStr := r.PathValue("id")
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+
+	submissions, err := s.submissionService.GetAllForUserShort(tx, userId, current_user, queryParams)
+	if err != nil {
+		db.Rollback()
+		switch err {
+		case service.ErrPermissionDenied:
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		}
+		return
+	}
+
+	if submissions == nil {
+		submissions = []schemas.SubmissionShort{}
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
@@ -218,7 +268,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -226,13 +276,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
-	query := r.URL.Query()
-	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
 	if err != nil {
@@ -279,19 +323,13 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	query := r.URL.Query()
-	queryParams, err := httputils.GetQueryParams(&query, httputils.SubmissionDefaultSortField)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
 	if err != nil {
@@ -311,14 +349,14 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 //
 // @Tags			submission
 // @Summary		Get all available languages
-// @Description	Get all available languages for submitting solutions. Temporary solutioon, while all tasks have same languages
+// @Description	Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages
 // @Produce		json
 // @Success		200	{object}	httputils.ApiResponse[[]schemas.LanguageConfig]
 // @Failure		500	{object}	httputils.ApiError
 // @Router		/submission/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -455,7 +493,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -486,4 +524,16 @@ func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorag
 		fileStorageUrl:    fileStorageUrl,
 		queueService:      queueService,
 	}
+}
+
+// RegisterSubmissionRoutes registers handlers for the submission routes
+func RegisterSubmissionRoutes(mux *http.ServeMux, route SubmissionRoutes) {
+	mux.HandleFunc("/", route.GetAll)
+	mux.HandleFunc("/{id}", route.GetById)
+	mux.HandleFunc("/user/{id}", route.GetAllForUser)
+	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
+	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/task/{id}", route.GetAllForTask)
+	mux.HandleFunc("/submit", route.SubmitSolution)
+	mux.HandleFunc("/languages", route.GetAvailableLanguages)
 }

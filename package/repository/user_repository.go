@@ -12,7 +12,7 @@ type UserRepository interface {
 	CreateUser(tx *gorm.DB, user *models.User) (int64, error)
 	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
 	GetUserByEmail(tx *gorm.DB, email string) (*models.User, error)
-	GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error)
+	GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
 	EditUser(tx *gorm.DB, user *schemas.User) error
 }
 
@@ -45,7 +45,7 @@ func (ur *userRepository) GetUserByEmail(tx *gorm.DB, email string) (*models.Use
 	return user, nil
 }
 
-func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset, sort string) ([]models.User, error) {
+func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
 	users := &[]models.User{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {

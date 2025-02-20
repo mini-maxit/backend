@@ -141,7 +141,7 @@ func TestEditUser(t *testing.T) {
 
 func TestGetAllUsers(t *testing.T) {
 	ust := newUserServiceTest()
-	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
 		users, err := ust.userService.GetAllUsers(ust.tx, queryParams)

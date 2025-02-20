@@ -46,7 +46,7 @@ func (p *PostgresDB) NewSession() Database {
 	return &PostgresDB{db: p.db.Session(&gorm.Session{}), logger: p.logger}
 }
 
-func (p *PostgresDB) Connect() (*gorm.DB, error) {
+func (p *PostgresDB) BeginTransaction() (*gorm.DB, error) {
 	if p.tx != nil {
 		return p.tx, nil
 	}
@@ -78,12 +78,4 @@ func (p *PostgresDB) Commit() error {
 	}
 	p.tx = nil
 	return nil
-}
-
-func (p *PostgresDB) InvalidateTx() {
-	p.shouldRollback = false
-	if p.tx != nil {
-		p.tx.Rollback()
-	}
-	p.tx = nil
 }

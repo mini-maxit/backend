@@ -51,7 +51,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -93,7 +93,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -142,21 +142,15 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.URL.Query()
-	limitStr := queryParams.Get("limit")
-	offsetStr := queryParams.Get("offset")
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
-	groups, err := gr.groupService.GetAllGroup(tx, map[string]string{
-		"limit":  limitStr,
-		"offset": offsetStr,
-	})
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	groups, err := gr.groupService.GetAllGroup(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		if err == service.ErrInvalidLimitParam {
@@ -206,7 +200,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return

@@ -10,9 +10,9 @@ type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, task *models.Task) (int64, error)
 	GetTask(tx *gorm.DB, taskId int64) (*models.Task, error)
-	GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error)
-	GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error)
-	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error)
+	GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
+	GetAllForUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error)
 	GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
@@ -48,7 +48,7 @@ func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, erro
 	return task, nil
 }
 
-func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
 	tasks := []models.Task{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -61,7 +61,7 @@ func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset, sort string) (
 	return tasks, nil
 }
 
-func (tr *taskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -83,7 +83,7 @@ func (tr *taskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset
 	return tasks, nil
 }
 
-func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error) {
 	var tasks []models.Task
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -103,28 +103,28 @@ func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offs
 
 func (tr *taskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
+	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
 	timeLimits := make([]float64, len(input_outputs))
 	for _, input_output := range input_outputs {
-		timeLimits[input_output.Order] = input_output.TimeLimit
+		timeLimits[input_output.Order-1] = input_output.TimeLimit
 	}
 	return timeLimits, nil
 }
 
 func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
+	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
 	memoryLimits := make([]float64, len(input_outputs))
 	for _, input_output := range input_outputs {
-		memoryLimits[input_output.Order] = input_output.MemoryLimit
+		memoryLimits[input_output.Order-1] = input_output.MemoryLimit
 	}
 	return memoryLimits, nil
 }

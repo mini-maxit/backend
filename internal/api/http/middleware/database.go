@@ -27,7 +27,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		session := db.NewSession()
-		tx, err := session.Connect()
+		tx, err := session.BeginTransaction()
 		if err != nil {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
 			return

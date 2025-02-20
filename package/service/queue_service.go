@@ -117,7 +117,6 @@ func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, e
 		return 0, err
 	}
 
-	qs.logger.Info("Submission id retrieved")
 	return queueMessage.SubmissionId, nil
 }
 
