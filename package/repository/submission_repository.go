@@ -37,6 +37,7 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -56,6 +57,7 @@ func (us *submissionRepository) GetAllForStudent(tx *gorm.DB, currentUserId int6
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Where("user_id = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -88,6 +90,7 @@ func (us *submissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		First(&submission).Error
 	if err != nil {
 		return nil, err
@@ -128,6 +131,7 @@ func (us *submissionRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Joins("JOIN users ON users.id = submissions.user_id").
 		Joins("JOIN user_group ON user_group.user_id = users.id").
 		Joins("JOIN groups ON groups.id = user_group.group_id").
@@ -152,6 +156,7 @@ func (us *submissionRepository) GetAllForGroupTeacher(tx *gorm.DB, groupId, teac
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Joins("JOIN task_group ON task_group.task_id = tasks.id").
 		Joins("JOIN groups ON groups.id = task_group.group_id").
@@ -176,6 +181,7 @@ func (us *submissionRepository) GetAllForTask(tx *gorm.DB, taskId int64, limit, 
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ?", taskId).
 		Find(&submissions).Error
@@ -198,6 +204,7 @@ func (us *submissionRepository) GetAllForTaskTeacher(tx *gorm.DB, taskId, teache
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
+		Preload("Result").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND tasks.created_by_id = ?", taskId, teacherId).
 		Find(&submissions).Error
