@@ -461,6 +461,265 @@ const docTemplate = `{
                 }
             }
         },
+        "/submission": {
+            "get": {
+                "description": "Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all submissions for the current user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit the number of returned submissions",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset the returned submissions",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/languages": {
+            "get": {
+                "description": "Get all available languages for submitting solutions. Temporary solutioon, while all tasks have same languages",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all available languages",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-array_LanguageConfig"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/task/{id}": {
+            "get": {
+                "description": "Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all submissions for a task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit the number of returned submissions",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset the returned submissions",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/user/{id}": {
+            "get": {
+                "description": "Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all submissions for a group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit the number of returned submissions",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset the returned submissions",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/{id}": {
+            "get": {
+                "description": "Get a submission by its ID, if the user is a student, the submission must belong to the user, if the user is a teacher, the submission must belong to a task owned by the teacher, if the user is an admin, the submission can be any submission",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get a submission by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
+        },
         "/task/": {
             "get": {
                 "description": "Returns all tasks",
@@ -637,6 +896,28 @@ const docTemplate = `{
                 }
             }
         },
+        "ApiResponse-Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/Submission"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ApiResponse-SubmitResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SubmitResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
         "ApiResponse-TaskCreateResponse": {
             "type": "object",
             "properties": {
@@ -666,6 +947,34 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Group"
+                    }
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ApiResponse-array_LanguageConfig": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LanguageConfig"
+                    }
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ApiResponse-array_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Submission"
                     }
                 },
                 "ok": {
@@ -750,6 +1059,23 @@ const docTemplate = `{
                 }
             }
         },
+        "LanguageConfig": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "$ref": "#/definitions/models.LanguageType"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "Session": {
             "type": "object",
             "properties": {
@@ -764,6 +1090,58 @@ const docTemplate = `{
                 },
                 "user_role": {
                     "type": "string"
+                }
+            }
+        },
+        "Submission": {
+            "type": "object",
+            "properties": {
+                "checked_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language": {
+                    "$ref": "#/definitions/LanguageConfig"
+                },
+                "language_id": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "task": {
+                    "$ref": "#/definitions/Task"
+                },
+                "task_id": {
+                    "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "SubmitResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "submissionNumber": {
+                    "type": "integer"
                 }
             }
         },
@@ -811,6 +1189,29 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -877,6 +1278,17 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.LanguageType": {
+            "type": "string",
+            "enum": [
+                "c",
+                "cpp"
+            ],
+            "x-enum-varnames": [
+                "LangTypeC",
+                "LangTypeCPP"
+            ]
         }
     }
 }`

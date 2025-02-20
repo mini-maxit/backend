@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -16,27 +18,31 @@ import (
 type TaskService interface {
 	// Create creates a new empty task and returns the task ID
 	Create(tx *gorm.DB, current_user schemas.User, task *schemas.Task) (int64, error)
-	GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error)
-	GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]string) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
+	GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error)
 	GetTask(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error)
+	CreateInputOutput(tx *gorm.DB, taskId int64, archivePath string) error
 	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
-	GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error)
-	GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error)
+	GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
+	GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
 	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
 	AssignTaskToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error
 	AssignTaskToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
 	UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error
 	UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
 	DeleteTask(tx *gorm.DB, current_user schemas.User, taskId int64) error
+	ParseInputOutput(archivePath string) (int, error)
 	modelToSchema(model *models.Task) *schemas.Task
 }
 
 type taskService struct {
-	fileStorageUrl  string
-	taskRepository  repository.TaskRepository
-	userRepository  repository.UserRepository
-	groupRepository repository.GroupRepository
-	logger          *zap.SugaredLogger
+	fileStorageUrl        string
+	groupRepository       repository.GroupRepository
+	inputOutputRepository repository.InputOutputRepository
+	taskRepository        repository.TaskRepository
+	userRepository        repository.UserRepository
+
+	logger *zap.SugaredLogger
 }
 
 func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *schemas.Task) (int64, error) {
@@ -89,25 +95,21 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 	return result, nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
 	}
-
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, err
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
 	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, err
-	}
-	sort := utils.GetSort(queryParams["sort"])
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(tx, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllTasks(tx, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -122,35 +124,20 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 	return result, nil
 }
 
-func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
-		ts.logger.Errorf("Error validating user role: %v", err.Error())
-		return nil, err
-	}
-
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, err
-	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, err
-	}
-	sort := utils.GetSort(queryParams["sort"])
-
-	group, err := ts.groupRepository.GetGroup(tx, groupId)
-	if err != nil {
-		ts.logger.Errorf("Error getting group: %v", err.Error())
-		return nil, err
-	}
-
-	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
 		return nil, errors.ErrNotAuthorized
+	}
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err
@@ -204,24 +191,20 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 	return result, nil
 }
 
-func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleStudent})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
 	}
-
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, err
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
 	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, err
-	}
-	sort := utils.GetSort(queryParams["sort"])
 
-	tasks, err := ts.taskRepository.GetAllAssignedTasks(tx, current_user.Id, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllAssignedTasks(tx, current_user.Id, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all assigned tasks: %v", err.Error())
 		return nil, err
@@ -236,24 +219,20 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 	return result, nil
 }
 
-func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Task, error) {
+func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
 	}
 
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, err
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at desc"
 	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, err
-	}
-	sort := utils.GetSort(queryParams["sort"])
-
-	tasks, err := ts.taskRepository.GetAllCreatedTasks(tx, current_user.Id, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllCreatedTasks(tx, current_user.Id, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all created tasks: %v", err.Error())
 		return nil, err
@@ -474,6 +453,98 @@ func (ts *taskService) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.
 	return nil
 }
 
+func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
+	// Unzip the archive
+	// Extract the input and output files
+	// Validate correct number of input and output files and naming
+	// Count the number of input and output files
+	archive, err := os.Open(archivePath)
+	if err != nil {
+		return -1, fmt.Errorf("failed to open archive: %v", err)
+	}
+	defer archive.Close()
+	temp_dir, err := os.MkdirTemp(os.TempDir(), "task-upload-archive")
+	if err != nil {
+		return -1, fmt.Errorf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(temp_dir)
+	err = utils.DecompressArchive(archive, temp_dir)
+	if err != nil {
+		return -1, fmt.Errorf("failed to decompress archive: %v", err)
+	}
+	entries, err := os.ReadDir(temp_dir)
+	if err != nil {
+		return -1, fmt.Errorf("failed to read temp directory: %v", err)
+	}
+	// Sometime archive contain a single directory which was archived, use it
+	if len(entries) == 1 {
+		if entries[0].IsDir() {
+			temp_dir = temp_dir + "/" + entries[0].Name()
+		} else {
+			return -1, fmt.Errorf("archive contains a single file, expected a single directory or [input/ output/ description.pdf]")
+		}
+	}
+
+	inputFiles, err := os.ReadDir(temp_dir + "/input")
+	if err != nil {
+		return -1, fmt.Errorf("failed to read input directory: %v", err)
+	}
+	outputFiles, err := os.ReadDir(temp_dir + "/output")
+	if err != nil {
+		return -1, fmt.Errorf("failed to read output directory: %v", err)
+	}
+	if len(inputFiles) != len(outputFiles) {
+		return -1, fmt.Errorf("number of input files does not match number of output files")
+	}
+	for _, file := range inputFiles {
+		if file.IsDir() {
+			return -1, fmt.Errorf("input directory contains a subdirectory")
+		}
+		filename_list := strings.Split(file.Name(), ".")
+		if len(filename_list) != 2 {
+			return -1, fmt.Errorf("input file name is not formatted correctly. Expected format: <filename>.<extension> but got %s", file.Name())
+		}
+		filename := filename_list[0]
+		found := false
+		for _, output_file := range outputFiles {
+			output_filename_list := strings.Split(output_file.Name(), ".")
+			if len(output_filename_list) != 2 {
+				return -1, fmt.Errorf("output file name is not formatted correctly. Expected format: <filename>.<extension> but got %s", output_file.Name())
+			}
+			output_filename := output_filename_list[0]
+			ts.logger.Infof("Comparing %s with %s", filename, output_filename)
+			if filename == output_filename {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return -1, fmt.Errorf("input file %s does not have a corresponding output file", filename)
+		}
+	}
+	return len(inputFiles), nil
+}
+
+func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath string) error {
+	num_files, err := ts.ParseInputOutput(archivePath)
+	if err != nil {
+		return fmt.Errorf("failed to parse input and output files: %v", err)
+	}
+	for i := 1; i <= num_files; i++ {
+		io := &models.InputOutput{
+			TaskId:      taskId,
+			Order:       i,
+			TimeLimit:   1, // Hardcode for now
+			MemoryLimit: 1, // Hardcode for now
+		}
+		err = ts.inputOutputRepository.Create(tx, io)
+		if err != nil {
+			return fmt.Errorf("failed to create input output: %v", err)
+		}
+	}
+	return nil
+}
+
 func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
 	if updateInfo.Title != "" {
 		currentModel.Title = updateInfo.Title
@@ -489,13 +560,14 @@ func (ts *taskService) modelToSchema(model *models.Task) *schemas.Task {
 	}
 }
 
-func NewTaskService(fileStorageUrl string, taskRepository repository.TaskRepository, userRepository repository.UserRepository, groupRepository repository.GroupRepository) TaskService {
+func NewTaskService(fileStorageUrl string, taskRepository repository.TaskRepository, inputOutputRepository repository.InputOutputRepository, userRepository repository.UserRepository, groupRepository repository.GroupRepository) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		fileStorageUrl:  fileStorageUrl,
-		taskRepository:  taskRepository,
-		userRepository:  userRepository,
-		groupRepository: groupRepository,
-		logger:          log,
+		fileStorageUrl:        fileStorageUrl,
+		taskRepository:        taskRepository,
+		userRepository:        userRepository,
+		groupRepository:       groupRepository,
+		inputOutputRepository: inputOutputRepository,
+		logger:                log,
 	}
 }

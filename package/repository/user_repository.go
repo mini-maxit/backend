@@ -29,7 +29,7 @@ func (ur *userRepository) CreateUser(tx *gorm.DB, user *models.User) (int64, err
 
 func (ur *userRepository) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
 	user := &models.User{}
-	err := tx.Model(&models.User{}).Where("id = ?", userId).First(user).Error
+	err := tx.Model(&models.User{}).Where("id = ?", userId).Take(user).Error
 	if err != nil {
 		return nil, err
 	}

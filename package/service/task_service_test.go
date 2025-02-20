@@ -29,7 +29,7 @@ func newTaskServiceTest() *taskServiceTest {
 	ur := testutils.NewMockUserRepository()
 	gr := testutils.NewMockGroupRepository(ur)
 	tr := testutils.NewMockTaskRepository(gr)
-	ts := NewTaskService(config.FileStorageUrl, tr, ur, gr)
+	ts := NewTaskService(config.FileStorageUrl, tr, nil, ur, gr)
 
 	return &taskServiceTest{
 		tx:          tx,
@@ -134,8 +134,7 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-
-	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
 		current_user := tst.createUser(t, types.UserRoleAdmin)
 		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
@@ -318,7 +317,7 @@ func TestAssignTaskToGroups(t *testing.T) {
 
 func TestGetAllAssignedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	query_params := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	query_params := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",

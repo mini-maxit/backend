@@ -129,7 +129,7 @@ func TestDeleteGroup(t *testing.T) {
 func TestGetAllGroup(t *testing.T) {
 	gst := newGroupServiceTest()
 
-	queryParams := map[string]string{"limit": "10", "offset": "0", "sort": "id:asc"}
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	t.Run("No groups", func(t *testing.T) {
 		current_user := gst.createUser(t, types.UserRoleAdmin)
 		groups, err := gst.groupService.GetAllGroup(gst.tx, current_user, queryParams)

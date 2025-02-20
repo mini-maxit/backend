@@ -26,26 +26,29 @@ func (w *ResponseWriterWrapper) StatusCode() int {
 func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		tx, err := db.Connect()
+		session := db.NewSession()
+		tx, err := session.BeginTransaction()
 		if err != nil {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
 			return
 		}
-		ctx = context.WithValue(ctx, DatabaseKey, db)
+		ctx = context.WithValue(ctx, DatabaseKey, session)
 		rWithDatabase := r.WithContext(ctx)
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
-		next.ServeHTTP(wrappedWriter, rWithDatabase)
-		if db.ShouldRollback() {
-			db.InvalidateTx()
-		} else {
-			err = db.Commit()
-			if err != nil {
+		defer func() {
+			if session.ShouldRollback() {
 				tx.Rollback()
-				httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
-				return
+			} else {
+				err := tx.Commit().Error
+				if err != nil {
+					tx.Rollback()
+					httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
+					return
+				}
 			}
-
-		}
+			session = nil
+		}()
+		next.ServeHTTP(wrappedWriter, rWithDatabase)
 	})
 
 }

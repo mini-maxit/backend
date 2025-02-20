@@ -194,28 +194,28 @@ func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offs
 
 func (tr *taskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
+	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
 	timeLimits := make([]float64, len(input_outputs))
 	for _, input_output := range input_outputs {
-		timeLimits[input_output.Order] = input_output.TimeLimit
+		timeLimits[input_output.Order-1] = input_output.TimeLimit
 	}
 	return timeLimits, nil
 }
 
 func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
 	input_outputs := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).Where("id = ?", taskId).Find(&input_outputs).Error
+	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
 	memoryLimits := make([]float64, len(input_outputs))
 	for _, input_output := range input_outputs {
-		memoryLimits[input_output.Order] = input_output.MemoryLimit
+		memoryLimits[input_output.Order-1] = input_output.MemoryLimit
 	}
 	return memoryLimits, nil
 }

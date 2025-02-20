@@ -43,7 +43,7 @@ func (s *sessionService) modelToSchema(session *models.Session) *schemas.Session
 		Id:        session.Id,
 		UserId:    session.UserId,
 		ExpiresAt: session.ExpiresAt,
-		UserRole:  "invalid",
+		UserRole:  string(session.User.Role),
 	}
 }
 

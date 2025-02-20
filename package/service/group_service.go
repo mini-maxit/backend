@@ -16,7 +16,7 @@ type GroupService interface {
 	CreateGroup(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error)
 	DeleteGroup(tx *gorm.DB, current_user schemas.User, groupId int64) error
 	Edit(tx *gorm.DB, current_user schemas.User, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
-	GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Group, error)
+	GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error)
 	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.Group, error)
 	AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
 	GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
@@ -113,38 +113,29 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 	return gs.modelToSchema(newModel), nil
 }
 
-func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]string) ([]schemas.Group, error) {
+func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	limit, err := utils.GetLimit(queryParams["limit"])
-	if err != nil {
-		return nil, ErrInvalidLimitParam
-	}
-	offset, err := utils.GetOffset(queryParams["offset"])
-	if err != nil {
-		return nil, ErrInvalidOffsetParam
-	}
-	sort := utils.GetSort(queryParams["sort"])
-
+	limit := queryParams["limit"].(uint64)
+	offset := queryParams["offset"].(uint64)
+	sort := queryParams["sort"].(string)
 	var groups []models.Group
 
 	switch current_user.Role {
 	case types.UserRoleAdmin:
-		groups, err = gs.groupRepository.GetAllGroup(tx, offset, limit, sort)
+		groups, err = gs.groupRepository.GetAllGroup(tx, int(offset), int(limit), sort)
 		if err != nil {
 			return nil, err
 		}
-
 	case types.UserRoleTeacher:
-		groups, err = gs.groupRepository.GetAllGroupForTeacher(tx, current_user.Id, offset, limit, sort)
+		groups, err = gs.groupRepository.GetAllGroupForTeacher(tx, current_user.Id, int(offset), int(limit), sort)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	var result []schemas.Group
 	for _, group := range groups {
 		result = append(result, *gs.modelToSchema(&group))
