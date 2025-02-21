@@ -50,7 +50,7 @@ func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "role desc"
+		sort = "role:desc"
 	}
 
 	userModels, err := us.userRepository.GetAllUsers(tx, int(limit), int(offset), sort)

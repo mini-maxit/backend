@@ -105,7 +105,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "created_at desc"
+		sort = "created_at:desc"
 	}
 
 	// Get all tasks
@@ -133,7 +133,7 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, gr
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "created_at desc"
+		sort = "created_at:desc"
 	}
 
 	// Get all tasks
@@ -201,7 +201,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "created_at desc"
+		sort = "created_at:desc"
 	}
 
 	tasks, err := ts.taskRepository.GetAllAssignedTasks(tx, current_user.Id, int(limit), int(offset), sort)
