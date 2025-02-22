@@ -122,6 +122,9 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = "created_at:desc"
+	}
 	var groups []models.Group
 
 	switch current_user.Role {

@@ -56,11 +56,11 @@ func (gr *groupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group)
 
 func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error) {
 	var groups []models.Group
-	tx, err := utils.ApplyPaginationAndSort(tx, offset, limit, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Find(&groups).Error
+	err = tx.Model(&models.Group{}).Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort 
 }
 
 func (gr *groupRepository) GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error) {
-	tx, err := utils.ApplyPaginationAndSort(tx, offset, limit, sort)
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
 		return nil, err
 	}

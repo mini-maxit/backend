@@ -168,7 +168,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		if err == errors.ErrNotAuthorized {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to list groups. "+err.Error())
 		return
 	}
 

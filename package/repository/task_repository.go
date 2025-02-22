@@ -181,7 +181,7 @@ func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offs
 		return nil, err
 	}
 
-	err = tx.Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
+	err = tx.Model(&models.Task{}).Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
 		Where("task_groups.group_id = ?", groupId).
 		Find(&tasks).Error
 
