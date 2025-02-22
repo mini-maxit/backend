@@ -249,7 +249,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 // @Accept          json
 // @Produce         json
 // @Param           id path int true "Group ID"
-// @Param           body body UserIds true "User IDs"
+// @Param           body body schemas.UserIds true "User IDs"
 // @Failure         400 {object} httputils.ApiError
 // @Failure         403 {object} httputils.ApiError
 // @Failure         405 {object} httputils.ApiError
@@ -274,10 +274,8 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var request struct {
-		UserIds []int64 `json:"userIds"`
-	}
 	decoder := json.NewDecoder(r.Body)
+	request := schemas.UserIds{}
 	err = decoder.Decode(&request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")

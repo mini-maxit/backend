@@ -18,3 +18,7 @@ type UserEdit struct {
 	Username *string         `json:"username,omitempty"`
 	Role     *types.UserRole `json:"role,omitempty"`
 }
+
+type UserIds struct {
+	UserIds []int64 `json:"user_ids"`
+}

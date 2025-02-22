@@ -479,7 +479,7 @@ func (tr *TaskRouteImpl) UpdateTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse
+//	@Success		200	{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id} [delete]
 func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -533,7 +533,7 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse
+//	@Success		200	{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/assign/users [post]
 func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -595,7 +595,7 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse
+//	@Success		200	{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/assign/groups [post]
 func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -657,7 +657,7 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse
+//	@Success		200	{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/unassign/users [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -719,7 +719,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse
+//	@Success		200	{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/unassign/groups [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

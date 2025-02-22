@@ -35,9 +35,9 @@ type UserRouteImpl struct {
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
 // @Param sort query string false "Sort"
-// @Success 200 httputils.ApiResponse[schemas.User]
-// @Failure 405 httputils.ApiError
-// @Failure 500 httputils.ApiError
+// @Success 200 {object} httputils.ApiResponse[schemas.User]
+// @Failure 405 {object} httputils.ApiError
+// @Failure 500 {object} httputils.ApiError
 // @Router /user/ [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -74,11 +74,11 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 // @Description Get user by ID
 // @Produce json
 // @Param id path int true "User ID"
-// @Success 200 httputils.ApiResponse[schemas.User]
-// @Failure 400 httputils.ApiError
-// @Failure 404 httputils.ApiError
-// @Failure 405 httputils.ApiError
-// @Failure 500 httputils.ApiError
+// @Success 200 {object} httputils.ApiResponse[schemas.User]
+// @Failure 400 {object} httputils.ApiError
+// @Failure 404 {object} httputils.ApiError
+// @Failure 405 {object} httputils.ApiError
+// @Failure 500 {object} httputils.ApiError
 // @Router /user/{id} [get]
 func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -127,11 +127,11 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 // @Description Get user by email
 // @Produce json
 // @Param email query string true "User email"
-// @Success 200 httputils.ApiResponse[schemas.User]
-// @Failure 400 httputils.ApiError
-// @Failure 404 httputils.ApiError
-// @Failure 405 httputils.ApiError
-// @Failure 500 httputils.ApiError
+// @Success 200 {object} httputils.ApiResponse[schemas.User]
+// @Failure 400 {object} httputils.ApiError
+// @Failure 404 {object} httputils.ApiError
+// @Failure 405 {object} httputils.ApiError
+// @Failure 500 {object} httputils.ApiError
 // @Router /user/email [get]
 func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -176,12 +176,12 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path int true "User ID"
 // @Param body body schemas.UserEdit true "User edit object"
-// @Success 200 httputils.ApiResponse[string]
-// @Failure 400 httputils.ApiError
-// @Failure 403 httputils.ApiError
-// @Failure 404 httputils.ApiError
-// @Failure 405 httputils.ApiError
-// @Failure 500 httputils.ApiError
+// @Success 200 {object} httputils.ApiResponse[string]
+// @Failure 400 {object} httputils.ApiError
+// @Failure 403 {object} httputils.ApiError
+// @Failure 404 {object} httputils.ApiError
+// @Failure 405 {object} httputils.ApiError
+// @Failure 500 {object} httputils.ApiError
 // @Router /user/{id} [patch]
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
