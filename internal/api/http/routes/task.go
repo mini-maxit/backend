@@ -355,12 +355,15 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 
 // EditTask godoc
 //
-//	@Tags			task
-//	@Summary		Update a task
-//	@Description	Updates a task by ID
-//	@Produce		json
-//	@Param			id		path		int					true	"Task ID"
-//	@Param			body	body		schemas.EditTask	true	"Task object"
+//		@Tags			task
+//		@Summary		Update a task
+//		@Description	Updates a task by ID
+//		@Produce		json
+//		@Param			id		path		int					true	"Task ID"
+//	 @Param 			title	formData	string				false	"New title for the task"
+//
+// @Param 			archive	formData	file				false	"New archive for the task"
+//
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		403		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
