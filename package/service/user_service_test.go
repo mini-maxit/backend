@@ -256,9 +256,15 @@ func TestChangePassword(t *testing.T) {
 	ust := newUserServiceTest()
 	user := ust.createUser(t, types.UserRoleStudent)
 	admin_user := ust.createUser(t, types.UserRoleAdmin)
+	randomUser := ust.createUser(t, types.UserRoleStudent)
 	t.Run("User does not exist", func(t *testing.T) {
 		err := ust.userService.ChangePassword(ust.tx, admin_user, 0, &schemas.UserChangePassword{})
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, randomUser, user.Id, &schemas.UserChangePassword{})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Invalid old password", func(t *testing.T) {
