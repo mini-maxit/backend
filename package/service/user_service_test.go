@@ -136,10 +136,22 @@ func TestGetUserById(t *testing.T) {
 func TestEditUser(t *testing.T) {
 	ust := newUserServiceTest()
 	admin_user := ust.createUser(t, types.UserRoleAdmin)
+	student_user := ust.createUser(t, types.UserRoleStudent)
 
 	t.Run("User does not exist", func(t *testing.T) {
 		err := ust.userService.EditUser(ust.tx, admin_user, 0, &schemas.UserEdit{})
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := ust.userService.EditUser(ust.tx, student_user, admin_user.Id, &schemas.UserEdit{})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("Not allowed", func(t *testing.T) {
+		role := types.UserRoleAdmin
+		err := ust.userService.EditUser(ust.tx, student_user, student_user.Id, &schemas.UserEdit{Role: &role})
+		assert.ErrorIs(t, err, errors.ErrNotAllowed)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -203,5 +215,33 @@ func TestGetAllUsers(t *testing.T) {
 		assert.Equal(t, user.Username, users[0].Username)
 		assert.Equal(t, user.Id, users[0].Id)
 		assert.Equal(t, user.Role, users[0].Role)
+	})
+}
+
+func TestChangeRole(t *testing.T) {
+	ust := newUserServiceTest()
+	admin_user := ust.createUser(t, types.UserRoleAdmin)
+	student_user := ust.createUser(t, types.UserRoleStudent)
+
+	t.Run("User does not exist", func(t *testing.T) {
+		err := ust.userService.ChangeRole(ust.tx, admin_user, 0, types.UserRoleAdmin)
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := ust.userService.ChangeRole(ust.tx, student_user, admin_user.Id, types.UserRoleAdmin)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		user := ust.createUser(t, types.UserRoleStudent)
+		err := ust.userService.ChangeRole(ust.tx, admin_user, user.Id, types.UserRoleTeacher)
+		assert.NoError(t, err)
+		userResp, err := ust.userService.GetUserById(ust.tx, user.Id)
+		assert.NoError(t, err)
+		if !assert.NotNil(t, userResp) {
+			t.FailNow()
+		}
+		assert.Equal(t, types.UserRoleTeacher, userResp.Role)
 	})
 }

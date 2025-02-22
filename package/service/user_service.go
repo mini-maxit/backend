@@ -16,7 +16,7 @@ type UserService interface {
 	GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
-	ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error
+	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
 	modelToSchema(user *models.User) *schemas.User
 }
 
@@ -103,7 +103,10 @@ func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId in
 	return nil
 }
 
-func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error {
+func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error {
+	if currentUser.Role != types.UserRoleAdmin {
+		return errors.ErrNotAuthorized
+	}
 	user, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

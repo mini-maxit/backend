@@ -75,6 +75,7 @@ func (ur *MockUserRepository) EditUser(tx *gorm.DB, user *schemas.User) error {
 	userModel.Surname = user.Surname
 	userModel.Email = user.Email
 	userModel.Username = user.Username
+	userModel.Role = user.Role
 	return nil
 }
 
