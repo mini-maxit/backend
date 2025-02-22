@@ -48,8 +48,12 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DOCS_PAT }}
           branch: ${{ env.branch_name }}
           title: "docs: update swagger docs"
           body: "This PR updates the Swagger documentation."
           base: ${{ github.ref_name }}
+          delete-branch: true
+          labels: |
+            documentation
+            automated pr
