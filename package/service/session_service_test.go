@@ -6,6 +6,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -46,7 +47,7 @@ func TestValidateSession(t *testing.T) {
 			Email:        "test-email",
 			Username:     "test-username",
 			PasswordHash: "test-password-hash",
-			Role:         models.UserRoleAdmin,
+			Role:         types.UserRoleAdmin,
 		}
 		userId, err := sst.ur.CreateUser(sst.tx, user)
 		assert.NoError(t, err)
@@ -61,7 +62,7 @@ func TestValidateSession(t *testing.T) {
 		assert.Equal(t, user.Surname, validateSession.User.Surname)
 		assert.Equal(t, user.Email, validateSession.User.Email)
 		assert.Equal(t, user.Username, validateSession.User.Username)
-		assert.Equal(t, string(user.Role), validateSession.User.Role)
+		assert.Equal(t, user.Role, validateSession.User.Role)
 	})
 }
 

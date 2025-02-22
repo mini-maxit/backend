@@ -1,12 +1,14 @@
 package schemas
 
+import "github.com/mini-maxit/backend/package/domain/types"
+
 type User struct {
-	Id       int64  `json:"id"`
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	Id       int64          `json:"id"`
+	Name     string         `json:"name"`
+	Surname  string         `json:"surname"`
+	Email    string         `json:"email"`
+	Username string         `json:"username"`
+	Role     types.UserRole `json:"role"`
 }
 
 type UserEdit struct {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -21,7 +22,7 @@ type UserService interface {
 	GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
-	ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error
+	ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error
 	modelToSchema(user *models.User) *schemas.User
 }
 
@@ -101,7 +102,7 @@ func (us *userService) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.U
 	return nil
 }
 
-func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role models.UserRole) error {
+func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error {
 	user, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -111,7 +112,7 @@ func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role models.UserRol
 		return err
 	}
 	schema := us.modelToSchema(user)
-	schema.Role = string(role)
+	schema.Role = role
 	err = us.userRepository.EditUser(tx, schema)
 	if err != nil {
 		us.logger.Errorf("Error changing user role: %v", err.Error())
@@ -130,7 +131,7 @@ func (us *userService) modelToSchema(user *models.User) *schemas.User {
 		Surname:  user.Surname,
 		Email:    user.Email,
 		Username: user.Username,
-		Role:     string(user.Role),
+		Role:     user.Role,
 	}
 }
 

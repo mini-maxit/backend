@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
@@ -17,6 +18,8 @@ type GroupRoute interface {
 	GetGroup(w http.ResponseWriter, r *http.Request)
 	GetAllGroup(w http.ResponseWriter, r *http.Request)
 	EditGroup(w http.ResponseWriter, r *http.Request)
+	AddUsersToGroup(w http.ResponseWriter, r *http.Request)
+	GetGroupUsers(w http.ResponseWriter, r *http.Request)
 }
 
 type GroupRouteImpl struct {
@@ -25,18 +28,18 @@ type GroupRouteImpl struct {
 
 // CreateGroup godoc
 //
-// @Tags group
-// @Summary Create a group
-// @Description Create a group
-// @Accept json
-// @Produce json
-// @Param body body CreateGroup true "Create Group"
-// @Success 200 {object} httputils.ApiResponse[int64]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 401 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /group/ [post]
+//	@Tags			group
+//	@Summary		Create a group
+//	@Description	Create a group
+//	@Accept			json
+//	@Produce		json
+//	@Param			body body CreateGroup true "Create Group"
+//	@Failure		400 {object} httputils.ApiError
+//	@Failure		403 {object} httputils.ApiError
+//	@Failure		405 {object} httputils.ApiError
+//	@Failure		500 {object} httputils.ApiError
+//	@Success		200 {object} httputils.ApiResponse[int64]
+//	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -57,16 +60,20 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := r.Context().Value(middleware.UserIDKey).(int64)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	group := &schemas.Group{
 		Name:      request.Name,
-		CreatedBy: userId,
+		CreatedBy: current_user.Id,
 	}
-	groupId, err := gr.groupService.CreateGroup(tx, group)
+	groupId, err := gr.groupService.CreateGroup(tx, current_user, group)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to create group. "+err.Error())
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
 	}
 
@@ -74,18 +81,18 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetGroup godoc
-// @Tags group
-// @Summary Get a group
-// @Description Get a group
-// @Produce json
-// @Param id path int true "Group ID"
-// @Success 200 {object} httputils.ApiResponse[schemas.Group]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 401 {object} httputils.ApiError
-// @Failure 404 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /group/{id} [get]
+//
+// @Tags            group
+// @Summary         Get a group
+// @Description     Get a group
+// @Produce         json
+// @Param           id path int true "Group ID"
+// @Failure         400 {object} httputils.ApiError
+// @Failure         403 {object} httputils.ApiError
+// @Failure         405 {object} httputils.ApiError
+// @Failure         500 {object} httputils.ApiError
+// @Success         200 {object} httputils.ApiResponse[schemas.Group]
+// @Router          /group/{id} [get]
 func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -110,13 +117,16 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := gr.groupService.GetGroup(tx, groupId)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	group, err := gr.groupService.GetGroup(tx, current_user, groupId)
 	if err != nil {
-		if err == service.ErrGroupNotFound {
-			httputils.ReturnError(w, http.StatusNotFound, "Group not found")
-			return
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get group. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
 	}
 
@@ -124,18 +134,17 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAllGroup godoc
-// @Tags group
-// @Summary Get all groups
-// @Description Get all groups
-// @Produce json
-// @Param limit query string false "Limit"
-// @Param offset query string false "Offset"
-// @Success 200 {object} httputils.ApiResponse[[]schemas.Group]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 401 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /group/ [get]
+//
+// @Tags            group
+// @Summary         Get all groups
+// @Description     Get all groups
+// @Produce         json
+// @Failure         400 {object} httputils.ApiError
+// @Failure         403 {object} httputils.ApiError
+// @Failure         405 {object} httputils.ApiError
+// @Failure         500 {object} httputils.ApiError
+// @Success         200 {object} httputils.ApiResponse[[]schemas.Group]
+// @Router          /group/ [get]
 func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -150,17 +159,16 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-	groups, err := gr.groupService.GetAllGroup(tx, queryParams)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	groups, err := gr.groupService.GetAllGroup(tx, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrInvalidLimitParam {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid limit")
-			return
-		} else if err == service.ErrInvalidOffsetParam {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid offset")
-			return
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting groups. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to list groups. "+err.Error())
 		return
 	}
 
@@ -172,20 +180,20 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 // EditGroup godoc
-// @Tags group
-// @Summary Edit a group
-// @Description Edit a group
-// @Accept json
-// @Produce json
-// @Param id path int true "Group ID"
-// @Param body body EditGroup true "Edit Group"
-// @Success 200 {object} httputils.ApiResponse[schemas.Group]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 401 {object} httputils.ApiError
-// @Failure 404 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /group/{id} [put]
+//
+// @Tags            group
+// @Summary         Edit a group
+// @Description     Edit a group
+// @Accept          json
+// @Produce         json
+// @Param           id path int true "Group ID"
+// @Param           body body EditGroup true "Edit Group"
+// @Failure         400 {object} httputils.ApiError
+// @Failure         403 {object} httputils.ApiError
+// @Failure         405 {object} httputils.ApiError
+// @Failure         500 {object} httputils.ApiError
+// @Success         200 {object} httputils.ApiResponse[schemas.Group]
+// @Router          /group/{id} [put]
 func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -217,18 +225,174 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := gr.groupService.Edit(tx, groupId, &request)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	resp, err := gr.groupService.Edit(tx, current_user, groupId, &request)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrGroupNotFound {
-			httputils.ReturnError(w, http.StatusNotFound, "Group not found")
-			return
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to edit group. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, resp)
+}
+
+// AddUsersToGroup godoc
+//
+// @Tags            group
+// @Summary         Add users to a group
+// @Description     Add users to a group
+// @Accept          json
+// @Produce         json
+// @Param           id path int true "Group ID"
+// @Param           body body UserIds true "User IDs"
+// @Failure         400 {object} httputils.ApiError
+// @Failure         403 {object} httputils.ApiError
+// @Failure         405 {object} httputils.ApiError
+// @Failure         500 {object} httputils.ApiError
+// @Success         200 {object} httputils.ApiResponse[string]
+// @Router          /group/{id}/users [post]
+func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+	if groupIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+		return
+	}
+
+	var request struct {
+		UserIds []int64 `json:"userIds"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = gr.groupService.AddUsersToGroup(tx, current_user, groupId, request.UserIds)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, "Users added to group successfully")
+}
+
+// GetGroupUsers godoc
+//
+// @Tags            group
+// @Summary         Get users in a group
+// @Description     Get users in a group
+// @Produce         json
+// @Param           id path int true "Group ID"
+// @Failure         400 {object} httputils.ApiError
+// @Failure         403 {object} httputils.ApiError
+// @Failure         405 {object} httputils.ApiError
+// @Failure         500 {object} httputils.ApiError
+// @Success         200 {object} httputils.ApiResponse[string]
+// @Router          /group/{id}/users [get]
+func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+	if groupIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	users, err := gr.groupService.GetGroupUsers(tx, current_user, groupId)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, "Failed to get group users. "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, users)
+}
+
+func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			groupRoute.CreateGroup(w, r)
+		case http.MethodGet:
+			groupRoute.GetAllGroup(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			groupRoute.GetGroup(w, r)
+		case http.MethodPut:
+			groupRoute.EditGroup(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			groupRoute.AddUsersToGroup(w, r)
+		case http.MethodGet:
+			groupRoute.GetGroupUsers(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
 }
 
 func NewGroupRoute(groupService service.GroupService) GroupRoute {

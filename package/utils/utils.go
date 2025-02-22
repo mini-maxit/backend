@@ -2,10 +2,13 @@ package utils
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"gorm.io/gorm"
 )
 
@@ -65,6 +68,13 @@ func GetOffset(str string) (int, error) {
 		return 0, nil
 	}
 	return int(offset), nil
+}
+
+func ValidateRoleAccess(current_role types.UserRole, acceptedRoles []types.UserRole) error {
+	if !slices.Contains(acceptedRoles, current_role) {
+		return errors.ErrNotAuthorized
+	}
+	return nil
 }
 
 func GetSort(str string) string {

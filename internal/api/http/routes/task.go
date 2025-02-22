@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -13,15 +14,23 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
 type TaskRoute interface {
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
-	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
+	GetAllAssingedTasks(w http.ResponseWriter, r *http.Request)
+	GetAllCreatedTasks(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
+	UpdateTask(w http.ResponseWriter, r *http.Request)
+	DeleteTask(w http.ResponseWriter, r *http.Request)
+	AssignTaskToUsers(w http.ResponseWriter, r *http.Request)
+	AssignTaskToGroups(w http.ResponseWriter, r *http.Request)
+	UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request)
+	UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskRouteImpl struct {
@@ -29,6 +38,79 @@ type TaskRouteImpl struct {
 
 	// Service that handles task-related operations
 	taskService service.TaskService
+}
+
+type usersRequest struct {
+	UserIds []int64 `json:"userIds"`
+}
+
+type groupsRequest struct {
+	GroupIds []int64 `json:"groupIds"`
+}
+
+func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	task, err := tr.taskService.GetAllAssignedTasks(tx, current_user, queryParams)
+
+	if err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
+
+	if task == nil {
+		task = []schemas.Task{}
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, task)
+}
+
+func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	task, err := tr.taskService.GetAllCreatedTasks(tx, current_user, queryParams)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
+
+	if task == nil {
+		task = []schemas.Task{}
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
 // GetAllTasks godoc
@@ -53,11 +135,16 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
 	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-	tasks, err := tr.taskService.GetAll(tx, queryParams)
+	tasks, err := tr.taskService.GetAll(tx, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 
@@ -76,6 +163,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id	path		int	true	"Task ID"
 //	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
 //	@Failure		500	{object}	httputils.ApiError
 //	@Success		200	{object}	httputils.ApiResponse[schemas.TaskDetailed]
@@ -104,57 +192,35 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := tr.taskService.GetTask(tx, taskId)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	task, err := tr.taskService.GetTask(tx, current_user, taskId)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting task. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
-func (tr *TaskRouteImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	userIdStr := r.PathValue("id")
-
-	if userIdStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
-		return
-	}
-
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id")
-		return
-	}
-
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
-	}
-
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-
-	tasks, err := tr.taskService.GetAllForUser(tx, userId, queryParams)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
-		return
-	}
-
-	if tasks == nil {
-		tasks = []schemas.Task{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, tasks)
-}
-
+// GetAllForGroup godoc
+//
+//	@Tags			task
+//	@Summary		Get all tasks for a group
+//	@Description	Returns all tasks for a group by ID
+//	@Produce		json
+//	@Param			id	path		int	true	"Group ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Router			/task/group/{id} [get]
 func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -183,10 +249,16 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
 
-	tasks, err := tr.taskService.GetAllForGroup(tx, groupId, queryParams)
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	tasks, err := tr.taskService.GetAllForGroup(tx, current_user, groupId, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 
@@ -297,10 +369,17 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
-	taskId, err := tr.taskService.Create(tx, &task)
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	taskId, err := tr.taskService.Create(tx, current_user, &task)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating empty task. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 	err = tr.taskService.CreateInputOutput(tx, taskId, filePath)
@@ -374,6 +453,354 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
+// UpdateTask godoc
+//
+//	@Tags			task
+//	@Summary		Update a task
+//
+// @Description	    NOT IMPLEMENTED Updates a task by ID
+//
+//	@Produce		json
+//	@Param			id	path	int	true	"Task ID"
+//	@Failure		501	{object}	httputils.ApiError
+//	@Router			/task/ [put]
+func (tr *TaskRouteImpl) UpdateTask(w http.ResponseWriter, r *http.Request) {
+	httputils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
+}
+
+// DeleteTask godoc
+//
+//	@Tags			task
+//	@Summary		Delete a task
+//	@Description	Deletes a task by ID
+//	@Produce		json
+//	@Param			id	path	int	true	"Task ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id} [delete]
+func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.DeleteTask(tx, current_user, taskId)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task deleted successfully")
+}
+
+// AssignTaskToUsers godoc
+//
+//	@Tags			task
+//	@Summary		Assign a task to users
+//	@Description	Assigns a task to users by task ID and user IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			userIds	body	[]int	true	"User IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/assign/users [post]
+func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	request := usersRequest{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, request.UserIds)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
+}
+
+// AssignTaskToGroups godoc
+//
+//	@Tags			task
+//	@Summary		Assign a task to groups
+//	@Description	Assigns a task to groups by task ID and group IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			groupIds	body	[]int	true	"Group IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/assign/groups [post]
+func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	request := groupsRequest{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, request.GroupIds)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
+}
+
+// UnAssignTaskFromUsers godoc
+//
+//	@Tags			task
+//	@Summary		Unassign a task from users
+//	@Description	Unassigns a task from users by task ID and user IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			userIds	body	[]int	true	"User IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/unassign/users [delete]
+func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	request := usersRequest{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.UnAssignTaskFromUsers(tx, current_user, taskId, request.UserIds)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error unassigning task. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
+}
+
+// UnAssignTaskFromGroups godoc
+//
+//	@Tags			task
+//	@Summary		Unassign a task from groups
+//	@Description	Unassigns a task from groups by task ID and group IDs
+//	@Produce		json
+//	@Param			id	path	int		true	"Task ID"
+//	@Param			groupIds	body	[]int	true	"Group IDs"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse
+//	@Router			/task/{id}/unassign/groups [delete]
+func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	request := groupsRequest{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.UnAssignTaskFromGroups(tx, current_user, taskId, request.GroupIds)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error unassigning task. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
+}
+
 func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
 	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
+}
+
+func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetAllTasks(w, r)
+		case http.MethodPost:
+			route.UploadTask(w, r)
+		case http.MethodPut:
+			route.UpdateTask(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetTask(w, r)
+		case http.MethodDelete:
+			route.DeleteTask(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+	mux.HandleFunc("/{id}/assign/users", route.AssignTaskToUsers)
+	mux.HandleFunc("/{id}/assign/groups", route.AssignTaskToGroups)
+	mux.HandleFunc("/{id}/unassign/users", route.UnAssignTaskFromUsers)
+	mux.HandleFunc("/{id}/unassign/groups", route.UnAssignTaskFromGroups)
+	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/assigned", route.GetAllAssingedTasks)
+	mux.HandleFunc("/created", route.GetAllCreatedTasks)
 }

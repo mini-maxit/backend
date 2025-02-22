@@ -61,15 +61,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Task routes
 	taskMux := http.NewServeMux()
-	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			init.TaskRoute.UploadTask(w, r)
-		} else if r.Method == "GET" {
-			init.TaskRoute.GetAllTasks(w, r)
-		}
-	},
-	)
-	taskMux.HandleFunc("/{id}", init.TaskRoute.GetTask)
+	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
 
 	// User routes
 	userMux := http.NewServeMux()
@@ -84,7 +76,6 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	)
 	userMux.HandleFunc("/user", init.UserRoute.GetAllUsers)
 	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
-	userMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForUser)
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()
@@ -92,21 +83,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Group routes
 	groupMux := http.NewServeMux()
-	groupMux.HandleFunc("/{id}/task", init.TaskRoute.GetAllForGroup)
-	groupMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			init.GroupRoute.CreateGroup(w, r)
-		} else if r.Method == http.MethodGet {
-			init.GroupRoute.GetAllGroup(w, r)
-		}
-	})
-	groupMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			init.GroupRoute.GetGroup(w, r)
-		} else if r.Method == http.MethodPut {
-			init.GroupRoute.EditGroup(w, r)
-		}
-	})
+	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
 	// Session routes
 	sessionMux := http.NewServeMux()

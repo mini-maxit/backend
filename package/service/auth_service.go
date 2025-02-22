@@ -5,6 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -111,7 +112,7 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 		Email:        userRegister.Email,
 		Username:     userRegister.Username,
 		PasswordHash: string(hash),
-		Role:         models.UserRoleStudent,
+		Role:         types.UserRoleStudent,
 	}
 
 	userId, err := as.userRepository.CreateUser(tx, userModel)

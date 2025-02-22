@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,9 @@ type GroupRepository interface {
 	DeleteGroup(tx *gorm.DB, groupId int64) error
 	Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error)
 	GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error)
+	GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error)
+	AddUserToGroup(tx *gorm.DB, groupId int64, userId int64) error
+	GetGroupUsers(tx *gorm.DB, groupId int64) ([]models.User, error)
 }
 
 type groupRepository struct {
@@ -52,11 +56,55 @@ func (gr *groupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group)
 
 func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error) {
 	var groups []models.Group
-	err := tx.Offset(offset).Limit(limit).Order(sort).Find(&groups).Error
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Model(&models.Group{}).Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}
 	return groups, nil
+}
+
+func (gr *groupRepository) GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error) {
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	var groups []models.Group
+	err = tx.Model(&models.Group{}).
+		Where("created_by = ?", teacherId).
+		Find(&groups).Error
+	if err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+func (gr *groupRepository) GetGroupUsers(tx *gorm.DB, groupId int64) ([]models.User, error) {
+	var users []models.User
+	err := tx.Model(&models.User{}).
+		Joins("JOIN user_groups ON user_groups.user_id = users.id").
+		Where("user_groups.group_id = ?", groupId).
+		Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (gr *groupRepository) AddUserToGroup(tx *gorm.DB, groupId int64, userId int64) error {
+	userGroup := &models.UserGroup{
+		GroupId: groupId,
+		UserId:  userId,
+	}
+	err := tx.Create(userGroup).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewGroupRepository(db *gorm.DB) (GroupRepository, error) {
