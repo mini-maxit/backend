@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -80,7 +81,7 @@ func TestRegister(t *testing.T) {
 			Password: "password",
 		}
 		response, err := as.Register(tx, userRegister)
-		assert.ErrorIs(t, err, ErrUserAlreadyExists)
+		assert.ErrorIs(t, err, errors.ErrUserAlreadyExists)
 		assert.Nil(t, response)
 	})
 
@@ -146,7 +147,7 @@ func TestLogin(t *testing.T) {
 			Password: "password",
 		}
 		response, err := as.Login(tx, userLogin)
-		assert.ErrorIs(t, err, ErrUserNotFound)
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, response)
 	})
 
@@ -164,7 +165,7 @@ func TestLogin(t *testing.T) {
 			Password: user.PasswordHash,
 		}
 		response, err := as.Login(tx, userLogin)
-		assert.ErrorIs(t, err, ErrInvalidCredentials)
+		assert.ErrorIs(t, err, errors.ErrInvalidCredentials)
 		assert.Nil(t, response)
 	})
 

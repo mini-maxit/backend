@@ -1,10 +1,9 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -36,8 +35,6 @@ type submissionService struct {
 	languageService            LanguageService
 	logger                     *zap.SugaredLogger
 }
-
-var ErrPermissionDenied = errors.New("user is not allowed to view this submission")
 
 func (us *submissionService) GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Submission, error) {
 	submission_models := []models.Submission{}
@@ -86,13 +83,13 @@ func (us *submissionService) GetById(tx *gorm.DB, submissionId int64, user schem
 		// Student is only allowed to view their own submissions
 		if submission_model.UserId != user.Id {
 			us.logger.Errorf("User %v is not allowed to view submission %v", user.Id, submissionId)
-			return schemas.Submission{}, ErrPermissionDenied
+			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
 	case "teacher":
 		// Teacher is only allowed to view submissions for tasks they created
 		if submission_model.Task.CreatedBy != user.Id {
 			us.logger.Errorf("User %v is not allowed to view submission %v", user.Id, submissionId)
-			return schemas.Submission{}, ErrPermissionDenied
+			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
 	}
 
@@ -120,7 +117,7 @@ func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUse
 		// Student is only allowed to view their own submissions
 		if userId != currentUser.Id {
 			us.logger.Errorf("User %v is not allowed to view submissions", currentUser.Id)
-			return nil, ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 	case "teacher":
 		// Teacher is only allowed to view submissions for tasks they created
@@ -183,7 +180,7 @@ func (us *submissionService) GetAllForGroup(tx *gorm.DB, groupId int64, user sch
 		submission_models, err = us.submissionRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)
 	case "student":
 		// Student is only allowed to view their own submissions
-		return []schemas.Submission{}, ErrPermissionDenied
+		return nil, errors.ErrPermissionDenied
 	case "teacher":
 		// Teacher is only allowed to view submissions for tasks they created
 		submission_models, err = us.submissionRepository.GetAllForGroupTeacher(tx, groupId, user.Id, int(limit), int(offset), sort)

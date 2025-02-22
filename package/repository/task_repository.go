@@ -23,7 +23,7 @@ type TaskRepository interface {
 	GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error)
 	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
 	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
-	UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error
+	EditTask(tx *gorm.DB, taskId int64, task *models.Task) error
 	DeleteTask(tx *gorm.DB, taskId int64) error
 }
 
@@ -220,7 +220,7 @@ func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]floa
 	return memoryLimits, nil
 }
 
-func (tr *taskRepository) UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error {
+func (tr *taskRepository) EditTask(tx *gorm.DB, taskId int64, task *models.Task) error {
 	err := tx.Model(&models.Task{}).Where("id = ?", taskId).Updates(task).Error
 	if err != nil {
 		return err

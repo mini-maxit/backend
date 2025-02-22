@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
@@ -57,11 +58,11 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrUserNotFound {
+		if err == errors.ErrUserNotFound {
 			httputils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registerd.")
 			return
 		}
-		if err == service.ErrInvalidCredentials {
+		if err == errors.ErrInvalidCredentials {
 			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
 			return
 		}
@@ -107,7 +108,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	switch err {
 	case nil:
 		break
-	case service.ErrUserAlreadyExists:
+	case errors.ErrUserAlreadyExists:
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
 		return

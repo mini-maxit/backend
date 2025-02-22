@@ -2,7 +2,7 @@ package schemas
 
 import "time"
 
-type UpdateTask struct {
+type EditTask struct {
 	Title string `json:"title"`
 }
 

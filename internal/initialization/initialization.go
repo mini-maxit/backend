@@ -170,6 +170,13 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 		}
+		fakeUser := schemas.User{
+			Name:     "FakeName",
+			Surname:  "FakeSurname",
+			Email:    "asd@asdf.com",
+			Username: "fake",
+			Role:     types.UserRoleAdmin,
+		}
 		session, err := authService.Register(tx, schemas.UserRegisterRequest{
 			Name:     "AdminName",
 			Surname:  "AdminSurname",
@@ -180,7 +187,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create admin: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, types.UserRoleAdmin)
+			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleAdmin)
 			if err != nil {
 				log.Warnf("Failed to change admin role: %s", err.Error())
 			}
@@ -195,7 +202,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create teacher: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, types.UserRoleTeacher)
+			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleTeacher)
 			if err != nil {
 				log.Warnf("Failed to change teacher role: %s", err.Error())
 			}
@@ -210,7 +217,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to create student: %s", err.Error())
 		} else {
-			err = userService.ChangeRole(tx, session.UserId, types.UserRoleStudent)
+			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleStudent)
 			if err != nil {
 				log.Warnf("Failed to change student role: %s", err.Error())
 			}

@@ -75,6 +75,7 @@ func (ur *MockUserRepository) EditUser(tx *gorm.DB, user *schemas.User) error {
 	userModel.Surname = user.Surname
 	userModel.Email = user.Email
 	userModel.Username = user.Username
+	userModel.Role = user.Role
 	return nil
 }
 
@@ -214,7 +215,7 @@ func (tr *MockTaskRepository) Clear() {
 	tr.tasksCouter = 0
 }
 
-func (tr *MockTaskRepository) UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error {
+func (tr *MockTaskRepository) EditTask(tx *gorm.DB, taskId int64, task *models.Task) error {
 	if _, ok := tr.tasks[taskId]; ok {
 		tr.tasks[taskId] = task
 		return nil

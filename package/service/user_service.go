@@ -1,28 +1,22 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserAlreadyExists = errors.New("user already exists")
-)
-
 type UserService interface {
 	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
 	GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error)
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
-	EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error
-	ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error
+	EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
+	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
 	modelToSchema(user *models.User) *schemas.User
 }
 
@@ -36,7 +30,7 @@ func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User,
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -72,7 +66,7 @@ func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, er
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -82,16 +76,23 @@ func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, er
 	return user, nil
 }
 
-func (us *userService) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.UserEdit) error {
+func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
+	if currentUser.Role != types.UserRoleAdmin && currentUser.Id != userId {
+		return errors.ErrNotAuthorized
+	}
 	currentModel, err := us.GetUserById(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
 	}
-
+	if updateInfo.Role != nil {
+		if currentUser.Role != types.UserRoleAdmin {
+			return errors.ErrNotAllowed
+		}
+	}
 	us.updateModel(currentModel, updateInfo)
 
 	err = us.userRepository.EditUser(tx, currentModel)
@@ -102,11 +103,14 @@ func (us *userService) EditUser(tx *gorm.DB, userId int64, updateInfo *schemas.U
 	return nil
 }
 
-func (us *userService) ChangeRole(tx *gorm.DB, userId int64, role types.UserRole) error {
+func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error {
+	if currentUser.Role != types.UserRoleAdmin {
+		return errors.ErrNotAuthorized
+	}
 	user, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
@@ -150,6 +154,9 @@ func (us *userService) updateModel(curretnModel *schemas.User, updateInfo *schem
 
 	if updateInfo.Username != nil {
 		curretnModel.Username = *updateInfo.Username
+	}
+	if updateInfo.Role != nil {
+		curretnModel.Role = *updateInfo.Role
 	}
 }
 
