@@ -38,7 +38,7 @@ type GroupRouteImpl struct {
 //	@Failure		403 {object} httputils.ApiError
 //	@Failure		405 {object} httputils.ApiError
 //	@Failure		500 {object} httputils.ApiError
-//	@Success		200 {object} int64
+//	@Success		200 {object} httputils.ApiResponse[int64]
 //	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -254,7 +254,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 // @Failure         403 {object} httputils.ApiError
 // @Failure         405 {object} httputils.ApiError
 // @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse
+// @Success         200 {object} httputils.ApiResponse[string]
 // @Router          /group/{id}/users [post]
 func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -317,7 +317,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 // @Failure         403 {object} httputils.ApiError
 // @Failure         405 {object} httputils.ApiError
 // @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse
+// @Success         200 {object} httputils.ApiResponse[string]
 // @Router          /group/{id}/users [get]
 func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
