@@ -30,7 +30,7 @@ func (gr *groupRepository) CreateGroup(tx *gorm.DB, group *models.Group) (int64,
 
 func (gr *groupRepository) GetGroup(tx *gorm.DB, groupId int64) (*models.Group, error) {
 	var group models.Group
-	err := tx.Where("id = ?", groupId).First(&group).Error
+	err := tx.Where("id = ?", groupId).Preload("Tasks").Preload("Users").First(&group).Error
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort 
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Model(&models.Group{}).Find(&groups).Error
+	err = tx.Model(&models.Group{}).Preload("Tasks").Preload("Users").Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +76,8 @@ func (gr *groupRepository) GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, o
 	var groups []models.Group
 	err = tx.Model(&models.Group{}).
 		Where("created_by = ?", teacherId).
+		Preload("Tasks").
+		Preload("Users").
 		Find(&groups).Error
 	if err != nil {
 		return nil, err

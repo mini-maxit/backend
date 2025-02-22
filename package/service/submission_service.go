@@ -389,9 +389,9 @@ func (us *submissionService) modelToSchema(submission *models.Submission) *schem
 		StatusMessage: submission.StatusMessage,
 		SubmittedAt:   submission.SubmittedAt,
 		CheckedAt:     submission.CheckedAt,
-		Language:      *us.languageService.modelToSchema(&submission.Language),
-		Task:          *us.taskService.modelToSchema(&submission.Task),
-		User:          *us.userService.modelToSchema(&submission.User),
+		Language:      *LanguageToSchema(&submission.Language),
+		Task:          *TaskToSchema(&submission.Task),
+		User:          *UserToSchema(&submission.User),
 		Result:        us.resultModelToSchema(submission.Result),
 	}
 }

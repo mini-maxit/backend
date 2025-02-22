@@ -1,11 +1,8 @@
 package routes
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -277,8 +274,6 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			title formData	string	true	"Name of the task"
-//	@Param			userId		formData	int		true	"ID of the author"
-//	@Param			overwrite	formData	bool	false	"Overwrite flag"
 //	@Param			archive		formData	file	true	"Task archive"
 //	@Failure		405			{object}	httputils.ApiError
 //	@Failure		400			{object}	httputils.ApiError
@@ -300,36 +295,16 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	overwriteStr := r.FormValue("overwrite")
-	overwrite := false
-	if overwriteStr != "" {
-		var err error
-		overwrite, err = strconv.ParseBool(overwriteStr)
-		if err != nil {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid overwrite flag.")
-			return
-		}
-	}
 	title := r.FormValue("title")
 	if title == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
-		return
-	}
-	userIdStr := r.FormValue("userId")
-	if userIdStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID of author is required.")
-		return
-	}
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID.")
 		return
 	}
 
 	// Extract the uploaded file
 	file, handler, err := r.FormFile("archive")
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found."+err.Error())
 		return
 	}
 	if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
@@ -343,25 +318,13 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tr.taskService.ParseInputOutput(filePath)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, fmt.Sprintf("Error parsing input output. %s", err.Error()))
-		return
-	}
-
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("failed to seek archive after input count: %v", err))
-		return
-	}
 	// Create a multipart writer for the HTTP request to FileStorage service
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
+	currentUser := r.Context().Value(middleware.UserKey).(schemas.User)
 
 	// Create empty task to get the task ID
 	task := schemas.Task{
 		Title:     title,
-		CreatedBy: userId,
+		CreatedBy: currentUser.Id,
 	}
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
@@ -370,9 +333,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-
-	taskId, err := tr.taskService.Create(tx, current_user, &task)
+	taskId, err := tr.taskService.Create(tx, currentUser, &task)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -382,65 +343,13 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
-	err = tr.taskService.CreateInputOutput(tx, taskId, filePath)
+
+	err = tr.taskService.ProcessAndUploadTask(tx, currentUser, taskId, filePath)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating input output. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
 		return
 	}
-
-	// Add form fields
-	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing task ID to form. %s", err.Error()))
-		return
-	}
-	err = writer.WriteField("overwrite", strconv.FormatBool(overwrite))
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error writing overwrite flag to form. %s", err.Error()))
-		return
-	}
-
-	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("archive", handler.Filename)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating form file for FileStorage. %s", err.Error()))
-		return
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error copying file to FileStorage request. %s", err.Error()))
-		return
-	}
-	writer.Close()
-
-	// Send the request to FileStorage service
-	client := &http.Client{}
-	resp, err := client.Post(tr.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
-		return
-	}
-	defer resp.Body.Close()
-
-	// Handle response from FileStorage
-	buffer := make([]byte, resp.ContentLength)
-	bytesRead, err := resp.Body.Read(buffer)
-	if err != nil && bytesRead == 0 {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
-		return
-	}
-	if resp.StatusCode != http.StatusOK {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)))
-		return
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
@@ -476,13 +385,6 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request schemas.EditTask
-	err = json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
-		return
-	}
-
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -491,6 +393,12 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	request := schemas.EditTask{}
+	newTitle := r.FormValue("title")
+	if newTitle != "" {
+		request.Title = &newTitle
+	}
 
 	err = tr.taskService.EditTask(tx, current_user, taskId, &request)
 	if err != nil {
@@ -501,6 +409,33 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		}
 		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
+	}
+
+	file, handler, err := r.FormFile("archive")
+	if err != nil {
+		if err == http.ErrMissingFile {
+			httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
+			return
+		}
+		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
+		return
+	} else {
+		defer file.Close()
+		if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename)
+			return
+		}
+		filePath, err := httputils.SaveMultiPartFile(file, handler)
+		if err != nil {
+			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error saving multipart file. %s", err.Error()))
+			return
+		}
+		err = tr.taskService.ProcessAndUploadTask(tx, current_user, taskId, filePath)
+		if err != nil {
+			db.Rollback()
+			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
+			return
+		}
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")

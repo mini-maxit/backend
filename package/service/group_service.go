@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -110,7 +111,7 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 	if err != nil {
 		return nil, err
 	}
-	return gs.modelToSchema(newModel), nil
+	return GroupToSchema(newModel), nil
 }
 
 func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
@@ -141,7 +142,7 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 	}
 	var result []schemas.Group
 	for _, group := range groups {
-		result = append(result, *gs.modelToSchema(&group))
+		result = append(result, *GroupToSchema(&group))
 	}
 
 	return result, nil
@@ -165,7 +166,7 @@ func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId
 		return nil, errors.ErrNotAuthorized
 	}
 
-	return gs.modelToSchema(group), nil
+	return GroupToSchema(group), nil
 }
 
 func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
@@ -193,6 +194,7 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 		if err != nil {
 			return err
 		}
+		log.Printf("added user %d to group %d", userId, groupId)
 	}
 
 	return nil
@@ -220,7 +222,7 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 
 	var result []schemas.User
 	for _, user := range users {
-		result = append(result, *gs.userService.modelToSchema(&user))
+		result = append(result, *UserToSchema(&user))
 	}
 
 	return result, nil
@@ -232,13 +234,24 @@ func (gs *groupService) updateModel(model *models.Group, editInfo *schemas.EditG
 	}
 }
 
-func (gs *groupService) modelToSchema(model *models.Group) *schemas.Group {
+func GroupToSchema(model *models.Group) *schemas.Group {
+	tasks := make([]schemas.Task, len(model.Tasks))
+	for i, task := range model.Tasks {
+		tasks[i] = *TaskToSchema(&task)
+	}
+	users := make([]schemas.User, len(model.Users))
+	for i, user := range model.Users {
+		users[i] = *UserToSchema(&user)
+	}
+
 	return &schemas.Group{
 		Id:        model.Id,
 		Name:      model.Name,
 		CreatedBy: model.CreatedBy,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
+		Tasks:     tasks,
+		Users:     users,
 	}
 }
 

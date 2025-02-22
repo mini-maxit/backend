@@ -20,7 +20,6 @@ type UserService interface {
 	EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
 	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
 	ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error
-	modelToSchema(user *models.User) *schemas.User
 }
 
 type userService struct {
@@ -38,8 +37,7 @@ func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User,
 		return nil, err
 	}
 
-	user := us.modelToSchema(userModel)
-	return user, nil
+	return UserToSchema(userModel), nil
 }
 
 func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error) {
@@ -58,7 +56,7 @@ func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface
 
 	var users []schemas.User
 	for _, userModel := range userModels {
-		users = append(users, *us.modelToSchema(&userModel))
+		users = append(users, *UserToSchema(&userModel))
 	}
 
 	return users, nil
@@ -74,8 +72,7 @@ func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, er
 		return nil, err
 	}
 
-	user := us.modelToSchema(userModel)
-	return user, nil
+	return UserToSchema(userModel), nil
 }
 
 func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
@@ -170,10 +167,7 @@ func (us *userService) ChangePassword(tx *gorm.DB, currentUser schemas.User, use
 	return nil
 }
 
-func (us *userService) modelToSchema(user *models.User) *schemas.User {
-	if user.Role == "" {
-		us.logger.Errorf("")
-	}
+func UserToSchema(user *models.User) *schemas.User {
 	return &schemas.User{
 		Id:       user.Id,
 		Name:     user.Name,

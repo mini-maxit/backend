@@ -3,7 +3,7 @@ package schemas
 import "time"
 
 type EditTask struct {
-	Title string `json:"title"`
+	Title *string `json:"title,omitempty"`
 }
 
 type Task struct {

@@ -406,20 +406,18 @@ func TestUpdateTask(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		updatedTask := &schemas.EditTask{
-			Title: "Updated Task",
-		}
+		newTitle := "Updated Task"
+		updatedTask := &schemas.EditTask{Title: &newTitle}
 		err = tst.taskService.EditTask(tst.tx, admin_user, taskId, updatedTask)
 		assert.NoError(t, err)
 		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
-		assert.Equal(t, updatedTask.Title, taskResp.Title)
+		assert.Equal(t, *updatedTask.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 	t.Run("Nonexistent task", func(t *testing.T) {
-		updatedTask := &schemas.EditTask{
-			Title: "Updated Task",
-		}
+		newTitle := "Updated Task"
+		updatedTask := &schemas.EditTask{Title: &newTitle}
 		err := tst.taskService.EditTask(tst.tx, admin_user, 0, updatedTask)
 		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})

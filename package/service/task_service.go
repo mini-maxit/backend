@@ -1,8 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -32,7 +37,7 @@ type TaskService interface {
 	UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
 	DeleteTask(tx *gorm.DB, current_user schemas.User, taskId int64) error
 	ParseInputOutput(archivePath string) (int, error)
-	modelToSchema(model *models.Task) *schemas.Task
+	ProcessAndUploadTask(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error
 }
 
 type taskService struct {
@@ -90,9 +95,7 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 		return nil, err
 	}
 
-	result := ts.modelToSchema(task)
-
-	return result, nil
+	return TaskToSchema(task), nil
 }
 
 func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
@@ -118,7 +121,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, *ts.modelToSchema(&task))
+		result = append(result, *TaskToSchema(&task))
 	}
 
 	return result, nil
@@ -146,7 +149,7 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, gr
 	// Convert the models to schemas
 	var result []schemas.Task
 	for _, task := range tasks {
-		result = append(result, *ts.modelToSchema(&task))
+		result = append(result, *TaskToSchema(&task))
 	}
 
 	return result, nil
@@ -213,7 +216,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 	var result []schemas.Task
 
 	for task := range tasks {
-		result = append(result, *ts.modelToSchema(&tasks[task]))
+		result = append(result, *TaskToSchema(&tasks[task]))
 	}
 
 	return result, nil
@@ -241,7 +244,7 @@ func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User
 	var result []schemas.Task
 
 	for task := range tasks {
-		result = append(result, *ts.modelToSchema(&tasks[task]))
+		result = append(result, *TaskToSchema(&tasks[task]))
 	}
 
 	return result, nil
@@ -508,6 +511,10 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 			return -1, fmt.Errorf("input file name is not formatted correctly. Expected format: <filename>.<extension> but got %s", file.Name())
 		}
 		filename := filename_list[0]
+		ext := filename_list[1]
+		if ext != "in" {
+			return -1, fmt.Errorf("input file extension is not .in")
+		}
 		found := false
 		for _, output_file := range outputFiles {
 			output_filename_list := strings.Split(output_file.Name(), ".")
@@ -515,6 +522,9 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 				return -1, fmt.Errorf("output file name is not formatted correctly. Expected format: <filename>.<extension> but got %s", output_file.Name())
 			}
 			output_filename := output_filename_list[0]
+			if output_filename_list[1] != "out" {
+				return -1, fmt.Errorf("output file extension is not .out")
+			}
 			ts.logger.Infof("Comparing %s with %s", filename, output_filename)
 			if filename == output_filename {
 				found = true
@@ -533,6 +543,12 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath 
 	if err != nil {
 		return fmt.Errorf("failed to parse input and output files: %v", err)
 	}
+	// Remove existing input output files
+	err = ts.inputOutputRepository.DeleteAll(tx, taskId)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing input output files: %v", err)
+	}
+
 	for i := 1; i <= num_files; i++ {
 		io := &models.InputOutput{
 			TaskId:      taskId,
@@ -548,13 +564,70 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath 
 	return nil
 }
 
+func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error {
+	if current_user.Role == types.UserRoleStudent {
+		return errors.ErrNotAllowed
+	}
+
+	err := ts.CreateInputOutput(tx, taskId, archivePath)
+	if err != nil {
+		return fmt.Errorf("failed to create input output: %v", err)
+	}
+
+	// Create a multipart writer for the HTTP request to FileStorage service
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
+	if err != nil {
+		return fmt.Errorf("Error writing task ID to form. %s", err.Error())
+	}
+	err = writer.WriteField("overwrite", strconv.FormatBool(true))
+	if err != nil {
+		return fmt.Errorf("Error writing overwrite to form. %s", err.Error())
+	}
+
+	// Create a form file field and copy the uploaded file to it
+	part, err := writer.CreateFormFile("archive", "Task.zip")
+	if err != nil {
+		return fmt.Errorf("Error creating form file. %s", err.Error())
+	}
+	file, err := os.Open(archivePath)
+	if err != nil {
+		return fmt.Errorf("Error opening file. %s", err.Error())
+	}
+	defer file.Close()
+	if _, err := io.Copy(part, file); err != nil {
+		return fmt.Errorf("Error copying file to form. %s", err.Error())
+	}
+	writer.Close()
+
+	// Send the request to FileStorage service
+	client := &http.Client{}
+	resp, err := client.Post(ts.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
+	if err != nil {
+		return fmt.Errorf("Error sending request to FileStorage. %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	// Handle response from FileStorage
+	buffer := make([]byte, resp.ContentLength)
+	bytesRead, err := resp.Body.Read(buffer)
+	if err != nil && bytesRead == 0 {
+		return fmt.Errorf("Error reading response from FileStorage. %s", err.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Error response from FileStorage. %s", string(buffer))
+	}
+
+	return nil
+}
 func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.EditTask) {
-	if updateInfo.Title != "" {
-		currentModel.Title = updateInfo.Title
+	if updateInfo.Title != nil {
+		currentModel.Title = *updateInfo.Title
 	}
 }
 
-func (ts *taskService) modelToSchema(model *models.Task) *schemas.Task {
+func TaskToSchema(model *models.Task) *schemas.Task {
 	return &schemas.Task{
 		Id:        model.Id,
 		Title:     model.Title,
