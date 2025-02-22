@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -12,6 +13,7 @@ import (
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -25,13 +27,17 @@ type userServiceTest struct {
 
 func (ust *userServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
 	ust.counter++
+	passHash, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
 	userId, err := ust.ur.CreateUser(ust.tx, &models.User{
 		Name:         fmt.Sprintf("Test User %d", ust.counter),
 		Surname:      fmt.Sprintf("Test Surname %d", ust.counter),
 		Email:        fmt.Sprintf("email%d@email.com", ust.counter),
 		Username:     fmt.Sprintf("testuser%d", ust.counter),
 		Role:         role,
-		PasswordHash: "password",
+		PasswordHash: string(passHash),
 	})
 	if !assert.NoError(t, err) {
 		t.FailNow()
@@ -243,5 +249,36 @@ func TestChangeRole(t *testing.T) {
 			t.FailNow()
 		}
 		assert.Equal(t, types.UserRoleTeacher, userResp.Role)
+	})
+}
+
+func TestChangePassword(t *testing.T) {
+	ust := newUserServiceTest()
+	user := ust.createUser(t, types.UserRoleStudent)
+	admin_user := ust.createUser(t, types.UserRoleAdmin)
+	randomUser := ust.createUser(t, types.UserRoleStudent)
+	t.Run("User does not exist", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, admin_user, 0, &schemas.UserChangePassword{})
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, randomUser, user.Id, &schemas.UserChangePassword{})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("Invalid old password", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "invalidpassword", NewPassword: "newpassword", NewPasswordConfirm: "newpassword"})
+		assert.ErrorIs(t, err, errors.ErrInvalidCredentials)
+	})
+
+	t.Run("Invalid data", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "new", NewPasswordConfirm: "new2"})
+		assert.IsType(t, validator.ValidationErrors{}, err)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "newpassword", NewPasswordConfirm: "newpassword"})
+		assert.NoError(t, err)
 	})
 }

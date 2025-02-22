@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"gorm.io/gorm"
 )
@@ -57,7 +56,7 @@ func (ur *MockUserRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort s
 	return users, nil
 }
 
-func (ur *MockUserRepository) EditUser(tx *gorm.DB, user *schemas.User) error {
+func (ur *MockUserRepository) EditUser(tx *gorm.DB, user *models.User) error {
 	if tx == nil {
 		return gorm.ErrInvalidDB
 	}

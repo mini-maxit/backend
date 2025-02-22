@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
@@ -20,6 +22,7 @@ type UserRoute interface {
 	GetUserByEmail(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
 	CreateUsers(w http.ResponseWriter, r *http.Request)
+	ChangePassword(w http.ResponseWriter, r *http.Request)
 }
 
 type UserRouteImpl struct {
@@ -236,6 +239,89 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, "Update successfull")
 }
 
+// ChangePassword godoc
+//
+// @Tags			user
+// @Summary		Change user password
+// @Description	Change user password
+// @Accept			json
+// @Produce		json
+// @Param			id		path		int							true	"User ID"
+// @Param			body	body		schemas.UserChangePassword	true	"User change password object"
+// @Success		200		{object}	httputils.ApiResponse[string]
+// @Failure		400		{object}	httputils.ApiError
+// @Failure		403		{object}	httputils.ApiError
+// @Failure		404		{object}	httputils.ApiError
+// @Failure		405		{object}	httputils.ApiError
+// @Failure		500		{object}	httputils.ApiError
+// @Router			/user/{id}/password [patch]
+func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userIdStr := r.PathValue("id")
+	if userIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "UserId cannot be empty")
+		return
+	}
+	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userId")
+		return
+	}
+
+	request := &schemas.UserChangePassword{}
+	err = json.NewDecoder(r.Body).Decode(request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		return
+	}
+
+	currentUser := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = u.userService.ChangePassword(tx, currentUser, userId, request)
+	if err != nil {
+		db.Rollback()
+		if reflect.TypeOf(err) == reflect.TypeOf(validator.ValidationErrors{}) {
+			httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err == errors.ErrNotAllowed {
+			httputils.ReturnError(w, http.StatusForbidden, "You are not allowed to change user role")
+			return
+		}
+		if err == errors.ErrUserNotFound {
+			httputils.ReturnError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		if err == errors.ErrNotAuthorized {
+			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
+			return
+		}
+		if err == errors.ErrInvalidCredentials {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid old password")
+			return
+		}
+		if err == errors.ErrInvalidData {
+			httputils.ReturnError(w, http.StatusBadRequest, "New password and confirm password do not match")
+			return
+		}
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error ocured during editing. "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Password changed successfully")
+}
+
 func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
 	// this funcion allows admin to ctreate new users with their email and given role
 	// the users will be created with a default password and will be required to change it on first login
@@ -245,4 +331,17 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
 
 func NewUserRoute(userService service.UserService) UserRoute {
 	return &UserRouteImpl{userService: userService}
+}
+
+func RegisterUserRoutes(mux *http.ServeMux, route UserRoute) {
+	mux.HandleFunc("/", route.GetAllUsers)
+	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			route.GetUserById(w, r)
+		} else if r.Method == http.MethodPatch {
+			route.EditUser(w, r)
+		}
+	})
+	mux.HandleFunc("/email", route.GetUserByEmail)
+	mux.HandleFunc("/{id}/password", route.ChangePassword)
 }

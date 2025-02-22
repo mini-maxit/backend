@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -8,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +19,7 @@ type UserService interface {
 	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
 	EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
 	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
+	ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error
 	modelToSchema(user *models.User) *schemas.User
 }
 
@@ -72,7 +75,6 @@ func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, er
 	}
 
 	user := us.modelToSchema(userModel)
-
 	return user, nil
 }
 
@@ -80,7 +82,7 @@ func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId in
 	if currentUser.Role != types.UserRoleAdmin && currentUser.Id != userId {
 		return errors.ErrNotAuthorized
 	}
-	currentModel, err := us.GetUserById(tx, userId)
+	user, err := us.userRepository.GetUser(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrUserNotFound
@@ -93,9 +95,10 @@ func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId in
 			return errors.ErrNotAllowed
 		}
 	}
-	us.updateModel(currentModel, updateInfo)
 
-	err = us.userRepository.EditUser(tx, currentModel)
+	us.updateModel(user, updateInfo)
+
+	err = us.userRepository.EditUser(tx, user)
 	if err != nil {
 		us.logger.Errorf("Error editing user: %v", err.Error())
 		return err
@@ -115,11 +118,53 @@ func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId 
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
 	}
-	schema := us.modelToSchema(user)
-	schema.Role = role
-	err = us.userRepository.EditUser(tx, schema)
+	user.Role = role
+	err = us.userRepository.EditUser(tx, user)
 	if err != nil {
 		us.logger.Errorf("Error changing user role: %v", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (us *userService) ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error {
+	if currentUser.Id != userId && currentUser.Role != types.UserRoleAdmin {
+		return errors.ErrNotAuthorized
+	}
+	user, err := us.userRepository.GetUser(tx, userId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrUserNotFound
+		}
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
+		return err
+	}
+
+	validate, err := utils.NewValidator()
+	if err != nil {
+		return err
+	}
+	if err := validate.Struct(data); err != nil {
+		return err.(validator.ValidationErrors)
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(data.OldPassword)) != nil {
+		return errors.ErrInvalidCredentials
+	}
+
+	if data.NewPassword != data.NewPasswordConfirm {
+		return errors.ErrInvalidData
+	}
+
+	// user.PasswordHash =
+	hash, err := bcrypt.GenerateFromPassword([]byte(data.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(hash)
+	err = us.userRepository.EditUser(tx, user)
+	if err != nil {
+		us.logger.Errorf("Error changing user password: %v", err.Error())
 		return err
 	}
 	return nil
@@ -139,7 +184,7 @@ func (us *userService) modelToSchema(user *models.User) *schemas.User {
 	}
 }
 
-func (us *userService) updateModel(curretnModel *schemas.User, updateInfo *schemas.UserEdit) {
+func (us *userService) updateModel(curretnModel *models.User, updateInfo *schemas.UserEdit) {
 	if updateInfo.Email != nil {
 		curretnModel.Email = *updateInfo.Email
 	}

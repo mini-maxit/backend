@@ -65,17 +65,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// User routes
 	userMux := http.NewServeMux()
-	userMux.HandleFunc("/", init.UserRoute.GetAllUsers)
-	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			init.UserRoute.GetUserById(w, r)
-		} else if r.Method == http.MethodPut {
-			init.UserRoute.EditUser(w, r)
-		}
-	},
-	)
-	userMux.HandleFunc("/user", init.UserRoute.GetAllUsers)
-	userMux.HandleFunc("/email", init.UserRoute.GetUserByEmail)
+	routes.RegisterUserRoutes(userMux, init.UserRoute)
 
 	// Submission routes
 	subbmissionMux := http.NewServeMux()

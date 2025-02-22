@@ -2,7 +2,6 @@ package repository
 
 import (
 	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
@@ -13,7 +12,7 @@ type UserRepository interface {
 	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
 	GetUserByEmail(tx *gorm.DB, email string) (*models.User, error)
 	GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
-	EditUser(tx *gorm.DB, user *schemas.User) error
+	EditUser(tx *gorm.DB, user *models.User) error
 }
 
 type userRepository struct {
@@ -59,7 +58,7 @@ func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort strin
 	return *users, nil
 }
 
-func (ur *userRepository) EditUser(tx *gorm.DB, user *schemas.User) error {
+func (ur *userRepository) EditUser(tx *gorm.DB, user *models.User) error {
 	err := tx.Model(&models.User{}).Where("id = ?", user.Id).Updates(user).Error
 	return err
 }
