@@ -827,7 +827,7 @@ func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
 			route.GetAllTasks(w, r)
 		case http.MethodPost:
 			route.UploadTask(w, r)
-		case http.MethodPut:
+		case http.MethodPatch:
 			route.EditTask(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
