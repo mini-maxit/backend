@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -194,7 +193,6 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 		if err != nil {
 			return err
 		}
-		log.Printf("added user %d to group %d", userId, groupId)
 	}
 
 	return nil
