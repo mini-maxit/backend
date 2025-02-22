@@ -239,6 +239,22 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, "Update successfull")
 }
 
+// ChangePassword godoc
+//
+// @Tags			user
+// @Summary		Change user password
+// @Description	Change user password
+// @Accept			json
+// @Produce		json
+// @Param			id		path		int							true	"User ID"
+// @Param			body	body		schemas.UserChangePassword	true	"User change password object"
+// @Success		200		{object}	httputils.ApiResponse[string]
+// @Failure		400		{object}	httputils.ApiError
+// @Failure		403		{object}	httputils.ApiError
+// @Failure		404		{object}	httputils.ApiError
+// @Failure		405		{object}	httputils.ApiError
+// @Failure		500		{object}	httputils.ApiError
+// @Router			/user/{id}/password [patch]
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
