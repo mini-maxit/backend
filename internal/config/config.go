@@ -92,11 +92,6 @@ var DefaultLanguages = []schemas.LanguageConfig{
 		Version:       "20",
 		FileExtension: "cpp",
 	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "23",
-		FileExtension: "cpp",
-	},
 }
 
 // AvailableLanguages is a list of languages that is acrively supported by the system and can be used if enabled.
