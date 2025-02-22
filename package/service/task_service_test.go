@@ -395,6 +395,7 @@ func TestDeleteTask(t *testing.T) {
 }
 func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
 
 	t.Run("Success", func(t *testing.T) {
 		current_user := tst.createUser(t, types.UserRoleAdmin)
@@ -405,10 +406,10 @@ func TestUpdateTask(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		updatedTask := schemas.UpdateTask{
+		updatedTask := &schemas.EditTask{
 			Title: "Updated Task",
 		}
-		err = tst.taskService.UpdateTask(tst.tx, taskId, updatedTask)
+		err = tst.taskService.EditTask(tst.tx, admin_user, taskId, updatedTask)
 		assert.NoError(t, err)
 		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
@@ -416,10 +417,10 @@ func TestUpdateTask(t *testing.T) {
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 	t.Run("Nonexistent task", func(t *testing.T) {
-		updatedTask := schemas.UpdateTask{
+		updatedTask := &schemas.EditTask{
 			Title: "Updated Task",
 		}
-		err := tst.taskService.UpdateTask(tst.tx, 0, updatedTask)
+		err := tst.taskService.EditTask(tst.tx, admin_user, 0, updatedTask)
 		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }

@@ -25,7 +25,7 @@ type TaskService interface {
 	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
 	GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
-	UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error
+	EditTask(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error
 	AssignTaskToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error
 	AssignTaskToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
 	UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error
@@ -432,7 +432,7 @@ func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId
 	return nil
 }
 
-func (ts *taskService) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.UpdateTask) error {
+func (ts *taskService) EditTask(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error {
 	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -441,11 +441,14 @@ func (ts *taskService) UpdateTask(tx *gorm.DB, taskId int64, updateInfo schemas.
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}
+	if currentUser.Role == types.UserRoleTeacher && currentTask.CreatedBy != currentUser.Id || currentUser.Role == types.UserRoleStudent {
+		return errors.ErrNotAuthorized
+	}
 
-	ts.updateModel(currentTask, &updateInfo)
+	ts.updateModel(currentTask, updateInfo)
 
 	// Update the task
-	err = ts.taskRepository.UpdateTask(tx, taskId, currentTask)
+	err = ts.taskRepository.EditTask(tx, taskId, currentTask)
 	if err != nil {
 		ts.logger.Errorf("Error updating task: %v", err.Error())
 		return err
@@ -545,7 +548,7 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath 
 	return nil
 }
 
-func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.UpdateTask) {
+func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.EditTask) {
 	if updateInfo.Title != "" {
 		currentModel.Title = updateInfo.Title
 	}

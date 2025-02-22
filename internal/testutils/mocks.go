@@ -215,7 +215,7 @@ func (tr *MockTaskRepository) Clear() {
 	tr.tasksCouter = 0
 }
 
-func (tr *MockTaskRepository) UpdateTask(tx *gorm.DB, taskId int64, task *models.Task) error {
+func (tr *MockTaskRepository) EditTask(tx *gorm.DB, taskId int64, task *models.Task) error {
 	if _, ok := tr.tasks[taskId]; ok {
 		tr.tasks[taskId] = task
 		return nil

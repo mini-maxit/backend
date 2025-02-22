@@ -19,18 +19,18 @@ import (
 )
 
 type TaskRoute interface {
-	GetAllTasks(w http.ResponseWriter, r *http.Request)
-	GetTask(w http.ResponseWriter, r *http.Request)
-	GetAllForGroup(w http.ResponseWriter, r *http.Request)
+	AssignTaskToGroups(w http.ResponseWriter, r *http.Request)
+	AssignTaskToUsers(w http.ResponseWriter, r *http.Request)
+	DeleteTask(w http.ResponseWriter, r *http.Request)
+	EditTask(w http.ResponseWriter, r *http.Request)
 	GetAllAssingedTasks(w http.ResponseWriter, r *http.Request)
 	GetAllCreatedTasks(w http.ResponseWriter, r *http.Request)
-	UploadTask(w http.ResponseWriter, r *http.Request)
-	UpdateTask(w http.ResponseWriter, r *http.Request)
-	DeleteTask(w http.ResponseWriter, r *http.Request)
-	AssignTaskToUsers(w http.ResponseWriter, r *http.Request)
-	AssignTaskToGroups(w http.ResponseWriter, r *http.Request)
-	UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request)
+	GetAllForGroup(w http.ResponseWriter, r *http.Request)
+	GetAllTasks(w http.ResponseWriter, r *http.Request)
+	GetTask(w http.ResponseWriter, r *http.Request)
 	UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request)
+	UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request)
+	UploadTask(w http.ResponseWriter, r *http.Request)
 }
 
 type TaskRouteImpl struct {
@@ -453,19 +453,66 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
 
-// UpdateTask godoc
+// EditTask godoc
 //
-//	@Tags			task
-//	@Summary		Update a task
-//
-// @Description	    NOT IMPLEMENTED Updates a task by ID
-//
-//	@Produce		json
-//	@Param			id	path	int	true	"Task ID"
-//	@Failure		501	{object}	httputils.ApiError
-//	@Router			/task/ [put]
-func (tr *TaskRouteImpl) UpdateTask(w http.ResponseWriter, r *http.Request) {
-	httputils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
+//		@Tags			task
+//		@Summary		Update a task
+//	 @Description	    Updates a task by ID
+//		@Produce		json
+//		@Param			id	path	int	true	"Task ID"
+//		@Param			body	body	schemas.EditTask	true	"Task object"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Router			/task/{id} [patch]
+func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIdStr := r.PathValue("id")
+	if taskIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+
+	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	var request schemas.EditTask
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+
+	err = tr.taskService.EditTask(tx, current_user, taskId, &request)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
 }
 
 // DeleteTask godoc
@@ -781,7 +828,7 @@ func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
 		case http.MethodPost:
 			route.UploadTask(w, r)
 		case http.MethodPut:
-			route.UpdateTask(w, r)
+			route.EditTask(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

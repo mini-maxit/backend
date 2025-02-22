@@ -120,6 +120,11 @@ definitions:
       name:
         type: string
     type: object
+  EditTask:
+    properties:
+      title:
+        type: string
+    type: object
   Group:
     properties:
       created_at:
@@ -1004,24 +1009,6 @@ paths:
       summary: Upload a task
       tags:
       - task
-    put:
-      description: NOT IMPLEMENTED Updates a task by ID
-      parameters:
-      - description: Task ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/ApiError'
-      summary: Update a task
-      tags:
-      - task
   /task/{id}:
     delete:
       description: Deletes a task by ID
@@ -1089,6 +1076,46 @@ paths:
           schema:
             $ref: '#/definitions/ApiError'
       summary: Get a task
+      tags:
+      - task
+    patch:
+      description: Updates a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EditTask'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Update a task
       tags:
       - task
   /task/{id}/assign/groups:

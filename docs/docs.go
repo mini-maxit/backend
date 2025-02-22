@@ -901,33 +901,6 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
-                "description": "NOT IMPLEMENTED Updates a task by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "task"
-                ],
-                "summary": "Update a task",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Task ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "501": {
-                        "description": "Not Implemented",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "Uploads a task to the FileStorage service",
                 "consumes": [
@@ -1118,6 +1091,66 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Updates a task by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Update a task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Task object",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/EditTask"
+                        }
                     }
                 ],
                 "responses": {
@@ -1826,6 +1859,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "EditTask": {
+            "type": "object",
+            "properties": {
+                "title": {
                     "type": "string"
                 }
             }
