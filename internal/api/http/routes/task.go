@@ -455,17 +455,17 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 
 // EditTask godoc
 //
-//		@Tags			task
-//		@Summary		Update a task
-//	 @Description	    Updates a task by ID
-//		@Produce		json
-//		@Param			id	path	int	true	"Task ID"
-//		@Param			body	body	schemas.EditTask	true	"Task object"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Tags			task
+//	@Summary		Update a task
+//	@Description	Updates a task by ID
+//	@Produce		json
+//	@Param			id		path		int					true	"Task ID"
+//	@Param			body	body		schemas.EditTask	true	"Task object"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id} [patch]
 func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -521,7 +521,7 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Delete a task
 //	@Description	Deletes a task by ID
 //	@Produce		json
-//	@Param			id	path	int	true	"Task ID"
+//	@Param			id	path		int	true	"Task ID"
 //	@Failure		400	{object}	httputils.ApiError
 //	@Failure		403	{object}	httputils.ApiError
 //	@Failure		405	{object}	httputils.ApiError
@@ -574,13 +574,13 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Assign a task to users
 //	@Description	Assigns a task to users by task ID and user IDs
 //	@Produce		json
-//	@Param			id	path	int		true	"Task ID"
-//	@Param			userIds	body	[]int	true	"User IDs"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Param			id		path		int		true	"Task ID"
+//	@Param			userIds	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/assign/users [post]
 func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -636,13 +636,13 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 //	@Summary		Assign a task to groups
 //	@Description	Assigns a task to groups by task ID and group IDs
 //	@Produce		json
-//	@Param			id	path	int		true	"Task ID"
-//	@Param			groupIds	body	[]int	true	"Group IDs"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Param			id			path		int		true	"Task ID"
+//	@Param			groupIds	body		[]int	true	"Group IDs"
+//	@Failure		400			{object}	httputils.ApiError
+//	@Failure		403			{object}	httputils.ApiError
+//	@Failure		405			{object}	httputils.ApiError
+//	@Failure		500			{object}	httputils.ApiError
+//	@Success		200			{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/assign/groups [post]
 func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -698,13 +698,13 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 //	@Summary		Unassign a task from users
 //	@Description	Unassigns a task from users by task ID and user IDs
 //	@Produce		json
-//	@Param			id	path	int		true	"Task ID"
-//	@Param			userIds	body	[]int	true	"User IDs"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Param			id		path		int		true	"Task ID"
+//	@Param			userIds	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/unassign/users [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -760,13 +760,13 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 //	@Summary		Unassign a task from groups
 //	@Description	Unassigns a task from groups by task ID and group IDs
 //	@Produce		json
-//	@Param			id	path	int		true	"Task ID"
-//	@Param			groupIds	body	[]int	true	"Group IDs"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Param			id			path		int		true	"Task ID"
+//	@Param			groupIds	body		[]int	true	"Group IDs"
+//	@Failure		400			{object}	httputils.ApiError
+//	@Failure		403			{object}	httputils.ApiError
+//	@Failure		405			{object}	httputils.ApiError
+//	@Failure		500			{object}	httputils.ApiError
+//	@Success		200			{object}	httputils.ApiResponse[string]
 //	@Router			/task/{id}/unassign/groups [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

@@ -28,17 +28,17 @@ type UserRouteImpl struct {
 
 // GetAllUsers godoc
 //
-// @Tags user
-// @Summary Get all users
-// @Description Get all users
-// @Produce json
-// @Param limit query int false "Limit"
-// @Param offset query int false "Offset"
-// @Param sort query string false "Sort"
-// @Success 200 {object} httputils.ApiResponse[schemas.User]
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /user/ [get]
+//	@Tags			user
+//	@Summary		Get all users
+//	@Description	Get all users
+//	@Produce		json
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Router			/user/ [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -69,17 +69,17 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 // GetUserById godoc
 //
-// @Tags user
-// @Summary Get user by ID
-// @Description Get user by ID
-// @Produce json
-// @Param id path int true "User ID"
-// @Success 200 {object} httputils.ApiResponse[schemas.User]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 404 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /user/{id} [get]
+//	@Tags			user
+//	@Summary		Get user by ID
+//	@Description	Get user by ID
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Success		200	{object}	httputils.ApiResponse[schemas.User]
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		404	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Router			/user/{id} [get]
 func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -122,17 +122,17 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 // GetUserByEmail godoc
 //
-// @Tags user
-// @Summary Get user by email
-// @Description Get user by email
-// @Produce json
-// @Param email query string true "User email"
-// @Success 200 {object} httputils.ApiResponse[schemas.User]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 404 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /user/email [get]
+//	@Tags			user
+//	@Summary		Get user by email
+//	@Description	Get user by email
+//	@Produce		json
+//	@Param			email	query		string	true	"User email"
+//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		404		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Router			/user/email [get]
 func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -167,22 +167,22 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, user)
 }
 
-//	EditUser godoc
+// EditUser godoc
 //
-// @Tags user
-// @Summary Edit user
-// @Description Edit user
-// @Accept json
-// @Produce json
-// @Param id path int true "User ID"
-// @Param body body schemas.UserEdit true "User edit object"
-// @Success 200 {object} httputils.ApiResponse[string]
-// @Failure 400 {object} httputils.ApiError
-// @Failure 403 {object} httputils.ApiError
-// @Failure 404 {object} httputils.ApiError
-// @Failure 405 {object} httputils.ApiError
-// @Failure 500 {object} httputils.ApiError
-// @Router /user/{id} [patch]
+// @Tags			user
+// @Summary		Edit user
+// @Description	Edit user
+// @Accept			json
+// @Produce		json
+// @Param			id		path		int					true	"User ID"
+// @Param			body	body		schemas.UserEdit	true	"User edit object"
+// @Success		200		{object}	httputils.ApiResponse[string]
+// @Failure		400		{object}	httputils.ApiError
+// @Failure		403		{object}	httputils.ApiError
+// @Failure		404		{object}	httputils.ApiError
+// @Failure		405		{object}	httputils.ApiError
+// @Failure		500		{object}	httputils.ApiError
+// @Router			/user/{id} [patch]
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

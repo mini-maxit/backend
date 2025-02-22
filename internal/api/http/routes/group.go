@@ -33,12 +33,12 @@ type GroupRouteImpl struct {
 //	@Description	Create a group
 //	@Accept			json
 //	@Produce		json
-//	@Param			body body CreateGroup true "Create Group"
-//	@Failure		400 {object} httputils.ApiError
-//	@Failure		403 {object} httputils.ApiError
-//	@Failure		405 {object} httputils.ApiError
-//	@Failure		500 {object} httputils.ApiError
-//	@Success		200 {object} httputils.ApiResponse[int64]
+//	@Param			body	body		CreateGroup	true	"Create Group"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[int64]
 //	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -82,17 +82,17 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 // GetGroup godoc
 //
-// @Tags            group
-// @Summary         Get a group
-// @Description     Get a group
-// @Produce         json
-// @Param           id path int true "Group ID"
-// @Failure         400 {object} httputils.ApiError
-// @Failure         403 {object} httputils.ApiError
-// @Failure         405 {object} httputils.ApiError
-// @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse[schemas.Group]
-// @Router          /group/{id} [get]
+//	@Tags			group
+//	@Summary		Get a group
+//	@Description	Get a group
+//	@Produce		json
+//	@Param			id	path		int	true	"Group ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[schemas.Group]
+//	@Router			/group/{id} [get]
 func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -135,16 +135,16 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 // GetAllGroup godoc
 //
-// @Tags            group
-// @Summary         Get all groups
-// @Description     Get all groups
-// @Produce         json
-// @Failure         400 {object} httputils.ApiError
-// @Failure         403 {object} httputils.ApiError
-// @Failure         405 {object} httputils.ApiError
-// @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse[[]schemas.Group]
-// @Router          /group/ [get]
+//	@Tags			group
+//	@Summary		Get all groups
+//	@Description	Get all groups
+//	@Produce		json
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Group]
+//	@Router			/group/ [get]
 func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -181,19 +181,19 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 
 // EditGroup godoc
 //
-// @Tags            group
-// @Summary         Edit a group
-// @Description     Edit a group
-// @Accept          json
-// @Produce         json
-// @Param           id path int true "Group ID"
-// @Param           body body EditGroup true "Edit Group"
-// @Failure         400 {object} httputils.ApiError
-// @Failure         403 {object} httputils.ApiError
-// @Failure         405 {object} httputils.ApiError
-// @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse[schemas.Group]
-// @Router          /group/{id} [put]
+//	@Tags			group
+//	@Summary		Edit a group
+//	@Description	Edit a group
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int			true	"Group ID"
+//	@Param			body	body		EditGroup	true	"Edit Group"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[schemas.Group]
+//	@Router			/group/{id} [put]
 func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -243,19 +243,19 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 
 // AddUsersToGroup godoc
 //
-// @Tags            group
-// @Summary         Add users to a group
-// @Description     Add users to a group
-// @Accept          json
-// @Produce         json
-// @Param           id path int true "Group ID"
-// @Param           body body schemas.UserIds true "User IDs"
-// @Failure         400 {object} httputils.ApiError
-// @Failure         403 {object} httputils.ApiError
-// @Failure         405 {object} httputils.ApiError
-// @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse[string]
-// @Router          /group/{id}/users [post]
+//	@Tags			group
+//	@Summary		Add users to a group
+//	@Description	Add users to a group
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int				true	"Group ID"
+//	@Param			body	body		schemas.UserIds	true	"User IDs"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Router			/group/{id}/users [post]
 func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -306,17 +306,17 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 
 // GetGroupUsers godoc
 //
-// @Tags            group
-// @Summary         Get users in a group
-// @Description     Get users in a group
-// @Produce         json
-// @Param           id path int true "Group ID"
-// @Failure         400 {object} httputils.ApiError
-// @Failure         403 {object} httputils.ApiError
-// @Failure         405 {object} httputils.ApiError
-// @Failure         500 {object} httputils.ApiError
-// @Success         200 {object} httputils.ApiResponse[string]
-// @Router          /group/{id}/users [get]
+//	@Tags			group
+//	@Summary		Get users in a group
+//	@Description	Get users in a group
+//	@Produce		json
+//	@Param			id	path		int	true	"Group ID"
+//	@Failure		400	{object}	httputils.ApiError
+//	@Failure		403	{object}	httputils.ApiError
+//	@Failure		405	{object}	httputils.ApiError
+//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Router			/group/{id}/users [get]
 func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
