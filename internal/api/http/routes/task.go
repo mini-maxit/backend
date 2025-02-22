@@ -276,7 +276,7 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Description	Uploads a task to the FileStorage service
 //	@Accept			multipart/form-data
 //	@Produce		json
-//	@Param			taskName	formData	string	true	"Name of the task"
+//	@Param			title formData	string	true	"Name of the task"
 //	@Param			userId		formData	int		true	"ID of the author"
 //	@Param			overwrite	formData	bool	false	"Overwrite flag"
 //	@Param			archive		formData	file	true	"Task archive"
@@ -310,8 +310,8 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	taskName := r.FormValue("taskName")
-	if taskName == "" {
+	title := r.FormValue("title")
+	if title == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
 		return
 	}
@@ -360,7 +360,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 
 	// Create empty task to get the task ID
 	task := schemas.Task{
-		Title:     taskName,
+		Title:     title,
 		CreatedBy: userId,
 	}
 	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
@@ -440,15 +440,6 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(buffer)))
 		return
 	}
-
-	// TODO: Update the task with the correct directories. Waiting to be implemented on the FileStorage service side
-	// updateInfo := schemas.UpdateTask{
-	// 	Title: taskName,
-	// }
-	// if err := tr.taskService.UpdateTask(taskId, updateInfo); err != nil {
-	// 	utils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error updating task directories. %s", err.Error()))
-	// 	return
-	// }
 
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
 }
