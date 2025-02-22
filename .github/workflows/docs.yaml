@@ -7,14 +7,13 @@ on:
       - develop
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -34,11 +33,15 @@ jobs:
       - name: Convert swagger to markdown
         run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
 
-      - name: Create new branch for docs update
+      - name: Set up Git remote with PAT
         run: |
-          BRANCH_NAME="update-swagger-docs-$(date +%Y%m%d%H%M%S)"
+          git remote set-url origin https://x-access-token:${{ secrets.DOCS_PAT }}@github.com/${{ github.repository }}
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create new branch for docs update
+        run: |
+          BRANCH_NAME="update-swagger-docs-$(uuidgen)"
           git checkout -b $BRANCH_NAME
           git add docs/*
           git commit -m "docs: update swagger docs"
@@ -52,8 +55,4 @@ jobs:
           branch: ${{ env.branch_name }}
           title: "docs: update swagger docs"
           body: "This PR updates the Swagger documentation."
-          base: ${{ github.ref_name }}
-          delete-branch: true
-          labels: |
-            documentation
-            automated pr
+          base: "develop"  # Set the base branch explicitly
