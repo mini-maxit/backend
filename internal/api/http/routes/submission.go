@@ -13,6 +13,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
@@ -32,6 +33,7 @@ type SubmissionRoutes interface {
 
 type SumbissionImpl struct {
 	submissionService service.SubmissionService
+	taskService       service.TaskService
 	fileStorageUrl    string
 	queueService      service.QueueService
 }
@@ -167,7 +169,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		switch err {
-		case service.ErrPermissionDenied:
+		case errors.ErrPermissionDenied:
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
 		default:
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
@@ -224,7 +226,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		db.Rollback()
 		switch err {
-		case service.ErrPermissionDenied:
+		case errors.ErrPermissionDenied:
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
 		default:
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
@@ -436,6 +438,26 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	_, err = s.taskService.GetTask(tx, current_user, taskId)
+	if err != nil {
+		db.Rollback()
+		switch err {
+		case errors.ErrPermissionDenied:
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to submit solutions for this task.")
+		case errors.ErrTaskNotFound:
+			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get task. "+err.Error())
+		}
+	}
+
 	// Create a multipart writer for the HTTP request to FileStorage service
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -489,13 +511,6 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	err = json.Unmarshal(resBody, &respJson)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error parsing response from FileStorage. %s", err.Error()))
-		return
-	}
-
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
