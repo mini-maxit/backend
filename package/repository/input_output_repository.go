@@ -8,6 +8,7 @@ import (
 type InputOutputRepository interface {
 	Create(tx *gorm.DB, inputOutput *models.InputOutput) error
 	GetInputOutputId(db *gorm.DB, taskId int64, order int64) (int64, error)
+	DeleteAll(tx *gorm.DB, taskId int64) error
 }
 
 type inputOutputRepository struct{}
@@ -21,6 +22,11 @@ func (i *inputOutputRepository) GetInputOutputId(tx *gorm.DB, taskId int64, orde
 	var input_output_id int64
 	err := tx.Table("input_outputs").Select("id").Where("task_id = ? AND \"order\" = ?", taskId, order).Scan(&input_output_id).Error
 	return input_output_id, err
+}
+
+func (i *inputOutputRepository) DeleteAll(tx *gorm.DB, taskId int64) error {
+	err := tx.Where("task_id = ?", taskId).Delete(&models.InputOutput{}).Error
+	return err
 }
 
 func NewInputOutputRepository(db *gorm.DB) (InputOutputRepository, error) {

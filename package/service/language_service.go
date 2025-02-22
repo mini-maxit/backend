@@ -20,7 +20,6 @@ type LanguageService interface {
 	// If language is not in enabled languages, but is present in the database, it is marked as disabled.
 	InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error
 	GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error)
-	modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig
 }
 
 // languageService implements [LanguageService] interface
@@ -69,12 +68,12 @@ func (l *languageService) GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error) 
 	}
 	var result []schemas.LanguageConfig
 	for _, language := range languages {
-		result = append(result, *l.modelToSchema(&language))
+		result = append(result, *LanguageToSchema(&language))
 	}
 	return result, nil
 }
 
-func (l *languageService) modelToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
+func LanguageToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
 	return &schemas.LanguageConfig{
 		Id:            language.Id,
 		Type:          language.Type,
