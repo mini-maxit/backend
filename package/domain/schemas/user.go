@@ -12,8 +12,9 @@ type User struct {
 }
 
 type UserEdit struct {
-	Name     *string `json:"name,omitempty"`
-	Surname  *string `json:"surname,omitempty"`
-	Email    *string `json:"email,omitempty"`
-	Username *string `json:"username,omitempty"`
+	Name     *string         `json:"name,omitempty"`
+	Surname  *string         `json:"surname,omitempty"`
+	Email    *string         `json:"email,omitempty"`
+	Username *string         `json:"username,omitempty"`
+	Role     *types.UserRole `json:"role,omitempty"`
 }

@@ -1,20 +1,15 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 // AuthService defines the methods for authentication-related operations.
@@ -57,7 +52,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 	user, err := as.userRepository.GetUserByEmail(tx, userLogin.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
@@ -65,8 +60,8 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userLogin.Password)) != nil {
-		as.logger.Errorf("Error comparing password hash: %v", ErrInvalidCredentials.Error())
-		return nil, ErrInvalidCredentials
+		as.logger.Errorf("Error comparing password hash: %v", errors.ErrInvalidCredentials.Error())
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	session, err := as.sessionService.CreateSession(tx, user.Id)
@@ -98,7 +93,7 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 
 	if user != nil {
 		as.logger.Errorf("User already exists")
-		return nil, ErrUserAlreadyExists
+		return nil, errors.ErrUserAlreadyExists
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)

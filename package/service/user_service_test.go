@@ -1,12 +1,15 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -17,6 +20,33 @@ type userServiceTest struct {
 	config      *config.Config
 	ur          repository.UserRepository
 	userService UserService
+	counter     int
+}
+
+func (ust *userServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
+	ust.counter++
+	userId, err := ust.ur.CreateUser(ust.tx, &models.User{
+		Name:         fmt.Sprintf("Test User %d", ust.counter),
+		Surname:      fmt.Sprintf("Test Surname %d", ust.counter),
+		Email:        fmt.Sprintf("email%d@email.com", ust.counter),
+		Username:     fmt.Sprintf("testuser%d", ust.counter),
+		Role:         role,
+		PasswordHash: "password",
+	})
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
+
+	user_model, err := ust.ur.GetUser(ust.tx, userId)
+	if !assert.NoError(t, err) {
+		t.FailNow()
+	}
+
+	user := schemas.User{
+		Id:   user_model.Id,
+		Role: user_model.Role,
+	}
+	return user
 }
 
 func newUserServiceTest() *userServiceTest {
@@ -37,7 +67,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 	t.Run("User does not exist", func(t *testing.T) {
 		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
-		assert.ErrorIs(t, err, ErrUserNotFound)
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
 
@@ -73,7 +103,7 @@ func TestGetUserById(t *testing.T) {
 
 	t.Run("User does not exist", func(t *testing.T) {
 		user, err := ust.userService.GetUserById(ust.tx, 0)
-		assert.ErrorIs(t, err, ErrUserNotFound)
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
 	ust = newUserServiceTest()
@@ -105,10 +135,11 @@ func TestGetUserById(t *testing.T) {
 
 func TestEditUser(t *testing.T) {
 	ust := newUserServiceTest()
+	admin_user := ust.createUser(t, types.UserRoleAdmin)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.EditUser(ust.tx, 0, &schemas.UserEdit{})
-		assert.ErrorIs(t, err, ErrUserNotFound)
+		err := ust.userService.EditUser(ust.tx, admin_user, 0, &schemas.UserEdit{})
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -127,7 +158,7 @@ func TestEditUser(t *testing.T) {
 		updatedUser := &schemas.UserEdit{
 			Name: &newName,
 		}
-		err = ust.userService.EditUser(ust.tx, userId, updatedUser)
+		err = ust.userService.EditUser(ust.tx, admin_user, userId, updatedUser)
 		assert.NoError(t, err)
 		userResp, err := ust.userService.GetUserById(ust.tx, userId)
 		assert.NoError(t, err)
