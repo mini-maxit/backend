@@ -45,6 +45,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.branch_name }}
           title: "docs: update swagger docs"
+          commit-message: "docs: update swagger docs"
           body: "This PR updates the Swagger documentation."
           base: ${{ github.ref_name }}
           delete-branch: true
