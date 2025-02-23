@@ -42,8 +42,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.UserLoginRequest
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
@@ -53,6 +52,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 
 	session, err := ar.authService.Login(tx, request)

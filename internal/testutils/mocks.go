@@ -1,10 +1,17 @@
 package testutils
 
 import (
+	"context"
+	"net/http"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -524,4 +531,116 @@ func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
 
 		userRepository: userRepo,
 	}
+}
+
+type MockUserService struct {
+}
+
+func (us *MockUserService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
+	panic("implement me")
+}
+func (us *MockUserService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error) {
+	panic("implement me")
+}
+func (us *MockUserService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
+	panic("implement me")
+}
+func (us *MockUserService) EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
+	panic("implement me")
+}
+func (us *MockUserService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error {
+	panic("implement me")
+}
+func (us *MockUserService) ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error {
+	panic("implement me")
+}
+
+func NewMockUserService() *MockUserService {
+	return &MockUserService{}
+}
+
+type MockAuthService struct {
+	users map[string]*models.User
+}
+
+func (as *MockAuthService) SetUser(user *models.User) {
+	as.users[user.Email] = user
+}
+
+func (as *MockAuthService) ClearUsers() {
+	as.users = make(map[string]*models.User)
+}
+
+func (as *MockAuthService) Login(tx *gorm.DB, request schemas.UserLoginRequest) (*schemas.Session, error) {
+	user := as.users[request.Email]
+	if user != nil {
+		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password))
+		if err == nil {
+			return &schemas.Session{
+				Id:        user.Email + request.Email,
+				UserId:    user.Id,
+				ExpiresAt: time.Now().Add(time.Hour),
+			}, nil
+		} else if err == bcrypt.ErrMismatchedHashAndPassword {
+			return nil, errors.ErrInvalidCredentials
+		} else {
+			return nil, err
+		}
+	}
+	return nil, errors.ErrUserNotFound
+}
+
+func (as *MockAuthService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
+	panic("implement me")
+}
+
+func NewMockAuthService() *MockAuthService {
+	return &MockAuthService{
+		users: make(map[string]*models.User),
+	}
+}
+
+type MockDatabase struct {
+	invalid bool
+}
+
+func (db *MockDatabase) BeginTransaction() (*gorm.DB, error) {
+	if db.invalid {
+		return nil, gorm.ErrInvalidDB
+	}
+	return &gorm.DB{}, nil
+}
+
+func (db *MockDatabase) NewSession() database.Database {
+	return &MockDatabase{}
+}
+
+func (db *MockDatabase) Commit() error {
+	return nil
+}
+
+func (db *MockDatabase) Rollback() {
+}
+
+func (db *MockDatabase) ShouldRollback() bool {
+	return false
+}
+
+func (db *MockDatabase) Invalidate() {
+	db.invalid = true
+}
+
+func (db *MockDatabase) Vaildate() {
+	db.invalid = false
+}
+
+func (db *MockDatabase) Db() *gorm.DB {
+	return &gorm.DB{}
+}
+
+func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), middleware.DatabaseKey, db)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
