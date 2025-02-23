@@ -3,7 +3,7 @@
 
 # Mini Maxit API Documentation testing the workflow
 This is the API documentation for the Mini Maxit API.
-
+  
 
 ## Informations
 
@@ -13,7 +13,7 @@ This is the API documentation for the Mini Maxit API.
 
 ### Contact
 
-
+  
 
 ## Content negotiation
 
@@ -35,7 +35,7 @@ This is the API documentation for the Mini Maxit API.
 |---------|---------|--------|---------|
 | POST | /api/v1/login | [post login](#post-login) | Login a user |
 | POST | /api/v1/register | [post register](#post-register) | Register a user |
-
+  
 
 
 ###  group
@@ -44,9 +44,11 @@ This is the API documentation for the Mini Maxit API.
 |---------|---------|--------|---------|
 | GET | /api/v1/group | [get group](#get-group) | Get all groups |
 | GET | /api/v1/group/{id} | [get group ID](#get-group-id) | Get a group |
+| GET | /api/v1/group/{id}/users | [get group ID users](#get-group-id-users) | Get users in a group |
 | POST | /api/v1/group | [post group](#post-group) | Create a group |
+| POST | /api/v1/group/{id}/users | [post group ID users](#post-group-id-users) | Add users to a group |
 | PUT | /api/v1/group/{id} | [put group ID](#put-group-id) | Edit a group |
-
+  
 
 
 ###  session
@@ -55,20 +57,276 @@ This is the API documentation for the Mini Maxit API.
 |---------|---------|--------|---------|
 | GET | /api/v1/session/validate | [get session validate](#get-session-validate) | Validate a session |
 | POST | /api/v1/session/invalidate | [post session invalidate](#post-session-invalidate) | Invalidate a session |
+  
 
+
+###  submission
+
+| Method  | URI     | Name   | Summary |
+|---------|---------|--------|---------|
+| GET | /api/v1/submission | [get submission](#get-submission) | Get all submissions for the current user |
+| GET | /api/v1/submission/{id} | [get submission ID](#get-submission-id) | Get a submission by ID |
+| GET | /api/v1/submission/languages | [get submission languages](#get-submission-languages) | Get all available languages |
+| GET | /api/v1/submission/task/{id} | [get submission task ID](#get-submission-task-id) | Get all submissions for a task |
+| GET | /api/v1/submission/user/{id} | [get submission user ID](#get-submission-user-id) | Get all submissions for a group |
+| GET | /api/v1/submission/user/{id}/short | [get submission user ID short](#get-submission-user-id-short) | Get all submissions for a user |
+  
 
 
 ###  task
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
+| DELETE | /api/v1/task/{id} | [delete task ID](#delete-task-id) | Delete a task |
+| DELETE | /api/v1/task/{id}/unassign/groups | [delete task ID unassign groups](#delete-task-id-unassign-groups) | Unassign a task from groups |
+| DELETE | /api/v1/task/{id}/unassign/users | [delete task ID unassign users](#delete-task-id-unassign-users) | Unassign a task from users |
 | GET | /api/v1/task | [get task](#get-task) | Get all tasks |
+| GET | /api/v1/task/group/{id} | [get task group ID](#get-task-group-id) | Get all tasks for a group |
 | GET | /api/v1/task/{id} | [get task ID](#get-task-id) | Get a task |
+| PATCH | /api/v1/task/{id} | [patch task ID](#patch-task-id) | Update a task |
 | POST | /api/v1/task | [post task](#post-task) | Upload a task |
+| POST | /api/v1/task/{id}/assign/groups | [post task ID assign groups](#post-task-id-assign-groups) | Assign a task to groups |
+| POST | /api/v1/task/{id}/assign/users | [post task ID assign users](#post-task-id-assign-users) | Assign a task to users |
+  
 
+
+###  user
+
+| Method  | URI     | Name   | Summary |
+|---------|---------|--------|---------|
+| GET | /api/v1/user | [get user](#get-user) | Get all users |
+| GET | /api/v1/user/email | [get user email](#get-user-email) | Get user by email |
+| GET | /api/v1/user/{id} | [get user ID](#get-user-id) | Get user by ID |
+| PATCH | /api/v1/user/{id} | [patch user ID](#patch-user-id) | Edit user |
+| PATCH | /api/v1/user/{id}/password | [patch user ID password](#patch-user-id-password) | Change user password |
+  
 
 
 ## Paths
+
+### <span id="delete-task-id"></span> Delete a task (*DeleteTaskID*)
+
+```
+DELETE /api/v1/task/{id}
+```
+
+Deletes a task by ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#delete-task-id-200) | OK | OK |  | [schema](#delete-task-id-200-schema) |
+| [400](#delete-task-id-400) | Bad Request | Bad Request |  | [schema](#delete-task-id-400-schema) |
+| [403](#delete-task-id-403) | Forbidden | Forbidden |  | [schema](#delete-task-id-403-schema) |
+| [405](#delete-task-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#delete-task-id-405-schema) |
+| [500](#delete-task-id-500) | Internal Server Error | Internal Server Error |  | [schema](#delete-task-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="delete-task-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="delete-task-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="delete-task-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="delete-task-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="delete-task-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="delete-task-id-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="delete-task-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="delete-task-id-unassign-groups"></span> Unassign a task from groups (*DeleteTaskIDUnassignGroups*)
+
+```
+DELETE /api/v1/task/{id}/unassign/groups
+```
+
+Unassigns a task from groups by task ID and group IDs
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| groupIds | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#delete-task-id-unassign-groups-200) | OK | OK |  | [schema](#delete-task-id-unassign-groups-200-schema) |
+| [400](#delete-task-id-unassign-groups-400) | Bad Request | Bad Request |  | [schema](#delete-task-id-unassign-groups-400-schema) |
+| [403](#delete-task-id-unassign-groups-403) | Forbidden | Forbidden |  | [schema](#delete-task-id-unassign-groups-403-schema) |
+| [405](#delete-task-id-unassign-groups-405) | Method Not Allowed | Method Not Allowed |  | [schema](#delete-task-id-unassign-groups-405-schema) |
+| [500](#delete-task-id-unassign-groups-500) | Internal Server Error | Internal Server Error |  | [schema](#delete-task-id-unassign-groups-500-schema) |
+
+#### Responses
+
+
+##### <span id="delete-task-id-unassign-groups-200"></span> 200 - OK
+Status: OK
+
+###### <span id="delete-task-id-unassign-groups-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="delete-task-id-unassign-groups-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="delete-task-id-unassign-groups-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-groups-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="delete-task-id-unassign-groups-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-groups-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="delete-task-id-unassign-groups-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-groups-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="delete-task-id-unassign-groups-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="delete-task-id-unassign-users"></span> Unassign a task from users (*DeleteTaskIDUnassignUsers*)
+
+```
+DELETE /api/v1/task/{id}/unassign/users
+```
+
+Unassigns a task from users by task ID and user IDs
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| userIds | `body` | []integer | `[]int64` | | ✓ | | User IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#delete-task-id-unassign-users-200) | OK | OK |  | [schema](#delete-task-id-unassign-users-200-schema) |
+| [400](#delete-task-id-unassign-users-400) | Bad Request | Bad Request |  | [schema](#delete-task-id-unassign-users-400-schema) |
+| [403](#delete-task-id-unassign-users-403) | Forbidden | Forbidden |  | [schema](#delete-task-id-unassign-users-403-schema) |
+| [405](#delete-task-id-unassign-users-405) | Method Not Allowed | Method Not Allowed |  | [schema](#delete-task-id-unassign-users-405-schema) |
+| [500](#delete-task-id-unassign-users-500) | Internal Server Error | Internal Server Error |  | [schema](#delete-task-id-unassign-users-500-schema) |
+
+#### Responses
+
+
+##### <span id="delete-task-id-unassign-users-200"></span> 200 - OK
+Status: OK
+
+###### <span id="delete-task-id-unassign-users-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="delete-task-id-unassign-users-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="delete-task-id-unassign-users-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-users-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="delete-task-id-unassign-users-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-users-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="delete-task-id-unassign-users-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-task-id-unassign-users-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="delete-task-id-unassign-users-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
 
 ### <span id="get-group"></span> Get all groups (*GetGroup*)
 
@@ -81,19 +339,12 @@ Get all groups
 #### Produces
   * application/json
 
-#### Parameters
-
-| Name | Source | Type | Go type | Separator | Required | Default | Description |
-|------|--------|------|---------|-----------| :------: |---------|-------------|
-| limit | `query` | string | `string` |  |  |  | Limit |
-| offset | `query` | string | `string` |  |  |  | Offset |
-
 #### All responses
 | Code | Status | Description | Has headers | Schema |
 |------|--------|-------------|:-----------:|--------|
 | [200](#get-group-200) | OK | OK |  | [schema](#get-group-200-schema) |
 | [400](#get-group-400) | Bad Request | Bad Request |  | [schema](#get-group-400-schema) |
-| [401](#get-group-401) | Unauthorized | Unauthorized |  | [schema](#get-group-401-schema) |
+| [403](#get-group-403) | Forbidden | Forbidden |  | [schema](#get-group-403-schema) |
 | [405](#get-group-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-group-405-schema) |
 | [500](#get-group-500) | Internal Server Error | Internal Server Error |  | [schema](#get-group-500-schema) |
 
@@ -104,8 +355,8 @@ Get all groups
 Status: OK
 
 ###### <span id="get-group-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseArrayGroup](#api-response-array-group)
 
@@ -113,17 +364,17 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-group-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
-##### <span id="get-group-401"></span> 401 - Unauthorized
-Status: Unauthorized
+##### <span id="get-group-403"></span> 403 - Forbidden
+Status: Forbidden
 
-###### <span id="get-group-401-schema"></span> Schema
-
-
+###### <span id="get-group-403-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -131,8 +382,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="get-group-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -140,8 +391,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-group-500-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -167,8 +418,7 @@ Get a group
 |------|--------|-------------|:-----------:|--------|
 | [200](#get-group-id-200) | OK | OK |  | [schema](#get-group-id-200-schema) |
 | [400](#get-group-id-400) | Bad Request | Bad Request |  | [schema](#get-group-id-400-schema) |
-| [401](#get-group-id-401) | Unauthorized | Unauthorized |  | [schema](#get-group-id-401-schema) |
-| [404](#get-group-id-404) | Not Found | Not Found |  | [schema](#get-group-id-404-schema) |
+| [403](#get-group-id-403) | Forbidden | Forbidden |  | [schema](#get-group-id-403-schema) |
 | [405](#get-group-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-group-id-405-schema) |
 | [500](#get-group-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-group-id-500-schema) |
 
@@ -179,8 +429,8 @@ Get a group
 Status: OK
 
 ###### <span id="get-group-id-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseGroup](#api-response-group)
 
@@ -188,26 +438,17 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-group-id-400-schema"></span> Schema
-
-
-
-[APIError](#api-error)
-
-##### <span id="get-group-id-401"></span> 401 - Unauthorized
-Status: Unauthorized
-
-###### <span id="get-group-id-401-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
-##### <span id="get-group-id-404"></span> 404 - Not Found
-Status: Not Found
+##### <span id="get-group-id-403"></span> 403 - Forbidden
+Status: Forbidden
 
-###### <span id="get-group-id-404-schema"></span> Schema
-
-
+###### <span id="get-group-id-403-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -215,8 +456,8 @@ Status: Not Found
 Status: Method Not Allowed
 
 ###### <span id="get-group-id-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -224,8 +465,82 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-group-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-group-id-users"></span> Get users in a group (*GetGroupIDUsers*)
+
+```
+GET /api/v1/group/{id}/users
+```
+
+Get users in a group
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-group-id-users-200) | OK | OK |  | [schema](#get-group-id-users-200-schema) |
+| [400](#get-group-id-users-400) | Bad Request | Bad Request |  | [schema](#get-group-id-users-400-schema) |
+| [403](#get-group-id-users-403) | Forbidden | Forbidden |  | [schema](#get-group-id-users-403-schema) |
+| [405](#get-group-id-users-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-group-id-users-405-schema) |
+| [500](#get-group-id-users-500) | Internal Server Error | Internal Server Error |  | [schema](#get-group-id-users-500-schema) |
+
+#### Responses
 
 
+##### <span id="get-group-id-users-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-group-id-users-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="get-group-id-users-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-group-id-users-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-group-id-users-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-group-id-users-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-group-id-users-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="get-group-id-users-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-group-id-users-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-group-id-users-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -261,8 +576,8 @@ Validates a session token
 Status: OK
 
 ###### <span id="get-session-validate-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseArrayTask](#api-response-array-task)
 
@@ -270,8 +585,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-session-validate-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -279,8 +594,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="get-session-validate-401-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -288,8 +603,358 @@ Status: Unauthorized
 Status: Internal Server Error
 
 ###### <span id="get-session-validate-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission"></span> Get all submissions for the current user (*GetSubmission*)
+
+```
+GET /api/v1/submission
+```
+
+Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+| limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
+| offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-200) | OK | OK |  | [schema](#get-submission-200-schema) |
+| [400](#get-submission-400) | Bad Request | Bad Request |  | [schema](#get-submission-400-schema) |
+| [500](#get-submission-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-500-schema) |
+
+#### Responses
 
 
+##### <span id="get-submission-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-200-schema"></span> Schema
+   
+  
+
+[APIResponseArraySubmission](#api-response-array-submission)
+
+##### <span id="get-submission-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission-id"></span> Get a submission by ID (*GetSubmissionID*)
+
+```
+GET /api/v1/submission/{id}
+```
+
+Get a submission by its ID, if the user is a student, the submission must belong to the user, if the user is a teacher, the submission must belong to a task owned by the teacher, if the user is an admin, the submission can be any submission
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Submission ID |
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-id-200) | OK | OK |  | [schema](#get-submission-id-200-schema) |
+| [400](#get-submission-id-400) | Bad Request | Bad Request |  | [schema](#get-submission-id-400-schema) |
+| [500](#get-submission-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseSubmission](#api-response-submission)
+
+##### <span id="get-submission-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission-languages"></span> Get all available languages (*GetSubmissionLanguages*)
+
+```
+GET /api/v1/submission/languages
+```
+
+Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages
+
+#### Produces
+  * application/json
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-languages-200) | OK | OK |  | [schema](#get-submission-languages-200-schema) |
+| [500](#get-submission-languages-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-languages-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-languages-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-languages-200-schema"></span> Schema
+   
+  
+
+[APIResponseArrayLanguageConfig](#api-response-array-language-config)
+
+##### <span id="get-submission-languages-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-languages-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission-task-id"></span> Get all submissions for a task (*GetSubmissionTaskID*)
+
+```
+GET /api/v1/submission/task/{id}
+```
+
+Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+| limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
+| offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-task-id-200) | OK | OK |  | [schema](#get-submission-task-id-200-schema) |
+| [400](#get-submission-task-id-400) | Bad Request | Bad Request |  | [schema](#get-submission-task-id-400-schema) |
+| [403](#get-submission-task-id-403) | Forbidden | Forbidden |  | [schema](#get-submission-task-id-403-schema) |
+| [500](#get-submission-task-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-task-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-task-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-task-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseArraySubmission](#api-response-array-submission)
+
+##### <span id="get-submission-task-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-task-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-task-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-submission-task-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-task-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-task-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission-user-id"></span> Get all submissions for a group (*GetSubmissionUserID*)
+
+```
+GET /api/v1/submission/user/{id}
+```
+
+Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+| limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
+| offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-user-id-200) | OK | OK |  | [schema](#get-submission-user-id-200-schema) |
+| [400](#get-submission-user-id-400) | Bad Request | Bad Request |  | [schema](#get-submission-user-id-400-schema) |
+| [403](#get-submission-user-id-403) | Forbidden | Forbidden |  | [schema](#get-submission-user-id-403-schema) |
+| [500](#get-submission-user-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-user-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-user-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-user-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseArraySubmission](#api-response-array-submission)
+
+##### <span id="get-submission-user-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-user-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-user-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-submission-user-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-user-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-user-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-submission-user-id-short"></span> Get all submissions for a user (*GetSubmissionUserIDShort*)
+
+```
+GET /api/v1/submission/user/{id}/short
+```
+
+Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | User ID |
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+| limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
+| offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-user-id-short-200) | OK | OK |  | [schema](#get-submission-user-id-short-200-schema) |
+| [400](#get-submission-user-id-short-400) | Bad Request | Bad Request |  | [schema](#get-submission-user-id-short-400-schema) |
+| [403](#get-submission-user-id-short-403) | Forbidden | Forbidden |  | [schema](#get-submission-user-id-short-403-schema) |
+| [500](#get-submission-user-id-short-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-user-id-short-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-user-id-short-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-user-id-short-200-schema"></span> Schema
+   
+  
+
+[APIResponseArraySubmission](#api-response-array-submission)
+
+##### <span id="get-submission-user-id-short-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-user-id-short-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-user-id-short-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-submission-user-id-short-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-submission-user-id-short-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-user-id-short-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -317,8 +982,8 @@ Returns all tasks
 Status: OK
 
 ###### <span id="get-task-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseArrayTask](#api-response-array-task)
 
@@ -326,8 +991,82 @@ Status: OK
 Status: Internal Server Error
 
 ###### <span id="get-task-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-task-group-id"></span> Get all tasks for a group (*GetTaskGroupID*)
+
+```
+GET /api/v1/task/group/{id}
+```
+
+Returns all tasks for a group by ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-task-group-id-200) | OK | OK |  | [schema](#get-task-group-id-200-schema) |
+| [400](#get-task-group-id-400) | Bad Request | Bad Request |  | [schema](#get-task-group-id-400-schema) |
+| [403](#get-task-group-id-403) | Forbidden | Forbidden |  | [schema](#get-task-group-id-403-schema) |
+| [405](#get-task-group-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-task-group-id-405-schema) |
+| [500](#get-task-group-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-task-group-id-500-schema) |
+
+#### Responses
 
 
+##### <span id="get-task-group-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-task-group-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseArrayTask](#api-response-array-task)
+
+##### <span id="get-task-group-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-task-group-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-task-group-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-task-group-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-task-group-id-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="get-task-group-id-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-task-group-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-task-group-id-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -353,6 +1092,7 @@ Returns a task by ID
 |------|--------|-------------|:-----------:|--------|
 | [200](#get-task-id-200) | OK | OK |  | [schema](#get-task-id-200-schema) |
 | [400](#get-task-id-400) | Bad Request | Bad Request |  | [schema](#get-task-id-400-schema) |
+| [403](#get-task-id-403) | Forbidden | Forbidden |  | [schema](#get-task-id-403-schema) |
 | [405](#get-task-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-task-id-405-schema) |
 | [500](#get-task-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-task-id-500-schema) |
 
@@ -363,8 +1103,8 @@ Returns a task by ID
 Status: OK
 
 ###### <span id="get-task-id-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseTaskDetailed](#api-response-task-detailed)
 
@@ -372,8 +1112,17 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="get-task-id-400-schema"></span> Schema
+   
+  
 
+[APIError](#api-error)
 
+##### <span id="get-task-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-task-id-403-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -381,8 +1130,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="get-task-id-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -390,8 +1139,464 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="get-task-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-user"></span> Get all users (*GetUser*)
+
+```
+GET /api/v1/user
+```
+
+Get all users
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| limit | `query` | integer | `int64` |  |  |  | Limit |
+| offset | `query` | integer | `int64` |  |  |  | Offset |
+| sort | `query` | string | `string` |  |  |  | Sort |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-user-200) | OK | OK |  | [schema](#get-user-200-schema) |
+| [405](#get-user-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-user-405-schema) |
+| [500](#get-user-500) | Internal Server Error | Internal Server Error |  | [schema](#get-user-500-schema) |
+
+#### Responses
 
 
+##### <span id="get-user-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-user-200-schema"></span> Schema
+   
+  
+
+[APIResponseUser](#api-response-user)
+
+##### <span id="get-user-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="get-user-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-user-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-user-email"></span> Get user by email (*GetUserEmail*)
+
+```
+GET /api/v1/user/email
+```
+
+Get user by email
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| email | `query` | string | `string` |  | ✓ |  | User email |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-user-email-200) | OK | OK |  | [schema](#get-user-email-200-schema) |
+| [400](#get-user-email-400) | Bad Request | Bad Request |  | [schema](#get-user-email-400-schema) |
+| [404](#get-user-email-404) | Not Found | Not Found |  | [schema](#get-user-email-404-schema) |
+| [405](#get-user-email-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-user-email-405-schema) |
+| [500](#get-user-email-500) | Internal Server Error | Internal Server Error |  | [schema](#get-user-email-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-user-email-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-user-email-200-schema"></span> Schema
+   
+  
+
+[APIResponseUser](#api-response-user)
+
+##### <span id="get-user-email-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-user-email-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-email-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="get-user-email-404-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-email-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="get-user-email-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-email-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-user-email-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="get-user-id"></span> Get user by ID (*GetUserID*)
+
+```
+GET /api/v1/user/{id}
+```
+
+Get user by ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | User ID |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-user-id-200) | OK | OK |  | [schema](#get-user-id-200-schema) |
+| [400](#get-user-id-400) | Bad Request | Bad Request |  | [schema](#get-user-id-400-schema) |
+| [404](#get-user-id-404) | Not Found | Not Found |  | [schema](#get-user-id-404-schema) |
+| [405](#get-user-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#get-user-id-405-schema) |
+| [500](#get-user-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-user-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-user-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-user-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseUser](#api-response-user)
+
+##### <span id="get-user-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-user-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-id-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="get-user-id-404-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-id-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="get-user-id-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="get-user-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-user-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="patch-task-id"></span> Update a task (*PatchTaskID*)
+
+```
+PATCH /api/v1/task/{id}
+```
+
+Updates a task by ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| archive | `formData` | file | `io.ReadCloser` |  |  |  | New archive for the task |
+| title | `formData` | string | `string` |  |  |  | New title for the task |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#patch-task-id-200) | OK | OK |  | [schema](#patch-task-id-200-schema) |
+| [400](#patch-task-id-400) | Bad Request | Bad Request |  | [schema](#patch-task-id-400-schema) |
+| [403](#patch-task-id-403) | Forbidden | Forbidden |  | [schema](#patch-task-id-403-schema) |
+| [405](#patch-task-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#patch-task-id-405-schema) |
+| [500](#patch-task-id-500) | Internal Server Error | Internal Server Error |  | [schema](#patch-task-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="patch-task-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="patch-task-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="patch-task-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="patch-task-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-task-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="patch-task-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-task-id-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="patch-task-id-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-task-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="patch-task-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="patch-user-id"></span> Edit user (*PatchUserID*)
+
+```
+PATCH /api/v1/user/{id}
+```
+
+Edit user
+
+#### Consumes
+  * application/json
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | User ID |
+| body | `body` | [UserEdit](#user-edit) | `models.UserEdit` | | ✓ | | User edit object |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#patch-user-id-200) | OK | OK |  | [schema](#patch-user-id-200-schema) |
+| [400](#patch-user-id-400) | Bad Request | Bad Request |  | [schema](#patch-user-id-400-schema) |
+| [403](#patch-user-id-403) | Forbidden | Forbidden |  | [schema](#patch-user-id-403-schema) |
+| [404](#patch-user-id-404) | Not Found | Not Found |  | [schema](#patch-user-id-404-schema) |
+| [405](#patch-user-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#patch-user-id-405-schema) |
+| [500](#patch-user-id-500) | Internal Server Error | Internal Server Error |  | [schema](#patch-user-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="patch-user-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="patch-user-id-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="patch-user-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="patch-user-id-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="patch-user-id-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="patch-user-id-404-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="patch-user-id-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="patch-user-id-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="patch-user-id-password"></span> Change user password (*PatchUserIDPassword*)
+
+```
+PATCH /api/v1/user/{id}/password
+```
+
+Change user password
+
+#### Consumes
+  * application/json
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | User ID |
+| body | `body` | [UserChangePassword](#user-change-password) | `models.UserChangePassword` | | ✓ | | User change password object |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#patch-user-id-password-200) | OK | OK |  | [schema](#patch-user-id-password-200-schema) |
+| [400](#patch-user-id-password-400) | Bad Request | Bad Request |  | [schema](#patch-user-id-password-400-schema) |
+| [403](#patch-user-id-password-403) | Forbidden | Forbidden |  | [schema](#patch-user-id-password-403-schema) |
+| [404](#patch-user-id-password-404) | Not Found | Not Found |  | [schema](#patch-user-id-password-404-schema) |
+| [405](#patch-user-id-password-405) | Method Not Allowed | Method Not Allowed |  | [schema](#patch-user-id-password-405-schema) |
+| [500](#patch-user-id-password-500) | Internal Server Error | Internal Server Error |  | [schema](#patch-user-id-password-500-schema) |
+
+#### Responses
+
+
+##### <span id="patch-user-id-password-200"></span> 200 - OK
+Status: OK
+
+###### <span id="patch-user-id-password-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="patch-user-id-password-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="patch-user-id-password-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-password-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="patch-user-id-password-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-password-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="patch-user-id-password-404-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-password-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="patch-user-id-password-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="patch-user-id-password-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="patch-user-id-password-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -420,7 +1625,7 @@ Create a group
 |------|--------|-------------|:-----------:|--------|
 | [200](#post-group-200) | OK | OK |  | [schema](#post-group-200-schema) |
 | [400](#post-group-400) | Bad Request | Bad Request |  | [schema](#post-group-400-schema) |
-| [401](#post-group-401) | Unauthorized | Unauthorized |  | [schema](#post-group-401-schema) |
+| [403](#post-group-403) | Forbidden | Forbidden |  | [schema](#post-group-403-schema) |
 | [405](#post-group-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-group-405-schema) |
 | [500](#post-group-500) | Internal Server Error | Internal Server Error |  | [schema](#post-group-500-schema) |
 
@@ -431,8 +1636,8 @@ Create a group
 Status: OK
 
 ###### <span id="post-group-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseInt64](#api-response-int64)
 
@@ -440,17 +1645,17 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-group-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
-##### <span id="post-group-401"></span> 401 - Unauthorized
-Status: Unauthorized
+##### <span id="post-group-403"></span> 403 - Forbidden
+Status: Forbidden
 
-###### <span id="post-group-401-schema"></span> Schema
-
-
+###### <span id="post-group-403-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -458,8 +1663,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="post-group-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -467,8 +1672,86 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-group-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="post-group-id-users"></span> Add users to a group (*PostGroupIDUsers*)
+
+```
+POST /api/v1/group/{id}/users
+```
+
+Add users to a group
+
+#### Consumes
+  * application/json
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+| body | `body` | [UserIds](#user-ids) | `models.UserIds` | | ✓ | | User IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#post-group-id-users-200) | OK | OK |  | [schema](#post-group-id-users-200-schema) |
+| [400](#post-group-id-users-400) | Bad Request | Bad Request |  | [schema](#post-group-id-users-400-schema) |
+| [403](#post-group-id-users-403) | Forbidden | Forbidden |  | [schema](#post-group-id-users-403-schema) |
+| [405](#post-group-id-users-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-group-id-users-405-schema) |
+| [500](#post-group-id-users-500) | Internal Server Error | Internal Server Error |  | [schema](#post-group-id-users-500-schema) |
+
+#### Responses
 
 
+##### <span id="post-group-id-users-200"></span> 200 - OK
+Status: OK
+
+###### <span id="post-group-id-users-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="post-group-id-users-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="post-group-id-users-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-group-id-users-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="post-group-id-users-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-group-id-users-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="post-group-id-users-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-group-id-users-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="post-group-id-users-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -507,8 +1790,8 @@ Logs in a user with email and password
 Status: OK
 
 ###### <span id="post-login-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseSession](#api-response-session)
 
@@ -516,8 +1799,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-login-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -525,8 +1808,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="post-login-401-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -534,8 +1817,8 @@ Status: Unauthorized
 Status: Internal Server Error
 
 ###### <span id="post-login-500-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -574,8 +1857,8 @@ Registers a user with name, surname, email, username and password
 Status: Created
 
 ###### <span id="post-register-201-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseSession](#api-response-session)
 
@@ -583,8 +1866,8 @@ Status: Created
 Status: Bad Request
 
 ###### <span id="post-register-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -592,8 +1875,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="post-register-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -601,8 +1884,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-register-500-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -639,8 +1922,8 @@ Invalidates a session token
 Status: OK
 
 ###### <span id="post-session-invalidate-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseString](#api-response-string)
 
@@ -648,8 +1931,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-session-invalidate-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -657,8 +1940,8 @@ Status: Bad Request
 Status: Unauthorized
 
 ###### <span id="post-session-invalidate-401-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -666,8 +1949,8 @@ Status: Unauthorized
 Status: Method Not Allowed
 
 ###### <span id="post-session-invalidate-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -675,8 +1958,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-session-invalidate-500-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -699,9 +1982,7 @@ Uploads a task to the FileStorage service
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | archive | `formData` | file | `io.ReadCloser` |  | ✓ |  | Task archive |
-| overwrite | `formData` | boolean | `bool` |  |  |  | Overwrite flag |
-| taskName | `formData` | string | `string` |  | ✓ |  | Name of the task |
-| userId | `formData` | integer | `int64` |  | ✓ |  | ID of the author |
+| title | `formData` | string | `string` |  | ✓ |  | Name of the task |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -718,8 +1999,8 @@ Uploads a task to the FileStorage service
 Status: OK
 
 ###### <span id="post-task-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseTaskCreateResponse](#api-response-task-create-response)
 
@@ -727,8 +2008,8 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="post-task-400-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -736,8 +2017,8 @@ Status: Bad Request
 Status: Method Not Allowed
 
 ###### <span id="post-task-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -745,8 +2026,158 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="post-task-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="post-task-id-assign-groups"></span> Assign a task to groups (*PostTaskIDAssignGroups*)
+
+```
+POST /api/v1/task/{id}/assign/groups
+```
+
+Assigns a task to groups by task ID and group IDs
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| groupIds | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#post-task-id-assign-groups-200) | OK | OK |  | [schema](#post-task-id-assign-groups-200-schema) |
+| [400](#post-task-id-assign-groups-400) | Bad Request | Bad Request |  | [schema](#post-task-id-assign-groups-400-schema) |
+| [403](#post-task-id-assign-groups-403) | Forbidden | Forbidden |  | [schema](#post-task-id-assign-groups-403-schema) |
+| [405](#post-task-id-assign-groups-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-task-id-assign-groups-405-schema) |
+| [500](#post-task-id-assign-groups-500) | Internal Server Error | Internal Server Error |  | [schema](#post-task-id-assign-groups-500-schema) |
+
+#### Responses
 
 
+##### <span id="post-task-id-assign-groups-200"></span> 200 - OK
+Status: OK
+
+###### <span id="post-task-id-assign-groups-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="post-task-id-assign-groups-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="post-task-id-assign-groups-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-groups-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="post-task-id-assign-groups-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-groups-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="post-task-id-assign-groups-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-groups-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="post-task-id-assign-groups-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+### <span id="post-task-id-assign-users"></span> Assign a task to users (*PostTaskIDAssignUsers*)
+
+```
+POST /api/v1/task/{id}/assign/users
+```
+
+Assigns a task to users by task ID and user IDs
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| userIds | `body` | []integer | `[]int64` | | ✓ | | User IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#post-task-id-assign-users-200) | OK | OK |  | [schema](#post-task-id-assign-users-200-schema) |
+| [400](#post-task-id-assign-users-400) | Bad Request | Bad Request |  | [schema](#post-task-id-assign-users-400-schema) |
+| [403](#post-task-id-assign-users-403) | Forbidden | Forbidden |  | [schema](#post-task-id-assign-users-403-schema) |
+| [405](#post-task-id-assign-users-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-task-id-assign-users-405-schema) |
+| [500](#post-task-id-assign-users-500) | Internal Server Error | Internal Server Error |  | [schema](#post-task-id-assign-users-500-schema) |
+
+#### Responses
+
+
+##### <span id="post-task-id-assign-users-200"></span> 200 - OK
+Status: OK
+
+###### <span id="post-task-id-assign-users-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="post-task-id-assign-users-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="post-task-id-assign-users-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-users-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="post-task-id-assign-users-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-users-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="post-task-id-assign-users-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="post-task-id-assign-users-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="post-task-id-assign-users-500-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -776,8 +2207,7 @@ Edit a group
 |------|--------|-------------|:-----------:|--------|
 | [200](#put-group-id-200) | OK | OK |  | [schema](#put-group-id-200-schema) |
 | [400](#put-group-id-400) | Bad Request | Bad Request |  | [schema](#put-group-id-400-schema) |
-| [401](#put-group-id-401) | Unauthorized | Unauthorized |  | [schema](#put-group-id-401-schema) |
-| [404](#put-group-id-404) | Not Found | Not Found |  | [schema](#put-group-id-404-schema) |
+| [403](#put-group-id-403) | Forbidden | Forbidden |  | [schema](#put-group-id-403-schema) |
 | [405](#put-group-id-405) | Method Not Allowed | Method Not Allowed |  | [schema](#put-group-id-405-schema) |
 | [500](#put-group-id-500) | Internal Server Error | Internal Server Error |  | [schema](#put-group-id-500-schema) |
 
@@ -788,8 +2218,8 @@ Edit a group
 Status: OK
 
 ###### <span id="put-group-id-200-schema"></span> Schema
-
-
+   
+  
 
 [APIResponseGroup](#api-response-group)
 
@@ -797,26 +2227,17 @@ Status: OK
 Status: Bad Request
 
 ###### <span id="put-group-id-400-schema"></span> Schema
-
-
-
-[APIError](#api-error)
-
-##### <span id="put-group-id-401"></span> 401 - Unauthorized
-Status: Unauthorized
-
-###### <span id="put-group-id-401-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
-##### <span id="put-group-id-404"></span> 404 - Not Found
-Status: Not Found
+##### <span id="put-group-id-403"></span> 403 - Forbidden
+Status: Forbidden
 
-###### <span id="put-group-id-404-schema"></span> Schema
-
-
+###### <span id="put-group-id-403-schema"></span> Schema
+   
+  
 
 [APIError](#api-error)
 
@@ -824,8 +2245,8 @@ Status: Not Found
 Status: Method Not Allowed
 
 ###### <span id="put-group-id-405-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -833,8 +2254,8 @@ Status: Method Not Allowed
 Status: Internal Server Error
 
 ###### <span id="put-group-id-500-schema"></span> Schema
-
-
+   
+  
 
 [APIError](#api-error)
 
@@ -843,7 +2264,7 @@ Status: Internal Server Error
 ### <span id="api-error"></span> ApiError
 
 
-
+  
 
 
 
@@ -859,7 +2280,7 @@ Status: Internal Server Error
 ### <span id="api-response-group"></span> ApiResponse-Group
 
 
-
+  
 
 
 
@@ -875,7 +2296,7 @@ Status: Internal Server Error
 ### <span id="api-response-session"></span> ApiResponse-Session
 
 
-
+  
 
 
 
@@ -888,10 +2309,42 @@ Status: Internal Server Error
 
 
 
+### <span id="api-response-submission"></span> ApiResponse-Submission
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [Submission](#submission)| `Submission` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
+### <span id="api-response-submit-response"></span> ApiResponse-SubmitResponse
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [SubmitResponse](#submit-response)| `SubmitResponse` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
 ### <span id="api-response-task-create-response"></span> ApiResponse-TaskCreateResponse
 
 
-
+  
 
 
 
@@ -907,7 +2360,7 @@ Status: Internal Server Error
 ### <span id="api-response-task-detailed"></span> ApiResponse-TaskDetailed
 
 
-
+  
 
 
 
@@ -920,10 +2373,26 @@ Status: Internal Server Error
 
 
 
+### <span id="api-response-user"></span> ApiResponse-User
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [User](#user)| `User` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
 ### <span id="api-response-array-group"></span> ApiResponse-array_Group
 
 
-
+  
 
 
 
@@ -936,10 +2405,42 @@ Status: Internal Server Error
 
 
 
+### <span id="api-response-array-language-config"></span> ApiResponse-array_LanguageConfig
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [][LanguageConfig](#language-config)| `[]*LanguageConfig` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
+### <span id="api-response-array-submission"></span> ApiResponse-array_Submission
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [][Submission](#submission)| `[]*Submission` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
 ### <span id="api-response-array-task"></span> ApiResponse-array_Task
 
 
-
+  
 
 
 
@@ -955,7 +2456,7 @@ Status: Internal Server Error
 ### <span id="api-response-int64"></span> ApiResponse-int64
 
 
-
+  
 
 
 
@@ -971,7 +2472,7 @@ Status: Internal Server Error
 ### <span id="api-response-string"></span> ApiResponse-string
 
 
-
+  
 
 
 
@@ -987,7 +2488,7 @@ Status: Internal Server Error
 ### <span id="create-group"></span> CreateGroup
 
 
-
+  
 
 
 
@@ -1002,7 +2503,7 @@ Status: Internal Server Error
 ### <span id="edit-group"></span> EditGroup
 
 
-
+  
 
 
 
@@ -1017,7 +2518,7 @@ Status: Internal Server Error
 ### <span id="group"></span> Group
 
 
-
+  
 
 
 
@@ -1029,14 +2530,34 @@ Status: Internal Server Error
 | created_by | integer| `int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | name | string| `string` |  | |  |  |
+| tasks | [][Task](#task)| `[]*Task` |  | |  |  |
 | updated_at | string| `string` |  | |  |  |
+| users | [][User](#user)| `[]*User` |  | |  |  |
+
+
+
+### <span id="language-config"></span> LanguageConfig
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| file_extension | string| `string` |  | |  |  |
+| id | integer| `int64` |  | |  |  |
+| language | [ModelsLanguageType](#models-language-type)| `ModelsLanguageType` |  | |  |  |
+| version | string| `string` |  | |  |  |
 
 
 
 ### <span id="session"></span> Session
 
 
-
+  
 
 
 
@@ -1051,10 +2572,73 @@ Status: Internal Server Error
 
 
 
+### <span id="submission"></span> Submission
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| checked_at | string| `string` |  | |  |  |
+| id | integer| `int64` |  | |  |  |
+| language | [LanguageConfig](#language-config)| `LanguageConfig` |  | |  |  |
+| language_id | integer| `int64` |  | |  |  |
+| order | integer| `int64` |  | |  |  |
+| result | [SubmissionResult](#submission-result)| `SubmissionResult` |  | |  |  |
+| status | string| `string` |  | |  |  |
+| status_message | string| `string` |  | |  |  |
+| submitted_at | string| `string` |  | |  |  |
+| task | [Task](#task)| `Task` |  | |  |  |
+| task_id | integer| `int64` |  | |  |  |
+| user | [User](#user)| `User` |  | |  |  |
+| user_id | integer| `int64` |  | |  |  |
+
+
+
+### <span id="submission-result"></span> SubmissionResult
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| code | string| `string` |  | |  |  |
+| created_at | string| `string` |  | |  |  |
+| id | integer| `int64` |  | |  |  |
+| message | string| `string` |  | |  |  |
+| submission_id | integer| `int64` |  | |  |  |
+| test_results | [][TestResult](#test-result)| `[]*TestResult` |  | |  |  |
+
+
+
+### <span id="submit-response"></span> SubmitResponse
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| message | string| `string` |  | |  |  |
+| submissionNumber | integer| `int64` |  | |  |  |
+
+
+
 ### <span id="task"></span> Task
 
 
-
+  
 
 
 
@@ -1072,7 +2656,7 @@ Status: Internal Server Error
 ### <span id="task-create-response"></span> TaskCreateResponse
 
 
-
+  
 
 
 
@@ -1087,7 +2671,7 @@ Status: Internal Server Error
 ### <span id="task-detailed"></span> TaskDetailed
 
 
-
+  
 
 
 
@@ -1104,10 +2688,99 @@ Status: Internal Server Error
 
 
 
+### <span id="test-result"></span> TestResult
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| id | integer| `int64` |  | |  |  |
+| input_output_id | integer| `int64` |  | |  |  |
+| passed | boolean| `bool` |  | |  |  |
+| submission_result_id | integer| `int64` |  | |  |  |
+
+
+
+### <span id="user"></span> User
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| email | string| `string` |  | |  |  |
+| id | integer| `int64` |  | |  |  |
+| name | string| `string` |  | |  |  |
+| role | [TypesUserRole](#types-user-role)| `TypesUserRole` |  | |  |  |
+| surname | string| `string` |  | |  |  |
+| username | string| `string` |  | |  |  |
+
+
+
+### <span id="user-change-password"></span> UserChangePassword
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| new_password | string| `string` | ✓ | |  |  |
+| new_password_confirm | string| `string` | ✓ | |  |  |
+| old_password | string| `string` |  | |  |  |
+
+
+
+### <span id="user-edit"></span> UserEdit
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| email | string| `string` |  | |  |  |
+| name | string| `string` |  | |  |  |
+| role | [TypesUserRole](#types-user-role)| `TypesUserRole` |  | |  |  |
+| surname | string| `string` |  | |  |  |
+| username | string| `string` |  | |  |  |
+
+
+
+### <span id="user-ids"></span> UserIds
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| user_ids | []integer| `[]int64` |  | |  |  |
+
+
+
 ### <span id="user-login-request"></span> UserLoginRequest
 
 
-
+  
 
 
 
@@ -1123,7 +2796,7 @@ Status: Internal Server Error
 ### <span id="user-register-request"></span> UserRegisterRequest
 
 
-
+  
 
 
 
@@ -1142,7 +2815,7 @@ Status: Internal Server Error
 ### <span id="error-struct"></span> errorStruct
 
 
-
+  
 
 
 
@@ -1152,3 +2825,27 @@ Status: Internal Server Error
 |------|------|---------|:--------:| ------- |-------------|---------|
 | code | string| `string` |  | |  |  |
 | message | string| `string` |  | |  |  |
+
+
+
+### <span id="models-language-type"></span> models.LanguageType
+
+
+  
+
+| Name | Type | Go type | Default | Description | Example |
+|------|------|---------| ------- |-------------|---------|
+| models.LanguageType | string| string | |  |  |
+
+
+
+### <span id="types-user-role"></span> types.UserRole
+
+
+  
+
+| Name | Type | Go type | Default | Description | Example |
+|------|------|---------| ------- |-------------|---------|
+| types.UserRole | string| string | |  |  |
+
+

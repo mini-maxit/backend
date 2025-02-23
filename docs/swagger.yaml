@@ -120,11 +120,6 @@ definitions:
       name:
         type: string
     type: object
-  EditTask:
-    properties:
-      title:
-        type: string
-    type: object
   Group:
     properties:
       created_at:
@@ -135,8 +130,16 @@ definitions:
         type: integer
       name:
         type: string
+      tasks:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
       updated_at:
         type: string
+      users:
+        items:
+          $ref: '#/definitions/User'
+        type: array
     type: object
   LanguageConfig:
     properties:
@@ -269,6 +272,22 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  UserChangePassword:
+    properties:
+      new_password:
+        maxLength: 50
+        minLength: 8
+        type: string
+      new_password_confirm:
+        maxLength: 50
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - new_password_confirm
     type: object
   UserEdit:
     properties:
@@ -970,18 +989,9 @@ paths:
       parameters:
       - description: Name of the task
         in: formData
-        name: taskName
+        name: title
         required: true
         type: string
-      - description: ID of the author
-        in: formData
-        name: userId
-        required: true
-        type: integer
-      - description: Overwrite flag
-        in: formData
-        name: overwrite
-        type: boolean
       - description: Task archive
         in: formData
         name: archive
@@ -1086,12 +1096,14 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Task object
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/EditTask'
+      - description: New title for the task
+        in: formData
+        name: title
+        type: string
+      - description: New archive for the task
+        in: formData
+        name: archive
+        type: file
       produces:
       - application/json
       responses:
@@ -1438,6 +1450,53 @@ paths:
           schema:
             $ref: '#/definitions/ApiError'
       summary: Edit user
+      tags:
+      - user
+  /user/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Change user password
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User change password object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserChangePassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Change user password
       tags:
       - user
   /user/email:
