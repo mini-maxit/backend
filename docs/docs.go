@@ -917,22 +917,9 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Name of the task",
-                        "name": "taskName",
+                        "name": "title",
                         "in": "formData",
                         "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "ID of the author",
-                        "name": "userId",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "Overwrite flag",
-                        "name": "overwrite",
-                        "in": "formData"
                     },
                     {
                         "type": "file",
@@ -1144,13 +1131,16 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Task object",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/EditTask"
-                        }
+                        "type": "string",
+                        "description": "New title for the task",
+                        "name": "title",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "New archive for the task",
+                        "name": "archive",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -1673,6 +1663,77 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/{id}/password": {
+            "patch": {
+                "description": "Change user password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Change user password",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User change password object",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserChangePassword"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1863,14 +1924,6 @@ const docTemplate = `{
                 }
             }
         },
-        "EditTask": {
-            "type": "object",
-            "properties": {
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
         "Group": {
             "type": "object",
             "properties": {
@@ -1886,8 +1939,20 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Task"
+                    }
+                },
                 "updated_at": {
                     "type": "string"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/User"
+                    }
                 }
             }
         },
@@ -2090,6 +2155,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserChangePassword": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "new_password_confirm"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 8
+                },
+                "new_password_confirm": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 8
+                },
+                "old_password": {
                     "type": "string"
                 }
             }
