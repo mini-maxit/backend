@@ -29,7 +29,7 @@ jobs:
           go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
       - name: Init swag
-        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
+        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml; cd ../..
 
       - name: Convert swagger to markdown
         run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
