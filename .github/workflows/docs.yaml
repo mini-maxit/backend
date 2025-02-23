@@ -40,7 +40,7 @@ jobs:
           git checkout -b $BRANCH_NAME
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add docs/*.yaml docs/*.md
+          git add docs/*
           git status
           git commit -m "docs: update swagger docs"
           git push origin $BRANCH_NAME
@@ -55,6 +55,7 @@ jobs:
           body: "This PR updates the Swagger documentation."
           base: ${{ github.ref_name }}
           delete-branch: true
+          add-paths: docs/*
           labels: |
             documentation
             automated pr
