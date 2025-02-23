@@ -37,13 +37,6 @@ jobs:
       - name: Create new branch for docs update
         run: |
           BRANCH_NAME="update-swagger-docs-$(date +%Y%m%d%H%M%S)"
-          git checkout -b $BRANCH_NAME
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add docs/*
-          git status
-          git commit -m "docs: update swagger docs"
-          git push origin $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Create Pull Request
