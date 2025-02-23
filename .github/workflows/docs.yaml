@@ -40,7 +40,8 @@ jobs:
           git checkout -b $BRANCH_NAME
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add docs/*
+          git add docs/*.yaml docs/*.md
+          git status
           git commit -m "docs: update swagger docs"
           git push origin $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
