@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -57,16 +56,16 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
 	if err != nil {
@@ -100,7 +99,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -115,7 +114,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	submission, err := s.submissionService.GetById(tx, submissionId, current_user)
 	if err != nil {
@@ -155,15 +154,15 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -212,15 +211,15 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForUserShort(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -269,16 +268,16 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
 	if err != nil {
@@ -323,15 +322,15 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
 	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
 	if err != nil {
@@ -357,7 +356,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{object}	httputils.ApiError
 //	@Router			/submission/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -422,7 +421,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	defer file.Close()
 
 	// Extract user ID
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 	userId := current_user.Id
 	userIDStr := strconv.FormatInt(userId, 10)
 
@@ -438,7 +437,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())

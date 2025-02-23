@@ -16,7 +16,7 @@ func QueryParamsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), QueryParamsKey, queryParams)
+		ctx := context.WithValue(r.Context(), httputils.QueryParamsKey, queryParams)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

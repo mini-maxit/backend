@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -53,14 +52,14 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	group := &schemas.Group{
 		Name:      request.Name,
@@ -99,7 +98,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -117,7 +116,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	group, err := gr.groupService.GetGroup(tx, current_user, groupId)
 	if err != nil {
@@ -151,15 +150,15 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	groups, err := gr.groupService.GetAllGroup(tx, current_user, queryParams)
 	if err != nil {
@@ -207,7 +206,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -225,7 +224,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	resp, err := gr.groupService.Edit(tx, current_user, groupId, &request)
 	if err != nil {
@@ -282,14 +281,14 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = gr.groupService.AddUsersToGroup(tx, current_user, groupId, request.UserIds)
 	if err != nil {
@@ -335,14 +334,14 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	users, err := gr.groupService.GetGroupUsers(tx, current_user, groupId)
 	if err != nil {

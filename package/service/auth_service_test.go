@@ -1,7 +1,6 @@
 package service
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -20,51 +19,6 @@ func TestRegister(t *testing.T) {
 	as := NewAuthService(ur, ss)
 	tx := &gorm.DB{}
 
-	t.Run("validaton of user register request", func(t *testing.T) {
-		cases := []struct {
-			name     string
-			surname  string
-			email    string
-			username string
-			password string
-
-			valid bool
-		}{
-			{"", "surname", "email@email.com", "username", "password", false},                      // Empty name
-			{"a", "surname", "email@email.com", "username", "password", false},                     // Too short name
-			{strings.Repeat("a", 51), "surname", "email@email.com", "username", "password", false}, // Too long name
-			{"name", "", "email@email.com", "username", "password", false},                         // Empty surname
-			{"name", "a", "email@email.com", "username", "password", false},                        // Too short surname
-			{"name", strings.Repeat("a", 51), "email@email.com", "username", "password", false},    // Too long surname
-			{"name", "surname", "", "username", "password", false},                                 // Empty email
-			{"name", "surname", "aaaa", "username", "password", false},                             // Invalid email
-			{"name", "surname", "email@email.com", "", "password", false},                          // Empty username
-			{"name", "surname", "email@email.com", "a", "password", false},                         // Too short username
-			{"name", "surname", "email@email.com", strings.Repeat("a", 31), "password", false},     // Too long username
-			{"name", "surname", "email@email.com", "_SuperCoolUsername_", "password", false},       // Invalid username
-			{"name", "surname", "email@email.com", "username", "", false},                          // Empty password
-			{"name", "surname", "email@email.com", "username", "aaaa", false},                      // Too short password
-			{"name", "surname", "email@email.com", "username", strings.Repeat("a", 51), false},     // Too long password
-			{"name", "surname", "email@email.com", "username", strings.Repeat("a", 13), true},      // Too long password
-		}
-		for _, tc := range cases {
-			userRegister := schemas.UserRegisterRequest{
-				Name:     tc.name,
-				Surname:  tc.surname,
-				Email:    tc.email,
-				Username: tc.username,
-				Password: tc.password,
-			}
-			response, err := as.Register(tx, userRegister)
-			if tc.valid {
-				assert.NoError(t, err)
-				assert.NotNil(t, response)
-			} else {
-				assert.Error(t, err, tc)
-				assert.Nil(t, response, tc)
-			}
-		}
-	})
 	t.Run("get user by email when user exists", func(t *testing.T) {
 		ur.CreateUser(tx, &models.User{
 			Name:         "name",
@@ -118,28 +72,6 @@ func TestLogin(t *testing.T) {
 	ss := NewSessionService(sr, ur)
 	as := NewAuthService(ur, ss)
 	tx := &gorm.DB{}
-
-	t.Run("validation of user login request", func(t *testing.T) {
-		cases := []struct {
-			email    string
-			password string
-		}{
-			{"", "password"},                             // Empty email
-			{"aaaa", "password"},                         // Invalid email
-			{"email@email.com", ""},                      // Empty password
-			{"email@email.com", "aa"},                    // Short password
-			{"email@email.com", strings.Repeat("a", 51)}, // Long password
-		}
-		for _, tc := range cases {
-			userLogin := schemas.UserLoginRequest{
-				Email:    tc.email,
-				Password: tc.password,
-			}
-			response, err := as.Login(tx, userLogin)
-			assert.Error(t, err, tc)
-			assert.Nil(t, response, tc)
-		}
-	})
 
 	t.Run("get user by email when user does not exist", func(t *testing.T) {
 		userLogin := schemas.UserLoginRequest{

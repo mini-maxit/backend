@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
@@ -36,7 +35,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -70,7 +69,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 		httputils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -131,7 +130,7 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 		httputils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())

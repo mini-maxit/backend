@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -591,7 +591,29 @@ func (as *MockAuthService) Login(tx *gorm.DB, request schemas.UserLoginRequest) 
 }
 
 func (as *MockAuthService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	panic("implement me")
+	user := as.users[userRegister.Email]
+	if user != nil {
+		return nil, errors.ErrUserAlreadyExists
+	}
+	hashPass, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	user = &models.User{
+		Name:         userRegister.Name,
+		Surname:      userRegister.Surname,
+		Email:        userRegister.Email,
+		Username:     userRegister.Username,
+		PasswordHash: string(hashPass),
+		Role:         types.UserRoleStudent,
+	}
+	as.users[user.Email] = user
+	return &schemas.Session{
+		Id:        user.Email + userRegister.Email,
+		UserId:    user.Id,
+		UserRole:  string(user.Role),
+		ExpiresAt: time.Now().Add(time.Hour),
+	}, nil
 }
 
 func NewMockAuthService() *MockAuthService {
@@ -640,7 +662,7 @@ func (db *MockDatabase) Db() *gorm.DB {
 
 func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), middleware.DatabaseKey, db)
+		ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

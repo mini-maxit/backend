@@ -1,11 +1,9 @@
 package routes
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -48,7 +46,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -82,6 +80,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Param			request	body		schemas.UserRegisterRequest	true	"User Register Request"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
+//	@Failure		409		{object}	httputils.ApiError
 //	@Failure		500		{object}	httputils.ApiError
 //	@Success		201		{object}	httputils.ApiResponse[schemas.Session]
 //	@Router			/register [post]
@@ -92,16 +91,16 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.UserRegisterRequest
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 
 	session, err := ar.authService.Register(tx, request)
@@ -110,7 +109,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		break
 	case errors.ErrUserAlreadyExists:
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		httputils.ReturnError(w, http.StatusConflict, err.Error())
 		return
 	default:
 		db.Rollback()

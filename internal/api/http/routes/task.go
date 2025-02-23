@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -51,15 +50,15 @@ func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	task, err := tr.taskService.GetAllAssignedTasks(tx, current_user, queryParams)
 
@@ -82,15 +81,15 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	task, err := tr.taskService.GetAllCreatedTasks(tx, current_user, queryParams)
 	if err != nil {
@@ -125,15 +124,15 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 	tasks, err := tr.taskService.GetAll(tx, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
@@ -182,14 +181,14 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	task, err := tr.taskService.GetTask(tx, current_user, taskId)
 	if err != nil {
@@ -237,16 +236,16 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	tasks, err := tr.taskService.GetAllForGroup(tx, current_user, groupId, queryParams)
 	if err != nil {
@@ -319,14 +318,14 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a multipart writer for the HTTP request to FileStorage service
-	currentUser := r.Context().Value(middleware.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	// Create empty task to get the task ID
 	task := schemas.Task{
 		Title:     title,
 		CreatedBy: currentUser.Id,
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
@@ -388,14 +387,14 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	request := schemas.EditTask{}
 	newTitle := r.FormValue("title")
@@ -474,14 +473,14 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = tr.taskService.DeleteTask(tx, current_user, taskId)
 	if err != nil {
@@ -536,14 +535,14 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
@@ -598,14 +597,14 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
@@ -660,14 +659,14 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = tr.taskService.UnAssignTaskFromUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
@@ -722,14 +721,14 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(middleware.UserKey).(schemas.User)
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = tr.taskService.UnAssignTaskFromGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
