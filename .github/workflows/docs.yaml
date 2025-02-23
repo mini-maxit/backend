@@ -12,9 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-      pull-requests: write
+    permissions: write-all
 
     steps:
       - uses: actions/checkout@v4
@@ -48,11 +46,9 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.branch_name }}
           title: "docs: update swagger docs"
-          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           body: "This PR updates the Swagger documentation."
           base: ${{ github.ref_name }}
           delete-branch: true
