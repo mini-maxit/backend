@@ -542,7 +542,7 @@ func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorag
 		queueService:      queueService,
 		taskService:       taskService,
 	}
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("SubmissionRoutes struct is not valid: %s", err.Error())
 	}
