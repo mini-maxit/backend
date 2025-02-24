@@ -398,7 +398,7 @@ func NewGroupRoute(groupService service.GroupService) GroupRoute {
 	route := &GroupRouteImpl{
 		groupService: groupService,
 	}
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("GroupRoute struct is not valid: %s", err.Error())
 	}

@@ -749,7 +749,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
 	route := &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
 
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("TaskRoute struct is not valid: %s", err.Error())
 	}

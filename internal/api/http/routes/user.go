@@ -332,7 +332,7 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
 
 func NewUserRoute(userService service.UserService) UserRoute {
 	route := &UserRouteImpl{userService: userService}
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("UserRoute struct is not valid: %s", err.Error())
 	}

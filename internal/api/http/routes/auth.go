@@ -127,7 +127,7 @@ func NewAuthRoute(userService service.UserService, authService service.AuthServi
 		userService: userService,
 		authService: authService,
 	}
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("AuthRoute struct is not valid: %s", err.Error())
 	}

@@ -153,7 +153,7 @@ func NewSessionRoute(sessionService service.SessionService) SessionRoute {
 		sessionService: sessionService,
 	}
 
-	err := utils.ValidateStruct(route)
+	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("SessionRoute struct is not valid: %s", err.Error())
 	}
