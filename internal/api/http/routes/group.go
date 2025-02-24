@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type GroupRoute interface {
@@ -393,7 +395,12 @@ func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
 }
 
 func NewGroupRoute(groupService service.GroupService) GroupRoute {
-	return &GroupRouteImpl{
+	route := &GroupRouteImpl{
 		groupService: groupService,
 	}
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("GroupRoute struct is not valid: %s", err.Error())
+	}
+	return route
 }

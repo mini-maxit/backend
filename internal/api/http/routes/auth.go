@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
@@ -8,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type AuthRoute interface {
@@ -121,8 +123,13 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService) AuthRoute {
-	return &AuthRouteImpl{
+	route := &AuthRouteImpl{
 		userService: userService,
 		authService: authService,
 	}
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("AuthRoute struct is not valid: %s", err.Error())
+	}
+	return route
 }

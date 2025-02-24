@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type SubmissionRoutes interface {
@@ -532,12 +534,18 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 }
 
 // New Instance
-func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorageUrl string, queueService service.QueueService) SubmissionRoutes {
-	return &SumbissionImpl{
+func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorageUrl string, queueService service.QueueService, taskService service.TaskService) SubmissionRoutes {
+	route := &SumbissionImpl{
 		submissionService: submissionService,
 		fileStorageUrl:    fileStorageUrl,
 		queueService:      queueService,
+		taskService:       taskService,
 	}
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("SubmissionRoutes struct is not valid: %s", err.Error())
+	}
+	return route
 }
 
 // RegisterSubmissionRoutes registers handlers for the submission routes

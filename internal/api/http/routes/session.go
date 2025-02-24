@@ -2,12 +2,14 @@ package routes
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type SessionRoute interface {
@@ -147,7 +149,14 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 }
 
 func NewSessionRoute(sessionService service.SessionService) SessionRoute {
-	return &SessionRouteImpl{
+	route := &SessionRouteImpl{
 		sessionService: sessionService,
 	}
+
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("SessionRoute struct is not valid: %s", err.Error())
+	}
+
+	return route
 }
