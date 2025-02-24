@@ -155,7 +155,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authRoute := routes.NewAuthRoute(userService, authService)
 	groupRoute := routes.NewGroupRoute(groupService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
-	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
 	userRoute := routes.NewUserRoute(userService)
 

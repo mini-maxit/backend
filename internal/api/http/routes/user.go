@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type UserRoute interface {
@@ -330,7 +332,12 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewUserRoute(userService service.UserService) UserRoute {
-	return &UserRouteImpl{userService: userService}
+	route := &UserRouteImpl{userService: userService}
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("UserRoute struct is not valid: %s", err.Error())
+	}
+	return route
 }
 
 func RegisterUserRoutes(mux *http.ServeMux, route UserRoute) {

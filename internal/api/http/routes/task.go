@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type TaskRoute interface {
@@ -746,7 +748,14 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 }
 
 func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
-	return &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
+	route := &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
+
+	err := utils.ValidateStruct(route)
+	if err != nil {
+		log.Panicf("TaskRoute struct is not valid: %s", err.Error())
+	}
+
+	return route
 }
 
 func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
