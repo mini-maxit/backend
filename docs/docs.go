@@ -442,6 +442,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/ApiError"
                         }
                     },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -2223,9 +2229,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 8
+                    "type": "string"
                 }
             }
         },
