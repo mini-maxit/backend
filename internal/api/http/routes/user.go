@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -50,14 +49,14 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 	users, err := u.userService.GetAllUsers(tx, queryParams)
 	if err != nil {
 		db.Rollback()
@@ -104,7 +103,7 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
@@ -144,14 +143,14 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.Context().Value(middleware.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
 	email := queryParams["email"].(string)
 	if email == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Email query cannot be empty")
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
@@ -210,14 +209,14 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
 		return
 	}
 
-	currentUser := r.Context().Value(middleware.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = u.userService.EditUser(tx, currentUser, userId, &request)
 	if err != nil {
@@ -281,14 +280,14 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
 		return
 	}
 
-	currentUser := r.Context().Value(middleware.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	err = u.userService.ChangePassword(tx, currentUser, userId, request)
 	if err != nil {

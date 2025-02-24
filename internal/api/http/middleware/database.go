@@ -32,7 +32,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
 			return
 		}
-		ctx = context.WithValue(ctx, DatabaseKey, session)
+		ctx = context.WithValue(ctx, httputils.DatabaseKey, session)
 		rWithDatabase := r.WithContext(ctx)
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		defer func() {

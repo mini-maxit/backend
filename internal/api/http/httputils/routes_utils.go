@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type ApiResponse[T any] struct {
@@ -120,4 +122,28 @@ func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (stri
 	}
 
 	return filePath, nil
+}
+
+// ShouldBindJSON binds the request body to a struct and validates it.
+func ShouldBindJSON(body io.ReadCloser, v interface{}) error {
+	dec := json.NewDecoder(body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&v)
+	if err != nil {
+		return err
+	}
+
+	if dec.More() {
+		return fmt.Errorf("unexpected extra data in JSON body")
+	}
+
+	validator, err := utils.NewValidator()
+	if err != nil {
+		return err
+	}
+	if err := validator.Struct(v); err != nil {
+		return err
+	}
+	return nil
 }

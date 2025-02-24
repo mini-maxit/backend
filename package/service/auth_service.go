@@ -39,16 +39,6 @@ type authService struct {
 
 // Login implements Login method of [AuthService] interface
 func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	validate, err := utils.NewValidator()
-	if err != nil {
-		as.logger.Errorf("Error creating validator: %v", err.Error())
-		return nil, err
-	}
-	if err := validate.Struct(userLogin); err != nil {
-		as.logger.Errorf("Error validating user login request: %v", err.Error())
-		return nil, err
-	}
-
 	user, err := as.userRepository.GetUserByEmail(tx, userLogin.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -75,16 +65,6 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 
 // Register implements Register method of [AuthService] interface
 func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	validate, err := utils.NewValidator()
-	if err != nil {
-		as.logger.Errorf("Error creating validator: %v", err.Error())
-		return nil, err
-	}
-	if err := validate.Struct(userRegister); err != nil {
-		as.logger.Errorf("Error validating user register request: %v", err.Error())
-		return nil, err
-	}
-
 	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
