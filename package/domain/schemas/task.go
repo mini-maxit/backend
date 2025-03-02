@@ -2,8 +2,8 @@ package schemas
 
 import "time"
 
-type UpdateTask struct {
-	Title string `json:"title"`
+type EditTask struct {
+	Title *string `json:"title,omitempty"`
 }
 
 type Task struct {

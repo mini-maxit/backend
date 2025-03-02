@@ -1,11 +1,10 @@
 package service
 
 import (
-	"errors"
-
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -13,32 +12,37 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
-
+// AuthService defines the methods for authentication-related operations.
 type AuthService interface {
+	// Login logs user in using provided credentials
+	//
+	// Method should check if such user exists, and if he does create valid session and return it.
+	// Possible errors: ErrInvalidCredentials, ErrUserNotFound, validator.ValidationErrors,
+	// errors returned by SessionService, repository.UserRepository.
 	Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error)
+
+	// Register registers user if he is not registered yet
+	//
+	// Method validates provided user data, checks if user with provided email already exists,
+	// creates new user, creates session for him and returns it.
+	// Possible errors: ErrUserAlreadyExists, errors returned by SessionService,
+	// repostiroy.UserRepository, bcrypt lib.
 	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
-type AuthServiceImpl struct {
+// authService implements AuthService interface
+type authService struct {
 	userRepository repository.UserRepository
 	sessionService SessionService
 	logger         *zap.SugaredLogger
 }
 
-func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
-	if err := validate.Struct(userLogin); err != nil {
-		as.logger.Errorf("Error validating user login request: %v", err.Error())
-		return nil, err
-	}
-
+// Login implements Login method of [AuthService] interface
+func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
 	user, err := as.userRepository.GetUserByEmail(tx, userLogin.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
@@ -46,8 +50,8 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userLogin.Password)) != nil {
-		as.logger.Errorf("Error comparing password hash: %v", ErrInvalidCredentials.Error())
-		return nil, ErrInvalidCredentials
+		as.logger.Errorf("Error comparing password hash: %v", errors.ErrInvalidCredentials.Error())
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	session, err := as.sessionService.CreateSession(tx, user.Id)
@@ -59,13 +63,8 @@ func (as *AuthServiceImpl) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest
 	return session, nil
 }
 
-func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	validate := utils.NewValidator()
-	if err := validate.Struct(userRegister); err != nil {
-		as.logger.Errorf("Error validating user register request: %v", err.Error())
-		return nil, err
-	}
-
+// Register implements Register method of [AuthService] interface
+func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
@@ -74,7 +73,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 
 	if user != nil {
 		as.logger.Errorf("User already exists")
-		return nil, ErrUserAlreadyExists
+		return nil, errors.ErrUserAlreadyExists
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
@@ -88,7 +87,7 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 		Email:        userRegister.Email,
 		Username:     userRegister.Username,
 		PasswordHash: string(hash),
-		Role:         models.UserRoleStudent,
+		Role:         types.UserRoleStudent,
 	}
 
 	userId, err := as.userRepository.CreateUser(tx, userModel)
@@ -107,9 +106,10 @@ func (as *AuthServiceImpl) Register(tx *gorm.DB, userRegister schemas.UserRegist
 	return session, nil
 }
 
+// NewAuthService creates new instance of [authService]
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
-	log := logger.NewNamedLogger("auth_service")
-	return &AuthServiceImpl{
+	log := utils.NewNamedLogger("auth_service")
+	return &authService{
 		userRepository: userRepository,
 		sessionService: sessionService,
 		logger:         log,

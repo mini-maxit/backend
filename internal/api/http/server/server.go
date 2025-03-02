@@ -9,9 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/internal/api/http/routes"
+	"github.com/mini-maxit/backend/internal/initialization"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
@@ -49,70 +50,57 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(server.Addr, server.Handler)
 }
 
-func NewServer(initialization *initialization.Initialization, log *zap.SugaredLogger) *Server {
+func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Server {
 	mux := http.NewServeMux()
 	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
 
 	// Auth routes
 	authMux := http.NewServeMux()
-	authMux.HandleFunc("/login", initialization.AuthRoute.Login)
-	authMux.HandleFunc("/register", initialization.AuthRoute.Register)
+	authMux.HandleFunc("/login", init.AuthRoute.Login)
+	authMux.HandleFunc("/register", init.AuthRoute.Register)
 
 	// Task routes
 	taskMux := http.NewServeMux()
-	taskMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			initialization.TaskRoute.UploadTask(w, r)
-		} else if r.Method == "GET" {
-			initialization.TaskRoute.GetAllTasks(w, r)
-		}
-	},
-	)
-	taskMux.HandleFunc("/{id}", initialization.TaskRoute.GetTask)
-	taskMux.HandleFunc("/submit", initialization.TaskRoute.SubmitSolution)
+	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
 
 	// User routes
 	userMux := http.NewServeMux()
-	userMux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			initialization.UserRoute.GetUserById(w, r)
-		} else if r.Method == http.MethodPut {
-			initialization.UserRoute.EditUser(w, r)
-		}
-	},
-	)
-	userMux.HandleFunc("/", initialization.UserRoute.GetAllUsers)
-	userMux.HandleFunc("/email", initialization.UserRoute.GetUserByEmail)
-	userMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForUser)
+	routes.RegisterUserRoutes(userMux, init.UserRoute)
+
+	// Submission routes
+	subbmissionMux := http.NewServeMux()
+	routes.RegisterSubmissionRoutes(subbmissionMux, init.SubmissionRoute)
 
 	// Group routes
 	groupMux := http.NewServeMux()
-	groupMux.HandleFunc("/{id}/task", initialization.TaskRoute.GetAllForGroup)
+	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
 	// Session routes
 	sessionMux := http.NewServeMux()
-	sessionMux.HandleFunc("/", initialization.SessionRoute.CreateSession)
-	sessionMux.HandleFunc("/validate", initialization.SessionRoute.ValidateSession)
-	sessionMux.HandleFunc("/invalidate", initialization.SessionRoute.InvalidateSession)
+	sessionMux.HandleFunc("/", init.SessionRoute.CreateSession)
+	sessionMux.HandleFunc("/validate", init.SessionRoute.ValidateSession)
+	sessionMux.HandleFunc("/invalidate", init.SessionRoute.InvalidateSession)
 
 	// Secure routes (require authentication)
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
 	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
+	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
 
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, initialization.Db, initialization.SessionService))
+	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.Db, init.SessionService))
 	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
-	httpLoger := logger.NewHttpLogger()
+	httpLoger := utils.NewHttpLogger()
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.DatabaseMiddleware(loggingMux, initialization.Db), log)))
-	return &Server{mux: mux, port: initialization.Cfg.App.Port, logger: log}
+	httpLoger.Infof("Query params middleware")
+	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.QueryParamsMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db)), log)))
+	return &Server{mux: mux, port: init.Cfg.Api.Port, logger: log}
 }

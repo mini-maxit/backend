@@ -2,7 +2,7 @@ package schemas
 
 type UserLoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,gte=8,lte=50"`
+	Password string `json:"password" validate:"required"`
 }
 
 type UserRegisterRequest struct {

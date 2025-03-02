@@ -3,8 +3,9 @@ name: docs
 on:
   push:
     branches:
-      - develop
+      - master
   workflow_dispatch:
+
 
 jobs:
   build:
@@ -12,6 +13,7 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -23,10 +25,30 @@ jobs:
         run: |
           go install github.com/mini-maxit/swag/cmd/swag@latest
           go get -u github.com/swaggo/http-swagger
+          go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
       - name: Init swag
-        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs -p snakecase --ot go,yaml
+        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml; cd ../..
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - name: Convert swagger to markdown
+        run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
+
+      - name: Create new branch for docs update
+        run: |
+          BRANCH_NAME="update-swagger-docs-$(date +%Y%m%d%H%M%S)"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
         with:
-          commit_message: "docs: update swagger docs"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.branch_name }}
+          title: "docs: update swagger docs"
+          commit-message: "docs: update swagger docs"
+          body: "This PR updates the Swagger documentation."
+          base: ${{ github.ref_name }}
+          delete-branch: true
+          add-paths: docs/*
+          labels: |
+            documentation
+            automated pr

@@ -1,14 +1,15 @@
 package routes
 
 import (
-	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type AuthRoute interface {
@@ -41,27 +42,27 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.UserLoginRequest
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 
 	session, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrUserNotFound {
+		if err == errors.ErrUserNotFound {
 			httputils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registerd.")
 			return
 		}
-		if err == service.ErrInvalidCredentials {
+		if err == errors.ErrInvalidCredentials {
 			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
 			return
 		}
@@ -81,6 +82,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Param			request	body		schemas.UserRegisterRequest	true	"User Register Request"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
+//	@Failure		409		{object}	httputils.ApiError
 //	@Failure		500		{object}	httputils.ApiError
 //	@Success		201		{object}	httputils.ApiResponse[schemas.Session]
 //	@Router			/register [post]
@@ -91,25 +93,25 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.UserRegisterRequest
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
 	}
 
 	session, err := ar.authService.Register(tx, request)
 	switch err {
 	case nil:
 		break
-	case service.ErrUserAlreadyExists:
+	case errors.ErrUserAlreadyExists:
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusBadRequest, err.Error())
+		httputils.ReturnError(w, http.StatusConflict, err.Error())
 		return
 	default:
 		db.Rollback()
@@ -121,8 +123,13 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService) AuthRoute {
-	return &AuthRouteImpl{
+	route := &AuthRouteImpl{
 		userService: userService,
 		authService: authService,
 	}
+	err := utils.ValidateStruct(*route)
+	if err != nil {
+		log.Panicf("AuthRoute struct is not valid: %s", err.Error())
+	}
+	return route
 }

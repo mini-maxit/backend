@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -26,29 +26,29 @@ type SessionService interface {
 	InvalidateSession(tx *gorm.DB, sessionId string) error
 }
 
-type SessionServiceImpl struct {
+type sessionService struct {
 	sessionRepository repository.SessionRepository
 	userRepository    repository.UserRepository
 	logger            *zap.SugaredLogger
 }
 
 // Generates a new session token
-func (s *SessionServiceImpl) generateSessionToken() string {
+func (s *sessionService) generateSessionToken() string {
 	return uuid.New().String()
 }
 
 // Converts a session model to a session schema
-func (s *SessionServiceImpl) modelToSchema(session *models.Session) *schemas.Session {
+func (s *sessionService) modelToSchema(session *models.Session) *schemas.Session {
 	return &schemas.Session{
 		Id:        session.Id,
 		UserId:    session.UserId,
 		ExpiresAt: session.ExpiresAt,
-		UserRole:  "invalid",
+		UserRole:  string(session.User.Role),
 	}
 }
 
 // Creates a new session for a given user
-func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
+func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
 	user, err := s.userRepository.GetUser(tx, userId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -93,33 +93,42 @@ func (s *SessionServiceImpl) CreateSession(tx *gorm.DB, userId int64) (*schemas.
 	return resp, nil
 }
 
-func (s *SessionServiceImpl) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
+func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
 	session, err := s.sessionRepository.GetSession(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error getting session by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionNotFound
+			return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, ErrSessionNotFound
 		}
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
+		return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, err
 	}
-	_, err = s.userRepository.GetUser(tx, session.UserId)
+	current_user_model, err := s.userRepository.GetUser(tx, session.UserId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionUserNotFound
+			return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, ErrSessionUserNotFound
 		}
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, err
+		return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, err
 	}
 
 	if session.ExpiresAt.Before(time.Now()) {
 		s.logger.Error("Session expired")
-		return schemas.ValidateSessionResponse{Valid: false, UserId: -1}, ErrSessionExpired
+		return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, ErrSessionExpired
 	}
 
-	return schemas.ValidateSessionResponse{Valid: true, UserId: session.UserId}, nil
+	current_user := schemas.User{
+		Id:       current_user_model.Id,
+		Email:    current_user_model.Email,
+		Username: current_user_model.Username,
+		Role:     current_user_model.Role,
+		Name:     current_user_model.Name,
+		Surname:  current_user_model.Surname,
+	}
+
+	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
 }
 
-func (s *SessionServiceImpl) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
+func (s *sessionService) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
 	err := s.sessionRepository.UpdateExpiration(tx, sessionId, time.Now().Add(time.Hour*24))
 	if err != nil {
 		s.logger.Errorf("Error updating session expiration: %v", err.Error())
@@ -133,7 +142,7 @@ func (s *SessionServiceImpl) RefreshSession(tx *gorm.DB, sessionId string) (*sch
 	return s.modelToSchema(session), nil
 }
 
-func (s *SessionServiceImpl) InvalidateSession(tx *gorm.DB, sessionId string) error {
+func (s *sessionService) InvalidateSession(tx *gorm.DB, sessionId string) error {
 	err := s.sessionRepository.DeleteSession(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error deleting session: %v", err.Error())
@@ -143,8 +152,8 @@ func (s *SessionServiceImpl) InvalidateSession(tx *gorm.DB, sessionId string) er
 }
 
 func NewSessionService(sessionRepository repository.SessionRepository, userRepository repository.UserRepository) SessionService {
-	log := logger.NewNamedLogger("session_service")
-	return &SessionServiceImpl{
+	log := utils.NewNamedLogger("session_service")
+	return &sessionService{
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
 		logger:            log,

@@ -16,7 +16,8 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			httputils.ReturnError(w, http.StatusUnauthorized, "Session header is not set, could not authorize")
 			return
 		}
-		tx, err := db.Connect()
+		session := db.NewSession()
+		tx, err := session.BeginTransaction()
 		if err != nil {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
@@ -34,10 +35,11 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate session. "+err.Error())
 			return
 		}
+		tx.Rollback()
 
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, SessionKey, sessionHeader)
-		ctx = context.WithValue(ctx, UserIDKey, sessionResponse.UserId)
+		ctx = context.WithValue(ctx, httputils.SessionKey, sessionHeader)
+		ctx = context.WithValue(ctx, httputils.UserKey, sessionResponse.User)
 		rWithSession := r.WithContext(ctx)
 
 		next.ServeHTTP(w, rWithSession)

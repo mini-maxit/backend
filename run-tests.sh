@@ -36,12 +36,6 @@ setup_container() {
 
 # Function to run tests with coverage
 generate_coverage() {
-  check_docker
-  if ! docker ps --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER_NAME$"; then
-    echo -e "\033[31mError: Container $POSTGRES_CONTAINER_NAME is not running. Please setup the container first.\033[0m"
-    exit 1
-  fi
-
   echo -e "\033[32mRunning tests with coverage...\033[0m"
   go test -v ./... -cover -coverprofile=$COVERAGE_FILE
   if [ $? -eq 0 ]; then
@@ -64,16 +58,16 @@ cleanup_container() {
 
 # Parse the first argument
 case "$1" in
-  setup)
-    setup_container
-    exit 0
-    ;;
+  # setup)
+  #   setup_container
+  #   exit 0
+  #   ;;
   run)
-    check_docker
-    if ! docker ps --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER_NAME$"; then
-      echo -e "\033[31mError: Container $POSTGRES_CONTAINER_NAME is not running. Please setup the container first.\033[0m"
-      exit 1
-    fi
+    # check_docker
+    # if ! docker ps --format '{{.Names}}' | grep -q "^$POSTGRES_CONTAINER_NAME$"; then
+    #   echo -e "\033[31mError: Container $POSTGRES_CONTAINER_NAME is not running. Please setup the container first.\033[0m"
+    #   exit 1
+    # fi
     echo -e "\033[32mRunning tests...\033[0m"
     go test -v ./...
     exit 0
@@ -82,19 +76,19 @@ case "$1" in
     generate_coverage
     exit 0
     ;;
-  cleanup)
-    cleanup_container
-    exit 0
-    ;;
-  all)
-    setup_container
-    sleep 7
-    generate_coverage
-    cleanup_container
-    exit 0
-    ;;
+  # cleanup)
+  #   cleanup_container
+  #   exit 0
+  #   ;;
+  # all)
+  #   setup_container
+  #   sleep 7
+  #   generate_coverage
+  #   cleanup_container
+  #   exit 0
+  #   ;;
   *)
-    echo -e "\033[31mUsage: $0 {setup|run|cover|cleanup|all}\033[0m"
+    echo -e "\033[31mUsage: $0 {run|cover}\033[0m"
     exit 1
     ;;
 esac

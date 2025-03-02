@@ -7,15 +7,15 @@ import (
 
 type QueueMessageRepository interface {
 	// CreateQueueMessage creates a new queue message and returns the message ID
-	CreateQueueMessage(tx *gorm.DB, queueMessage models.QueueMessage) (string, error)
+	CreateQueueMessage(tx *gorm.DB, queueMessage *models.QueueMessage) (string, error)
 	GetQueueMessage(tx *gorm.DB, messageId string) (*models.QueueMessage, error)
 	DeleteQueueMessage(tx *gorm.DB, messageId string) error
 }
 
-type QueueMessageRepositoryImpl struct {
+type queueMessageRepository struct {
 }
 
-func (qm *QueueMessageRepositoryImpl) CreateQueueMessage(tx *gorm.DB, queueMessage models.QueueMessage) (string, error) {
+func (qm *queueMessageRepository) CreateQueueMessage(tx *gorm.DB, queueMessage *models.QueueMessage) (string, error) {
 	err := tx.Create(queueMessage).Error
 	if err != nil {
 		return "", err
@@ -23,17 +23,17 @@ func (qm *QueueMessageRepositoryImpl) CreateQueueMessage(tx *gorm.DB, queueMessa
 	return queueMessage.Id, nil
 }
 
-func (qm *QueueMessageRepositoryImpl) GetQueueMessage(tx *gorm.DB, messageId string) (*models.QueueMessage, error) {
+func (qm *queueMessageRepository) GetQueueMessage(tx *gorm.DB, messageId string) (*models.QueueMessage, error) {
 	queueMessage := &models.QueueMessage{}
-	err := tx.Model(&models.QueueMessage{}).Where("message_id = ?", messageId).First(queueMessage).Error
+	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageId).First(queueMessage).Error
 	if err != nil {
 		return nil, err
 	}
 	return queueMessage, nil
 }
 
-func (qm *QueueMessageRepositoryImpl) DeleteQueueMessage(tx *gorm.DB, messageId string) error {
-	err := tx.Model(&models.QueueMessage{}).Where("message_id = ?", messageId).Delete(&models.QueueMessage{}).Error
+func (qm *queueMessageRepository) DeleteQueueMessage(tx *gorm.DB, messageId string) error {
+	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageId).Delete(&models.QueueMessage{}).Error
 	if err != nil {
 		return err
 	}
@@ -48,5 +48,5 @@ func NewQueueMessageRepository(db *gorm.DB) (QueueMessageRepository, error) {
 		}
 	}
 
-	return &QueueMessageRepositoryImpl{}, nil
+	return &queueMessageRepository{}, nil
 }

@@ -2,13 +2,14 @@ package routes
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type SessionRoute interface {
@@ -36,8 +37,8 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -70,8 +71,8 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 		httputils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -131,8 +132,8 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 		httputils.ReturnError(w, http.StatusUnauthorized, "Session token is empty")
 		return
 	}
-	db := r.Context().Value(middleware.DatabaseKey).(database.Database)
-	tx, err := db.Connect()
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
 	if err != nil {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
 		return
@@ -148,7 +149,14 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 }
 
 func NewSessionRoute(sessionService service.SessionService) SessionRoute {
-	return &SessionRouteImpl{
+	route := &SessionRouteImpl{
 		sessionService: sessionService,
 	}
+
+	err := utils.ValidateStruct(*route)
+	if err != nil {
+		log.Panicf("SessionRoute struct is not valid: %s", err.Error())
+	}
+
+	return route
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"runtime/debug"
 
 	"go.uber.org/zap"
 )
@@ -13,6 +14,7 @@ func RecoveryMiddleware(next http.Handler, log *zap.SugaredLogger) http.Handler 
 			if rec := recover(); rec != nil {
 
 				log.Errorf("Panic recovered: %v", rec)
+				log.Error(string(debug.Stack()))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()

@@ -2,7 +2,16 @@ package httputils
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 type ApiResponse[T any] struct {
@@ -45,4 +54,96 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+}
+func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
+	queryParams := map[string]interface{}{}
+	for key, value := range *query {
+		if len(value) > 1 {
+			err := QueryError{Filed: key, Detail: MultipleQueryValues}
+			return nil, err
+		}
+		queryParams[key] = value[0]
+	}
+	if queryParams["limit"] == nil {
+		queryParams["limit"] = DefaultPaginationLimitStr
+	}
+	limit, err := strconv.ParseUint(queryParams["limit"].(string), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid limit value. expected unsigned integer got %s", queryParams["limit"])
+	}
+	queryParams["limit"] = limit
+
+	if queryParams["offset"] == nil {
+		queryParams["offset"] = DefaultPaginationOffsetStr
+	}
+	offset, err := strconv.ParseUint(queryParams["offset"].(string), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid offset value. expected unsigned integer got %s", queryParams["offset"])
+	}
+	queryParams["offset"] = offset
+
+	if queryParams["sort"] != nil {
+		sortFields := queryParams["sort"]
+		sortFieldsParts := strings.Split(sortFields.(string), ",")
+		for _, sortField := range sortFieldsParts {
+			sortFieldParts := strings.Split(sortField, ":")
+			if len(sortFieldParts) == 2 {
+				if sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc" {
+					return nil, fmt.Errorf("invalid sort order. expected asc or desc, got %s", sortFieldParts[1])
+				}
+			} else {
+				return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
+			}
+		}
+
+		queryParams["sort"] = sortFields
+	} else {
+		queryParams["sort"] = ""
+	}
+	return queryParams, nil
+}
+
+// SaveMultiPartFile saves an uploaded multipart file to a temporary directory and returns the file path.
+func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (string, error) {
+
+	tempDir := os.TempDir()
+
+	filePath := fmt.Sprintf("%s/%s", tempDir, handler.Filename)
+
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, file)
+	if err != nil {
+		return "", err
+	}
+
+	return filePath, nil
+}
+
+// ShouldBindJSON binds the request body to a struct and validates it.
+func ShouldBindJSON(body io.ReadCloser, v interface{}) error {
+	dec := json.NewDecoder(body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(&v)
+	if err != nil {
+		return err
+	}
+
+	if dec.More() {
+		return fmt.Errorf("unexpected extra data in JSON body")
+	}
+
+	validator, err := utils.NewValidator()
+	if err != nil {
+		return err
+	}
+	if err := validator.Struct(v); err != nil {
+		return err
+	}
+	return nil
 }

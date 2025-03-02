@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/internal/logger"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,7 +21,7 @@ type QueueService interface {
 	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
 }
 
-type QueueServiceImpl struct {
+type queueService struct {
 	taskRepository       repository.TaskRepository
 	submissionRepository repository.SubmissionRepository
 	queueRepository      repository.QueueMessageRepository
@@ -31,7 +31,7 @@ type QueueServiceImpl struct {
 	logger               *zap.SugaredLogger
 }
 
-func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
+func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling message: %v", err.Error())
@@ -55,7 +55,7 @@ func (qs *QueueServiceImpl) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) error {
+func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error {
 	submission, err := qs.submissionRepository.GetSubmission(tx, submissionId)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err.Error())
@@ -83,10 +83,15 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 		TimeLimits:      timeLimits,
 		MemoryLimits:    memoryLimits,
 	}
-	qs.queueRepository.CreateQueueMessage(tx, models.QueueMessage{
+	qm := &models.QueueMessage{
 		Id:           msq.MessageId,
 		SubmissionId: submissionId,
-	})
+	}
+	_, err = qs.queueRepository.CreateQueueMessage(tx, qm)
+	if err != nil {
+		qs.logger.Errorf("Error creating queue message: %v", err.Error())
+		return err
+	}
 	err = qs.publishMessage(msq)
 	if err != nil {
 		err2 := qs.submissionRepository.MarkSubmissionFailed(tx, submissionId, err.Error())
@@ -106,17 +111,16 @@ func (qs *QueueServiceImpl) PublishSubmission(tx *gorm.DB, submissionId int64) e
 	return nil
 }
 
-func (qs *QueueServiceImpl) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
+func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
 	queueMessage, err := qs.queueRepository.GetQueueMessage(tx, messageId)
 	if err != nil {
 		return 0, err
 	}
 
-	qs.logger.Info("Submission id retrieved")
 	return queueMessage.SubmissionId, nil
 }
 
-func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*QueueServiceImpl, error) {
+func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*queueService, error) {
 	q, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
@@ -128,8 +132,8 @@ func NewQueueService(taskRepository repository.TaskRepository, submissionReposit
 	if err != nil {
 		return nil, err
 	}
-	log := logger.NewNamedLogger("queue_service")
-	return &QueueServiceImpl{
+	log := utils.NewNamedLogger("queue_service")
+	return &queueService{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
 		queueRepository:      queueMessageRepository,

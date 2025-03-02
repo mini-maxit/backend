@@ -7,10 +7,31 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-Group:
+    properties:
+      data:
+        $ref: '#/definitions/Group'
+      ok:
+        type: boolean
+    type: object
   ApiResponse-Session:
     properties:
       data:
         $ref: '#/definitions/Session'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-Submission:
+    properties:
+      data:
+        $ref: '#/definitions/Submission'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-SubmitResponse:
+    properties:
+      data:
+        $ref: '#/definitions/SubmitResponse'
       ok:
         type: boolean
     type: object
@@ -28,6 +49,40 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-User:
+    properties:
+      data:
+        $ref: '#/definitions/User'
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-array_Group:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Group'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-array_LanguageConfig:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/LanguageConfig'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  ApiResponse-array_Submission:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Submission'
+        type: array
+      ok:
+        type: boolean
+    type: object
   ApiResponse-array_Task:
     properties:
       data:
@@ -37,12 +92,65 @@ definitions:
       ok:
         type: boolean
     type: object
+  ApiResponse-int64:
+    properties:
+      data:
+        type: integer
+      ok:
+        type: boolean
+    type: object
   ApiResponse-string:
     properties:
       data:
         type: string
       ok:
         type: boolean
+    type: object
+  CreateGroup:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  EditGroup:
+    properties:
+      name:
+        type: string
+    type: object
+  Group:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      updated_at:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/User'
+        type: array
+    type: object
+  LanguageConfig:
+    properties:
+      file_extension:
+        type: string
+      id:
+        type: integer
+      language:
+        $ref: '#/definitions/models.LanguageType'
+      version:
+        type: string
     type: object
   Session:
     properties:
@@ -54,6 +162,59 @@ definitions:
         type: integer
       user_role:
         type: string
+    type: object
+  Submission:
+    properties:
+      checked_at:
+        type: string
+      id:
+        type: integer
+      language:
+        $ref: '#/definitions/LanguageConfig'
+      language_id:
+        type: integer
+      order:
+        type: integer
+      result:
+        $ref: '#/definitions/SubmissionResult'
+      status:
+        type: string
+      status_message:
+        type: string
+      submitted_at:
+        type: string
+      task:
+        $ref: '#/definitions/Task'
+      task_id:
+        type: integer
+      user:
+        $ref: '#/definitions/User'
+      user_id:
+        type: integer
+    type: object
+  SubmissionResult:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      message:
+        type: string
+      submission_id:
+        type: integer
+      test_results:
+        items:
+          $ref: '#/definitions/TestResult'
+        type: array
+    type: object
+  SubmitResponse:
+    properties:
+      message:
+        type: string
+      submissionNumber:
+        type: integer
     type: object
   Task:
     properties:
@@ -86,13 +247,73 @@ definitions:
       title:
         type: string
     type: object
+  TestResult:
+    properties:
+      id:
+        type: integer
+      input_output_id:
+        type: integer
+      passed:
+        type: boolean
+      submission_result_id:
+        type: integer
+    type: object
+  User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/types.UserRole'
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  UserChangePassword:
+    properties:
+      new_password:
+        maxLength: 50
+        minLength: 8
+        type: string
+      new_password_confirm:
+        maxLength: 50
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - new_password_confirm
+    type: object
+  UserEdit:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/types.UserRole'
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
+  UserIds:
+    properties:
+      user_ids:
+        items:
+          type: integer
+        type: array
+    type: object
   UserLoginRequest:
     properties:
       email:
         type: string
       password:
-        maxLength: 50
-        minLength: 8
         type: string
     required:
     - email
@@ -132,6 +353,24 @@ definitions:
       message:
         type: string
     type: object
+  models.LanguageType:
+    enum:
+    - c
+    - cpp
+    type: string
+    x-enum-varnames:
+    - LangTypeC
+    - LangTypeCPP
+  types.UserRole:
+    enum:
+    - student
+    - teacher
+    - admin
+    type: string
+    x-enum-varnames:
+    - UserRoleStudent
+    - UserRoleTeacher
+    - UserRoleAdmin
 host: localhost:8080
 info:
   contact: {}
@@ -139,6 +378,226 @@ info:
   title: Mini Maxit API Documentation testing the workflow
   version: "1.0"
 paths:
+  /group/:
+    get:
+      description: Get all groups
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all groups
+      tags:
+      - group
+    post:
+      consumes:
+      - application/json
+      description: Create a group
+      parameters:
+      - description: Create Group
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-int64'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Create a group
+      tags:
+      - group
+  /group/{id}:
+    get:
+      description: Get a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get a group
+      tags:
+      - group
+    put:
+      consumes:
+      - application/json
+      description: Edit a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Edit Group
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EditGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Edit a group
+      tags:
+      - group
+  /group/{id}/users:
+    get:
+      description: Get users in a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get users in a group
+      tags:
+      - group
+    post:
+      consumes:
+      - application/json
+      description: Add users to a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserIds'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Add users to a group
+      tags:
+      - group
   /login:
     post:
       consumes:
@@ -198,6 +657,10 @@ paths:
             $ref: '#/definitions/ApiError'
         "405":
           description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/ApiError'
         "500":
@@ -273,6 +736,237 @@ paths:
       summary: Validate a session
       tags:
       - session
+  /submission:
+    get:
+      description: Depending on the user role, this endpoint will return all submissions
+        for the current user if user is student, all submissions to owned tasks if
+        user is teacher, and all submissions in database if user is admin
+      parameters:
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all submissions for the current user
+      tags:
+      - submission
+  /submission/{id}:
+    get:
+      description: Get a submission by its ID, if the user is a student, the submission
+        must belong to the user, if the user is a teacher, the submission must belong
+        to a task owned by the teacher, if the user is an admin, the submission can
+        be any submission
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get a submission by ID
+      tags:
+      - submission
+  /submission/languages:
+    get:
+      description: Get all available languages for submitting solutions. Temporary
+        solution, while all tasks have same languages
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_LanguageConfig'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all available languages
+      tags:
+      - submission
+  /submission/task/{id}:
+    get:
+      description: Gets all submissions for specific task. If the user is a student
+        and has no access to this task, it fails with 403 Forbidden. For teacher it
+        returns all submissions for this task if he created it. For admin it returns
+        all submissions for specific task.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all submissions for a task
+      tags:
+      - submission
+  /submission/user/{id}:
+    get:
+      description: Gets all submissions for specific group. If the user is a student,
+        it fails with 403 Forbidden. For teacher it returns all submissions from this
+        group for tasks he created. For admin it returns all submissions for specific
+        group.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all submissions for a group
+      tags:
+      - submission
+  /submission/user/{id}/short:
+    get:
+      description: Gets all submissions for specific user. If the user is a student,
+        it fails with 403 Forbidden. For teacher it returns all submissions from this
+        user for tasks owned by the teacher. For admin it returns all submissions
+        for specific user.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Session Token
+        in: header
+        name: Session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all submissions for a user
+      tags:
+      - submission
   /task/:
     get:
       description: Returns all tasks
@@ -297,18 +991,9 @@ paths:
       parameters:
       - description: Name of the task
         in: formData
-        name: taskName
+        name: title
         required: true
         type: string
-      - description: ID of the author
-        in: formData
-        name: userId
-        required: true
-        type: integer
-      - description: Overwrite flag
-        in: formData
-        name: overwrite
-        type: boolean
       - description: Task archive
         in: formData
         name: archive
@@ -337,6 +1022,40 @@ paths:
       tags:
       - task
   /task/{id}:
+    delete:
+      description: Deletes a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Delete a task
+      tags:
+      - task
     get:
       description: Returns a task by ID
       parameters:
@@ -356,6 +1075,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
         "405":
           description: Method Not Allowed
           schema:
@@ -367,4 +1090,450 @@ paths:
       summary: Get a task
       tags:
       - task
+    patch:
+      description: Updates a task by ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New title for the task
+        in: formData
+        name: title
+        type: string
+      - description: New archive for the task
+        in: formData
+        name: archive
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Update a task
+      tags:
+      - task
+  /task/{id}/assign/groups:
+    post:
+      description: Assigns a task to groups by task ID and group IDs
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Group IDs
+        in: body
+        name: groupIds
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Assign a task to groups
+      tags:
+      - task
+  /task/{id}/assign/users:
+    post:
+      description: Assigns a task to users by task ID and user IDs
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User IDs
+        in: body
+        name: userIds
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Assign a task to users
+      tags:
+      - task
+  /task/{id}/unassign/groups:
+    delete:
+      description: Unassigns a task from groups by task ID and group IDs
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Group IDs
+        in: body
+        name: groupIds
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Unassign a task from groups
+      tags:
+      - task
+  /task/{id}/unassign/users:
+    delete:
+      description: Unassigns a task from users by task ID and user IDs
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User IDs
+        in: body
+        name: userIds
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Unassign a task from users
+      tags:
+      - task
+  /task/group/{id}:
+    get:
+      description: Returns all tasks for a group by ID
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-array_Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all tasks for a group
+      tags:
+      - task
+  /user/:
+    get:
+      description: Get all users
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-User'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get all users
+      tags:
+      - user
+  /user/{id}:
+    get:
+      description: Get user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get user by ID
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: Edit user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User edit object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserEdit'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Edit user
+      tags:
+      - user
+  /user/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Change user password
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User change password object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserChangePassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Change user password
+      tags:
+      - user
+  /user/email:
+    get:
+      description: Get user by email
+      parameters:
+      - description: User email
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Get user by email
+      tags:
+      - user
 swagger: "2.0"

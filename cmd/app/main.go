@@ -5,10 +5,10 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/mini-maxit/backend/docs"
-	"github.com/mini-maxit/backend/internal/api/http/initialization"
 	"github.com/mini-maxit/backend/internal/api/http/server"
 	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/internal/logger"
+	"github.com/mini-maxit/backend/internal/initialization"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 // @title			Mini Maxit API Documentation testing the workflow
@@ -17,6 +17,9 @@ import (
 // @host			localhost:8080
 // @BasePath		/api/v1
 func main() {
+	utils.InitializeLogger()
+	log := utils.NewNamedLogger("server")
+
 	if _, ok := os.LookupEnv("DEBUG"); ok {
 		err := godotenv.Load("././.env")
 		if err != nil {
@@ -25,26 +28,30 @@ func main() {
 	}
 	cfg := config.NewConfig()
 
-	initialization := initialization.NewInitialization(cfg)
+	init := initialization.NewInitialization(cfg)
 
-	logger.InitializeLogger()
-	log := logger.NewNamedLogger("server")
-
-	queueListener := initialization.QueueListener
-	cancel, err := queueListener.Start()
+	queueListener := init.QueueListener
+	log.Info("Starting queue listener...")
+	err := queueListener.Start()
 	if err != nil {
 		log.Errorf("failed to start queue listener: %v", err.Error())
 		os.Exit(1)
 	}
 
-	server := server.NewServer(initialization, log)
+	server := server.NewServer(init, log)
 	err = server.Start()
 	if err != nil {
-		cancel() // Stop the queue listener
+		err := queueListener.Shutdown()
+		if err != nil {
+			log.Errorf("failed to shutdown queue listener: %v", err.Error())
+		}
 		log.Errorf("failed to start server: %v", err.Error())
 		os.Exit(1)
 
 	}
 
-	cancel() // Stop the queue listener on graceful shutdown
+	err = queueListener.Shutdown()
+	if err != nil {
+		log.Errorf("failed to shutdown queue listener: %v", err.Error())
+	}
 }
