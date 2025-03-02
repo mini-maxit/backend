@@ -99,11 +99,11 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 }
 
 func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
-	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin})
-	if err != nil {
-		ts.logger.Errorf("Error validating user role: %v", err.Error())
-		return nil, err
-	}
+	// err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin})
+	// if err != nil {
+	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
+	// 	return nil, err
+	// }
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
@@ -163,23 +163,23 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 		return nil, err
 	}
 
-	switch types.UserRole(current_user.Role) {
-	case types.UserRoleStudent:
-		// Check if the task is assigned to the user
-		isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskId, current_user.Id)
-		if err != nil {
-			ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
-			return nil, err
-		}
-		if !isAssigned {
-			return nil, errors.ErrNotAuthorized
-		}
-	case types.UserRoleTeacher:
-		// Check if the task is created by the user
-		if task.CreatedBy != current_user.Id {
-			return nil, errors.ErrNotAuthorized
-		}
-	}
+	// switch types.UserRole(current_user.Role) {
+	// case types.UserRoleStudent:
+	// 	// Check if the task is assigned to the user
+	// 	isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskId, current_user.Id)
+	// 	if err != nil {
+	// 		ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
+	// 		return nil, err
+	// 	}
+	// 	if !isAssigned {
+	// 		return nil, errors.ErrNotAuthorized
+	// 	}
+	// case types.UserRoleTeacher:
+	// 	// Check if the task is created by the user
+	// 	if task.CreatedBy != current_user.Id {
+	// 		return nil, errors.ErrNotAuthorized
+	// 	}
+	// }
 
 	// Convert the model to schema
 	result := &schemas.TaskDetailed{
