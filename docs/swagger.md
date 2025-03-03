@@ -2814,7 +2814,7 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| confirm_password | string| `string` | ✓ | |  |  |
+| confirmPassword | string| `string` | ✓ | |  |  |
 | email | string| `string` | ✓ | |  |  |
 | name | string| `string` | ✓ | |  |  |
 | password | string| `string` | ✓ | |  |  |
