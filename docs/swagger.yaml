@@ -321,6 +321,8 @@ definitions:
     type: object
   UserRegisterRequest:
     properties:
+      confirm_password:
+        type: string
       email:
         type: string
       name:
@@ -340,6 +342,7 @@ definitions:
         minLength: 3
         type: string
     required:
+    - confirm_password
     - email
     - name
     - password
