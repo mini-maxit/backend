@@ -28,11 +28,12 @@ func TestRegister(t *testing.T) {
 			PasswordHash: "password",
 		})
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
-			Email:    "email2@email.com",
-			Username: "username",
-			Password: "password",
+			Name:            "name",
+			Surname:         "surname",
+			Email:           "email2@email.com",
+			Username:        "username",
+			Password:        "Password123!",
+			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(tx, userRegister)
 		assert.ErrorIs(t, err, errors.ErrUserAlreadyExists)
@@ -41,11 +42,12 @@ func TestRegister(t *testing.T) {
 
 	t.Run("successful user registration", func(t *testing.T) {
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
-			Email:    "email3@email.com",
-			Username: "username3",
-			Password: "password",
+			Name:            "name",
+			Surname:         "surname",
+			Email:           "email3@email.com",
+			Username:        "username3",
+			Password:        "Password123!",
+			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(tx, userRegister)
 		assert.NoError(t, err)
@@ -54,11 +56,12 @@ func TestRegister(t *testing.T) {
 
 	t.Run("unexpected repostiroy error", func(t *testing.T) {
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
-			Email:    "email4@email.com",
-			Username: "username4",
-			Password: "password",
+			Name:            "name",
+			Surname:         "surname",
+			Email:           "email4@email.com",
+			Username:        "username4",
+			Password:        "Password123!",
+			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(nil, userRegister)
 		assert.Error(t, err)
