@@ -2236,7 +2236,7 @@ const docTemplate = `{
         "UserRegisterRequest": {
             "type": "object",
             "required": [
-                "confirm_password",
+                "confirmPassword",
                 "email",
                 "name",
                 "password",
@@ -2244,7 +2244,7 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
-                "confirm_password": {
+                "confirmPassword": {
                     "type": "string"
                 },
                 "email": {
