@@ -59,7 +59,7 @@ func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort strin
 }
 
 func (ur *userRepository) EditUser(tx *gorm.DB, user *models.User) error {
-	err := tx.Model(&models.User{}).Where("id = ?", user.Id).Updates(user).Error
+	err := tx.Save(user).Error
 	return err
 }
 
