@@ -18,6 +18,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const numTries = 10
+
 type Initialization struct {
 	Cfg *config.Config
 	Db  database.Database
@@ -42,11 +44,11 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 
 	var err error
 	var conn *amqp.Connection
-	for v := range 5 {
+	for v := range numTries {
 		conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
 		if err != nil {
 			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
-			time.Sleep(2*time.Second + time.Duration(v))
+			time.Sleep(2 * time.Second * time.Duration(v))
 			continue
 		}
 	}

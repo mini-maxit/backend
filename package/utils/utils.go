@@ -47,9 +47,31 @@ func usernameValidator(fl validator.FieldLevel) bool {
 	return re.MatchString(username)
 }
 
+func passwordValidator(fl validator.FieldLevel) bool {
+	password := fl.Field().String()
+
+	if len(password) < 8 {
+		return false
+	}
+
+	upperCase := regexp.MustCompile(`[A-Z]`)
+	lowerCase := regexp.MustCompile(`[a-z]`)
+	digit := regexp.MustCompile(`[0-9]`)
+	specialChar := regexp.MustCompile(`[#!?@$%^&*-]`)
+
+	return upperCase.MatchString(password) &&
+		lowerCase.MatchString(password) &&
+		digit.MatchString(password) &&
+		specialChar.MatchString(password)
+}
+
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.RegisterValidation("username", usernameValidator)
+	if err != nil {
+		return nil, err
+	}
+	err = validate.RegisterValidation("password", passwordValidator)
 	if err != nil {
 		return nil, err
 	}

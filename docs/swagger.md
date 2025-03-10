@@ -2814,6 +2814,10 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
+<<<<<<< HEAD
+=======
+| confirmPassword | string| `string` | ✓ | |  |  |
+>>>>>>> origin/master
 | email | string| `string` | ✓ | |  |  |
 | name | string| `string` | ✓ | |  |  |
 | password | string| `string` | ✓ | |  |  |
