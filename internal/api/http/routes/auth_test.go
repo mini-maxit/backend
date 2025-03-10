@@ -227,11 +227,12 @@ func TestRegister(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	correctRequest := schemas.UserRegisterRequest{
-		Name:     "name",
-		Surname:  "surname",
-		Email:    "email@email.com",
-		Username: "username",
-		Password: "password",
+		Name:            "name",
+		Surname:         "surname",
+		Email:           "email@email.com",
+		Username:        "username",
+		Password:        "HardPassowrd123!",
+		ConfirmPassword: "HardPassowrd123!",
 	}
 
 	existingUser := &models.User{
@@ -256,32 +257,36 @@ func TestRegister(t *testing.T) {
 				Email: "email",
 			},
 			struct {
-				Name     string `json:"name"`
-				Surname  string `json:"surname"`
-				Username string `json:"username"`
-				Email    string `json:"email"`
-				Password string `json:"password"`
-				Invalid  string `json:"invalid"`
+				Name            string `json:"name"`
+				Surname         string `json:"surname"`
+				Username        string `json:"username"`
+				Email           string `json:"email"`
+				Password        string `json:"password"`
+				ConfirmPassword string `json:"confirm_password"`
+				Invalid         string `json:"invalid"`
 			}{
-				Name:     "name",
-				Surname:  "surname",
-				Username: "username",
-				Email:    "email",
-				Password: "password",
-				Invalid:  "invalid",
+				Name:            "name",
+				Surname:         "surname",
+				Username:        "username",
+				Email:           "email",
+				Password:        "HardPassowrd123!",
+				ConfirmPassword: "HardPassowrd123!",
+				Invalid:         "invalid",
 			},
 			struct {
-				Name     string `json:"name"`
-				Surname  string `json:"surname"`
-				Username string `json:"username"`
-				Email    string `json:"email"`
-				Password string `json:"password"`
+				Name            string `json:"name"`
+				Surname         string `json:"surname"`
+				Username        string `json:"username"`
+				Email           string `json:"email"`
+				Password        string `json:"password"`
+				ConfirmPassword string `json:"confirm_password"`
 			}{
-				Name:     "name",
-				Surname:  "surname",
-				Username: "username",
-				Email:    "email",
-				Password: "password",
+				Name:            "name",
+				Surname:         "surname",
+				Username:        "username",
+				Email:           "email",
+				Password:        "HardPassowrd123!",
+				ConfirmPassword: "HardPassowrd123!",
 			},
 		}
 		for _, body := range tt {

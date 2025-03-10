@@ -11,5 +11,5 @@ type UserRegisterRequest struct {
 	Email           string `json:"email" validate:"required,email"`
 	Username        string `json:"username" validate:"required,gte=3,lte=30,username"`
 	Password        string `json:"password" validate:"required,gte=8,lte=50,password"`
-	ConfirmPassword string `json:"confirmPassword" validate:"required,password,eqfield=Password"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,password,eqfield=Password"`
 }
