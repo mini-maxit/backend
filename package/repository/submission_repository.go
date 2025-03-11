@@ -206,7 +206,7 @@ func (us *submissionRepository) GetAllForTaskTeacher(tx *gorm.DB, taskId, teache
 		Preload("User").
 		Preload("Result").
 		Joins("JOIN tasks ON tasks.id = submissions.task_id").
-		Where("tasks.id = ? AND tasks.created_by_id = ?", taskId, teacherId).
+		Where("tasks.id = ? AND tasks.created_by = ?", taskId, teacherId).
 		Find(&submissions).Error
 
 	if err != nil {
