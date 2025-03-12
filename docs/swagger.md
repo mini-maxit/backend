@@ -2693,6 +2693,7 @@ Status: Internal Server Error
 | created_by | integer| `int64` |  | |  |  |
 | created_by_name | string| `string` |  | |  |  |
 | description_url | string| `string` |  | |  |  |
+| group_ids | []integer| `[]int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | title | string| `string` |  | |  |  |
 
@@ -2814,10 +2815,7 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-<<<<<<< HEAD
-=======
-| confirmPassword | string| `string` | ✓ | |  |  |
->>>>>>> origin/master
+| confirm_password | string| `string` | ✓ | |  |  |
 | email | string| `string` | ✓ | |  |  |
 | name | string| `string` | ✓ | |  |  |
 | password | string| `string` | ✓ | |  |  |
