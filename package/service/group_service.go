@@ -188,6 +188,13 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 		if err != nil {
 			return err
 		}
+		exists, err := gs.groupRepository.UserBelongsTo(tx, groupId, userId)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
 
 		err = gs.groupRepository.AddUserToGroup(tx, groupId, userId)
 		if err != nil {

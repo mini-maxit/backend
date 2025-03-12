@@ -275,11 +275,10 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	request := schemas.UserIds{}
-	err = decoder.Decode(&request)
+	request := &schemas.UserIds{}
+	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 

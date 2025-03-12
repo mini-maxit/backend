@@ -15,6 +15,7 @@ type GroupRepository interface {
 	GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error)
 	AddUserToGroup(tx *gorm.DB, groupId int64, userId int64) error
 	GetGroupUsers(tx *gorm.DB, groupId int64) ([]models.User, error)
+	UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error)
 }
 
 type groupRepository struct {
@@ -107,6 +108,17 @@ func (gr *groupRepository) AddUserToGroup(tx *gorm.DB, groupId int64, userId int
 		return err
 	}
 	return nil
+}
+
+func (gr *groupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error) {
+	var count int64
+	err := tx.Model(&models.UserGroup{}).
+		Where("group_id = ? AND user_id = ?", groupId, userId).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func NewGroupRepository(db *gorm.DB) (GroupRepository, error) {

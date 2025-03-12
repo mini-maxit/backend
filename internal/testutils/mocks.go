@@ -521,6 +521,17 @@ func (gr *MockGroupRepository) GetGroupUsers(tx *gorm.DB, groupId int64) ([]mode
 	return users, nil
 }
 
+func (gr *MockGroupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error) {
+	for _, userGroup := range gr.userGroups {
+		for _, ug := range userGroup {
+			if ug.GroupId == groupId && ug.UserId == userId {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
 	return &MockGroupRepository{
 		groups:        make(map[int64]*models.Group),

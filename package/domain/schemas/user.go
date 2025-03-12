@@ -20,7 +20,7 @@ type UserEdit struct {
 }
 
 type UserIds struct {
-	UserIds []int64 `json:"user_ids"`
+	UserIds []int64 `json:"userIds"`
 }
 
 type UserChangePassword struct {
