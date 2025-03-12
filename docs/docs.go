@@ -2117,6 +2117,12 @@ const docTemplate = `{
                 "description_url": {
                     "type": "string"
                 },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2236,7 +2242,7 @@ const docTemplate = `{
         "UserRegisterRequest": {
             "type": "object",
             "required": [
-                "confirmPassword",
+                "confirm_password",
                 "email",
                 "name",
                 "password",
@@ -2244,7 +2250,7 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
-                "confirmPassword": {
+                "confirm_password": {
                     "type": "string"
                 },
                 "email": {
