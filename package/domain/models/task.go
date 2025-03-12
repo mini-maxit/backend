@@ -9,6 +9,7 @@ type Task struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 	CreatedBy int64     `gorm:"foreignKey:UserID"`
 	Author    User      `gorm:"foreignKey:CreatedBy; references:Id"`
+	Groups    []Group   `gorm:"many2many:task_groups;"`
 }
 
 type TaskUser struct {

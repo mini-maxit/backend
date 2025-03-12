@@ -20,6 +20,7 @@ type TaskDetailed struct {
 	CreatedBy      int64     `json:"created_by"`
 	CreatedByName  string    `json:"created_by_name"`
 	CreatedAt      time.Time `json:"created_at"`
+	GroupIds       []int64   `json:"group_ids"`
 }
 
 type TaskCreateResponse struct {

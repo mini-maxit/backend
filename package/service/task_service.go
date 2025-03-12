@@ -182,6 +182,10 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 	// }
 
 	// Convert the model to schema
+	groups := make([]int64, len(task.Groups))
+	for i, group := range task.Groups {
+		groups[i] = group.Id
+	}
 	result := &schemas.TaskDetailed{
 		Id:             task.Id,
 		Title:          task.Title,
@@ -189,6 +193,7 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 		CreatedBy:      task.CreatedBy,
 		CreatedByName:  task.Author.Name,
 		CreatedAt:      task.CreatedAt,
+		GroupIds:       groups,
 	}
 
 	return result, nil

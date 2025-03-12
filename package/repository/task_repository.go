@@ -49,7 +49,7 @@ func (tr *taskRepository) GetTaskByTitle(tx *gorm.DB, title string) (*models.Tas
 
 func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Preload("Author").Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
+	err := tx.Preload("Author").Preload("Groups").Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
 	if err != nil {
 		return nil, err
 	}
