@@ -20,6 +20,7 @@ type GroupService interface {
 	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.Group, error)
 	AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
 	GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
+	GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error)
 }
 
 var (
@@ -228,6 +229,37 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 	var result []schemas.User
 	for _, user := range users {
 		result = append(result, *UserToSchema(&user))
+	}
+
+	return result, nil
+}
+
+func (gs *groupService) GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error) {
+	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
+		return nil, errors.ErrNotAuthorized
+	} else {
+		exists, err := gs.groupRepository.UserBelongsTo(tx, groupId, current_user.Id)
+		if err != nil {
+			return nil, err
+		}
+		if current_user.Role == types.UserRoleStudent && !exists {
+			return nil, errors.ErrNotAuthorized
+		}
+	}
+
+	tasks, err := gs.groupRepository.GetGroupTasks(tx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []schemas.Task
+	for _, task := range tasks {
+		result = append(result, *TaskToSchema(&task))
 	}
 
 	return result, nil

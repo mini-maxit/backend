@@ -21,6 +21,7 @@ type GroupRoute interface {
 	EditGroup(w http.ResponseWriter, r *http.Request)
 	AddUsersToGroup(w http.ResponseWriter, r *http.Request)
 	GetGroupUsers(w http.ResponseWriter, r *http.Request)
+	GetGroupTasks(w http.ResponseWriter, r *http.Request)
 }
 
 type GroupRouteImpl struct {
@@ -358,7 +359,49 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 	httputils.ReturnSuccess(w, http.StatusOK, users)
 }
 
+func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+	if groupIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	tasks, err := gr.groupService.GetGroupTasks(tx, current_user, groupId)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, "Failed to get group tasks. "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, tasks)
+}
+
 func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
@@ -391,6 +434,8 @@ func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
+
+	mux.HandleFunc("/{id}/tasks", groupRoute.GetGroupTasks)
 }
 
 func NewGroupRoute(groupService service.GroupService) GroupRoute {

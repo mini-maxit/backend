@@ -16,6 +16,7 @@ type GroupRepository interface {
 	AddUserToGroup(tx *gorm.DB, groupId int64, userId int64) error
 	GetGroupUsers(tx *gorm.DB, groupId int64) ([]models.User, error)
 	UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error)
+	GetGroupTasks(tx *gorm.DB, groupId int64) ([]models.Task, error)
 }
 
 type groupRepository struct {
@@ -119,6 +120,15 @@ func (gr *groupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId int6
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (gr *groupRepository) GetGroupTasks(tx *gorm.DB, groupId int64) ([]models.Task, error) {
+	group := &models.Group{}
+	err := tx.Where("id = ?", groupId).Preload("Tasks").First(group).Error
+	if err != nil {
+		return nil, err
+	}
+	return group.Tasks, nil
 }
 
 func NewGroupRepository(db *gorm.DB) (GroupRepository, error) {

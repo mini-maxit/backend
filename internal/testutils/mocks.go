@@ -532,6 +532,11 @@ func (gr *MockGroupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId 
 	return false, nil
 }
 
+func (gr *MockGroupRepository) GetGroupTasks(tx *gorm.DB, groupId int64) ([]models.Task, error) {
+	panic("implement me")
+	// var tasks []models.Task
+}
+
 func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
 	return &MockGroupRepository{
 		groups:        make(map[int64]*models.Group),
