@@ -20,6 +20,7 @@ type GroupRoute interface {
 	GetAllGroup(w http.ResponseWriter, r *http.Request)
 	EditGroup(w http.ResponseWriter, r *http.Request)
 	AddUsersToGroup(w http.ResponseWriter, r *http.Request)
+	DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request)
 	GetGroupUsers(w http.ResponseWriter, r *http.Request)
 	GetGroupTasks(w http.ResponseWriter, r *http.Request)
 }
@@ -305,6 +306,75 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	httputils.ReturnSuccess(w, http.StatusOK, "Users added to group successfully")
 }
 
+// DeleteUsersFromGroup godoc
+//
+//	@Tags			group
+//	@Summary		Delete users from a group
+//	@Description	Delete users from a group
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int				true	"Group ID"
+//	@Param			body	body		schemas.UserIds	true	"User IDs"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		403		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Router			/group/{id}/users [delete]
+func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	groupIdStr := r.PathValue("id")
+	if groupIdStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+		return
+	}
+
+	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+		return
+	}
+
+	request := &schemas.UserIds{}
+	err = httputils.ShouldBindJSON(r.Body, request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	err = gr.groupService.DeleteUsersFromGroup(tx, current_user, groupId, request.UserIds)
+	if err != nil {
+		db.Rollback()
+		var status int
+		switch err {
+		case errors.ErrNotAuthorized:
+			status = http.StatusForbidden
+		case errors.ErrUserNotFound:
+			status = http.StatusBadRequest
+		case errors.ErrNotFound:
+			status = http.StatusNotFound
+		default:
+			status = http.StatusInternalServerError
+		}
+		httputils.ReturnError(w, status, "Failed to delete users from group. "+err.Error())
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, "Users deleted from group successfully")
+}
+
 // GetGroupUsers godoc
 //
 //	@Tags			group
@@ -428,6 +498,8 @@ func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
 		switch r.Method {
 		case http.MethodPost:
 			groupRoute.AddUsersToGroup(w, r)
+		case http.MethodDelete:
+			groupRoute.DeleteUsersFromGroup(w, r)
 		case http.MethodGet:
 			groupRoute.GetGroupUsers(w, r)
 		default:

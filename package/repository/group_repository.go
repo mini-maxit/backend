@@ -14,6 +14,7 @@ type GroupRepository interface {
 	GetAllGroup(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error)
 	GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error)
 	AddUserToGroup(tx *gorm.DB, groupId int64, userId int64) error
+	DeleteUserFromGroup(tx *gorm.DB, groupId int64, userId int64) error
 	GetGroupUsers(tx *gorm.DB, groupId int64) ([]models.User, error)
 	UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error)
 	GetGroupTasks(tx *gorm.DB, groupId int64) ([]models.Task, error)
@@ -109,6 +110,11 @@ func (gr *groupRepository) AddUserToGroup(tx *gorm.DB, groupId int64, userId int
 		return err
 	}
 	return nil
+}
+
+func (gr *groupRepository) DeleteUserFromGroup(tx *gorm.DB, groupId int64, userId int64) error {
+	err := tx.Where("group_id = ? AND user_id = ?", groupId, userId).Delete(&models.UserGroup{}).Error
+	return err
 }
 
 func (gr *groupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error) {

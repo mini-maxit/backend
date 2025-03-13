@@ -19,6 +19,7 @@ type GroupService interface {
 	GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error)
 	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error)
 	AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
+	DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
 	GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
 	GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error)
 }
@@ -198,6 +199,43 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 		}
 
 		err = gs.groupRepository.AddUserToGroup(tx, groupId, userId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (gs *groupService) DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
+	if err != nil {
+		return err
+	}
+
+	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	if err != nil {
+		return errors.ErrNotFound
+	}
+
+	if current_user.Role == types.UserRoleTeacher && group.CreatedBy != current_user.Id {
+		return errors.ErrNotAuthorized
+	}
+
+	for _, userId := range userIds {
+		_, err := gs.userRepository.GetUser(tx, userId)
+		if err != nil {
+			return errors.ErrUserNotFound
+		}
+		exists, err := gs.groupRepository.UserBelongsTo(tx, groupId, userId)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			continue
+		}
+
+		err = gs.groupRepository.DeleteUserFromGroup(tx, groupId, userId)
 		if err != nil {
 			return err
 		}

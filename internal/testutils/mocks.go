@@ -496,6 +496,18 @@ func (gr *MockGroupRepository) AddUserToGroup(tx *gorm.DB, groupId int64, userId
 	return nil
 }
 
+func (gr *MockGroupRepository) DeleteUserFromGroup(tx *gorm.DB, groupId int64, userId int64) error {
+	for i, userGroup := range gr.userGroups {
+		for j, ug := range userGroup {
+			if ug.GroupId == groupId && ug.UserId == userId {
+				gr.userGroups[i] = append(gr.userGroups[i][:j], gr.userGroups[i][j+1:]...)
+				return nil
+			}
+		}
+	}
+	return gorm.ErrRecordNotFound
+}
+
 func (gr *MockGroupRepository) GetAllGroupForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error) {
 	var groups []models.Group
 	for _, group := range gr.groups {
