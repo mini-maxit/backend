@@ -62,7 +62,7 @@ func (gr *groupRepository) GetAllGroup(tx *gorm.DB, offset int, limit int, sort 
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Model(&models.Group{}).Preload("Tasks").Preload("Users").Find(&groups).Error
+	err = tx.Model(&models.Group{}).Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}

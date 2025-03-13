@@ -17,7 +17,7 @@ type GroupService interface {
 	DeleteGroup(tx *gorm.DB, current_user schemas.User, groupId int64) error
 	Edit(tx *gorm.DB, current_user schemas.User, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
 	GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error)
-	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.Group, error)
+	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error)
 	AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
 	GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
 	GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error)
@@ -148,7 +148,7 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 	return result, nil
 }
 
-func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.Group, error) {
+func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId
 		return nil, errors.ErrNotAuthorized
 	}
 
-	return GroupToSchema(group), nil
+	return GroupToSchemaDetailed(group), nil
 }
 
 func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
@@ -271,7 +271,7 @@ func (gs *groupService) updateModel(model *models.Group, editInfo *schemas.EditG
 	}
 }
 
-func GroupToSchema(model *models.Group) *schemas.Group {
+func GroupToSchemaDetailed(model *models.Group) *schemas.GroupDetailed {
 	tasks := make([]schemas.Task, len(model.Tasks))
 	for i, task := range model.Tasks {
 		tasks[i] = *TaskToSchema(&task)
@@ -281,7 +281,7 @@ func GroupToSchema(model *models.Group) *schemas.Group {
 		users[i] = *UserToSchema(&user)
 	}
 
-	return &schemas.Group{
+	return &schemas.GroupDetailed{
 		Id:        model.Id,
 		Name:      model.Name,
 		CreatedBy: model.CreatedBy,
@@ -292,6 +292,15 @@ func GroupToSchema(model *models.Group) *schemas.Group {
 	}
 }
 
+func GroupToSchema(model *models.Group) *schemas.Group {
+	return &schemas.Group{
+		Id:        model.Id,
+		Name:      model.Name,
+		CreatedBy: model.CreatedBy,
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
+	}
+}
 func NewGroupService(groupRepository repository.GroupRepository, userRepository repository.UserRepository, userService UserService) GroupService {
 	return &groupService{
 		groupRepository: groupRepository,
