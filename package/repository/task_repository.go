@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -49,7 +51,7 @@ func (tr *taskRepository) GetTaskByTitle(tx *gorm.DB, title string) (*models.Tas
 
 func (tr *taskRepository) GetTask(tx *gorm.DB, taskId int64) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Preload("Author").Preload("Groups").Model(&models.Task{}).Where("id = ?", taskId).First(task).Error
+	err := tx.Preload("Author").Preload("Groups").Model(&models.Task{}).Where("id = ? AND deleted_at IS NULL", taskId).First(task).Error
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +69,7 @@ func (tr *taskRepository) GetAllAssignedTasks(tx *gorm.DB, userId int64, limit, 
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
 		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
 		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
-		Where("task_users.user_id = ? OR user_groups.user_id = ?", userId, userId).
+		Where("(task_users.user_id = ? OR user_groups.user_id = ?) AND tasks.deleted_at IS NULL", userId, userId).
 		Distinct().
 		Find(&tasks).Error
 
@@ -124,7 +126,7 @@ func (tr *taskRepository) GetAllCreatedTasks(tx *gorm.DB, userId int64, limit, o
 		return nil, err
 	}
 
-	err = tx.Model(&models.Task{}).Where("created_by_id = ?", userId).Find(&tasks).Error
+	err = tx.Model(&models.Task{}).Where("created_by_id = ? AND deleted_at IS NULL", userId).Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +140,7 @@ func (tr *taskRepository) IsTaskAssignedToUser(tx *gorm.DB, taskId, userId int64
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
 		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
 		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
-		Where("task_users.task_id = ? AND task_users.user_id = ? OR task_groups.task_id = ? AND user_groups.user_id = ?", taskId, userId, taskId, userId).
+		Where("(task_users.task_id = ? AND task_users.user_id = ? OR task_groups.task_id = ? AND user_groups.user_id = ?) AND tasks.deleted_at IS NULL", taskId, userId, taskId, userId).
 		Distinct().
 		Count(&count).Error
 
@@ -153,7 +155,7 @@ func (tr *taskRepository) IsTaskAssignedToGroup(tx *gorm.DB, taskId, groupId int
 	var count int64
 	err := tx.Model(&models.Task{}).
 		Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
-		Where("task_groups.task_id = ? AND task_groups.group_id = ?", taskId, groupId).
+		Where("task_groups.task_id = ? AND task_groups.group_id = ? AND tasks.deleted_at IS NULL", taskId, groupId).
 		Count(&count).Error
 	if err != nil {
 		return false, err
@@ -167,7 +169,7 @@ func (tr *taskRepository) GetAllTasks(tx *gorm.DB, limit, offset int, sort strin
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Model(&models.Task{}).Find(&tasks).Error
+	err = tx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +184,7 @@ func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offs
 	}
 
 	err = tx.Model(&models.Task{}).Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
-		Where("task_groups.group_id = ?", groupId).
+		Where("task_groups.group_id = ? AND tasks.deleted_at IS NULL", groupId).
 		Find(&tasks).Error
 
 	if err != nil {
@@ -229,7 +231,7 @@ func (tr *taskRepository) EditTask(tx *gorm.DB, taskId int64, task *models.Task)
 }
 
 func (tr *taskRepository) DeleteTask(tx *gorm.DB, taskId int64) error {
-	err := tx.Model(&models.Task{}).Where("id = ?", taskId).Delete(&models.Task{}).Error
+	err := tx.Model(&models.Task{}).Where("id = ?", taskId).Update("deleted_at", time.Now()).Error
 	if err != nil {
 		return err
 	}

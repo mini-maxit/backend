@@ -11,6 +11,7 @@ type Task struct {
 	Title     string    `json:"title"`
 	CreatedBy int64     `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type TaskDetailed struct {

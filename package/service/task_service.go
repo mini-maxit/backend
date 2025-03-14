@@ -638,6 +638,7 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 		Title:     model.Title,
 		CreatedBy: model.CreatedBy,
 		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
 	}
 }
 
