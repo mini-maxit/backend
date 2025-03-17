@@ -422,3 +422,121 @@ func TestUpdateTask(t *testing.T) {
 		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }
+
+func TestGetAllForGroup(t *testing.T) {
+	tst := newTaskServiceTest()
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	group := &models.Group{
+		Name: "Test Group",
+	}
+	groupId, err := tst.gr.CreateGroup(tst.tx, group)
+	assert.NoError(t, err)
+
+	t.Run("No tasks", func(t *testing.T) {
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, admin_user, groupId, queryParams)
+		assert.NoError(t, err)
+		assert.Empty(t, tasks)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: admin_user.Id,
+		}
+		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, taskId)
+		task = &schemas.Task{
+			Title:     "Test Task2",
+			CreatedBy: admin_user.Id,
+		}
+		taskId, err = tst.taskService.Create(tst.tx, admin_user, task)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, taskId)
+		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, admin_user, groupId, queryParams)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tasks)
+		assert.Equal(t, 1, len(tasks))
+		assert.Equal(t, task.Title, tasks[0].Title)
+		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		student_user := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, student_user, groupId, queryParams)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Empty(t, tasks)
+	})
+}
+
+func TestGetAllCreatedTasks(t *testing.T) {
+	tst := newTaskServiceTest()
+	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	teacher_user := tst.createUser(t, types.UserRoleTeacher)
+
+	t.Run("No tasks", func(t *testing.T) {
+		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, admin_user, queryParams)
+		assert.NoError(t, err)
+		assert.Empty(t, tasks)
+	})
+
+	t.Run("Success with admin", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: admin_user.Id,
+		}
+		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, taskId)
+		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, admin_user, queryParams)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tasks)
+		assert.Equal(t, 1, len(tasks))
+		assert.Equal(t, task.Title, tasks[0].Title)
+		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+	})
+
+	t.Run("Success with teacher", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Teacher Task",
+			CreatedBy: teacher_user.Id,
+		}
+		taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, taskId)
+		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, teacher_user, queryParams)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tasks)
+		assert.Equal(t, 1, len(tasks))
+		assert.Equal(t, task.Title, tasks[0].Title)
+		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+	})
+
+	t.Run("Different teachers", func(t *testing.T) {
+		teacher_user2 := tst.createUser(t, types.UserRoleTeacher)
+		task := &schemas.Task{
+			Title:     "Teacher Task 2",
+			CreatedBy: teacher_user2.Id,
+		}
+		taskId, err := tst.taskService.Create(tst.tx, teacher_user2, task)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, taskId)
+		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, teacher_user2, queryParams)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, tasks)
+		assert.Equal(t, 1, len(tasks))
+		assert.Equal(t, task.Title, tasks[0].Title)
+		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		student_user := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, student_user, queryParams)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Empty(t, tasks)
+	})
+}

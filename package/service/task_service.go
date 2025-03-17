@@ -228,7 +228,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 }
 
 func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
-	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err

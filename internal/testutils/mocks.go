@@ -209,14 +209,16 @@ func (tr *MockTaskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, of
 }
 
 func (tr *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error) {
-	panic("implement me")
-	// var tasks []models.Task
-	// for _, task := range tr.tasks {
-	// 	if task.GroupId == groupId {
-	// 		tasks = append(tasks, *task)
-	// 	}
-	// }
-	// return tasks, nil
+	var tasks []models.Task
+	for _, task := range tr.tasks {
+		for _, group := range task.Groups {
+			if group.Id == groupId {
+				tasks = append(tasks, *task)
+				break
+			}
+		}
+	}
+	return tasks, nil
 }
 
 func (tr *MockTaskRepository) GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error) {
@@ -293,6 +295,13 @@ func (tr *MockTaskRepository) AssignTaskToGroup(tx *gorm.DB, taskId, groupId int
 		TaskId:  taskId,
 		GroupId: groupId,
 	})
+	for _, task := range tr.tasks {
+		if task.Id == taskId {
+			task.Groups = append(task.Groups, models.Group{
+				Id: groupId,
+			})
+		}
+	}
 	return nil
 }
 
