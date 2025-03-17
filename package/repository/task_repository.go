@@ -23,8 +23,8 @@ type TaskRepository interface {
 	GetAllTasks(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
 	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error)
 	GetTaskByTitle(tx *gorm.DB, title string) (*models.Task, error)
-	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error)
-	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error)
+	GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]int64, error)
+	GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]int64, error)
 	EditTask(tx *gorm.DB, taskId int64, task *models.Task) error
 	DeleteTask(tx *gorm.DB, taskId int64) error
 }
@@ -194,28 +194,28 @@ func (tr *taskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offs
 	return tasks, nil
 }
 
-func (tr *taskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *taskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
 	input_outputs := []models.InputOutput{}
 	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
-	timeLimits := make([]float64, len(input_outputs))
+	timeLimits := make([]int64, len(input_outputs))
 	for _, input_output := range input_outputs {
 		timeLimits[input_output.Order-1] = input_output.TimeLimit
 	}
 	return timeLimits, nil
 }
 
-func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *taskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
 	input_outputs := []models.InputOutput{}
 	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskId).Find(&input_outputs).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
-	memoryLimits := make([]float64, len(input_outputs))
+	memoryLimits := make([]int64, len(input_outputs))
 	for _, input_output := range input_outputs {
 		memoryLimits[input_output.Order-1] = input_output.MemoryLimit
 	}

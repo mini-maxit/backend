@@ -26,12 +26,17 @@ const (
 	InternalError
 )
 
+const MessageTypeTask = "task"
+const MessageTypeHandshake = "handshake"
+const MessageTypeStatus = "status"
+
 type QueueListenerImpl struct {
 	// Service that handles task-related operations
 	database          database.Database
 	taskService       service.TaskService
 	queueService      service.QueueService
 	submissionService service.SubmissionService
+	languageService   service.LanguageService
 	// RabbitMQ connection and channel
 	conn    *amqp.Connection
 	channel *amqp.Channel
@@ -42,7 +47,7 @@ type QueueListenerImpl struct {
 	logger *zap.SugaredLogger
 }
 
-func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, db database.Database, taskService service.TaskService, queueService service.QueueService, submissionService service.SubmissionService, queueName string) (*QueueListenerImpl, error) {
+func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, db database.Database, taskService service.TaskService, queueService service.QueueService, submissionService service.SubmissionService, langService service.LanguageService, queueName string) (*QueueListenerImpl, error) {
 	// Declare the queue
 	_, err := channel.QueueDeclare(
 		queueName, // name of the queue
@@ -63,6 +68,7 @@ func NewQueueListener(conn *amqp.Connection, channel *amqp.Channel, db database.
 		taskService:       taskService,
 		queueService:      queueService,
 		submissionService: submissionService,
+		languageService:   langService,
 		conn:              conn,
 		channel:           channel,
 		done:              make(chan error),
@@ -159,31 +165,122 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		}
 		return
 	}
-	submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)
-	if err != nil {
-		ql.logger.Errorf("Failed to get submission id: %s", err.Error())
-		tx.Rollback()
-		err := msg.Reject(true)
+	
+	switch queueMessage.Type {
+	case MessageTypeTask:
+		submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)
 		if err != nil {
-			ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
-		}
-		return
-	}
-	if queueMessage.Result.StatusCode == InternalError {
-		err = ql.submissionService.MarkSubmissionFailed(tx, submissionId, queueMessage.Result.Message)
-		if err != nil {
+			ql.logger.Errorf("Failed to get submission id: %s", err.Error())
 			tx.Rollback()
 			err := msg.Reject(true)
 			if err != nil {
 				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
 			}
+			return
 		}
-		return
-	}
+		taskResponse := schemas.TaskResponsePayload{}
+		err = json.Unmarshal(queueMessage.Payload, &taskResponse)
+		if err != nil {
+			ql.logger.Errorf("Failed to unmarshal task response: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+		if taskResponse.StatusCode == InternalError {
+			err = ql.submissionService.MarkSubmissionFailed(tx, submissionId, taskResponse.Message)
+			if err != nil {
+				tx.Rollback()
+				err := msg.Reject(true)
+				if err != nil {
+					ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+				}
+			}
+			return
+		}
 
-	err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
-	if err != nil {
-		ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
+		err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
+		if err != nil {
+			ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+		_, err = ql.submissionService.CreateSubmissionResult(tx, submissionId, queueMessage)
+		if err != nil {
+			ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+		tx.Commit()
+		ql.logger.Infof("Succesfuly processed message: %s", queueMessage.MessageId)
+	case MessageTypeHandshake:
+		ql.logger.Info("Handshake message received")
+
+		handshakeResponse := schemas.HandShakeResponsePayload{}
+		err = json.Unmarshal(queueMessage.Payload, &handshakeResponse)
+		if err != nil {
+			ql.logger.Errorf("Failed to unmarshal handshake response: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+
+		err := ql.languageService.InitLanguages(tx, handshakeResponse)
+		if err != nil {
+			ql.logger.Errorf("Failed to initialize languages: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+		tx.Commit()
+		ql.logger.Info("Languages initialized")
+		return
+	case MessageTypeStatus:
+		ql.logger.Info("Status message received")
+
+		statusResponse := schemas.StatusResponsePayload{}
+		err = json.Unmarshal(queueMessage.Payload, &statusResponse)
+		if err != nil {
+			ql.logger.Errorf("Failed to unmarshal status response: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+
+		err := ql.queueService.UpdateWorkerStatus(tx, statusResponse)
+		if err != nil {
+			ql.logger.Errorf("Failed to update worker status: %s", err.Error())
+			tx.Rollback()
+			err := msg.Reject(true)
+			if err != nil {
+				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			}
+			return
+		}
+		tx.Commit()
+		ql.logger.Info("Worker status updated")
+		return
+	default:
+		ql.logger.Errorf("Unknown message type: %s", queueMessage.Type)
 		tx.Rollback()
 		err := msg.Reject(true)
 		if err != nil {
@@ -191,16 +288,4 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		}
 		return
 	}
-	_, err = ql.submissionService.CreateSubmissionResult(tx, submissionId, queueMessage)
-	if err != nil {
-		ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
-		tx.Rollback()
-		err := msg.Reject(true)
-		if err != nil {
-			ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
-		}
-		return
-	}
-	tx.Commit()
-	ql.logger.Infof("Succesfuly processed message: %s", queueMessage.MessageId)
 }

@@ -2,12 +2,8 @@ package config
 
 import (
 	"os"
-	"slices"
 	"strconv"
-	"strings"
 
-	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
@@ -18,8 +14,6 @@ type Config struct {
 	Api            ApiConfig
 	BrokerConfig   BrokerConfig
 	Dump           bool
-
-	EnabledLanguages []schemas.LanguageConfig
 }
 
 type DBConfig struct {
@@ -54,89 +48,6 @@ const (
 	defaultQueueName         = "worker_queue"
 	defaultResponseQueueName = "worker_response_queue"
 )
-
-// DefaultLanguages is a list of languages that is enabled by default
-var DefaultLanguages = []schemas.LanguageConfig{
-	{
-		Type:          models.LangTypeC,
-		Version:       "99",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "11",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "18",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "11",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "14",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "17",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "20",
-		FileExtension: "cpp",
-	},
-}
-
-// AvailableLanguages is a list of languages that is acrively supported by the system and can be used if enabled.
-var AvailableLanguages = []schemas.LanguageConfig{
-	{
-		Type:          models.LangTypeC,
-		Version:       "99",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "11",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "18",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "11",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "14",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "17",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "20",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "23",
-		FileExtension: "cpp",
-	},
-}
 
 // NewConfig creates new Config instance
 //
@@ -266,7 +177,6 @@ func NewConfig() *Config {
 		},
 		FileStorageUrl:   fileStorageUrl,
 		Dump:             dump,
-		EnabledLanguages: parseLanguages(os.Getenv("LANGUAGES"), log),
 	}
 }
 
@@ -276,26 +186,4 @@ func validatePort(port string, which string, log *zap.SugaredLogger) uint16 {
 		log.Panicf("invalid %s port number %s", which, port)
 	}
 	return uint16(p)
-}
-
-func parseLanguages(input string, log *zap.SugaredLogger) []schemas.LanguageConfig {
-	if input == "" {
-		log.Warn("LANGUAGES is not set. Using default languages")
-		return DefaultLanguages
-	}
-	langs := make([]schemas.LanguageConfig, 0)
-	languages := strings.Split(input, ",")
-	for _, lang := range languages {
-		parts := strings.Split(lang, ":")
-		if len(parts) != 2 {
-			log.Panicf("invalid language format in config: %s. For available options refer to documentation", lang)
-		}
-		language := schemas.LanguageConfig{Type: models.LanguageType(parts[0]), Version: parts[1]}
-		if !slices.Contains(AvailableLanguages, language) {
-			log.Panicf("language %s is not available. Available languages: %v, for more refer to documentation", lang, AvailableLanguages)
-		}
-		langs = append(langs, language)
-	}
-
-	return langs
 }

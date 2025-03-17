@@ -1,6 +1,9 @@
 package service
 
 import (
+	"encoding/json"
+	"strconv"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -289,10 +292,18 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 		return -1, err
 	}
 
+	taskResponse := schemas.TaskResponsePayload{}
+
+	err = json.Unmarshal(responseMessage.Payload, &taskResponse)
+	if err != nil {
+		us.logger.Errorf("Error unmarshalling task response: %v", err.Error())
+		return -1, err
+	}
+
 	submissionResult := models.SubmissionResult{
 		SubmissionId: submissionId,
-		Code:         responseMessage.Result.Code,
-		Message:      responseMessage.Result.Message,
+		Code:         strconv.FormatInt(taskResponse.StatusCode, 10),
+		Message:      taskResponse.Message,
 	}
 	id, err := us.submissionResultRepository.CreateSubmissionResult(tx, submissionResult)
 	if err != nil {
@@ -300,7 +311,7 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 		return -1, err
 	}
 	// Save test results
-	for _, testResult := range responseMessage.Result.TestResults {
+	for _, testResult := range taskResponse.TestResults {
 		inputOutputId, err := us.inputOutputRepository.GetInputOutputId(tx, submission.TaskId, testResult.Order)
 		if err != nil {
 			us.logger.Errorf("Error getting input output id: %v", err.Error())

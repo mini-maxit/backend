@@ -18,7 +18,7 @@ type LanguageService interface {
 	// Method initializes languages in the database if they are not already present.
 	// If language is already present in the database, and is not disabled it skips it. Otherwise, it enables it.
 	// If language is not in enabled languages, but is present in the database, it is marked as disabled.
-	InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error
+	InitLanguages(tx *gorm.DB, enabledLanguages schemas.HandShakeResponsePayload) error
 	GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 }
 
@@ -29,33 +29,49 @@ type languageService struct {
 }
 
 // InitLanguages implements InitLanguages method of [LanguageService] interface
-func (l *languageService) InitLanguages(tx *gorm.DB, enabledLanguages []schemas.LanguageConfig) error {
+func (l *languageService) InitLanguages(tx *gorm.DB, workerLanguages schemas.HandShakeResponsePayload) error {
+
+	l.logger.Infof("Initializing languages: %v", workerLanguages.Languages)
+
 	existingLanguages, err := l.languageRepository.GetLanguages(tx)
 	if err != nil {
 		l.logger.Errorf("Error getting existing languages: %v", err.Error())
 		return err
 	}
-	for _, newLang := range enabledLanguages {
-		found := false
-		for _, lang := range existingLanguages {
-			if lang.Type == newLang.Type && lang.Version == newLang.Version {
-				found = true
-				break
+	for _, lang := range workerLanguages.Languages {
+		for _, version := range lang.Versions {
+			language := models.LanguageConfig{
+				Type:    lang.Name,
+				Version: version,
 			}
+			var found bool
+			for i, existingLanguage := range existingLanguages {
+				if existingLanguage.Type == language.Type && existingLanguage.Version == language.Version {
+					found = true
+					existingLanguages = append(existingLanguages[:i], existingLanguages[i+1:]...)
+					existingLanguage.Disabled = false
+					break
+				}
+			}
+			if !found {
+				err := l.languageRepository.CreateLanguage(tx, &language)
+				if err != nil {
+					l.logger.Errorf("Error adding language: %v", err.Error())
+					return err
+				}
+			}
+
 		}
-		if !found {
-			langModel := &models.LanguageConfig{
-				Type:          newLang.Type,
-				Version:       newLang.Version,
-				FileExtension: newLang.FileExtension,
-			}
-			err = l.languageRepository.CreateLanguage(tx, langModel)
+	}
+
+	if len(existingLanguages) > 0 {
+		for _, lang := range existingLanguages {
+			err := l.languageRepository.MarkLanguageDisabled(tx, lang.Id)
 			if err != nil {
-				l.logger.Errorf("Error creating language: %v", err.Error())
+				l.logger.Errorf("Error marking language disabled: %v", err.Error())
 				return err
 			}
 		}
-
 	}
 	return nil
 }

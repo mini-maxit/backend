@@ -19,6 +19,8 @@ type QueueService interface {
 	// PublishTask publishes a task to the queue
 	PublishSubmission(tx *gorm.DB, submissionId int64) error
 	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
+	PublishHandshake() error
+	UpdateWorkerStatus(tx *gorm.DB, statusResponse schemas.StatusResponsePayload) error
 }
 
 type queueService struct {
@@ -73,18 +75,29 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error
 		return err
 	}
 
+	payload := schemas.TaskQueueMessage{
+		TaskID:           submission.TaskId,
+		UserID:           submission.UserId,
+		SubmissionNumber: submission.Order,
+		LanguageType:     string(submission.Language.Type),
+		LanguageVersion:  submission.Language.Version,
+		TimeLimits:       timeLimits,
+		MemoryLimits:     memoryLimits,
+	}
+
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		qs.logger.Errorf("Error marshalling payload: %v", err.Error())
+		return err
+	}
+
 	msq := schemas.QueueMessage{
-		MessageId:       uuid.New().String(),
-		TaskId:          submission.TaskId,
-		UserId:          submission.UserId,
-		SumissionNumber: submission.Order,
-		LanguageType:    string(submission.Language.Type),
-		LanguageVersion: submission.Language.Version,
-		TimeLimits:      timeLimits,
-		MemoryLimits:    memoryLimits,
+		MessageID: uuid.New().String(),
+		Type:      "task",
+		Payload:   payloadJson,
 	}
 	qm := &models.QueueMessage{
-		Id:           msq.MessageId,
+		Id:           msq.MessageID,
 		SubmissionId: submissionId,
 	}
 	_, err = qs.queueRepository.CreateQueueMessage(tx, qm)
@@ -120,14 +133,36 @@ func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, e
 	return queueMessage.SubmissionId, nil
 }
 
+func (qs *queueService) PublishHandshake() error {
+	msq := schemas.QueueMessage{
+		MessageID: uuid.New().String(),
+		Type:      "handshake",
+		Payload:   nil,
+	}
+	err := qs.publishMessage(msq)
+	if err != nil {
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
+		return err
+	}
+	qs.logger.Info("Handshake published")
+	return nil
+}
+
+func (q *queueService) UpdateWorkerStatus(tx *gorm.DB, statusResponse schemas.StatusResponsePayload) error {
+	panic("implement me")
+}
+
 func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*queueService, error) {
+	args := make(amqp.Table)
+	args["x-max-priority"] = 3
+
 	q, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
-		nil,       // arguments
+		args,      // arguments
 	)
 	if err != nil {
 		return nil, err
