@@ -165,7 +165,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 		}
 		return
 	}
-	
+
 	switch queueMessage.Type {
 	case MessageTypeTask:
 		submissionId, err := ql.queueService.GetSubmissionId(tx, queueMessage.MessageId)

@@ -17,23 +17,23 @@ type QueueResult struct {
 }
 
 type TaskResponsePayload struct {
-	Success    bool   `json:"Success"`
-	StatusCode int64  `json:"StatusCode"`
-	Message    string `json:"Message"`
+	Success     bool              `json:"Success"`
+	StatusCode  int64             `json:"StatusCode"`
+	Message     string            `json:"Message"`
 	TestResults []QueueTestResult `json:"TestResults"`
 }
 
 type HandShakeResponsePayload struct {
 	Languages []struct {
-		Name   string `json:"name"`
+		Name     string   `json:"name"`
 		Versions []string `json:"versions"`
 	} `json:"languages"`
 }
 
 type StatusResponsePayload struct {
-	BusyWorkers   int               `json:"busy_workers"`
-	TotalWorkers  int               `json:"total_workers"`
-	WorkerStatus  map[string]string `json:"worker_status"`
+	BusyWorkers  int               `json:"busy_workers"`
+	TotalWorkers int               `json:"total_workers"`
+	WorkerStatus map[string]string `json:"worker_status"`
 }
 
 type QueueTestResult struct {

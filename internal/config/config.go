@@ -175,8 +175,8 @@ func NewConfig() *Config {
 			User:              queueUser,
 			Password:          queuePassword,
 		},
-		FileStorageUrl:   fileStorageUrl,
-		Dump:             dump,
+		FileStorageUrl: fileStorageUrl,
+		Dump:           dump,
 	}
 }
 

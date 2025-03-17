@@ -153,7 +153,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
-	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, langService,cfg.BrokerConfig.ResponseQueueName)
+	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, langService, cfg.BrokerConfig.ResponseQueueName)
 	if err != nil {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
