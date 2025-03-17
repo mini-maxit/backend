@@ -594,25 +594,25 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	writer := multipart.NewWriter(body)
 	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
 	if err != nil {
-		return fmt.Errorf("Error writing task ID to form. %s", err.Error())
+		return errors.ErrWriteTaskID
 	}
 	err = writer.WriteField("overwrite", strconv.FormatBool(true))
 	if err != nil {
-		return fmt.Errorf("Error writing overwrite to form. %s", err.Error())
+		return errors.ErrWriteOverwrite
 	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("archive", "Task.zip")
 	if err != nil {
-		return fmt.Errorf("Error creating form file. %s", err.Error())
+		return errors.ErrCreateFormFile
 	}
 	file, err := os.Open(archivePath)
 	if err != nil {
-		return fmt.Errorf("Error opening file. %s", err.Error())
+		return errors.ErrFileOpen
 	}
 	defer file.Close()
 	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("Error copying file to form. %s", err.Error())
+		return errors.ErrCopyFile
 	}
 	writer.Close()
 
@@ -620,7 +620,7 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	client := &http.Client{}
 	resp, err := client.Post(ts.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
 	if err != nil {
-		return fmt.Errorf("Error sending request to FileStorage. %s", err.Error())
+		return errors.ErrSendRequest
 	}
 	defer resp.Body.Close()
 
@@ -628,14 +628,15 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	buffer := make([]byte, resp.ContentLength)
 	bytesRead, err := resp.Body.Read(buffer)
 	if err != nil && bytesRead == 0 {
-		return fmt.Errorf("Error reading response from FileStorage. %s", err.Error())
+		return errors.ErrReadResponse
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Error response from FileStorage. %s", string(buffer))
+		return fmt.Errorf("%w: %s", errors.ErrResponseFromFileStorage, string(buffer))
 	}
 
 	return nil
 }
+
 func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.EditTask) {
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title
