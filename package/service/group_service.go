@@ -142,8 +142,8 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 		}
 	}
 	result := make([]schemas.Group, len(groups))
-	for _, group := range groups {
-		result = append(result, *GroupToSchema(&group))
+	for i, group := range groups {
+		result[i] = *GroupToSchema(&group)
 	}
 
 	return result, nil
@@ -265,8 +265,8 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 	}
 
 	result := make([]schemas.User, len(users))
-	for _, user := range users {
-		result = append(result, *UserToSchema(&user))
+	for i, user := range users {
+		result[i] = *UserToSchema(&user)
 	}
 
 	return result, nil
