@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -11,16 +12,27 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/repository"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type MockUserRepository struct {
-	users   map[string]*models.User
-	counter int64
+	repository.UserRepository
+	users    map[string]*models.User
+	counter  int64
+	failNext bool
+}
+
+func (ur *MockUserRepository) FailNext() {
+	ur.failNext = true
 }
 
 func (ur *MockUserRepository) CreateUser(tx *gorm.DB, user *models.User) (int64, error) {
+	if ur.failNext {
+		ur.failNext = false
+		return 0, gorm.ErrInvalidDB
+	}
 	if tx == nil {
 		return 0, gorm.ErrInvalidDB
 	}
@@ -31,7 +43,8 @@ func (ur *MockUserRepository) CreateUser(tx *gorm.DB, user *models.User) (int64,
 }
 
 func (ur *MockUserRepository) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
-	if tx == nil {
+	if ur.failNext {
+		ur.failNext = false
 		return nil, gorm.ErrInvalidDB
 	}
 	for _, user := range ur.users {
@@ -93,7 +106,13 @@ func NewMockUserRepository() *MockUserRepository {
 }
 
 type MockSessionRepository struct {
+	repository.SessionRepository
 	sessions map[string]*models.Session
+	failNext bool
+}
+
+func (sr *MockSessionRepository) FailNext() {
+	sr.failNext = true
 }
 
 func (sr *MockSessionRepository) CreateSession(tx *gorm.DB, session *models.Session) error {
@@ -102,6 +121,10 @@ func (sr *MockSessionRepository) CreateSession(tx *gorm.DB, session *models.Sess
 }
 
 func (sr *MockSessionRepository) GetSession(tx *gorm.DB, sessionId string) (*models.Session, error) {
+	if sr.failNext {
+		sr.failNext = false
+		return nil, gorm.ErrInvalidDB
+	}
 	if session, ok := sr.sessions[sessionId]; ok {
 		return session, nil
 	}
@@ -109,6 +132,11 @@ func (sr *MockSessionRepository) GetSession(tx *gorm.DB, sessionId string) (*mod
 }
 
 func (sr *MockSessionRepository) GetSessionByUserId(tx *gorm.DB, userId int64) (*models.Session, error) {
+	if sr.failNext {
+		log.Printf("Failing getsession by user id")
+		sr.failNext = false
+		return nil, gorm.ErrInvalidDB
+	}
 	for _, session := range sr.sessions {
 		if session.UserId == userId {
 			return session, nil

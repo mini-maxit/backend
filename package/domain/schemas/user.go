@@ -25,6 +25,6 @@ type UserIds struct {
 
 type UserChangePassword struct {
 	OldPassword        string `json:"old_password"`
-	NewPassword        string `json:"new_password" validate:"required,gte=8,lte=50"`
-	NewPasswordConfirm string `json:"new_password_confirm" validate:"required,gte=8,lte=50"`
+	NewPassword        string `json:"new_password" validate:"required,password,gte=8,lte=50"`
+	NewPasswordConfirm string `json:"new_password_confirm" validate:"required,eqfield=NewPassword,gte=8,lte=50"`
 }

@@ -102,6 +102,11 @@ func TestGetUserByEmail(t *testing.T) {
 		assert.Equal(t, user.Username, userResp.Username)
 	})
 
+	t.Run("Non existent email", func(t *testing.T) {
+		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+		assert.Nil(t, user)
+	})
 }
 
 func TestGetUserById(t *testing.T) {
@@ -268,17 +273,17 @@ func TestChangePassword(t *testing.T) {
 	})
 
 	t.Run("Invalid old password", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "invalidpassword", NewPassword: "newpassword", NewPasswordConfirm: "newpassword"})
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "invalidpassword", NewPassword: "VeryStrongPass123!", NewPasswordConfirm: "VeryStrongPass123!"})
 		assert.ErrorIs(t, err, errors.ErrInvalidCredentials)
 	})
 
 	t.Run("Invalid data", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "new", NewPasswordConfirm: "new2"})
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "VeryStrongPass123!", NewPasswordConfirm: "VeryStrongPass1234!"})
 		assert.IsType(t, validator.ValidationErrors{}, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "newpassword", NewPasswordConfirm: "newpassword"})
+		err := ust.userService.ChangePassword(ust.tx, admin_user, user.Id, &schemas.UserChangePassword{OldPassword: "password", NewPassword: "VeryStrongPass123!", NewPasswordConfirm: "VeryStrongPass123!"})
 		assert.NoError(t, err)
 	})
 }
