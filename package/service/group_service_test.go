@@ -156,6 +156,13 @@ func TestGetAllGroup(t *testing.T) {
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Nil(t, groups)
 	})
+
+	t.Run("Success for teacher", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleTeacher)
+		groups, err := gst.groupService.GetAllGroup(gst.tx, current_user, queryParams)
+		assert.NoError(t, err)
+		assert.NotNil(t, groups)
+	})
 }
 
 func TestGetGroup(t *testing.T) {
@@ -251,5 +258,228 @@ func TestGetGroupUsers(t *testing.T) {
 		users, err := gst.groupService.GetGroupUsers(gst.tx, current_user, groupId)
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Nil(t, users)
+	})
+}
+func TestEditGroup(t *testing.T) {
+	gst := newGroupServiceTest()
+
+	t.Run("Success", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		newName := "Updated Group Name"
+		editInfo := &schemas.EditGroup{
+			Name: &newName,
+		}
+		updatedGroup, err := gst.groupService.Edit(gst.tx, current_user, groupId, editInfo)
+		assert.NoError(t, err)
+		assert.Equal(t, "Updated Group Name", updatedGroup.Name)
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		newName := "Updated Group Name"
+		editInfo := &schemas.EditGroup{
+			Name: &newName,
+		}
+		updatedGroup, err := gst.groupService.Edit(gst.tx, current_user, 9999, editInfo)
+		assert.ErrorIs(t, err, ErrGroupNotFound)
+		assert.Nil(t, updatedGroup)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleTeacher)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: gst.createUser(t, types.UserRoleAdmin).Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		newName := "Updated Group Name"
+		editInfo := &schemas.EditGroup{
+			Name: &newName,
+		}
+		updatedGroup, err := gst.groupService.Edit(gst.tx, current_user, groupId, editInfo)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Nil(t, updatedGroup)
+	})
+
+	t.Run("Validation error", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		editInfo := &schemas.EditGroup{
+			Name: nil, // Invalid as name is required
+		}
+		updatedGroup, err := gst.groupService.Edit(gst.tx, current_user, groupId, editInfo)
+		assert.Error(t, err)
+		assert.Nil(t, updatedGroup)
+	})
+}
+func TestDeleteUsersFromGroup(t *testing.T) {
+	gst := newGroupServiceTest()
+
+	t.Run("Success", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		user := gst.createUser(t, types.UserRoleStudent)
+		err = gst.groupService.AddUsersToGroup(gst.tx, current_user, groupId, []int64{user.Id})
+		assert.NoError(t, err)
+
+		err = gst.groupService.DeleteUsersFromGroup(gst.tx, current_user, groupId, []int64{user.Id})
+		assert.NoError(t, err)
+	})
+
+	t.Run("Not authorized student", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleStudent)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		user := gst.createUser(t, types.UserRoleStudent)
+		err = gst.groupService.AddUsersToGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), groupId, []int64{user.Id})
+		assert.NoError(t, err)
+
+		err = gst.groupService.DeleteUsersFromGroup(gst.tx, current_user, groupId, []int64{user.Id})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("Not authorized teacher", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleTeacher)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: gst.createUser(t, types.UserRoleAdmin).Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		user := gst.createUser(t, types.UserRoleStudent)
+		err = gst.groupService.AddUsersToGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), groupId, []int64{user.Id})
+		assert.NoError(t, err)
+
+		err = gst.groupService.DeleteUsersFromGroup(gst.tx, current_user, groupId, []int64{user.Id})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("User not found", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		err = gst.groupService.DeleteUsersFromGroup(gst.tx, current_user, groupId, []int64{9999})
+		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		err := gst.groupService.DeleteUsersFromGroup(gst.tx, current_user, 9999, []int64{current_user.Id})
+		assert.ErrorIs(t, err, errors.ErrNotFound)
+	})
+}
+func TestGetGroupTasks(t *testing.T) {
+	gst := newGroupServiceTest()
+
+	t.Run("Success for Admin", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, groupId)
+		assert.NoError(t, err)
+		assert.NotNil(t, tasks)
+	})
+
+	t.Run("Success for Teacher", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleTeacher)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, current_user, &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: current_user.Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, groupId)
+		assert.NoError(t, err)
+		assert.NotNil(t, tasks)
+	})
+
+	t.Run("Not authorized for Teacher", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleTeacher)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: gst.createUser(t, types.UserRoleAdmin).Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, groupId)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Nil(t, tasks)
+	})
+
+	t.Run("Success for Student", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleStudent)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: gst.createUser(t, types.UserRoleAdmin).Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		err = gst.groupService.AddUsersToGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), groupId, []int64{current_user.Id})
+		assert.NoError(t, err)
+
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, groupId)
+		assert.NoError(t, err)
+		assert.NotNil(t, tasks)
+	})
+
+	t.Run("Not authorized for Student", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleStudent)
+		groupId, err := gst.groupService.CreateGroup(gst.tx, gst.createUser(t, types.UserRoleAdmin), &schemas.Group{
+			Name:      "Test Group",
+			CreatedBy: gst.createUser(t, types.UserRoleAdmin).Id,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, groupId)
+
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, groupId)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Nil(t, tasks)
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		current_user := gst.createUser(t, types.UserRoleAdmin)
+		tasks, err := gst.groupService.GetGroupTasks(gst.tx, current_user, 9999)
+		assert.Error(t, err)
+		assert.Nil(t, tasks)
 	})
 }

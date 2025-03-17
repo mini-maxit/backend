@@ -25,5 +25,5 @@ type CreateGroup struct {
 }
 
 type EditGroup struct {
-	Name *string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty" validate:"gte=3,lte=50"`
 }

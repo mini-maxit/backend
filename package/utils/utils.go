@@ -81,7 +81,7 @@ func NewValidator() (*validator.Validate, error) {
 func GetLimit(str string) (int, error) {
 	limit, err := strconv.ParseInt(str, 10, 32)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	return int(limit), nil
 }
@@ -89,7 +89,7 @@ func GetLimit(str string) (int, error) {
 func GetOffset(str string) (int, error) {
 	offset, err := strconv.ParseInt(str, 10, 32)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 	return int(offset), nil
 }

@@ -495,7 +495,11 @@ func (gr *MockGroupRepository) DeleteGroup(tx *gorm.DB, groupId int64) error {
 }
 
 func (gr *MockGroupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error) {
-	panic("implement me")
+	if _, ok := gr.groups[groupId]; ok {
+		gr.groups[groupId] = group
+		return group, nil
+	}
+	return nil, gorm.ErrRecordNotFound
 }
 
 func (gr *MockGroupRepository) GetAllGroup(*gorm.DB, int, int, string) ([]models.Group, error) {
@@ -582,8 +586,8 @@ func (gr *MockGroupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId 
 }
 
 func (gr *MockGroupRepository) GetGroupTasks(tx *gorm.DB, groupId int64) ([]models.Task, error) {
-	panic("implement me")
-	// var tasks []models.Task
+	tasks := make([]models.Task, 0)
+	return tasks, nil
 }
 
 func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
