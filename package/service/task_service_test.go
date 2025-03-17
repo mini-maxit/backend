@@ -1,7 +1,9 @@
 package service
 
 import (
+	"archive/zip"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -29,7 +31,8 @@ func newTaskServiceTest() *taskServiceTest {
 	ur := testutils.NewMockUserRepository()
 	gr := testutils.NewMockGroupRepository(ur)
 	tr := testutils.NewMockTaskRepository(gr)
-	ts := NewTaskService(config.FileStorageUrl, tr, nil, ur, gr)
+	io := testutils.NewMockInputOutputRepository()
+	ts := NewTaskService(config.FileStorageUrl, tr, io, ur, gr)
 
 	return &taskServiceTest{
 		tx:          tx,
@@ -64,6 +67,96 @@ func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schema
 		Role: user_model.Role,
 	}
 	return user
+}
+
+func addDescription(t *testing.T, zipWriter *zip.Writer) {
+	// Create description.pdf
+	descriptionFile, err := zipWriter.Create("folder/description.pdf")
+	assert.NoError(t, err)
+	_, err = descriptionFile.Write([]byte("This is a test description."))
+	assert.NoError(t, err)
+}
+
+func addInputOutputFiles(t *testing.T, zipWriter *zip.Writer, count int, inputDir, outputDir string) {
+	for i := 1; i <= count; i++ {
+		inputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.in", inputDir, i))
+		assert.NoError(t, err)
+		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", i)))
+		assert.NoError(t, err)
+
+		outputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.out", outputDir, i))
+		assert.NoError(t, err)
+		_, err = outputFile.Write([]byte(fmt.Sprintf("Output data %d", i)))
+		assert.NoError(t, err)
+	}
+}
+
+func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) string {
+	tempFile, err := os.CreateTemp(os.TempDir(), "test-archive-*.zip")
+	assert.NoError(t, err)
+	defer tempFile.Close()
+
+	zipWriter := zip.NewWriter(tempFile)
+	defer zipWriter.Close()
+
+	// Create input and output files based on caseType
+	switch caseType {
+	case "valid":
+		addDescription(t, zipWriter)
+		addInputOutputFiles(t, zipWriter, 4, "folder/input", "folder/output")
+	case "missing_files":
+		addDescription(t, zipWriter)
+		addInputOutputFiles(t, zipWriter, 2, "folder/input", "folder/output")
+		outputFile, err := zipWriter.Create("folder/output/3.out")
+		assert.NoError(t, err)
+		_, err = outputFile.Write([]byte("Output data 3"))
+		assert.NoError(t, err)
+	case "invalid_structure":
+		addDescription(t, zipWriter)
+		addInputOutputFiles(t, zipWriter, 4, "folder", "folder")
+	case "single_file":
+		// Create only one input and output file
+		_, err := zipWriter.Create("1.in")
+		assert.NoError(t, err)
+	case "nonexistent_file":
+		// Create an invalid archive
+		defer os.Remove(tempFile.Name())
+	case "invalid_archive":
+		defer os.Remove(tempFile.Name())
+		file, err := os.CreateTemp(os.TempDir(), "test-archive-*.txt")
+		assert.NoError(t, err)
+		return file.Name()
+	case "no_output":
+		// Create only input files
+		addDescription(t, zipWriter)
+		addInputOutputFiles(t, zipWriter, 4, "folder/input", "folder/invalid")
+	case "no_input":
+		// Create only output files
+		addDescription(t, zipWriter)
+		addInputOutputFiles(t, zipWriter, 4, "folder/invalid", "folder/output")
+	case "input_dir":
+		// input dir contains another dir
+		addDescription(t, zipWriter)
+		_, err := zipWriter.Create("folder/input/another.in/input.in")
+		assert.NoError(t, err)
+		addInputOutputFiles(t, zipWriter, 3, "folder/input", "folder/output")
+		outputFile, err := zipWriter.Create(fmt.Sprintf("folder/output/%d.out", 4))
+		assert.NoError(t, err)
+		_, err = outputFile.Write([]byte("Output data"))
+		assert.NoError(t, err)
+	case "output_dir":
+		// output dir contains another dir
+		addDescription(t, zipWriter)
+		_, err := zipWriter.Create("folder/output/another.out/output.out")
+		assert.NoError(t, err)
+		addInputOutputFiles(t, zipWriter, 3, "folder/input", "folder/output")
+		inputFile, err := zipWriter.Create("folder/input/another.in")
+		assert.NoError(t, err)
+		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", 4)))
+		assert.NoError(t, err)
+	}
+
+	return tempFile.Name()
 }
 
 func TestCreateTask(t *testing.T) {
@@ -266,6 +359,12 @@ func TestAssignTaskToUsers(t *testing.T) {
 		err := tst.taskService.AssignTaskToUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
+
+	t.Run("Not authorized teacher", func(t *testing.T) {
+		teacher_user := tst.createUser(t, types.UserRoleTeacher)
+		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{teacher_user.Id})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
 }
 
 func TestAssignTaskToGroups(t *testing.T) {
@@ -301,7 +400,7 @@ func TestAssignTaskToGroups(t *testing.T) {
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
-	t.Run("Not authorized", func(t *testing.T) {
+	t.Run("Not authorized student", func(t *testing.T) {
 		group_model := &models.Group{
 			Name: "Test Group",
 		}
@@ -311,6 +410,18 @@ func TestAssignTaskToGroups(t *testing.T) {
 		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
 		err = tst.taskService.AssignTaskToGroups(tst.tx, student_user, taskId, []int64{groupId})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+
+	t.Run("Not authorized teacher", func(t *testing.T) {
+		teacher_user := tst.createUser(t, types.UserRoleTeacher)
+		group_model := &models.Group{
+			Name:      "Test Group",
+			CreatedBy: teacher_user.Id + 1,
+		}
+		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		assert.NoError(t, err)
+		err = tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
@@ -539,4 +650,196 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
+}
+
+func TestUnAssignTaskFromUsers(t *testing.T) {
+	tst := newTaskServiceTest()
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	teacher_user := tst.createUser(t, types.UserRoleTeacher)
+	student_user := tst.createUser(t, types.UserRoleStudent)
+
+	task := &schemas.Task{
+		Title:     "Test Task",
+		CreatedBy: teacher_user.Id,
+	}
+	taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
+	assert.NoError(t, err)
+	assert.NotEqual(t, 0, taskId)
+
+	t.Run("Success with admin", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		assert.NoError(t, err)
+	})
+
+	t.Run("Success with teacher", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		assert.NoError(t, err)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+}
+
+func TestUnAssignTaskFromGroups(t *testing.T) {
+	tst := newTaskServiceTest()
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	teacher_user := tst.createUser(t, types.UserRoleTeacher)
+	student_user := tst.createUser(t, types.UserRoleStudent)
+
+	task := &schemas.Task{
+		Title:     "Test Task",
+		CreatedBy: teacher_user.Id,
+	}
+	taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
+	assert.NoError(t, err)
+	assert.NotEqual(t, 0, taskId)
+
+	group := &models.Group{
+		Name: "Test Group",
+	}
+	groupId, err := tst.gr.CreateGroup(tst.tx, group)
+	assert.NoError(t, err)
+
+	t.Run("Success with admin", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+	})
+
+	t.Run("Success with teacher", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		err := tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		assert.NoError(t, err)
+
+		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, student_user, taskId, []int64{groupId})
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+	})
+}
+
+func TestCreateInputOutput(t *testing.T) {
+	tst := newTaskServiceTest()
+	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	task := &schemas.Task{
+		Title:     "Test Task",
+		CreatedBy: admin_user.Id,
+	}
+
+	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
+	assert.NoError(t, err)
+	assert.NotEqual(t, 0, taskId)
+
+	t.Run("Success", func(t *testing.T) {
+		pathToArchive := tst.createTestArchive(t, "valid")
+		defer os.Remove(pathToArchive)
+		err := tst.taskService.CreateInputOutput(tst.tx, taskId, pathToArchive)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Nonexistent task", func(t *testing.T) {
+		pathToArchive := tst.createTestArchive(t, "valid")
+		defer os.Remove(pathToArchive)
+		err := tst.taskService.CreateInputOutput(tst.tx, -1, pathToArchive)
+		assert.ErrorIs(t, err, errors.ErrNotFound)
+	})
+
+	t.Run("Invalid archive path", func(t *testing.T) {
+		err := tst.taskService.CreateInputOutput(tst.tx, taskId, "INVALIDPATH")
+		assert.Error(t, err)
+	})
+}
+
+func TestParseInputOutput(t *testing.T) {
+	tst := newTaskServiceTest()
+	tests := []struct {
+		name          string
+		caseType      string
+		expected      int
+		isError       bool
+		expectedError error
+	}{{
+		name:     "Valid archive",
+		caseType: "valid",
+		expected: 4,
+	}, {
+		name:     "Missing files",
+		caseType: "missing_files",
+		expected: -1,
+		isError:  true,
+	}, {
+		name:     "Invalid structure",
+		caseType: "invalid_structure",
+		expected: -1,
+		isError:  true,
+	}, {
+		name:     "Single file",
+		caseType: "single_file",
+		expected: -1,
+		isError:  true,
+	}, {
+		name:          "Nonexistent file",
+		caseType:      "nonexistent_file",
+		expected:      -1,
+		isError:       true,
+		expectedError: errors.ErrFileOpen,
+	}, {
+		name:          "Invalid archive",
+		caseType:      "invalid_archive",
+		expected:      -1,
+		isError:       true,
+		expectedError: errors.ErrDecompressArchive,
+	}, {
+		name:          "No output dir",
+		caseType:      "no_output",
+		expected:      -1,
+		isError:       true,
+		expectedError: errors.ErrNoOutputDirectory,
+	}, {
+		name:          "No input dir",
+		caseType:      "no_input",
+		expected:      -1,
+		isError:       true,
+		expectedError: errors.ErrNoInputDirectory,
+	}, {
+		name:          "Input contains directories",
+		caseType:      "input_dir",
+		expected:      -1,
+		isError:       true,
+		expectedError: errors.ErrInputContainsDir,
+	},
+	}
+	for _, tt := range tests {
+		pathToArchive := tst.createTestArchive(t, tt.caseType)
+		numFiles, err := tst.taskService.ParseInputOutput(pathToArchive)
+		if tt.isError {
+			if tt.expectedError != nil {
+				assert.ErrorIs(t, err, tt.expectedError)
+			} else {
+				assert.Error(t, err)
+			}
+			assert.Equal(t, tt.expected, numFiles)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, numFiles)
+		}
+	}
 }

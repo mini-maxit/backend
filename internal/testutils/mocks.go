@@ -731,3 +731,39 @@ func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handle
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+type MockInputOutputRepository struct {
+	repository.InputOutputRepository
+	inputOutputs map[int64]*models.InputOutput
+	counter      int64
+}
+
+func (ir *MockInputOutputRepository) Create(tx *gorm.DB, inputOutput *models.InputOutput) error {
+	for _, io := range ir.inputOutputs {
+		io.Id = ir.counter
+		ir.inputOutputs[ir.counter] = io
+		ir.counter++
+	}
+	return nil
+}
+
+func (ir *MockInputOutputRepository) GetInputOutputId(tx *gorm.DB, taskId, order int64) (int64, error) {
+	panic("implement me")
+}
+
+func (ir *MockInputOutputRepository) DeleteAll(tx *gorm.DB, taskId int64) error {
+	toDelete := make([]int64, 0)
+	for _, io := range ir.inputOutputs {
+		if io.TaskId == taskId {
+			toDelete = append(toDelete, io.Id)
+		}
+	}
+	for _, id := range toDelete {
+		delete(ir.inputOutputs, id)
+	}
+	return nil
+}
+
+func NewMockInputOutputRepository() repository.InputOutputRepository {
+	return &MockInputOutputRepository{counter: 1}
+}
