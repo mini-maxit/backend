@@ -20,6 +20,7 @@ type QueueService interface {
 	PublishSubmission(tx *gorm.DB, submissionId int64) error
 	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
 	PublishHandshake() error
+	PublishWorkerStatus() error
 	UpdateWorkerStatus(tx *gorm.DB, statusResponse schemas.StatusResponsePayload) error
 }
 
@@ -93,7 +94,7 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error
 
 	msq := schemas.QueueMessage{
 		MessageID: uuid.New().String(),
-		Type:      "task",
+		Type:      schemas.MessageTypeTask,
 		Payload:   payloadJson,
 	}
 	qm := &models.QueueMessage{
@@ -136,7 +137,7 @@ func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, e
 func (qs *queueService) PublishHandshake() error {
 	msq := schemas.QueueMessage{
 		MessageID: uuid.New().String(),
-		Type:      "handshake",
+		Type:      schemas.MessageTypeHandshake,
 		Payload:   nil,
 	}
 	err := qs.publishMessage(msq)
@@ -145,6 +146,21 @@ func (qs *queueService) PublishHandshake() error {
 		return err
 	}
 	qs.logger.Info("Handshake published")
+	return nil
+}
+
+func (qs *queueService) PublishWorkerStatus() error {
+	msq := schemas.QueueMessage{
+		MessageID: uuid.New().String(),
+		Type:      schemas.MessageTypeStatus,
+		Payload:   nil,
+	}
+	err := qs.publishMessage(msq)
+	if err != nil {
+		qs.logger.Errorf("Error publishing message: %v", err.Error())
+		return err
+	}
+	qs.logger.Info("Worker status published")
 	return nil
 }
 

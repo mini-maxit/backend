@@ -4,6 +4,9 @@ import "encoding/json"
 
 const (
 	SubmissionStatusQueued = "queued"
+	MessageTypeTask        = "task"
+	MessageTypeHandshake   = "handshake"
+	MessageTypeStatus      = "status"
 )
 
 type QueueMessage struct {
