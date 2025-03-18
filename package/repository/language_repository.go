@@ -41,19 +41,20 @@ func (l *languageRepository) DeleteLanguage(tx *gorm.DB, languageId int64) error
 	return err
 }
 
+
 func (l *languageRepository) MarkLanguageDisabled(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("enabled", false).Error
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("disabled", true).Error
 	return err
 }
 
 func (l *languageRepository) MarkLanguageEnabled(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("enabled", true).Error
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("disabled", false).Error
 	return err
 }
 
 func (l *languageRepository) GetEnabledLanguages(tx *gorm.DB) ([]models.LanguageConfig, error) {
 	tasks := []models.LanguageConfig{}
-	err := tx.Model(&models.LanguageConfig{}).Where("enabled = ?", true).Find(&tasks).Error
+	err := tx.Model(&models.LanguageConfig{}).Where("disabled = ?", false).Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}

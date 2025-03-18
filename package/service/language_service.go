@@ -20,6 +20,7 @@ type LanguageService interface {
 	// If language is not in enabled languages, but is present in the database, it is marked as disabled.
 	InitLanguages(tx *gorm.DB, enabledLanguages schemas.HandShakeResponsePayload) error
 	GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error)
+	GetAllEnabled(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 }
 
 // languageService implements [LanguageService] interface
@@ -49,7 +50,10 @@ func (l *languageService) InitLanguages(tx *gorm.DB, workerLanguages schemas.Han
 				if existingLanguage.Type == language.Type && existingLanguage.Version == language.Version {
 					found = true
 					existingLanguages = append(existingLanguages[:i], existingLanguages[i+1:]...)
-					existingLanguage.Disabled = false
+					err := l.languageRepository.MarkLanguageEnabled(tx, existingLanguage.Id)
+					if err != nil {
+						l.logger.Errorf("Error marking language enabled: %v", err.Error())
+					}
 					break
 				}
 			}
@@ -80,6 +84,19 @@ func (l *languageService) GetAll(tx *gorm.DB) ([]schemas.LanguageConfig, error) 
 	languages, err := l.languageRepository.GetLanguages(tx)
 	if err != nil {
 		l.logger.Errorf("Error getting languages: %v", err.Error())
+		return nil, err
+	}
+	var result []schemas.LanguageConfig
+	for _, language := range languages {
+		result = append(result, *LanguageToSchema(&language))
+	}
+	return result, nil
+}
+
+func (l *languageService) GetAllEnabled(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
+	languages, err := l.languageRepository.GetEnabledLanguages(tx)
+	if err != nil {
+		l.logger.Errorf("Error getting enabled languages: %v", err.Error())
 		return nil, err
 	}
 	var result []schemas.LanguageConfig

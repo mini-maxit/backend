@@ -328,7 +328,7 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 }
 
 func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
-	languages, err := ss.languageService.GetAll(tx)
+	languages, err := ss.languageService.GetAllEnabled(tx)
 	if err != nil {
 		ss.logger.Errorf("Error getting all languages: %v", err.Error())
 		return nil, err
