@@ -41,7 +41,6 @@ func (l *languageRepository) DeleteLanguage(tx *gorm.DB, languageId int64) error
 	return err
 }
 
-
 func (l *languageRepository) MarkLanguageDisabled(tx *gorm.DB, languageId int64) error {
 	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("disabled", true).Error
 	return err
