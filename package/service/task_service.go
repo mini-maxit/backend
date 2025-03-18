@@ -228,7 +228,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 }
 
 func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
-	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher})
+	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return nil, err
@@ -471,17 +471,18 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 	// Count the number of input and output files
 	archive, err := os.Open(archivePath)
 	if err != nil {
-		return -1, fmt.Errorf("failed to open archive: %v", err)
+		return -1, errors.ErrFileOpen
 	}
 	defer archive.Close()
 	temp_dir, err := os.MkdirTemp(os.TempDir(), "task-upload-archive")
 	if err != nil {
-		return -1, fmt.Errorf("failed to create temp directory: %v", err)
+		return -1, errors.ErrTempDirCreate
 	}
 	defer os.RemoveAll(temp_dir)
 	err = utils.DecompressArchive(archive, temp_dir)
 	if err != nil {
-		return -1, fmt.Errorf("failed to decompress archive: %v", err)
+		ts.logger.Errorf("Error decompressing archive %s: %v", archivePath, err)
+		return -1, errors.ErrDecompressArchive
 	}
 	entries, err := os.ReadDir(temp_dir)
 	if err != nil {
@@ -498,18 +499,18 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 
 	inputFiles, err := os.ReadDir(temp_dir + "/input")
 	if err != nil {
-		return -1, fmt.Errorf("failed to read input directory: %v", err)
+		return -1, errors.ErrNoInputDirectory
 	}
 	outputFiles, err := os.ReadDir(temp_dir + "/output")
 	if err != nil {
-		return -1, fmt.Errorf("failed to read output directory: %v", err)
+		return -1, errors.ErrNoOutputDirectory
 	}
 	if len(inputFiles) != len(outputFiles) {
-		return -1, fmt.Errorf("number of input files does not match number of output files")
+		return -1, errors.ErrIOCountMismatch
 	}
 	for _, file := range inputFiles {
 		if file.IsDir() {
-			return -1, fmt.Errorf("input directory contains a subdirectory")
+			return -1, errors.ErrInputContainsDir
 		}
 		filename_list := strings.Split(file.Name(), ".")
 		if len(filename_list) != 2 {
@@ -518,19 +519,21 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 		filename := filename_list[0]
 		ext := filename_list[1]
 		if ext != "in" {
-			return -1, fmt.Errorf("input file extension is not .in")
+			return -1, errors.ErrInvalidInExtention
 		}
 		found := false
 		for _, output_file := range outputFiles {
+			if file.IsDir() {
+				return -1, errors.ErrOutputContainsDir
+			}
 			output_filename_list := strings.Split(output_file.Name(), ".")
 			if len(output_filename_list) != 2 {
 				return -1, fmt.Errorf("output file name is not formatted correctly. Expected format: <filename>.<extension> but got %s", output_file.Name())
 			}
 			output_filename := output_filename_list[0]
 			if output_filename_list[1] != "out" {
-				return -1, fmt.Errorf("output file extension is not .out")
+				return -1, errors.ErrInvalidOutExtention
 			}
-			ts.logger.Infof("Comparing %s with %s", filename, output_filename)
 			if filename == output_filename {
 				found = true
 				break
@@ -544,6 +547,13 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 }
 
 func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath string) error {
+	_, err := ts.taskRepository.GetTask(tx, taskId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.ErrNotFound
+		}
+		return err
+	}
 	num_files, err := ts.ParseInputOutput(archivePath)
 	if err != nil {
 		return fmt.Errorf("failed to parse input and output files: %v", err)
@@ -584,25 +594,25 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	writer := multipart.NewWriter(body)
 	err = writer.WriteField("taskID", fmt.Sprintf("%d", taskId))
 	if err != nil {
-		return fmt.Errorf("Error writing task ID to form. %s", err.Error())
+		return errors.ErrWriteTaskID
 	}
 	err = writer.WriteField("overwrite", strconv.FormatBool(true))
 	if err != nil {
-		return fmt.Errorf("Error writing overwrite to form. %s", err.Error())
+		return errors.ErrWriteOverwrite
 	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("archive", "Task.zip")
 	if err != nil {
-		return fmt.Errorf("Error creating form file. %s", err.Error())
+		return errors.ErrCreateFormFile
 	}
 	file, err := os.Open(archivePath)
 	if err != nil {
-		return fmt.Errorf("Error opening file. %s", err.Error())
+		return errors.ErrFileOpen
 	}
 	defer file.Close()
 	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("Error copying file to form. %s", err.Error())
+		return errors.ErrCopyFile
 	}
 	writer.Close()
 
@@ -610,7 +620,7 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	client := &http.Client{}
 	resp, err := client.Post(ts.fileStorageUrl+"/createTask", writer.FormDataContentType(), body)
 	if err != nil {
-		return fmt.Errorf("Error sending request to FileStorage. %s", err.Error())
+		return errors.ErrSendRequest
 	}
 	defer resp.Body.Close()
 
@@ -618,14 +628,15 @@ func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.Us
 	buffer := make([]byte, resp.ContentLength)
 	bytesRead, err := resp.Body.Read(buffer)
 	if err != nil && bytesRead == 0 {
-		return fmt.Errorf("Error reading response from FileStorage. %s", err.Error())
+		return errors.ErrReadResponse
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Error response from FileStorage. %s", string(buffer))
+		return fmt.Errorf("%w: %s", errors.ErrResponseFromFileStorage, string(buffer))
 	}
 
 	return nil
 }
+
 func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.EditTask) {
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title

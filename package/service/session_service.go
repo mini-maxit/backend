@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -53,7 +54,7 @@ func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Sess
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrSessionUserNotFound
+			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -126,20 +127,6 @@ func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas
 	}
 
 	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
-}
-
-func (s *sessionService) RefreshSession(tx *gorm.DB, sessionId string) (*schemas.Session, error) {
-	err := s.sessionRepository.UpdateExpiration(tx, sessionId, time.Now().Add(time.Hour*24))
-	if err != nil {
-		s.logger.Errorf("Error updating session expiration: %v", err.Error())
-		return nil, err
-	}
-	session, err := s.sessionRepository.GetSession(tx, sessionId)
-	if err != nil {
-		s.logger.Errorf("Error getting session by id: %v", err.Error())
-		return nil, err
-	}
-	return s.modelToSchema(session), nil
 }
 
 func (s *sessionService) InvalidateSession(tx *gorm.DB, sessionId string) error {
