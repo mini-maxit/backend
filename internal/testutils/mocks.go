@@ -230,7 +230,7 @@ func (tr *MockTaskRepository) GetTaskByTitle(tx *gorm.DB, title string) (*models
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *MockTaskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
 	panic("implement me")
 	// if task, ok := tr.tasks[taskId]; ok {
 	// 	return task.TimeLimits, nil
@@ -238,7 +238,7 @@ func (tr *MockTaskRepository) GetTaskTimeLimits(tx *gorm.DB, taskId int64) ([]fl
 	// return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]float64, error) {
+func (tr *MockTaskRepository) GetTaskMemoryLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
 	panic("implement me")
 	// if task, ok := tr.tasks[taskId]; ok {
 	// 	return task.MemoryLimits, nil
