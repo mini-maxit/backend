@@ -118,6 +118,8 @@ definitions:
   EditGroup:
     properties:
       name:
+        maxLength: 50
+        minLength: 3
         type: string
     type: object
   Group:
@@ -130,16 +132,8 @@ definitions:
         type: integer
       name:
         type: string
-      tasks:
-        items:
-          $ref: '#/definitions/Task'
-        type: array
       updated_at:
         type: string
-      users:
-        items:
-          $ref: '#/definitions/User'
-        type: array
     type: object
   LanguageConfig:
     properties:
@@ -148,7 +142,7 @@ definitions:
       id:
         type: integer
       language:
-        $ref: '#/definitions/models.LanguageType'
+        type: string
       version:
         type: string
     type: object
@@ -225,6 +219,8 @@ definitions:
       id:
         type: integer
       title:
+        type: string
+      updated_at:
         type: string
     type: object
   TaskCreateResponse:
@@ -308,7 +304,7 @@ definitions:
     type: object
   UserIds:
     properties:
-      user_ids:
+      userIds:
         items:
           type: integer
         type: array
@@ -360,14 +356,6 @@ definitions:
       message:
         type: string
     type: object
-  models.LanguageType:
-    enum:
-    - c
-    - cpp
-    type: string
-    x-enum-varnames:
-    - LangTypeC
-    - LangTypeCPP
   types.UserRole:
     enum:
     - student
@@ -529,6 +517,48 @@ paths:
       tags:
       - group
   /group/{id}/users:
+    delete:
+      consumes:
+      - application/json
+      description: Delete users from a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserIds'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ApiResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ApiError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ApiError'
+      summary: Delete users from a group
+      tags:
+      - group
     get:
       description: Get users in a group
       parameters:
