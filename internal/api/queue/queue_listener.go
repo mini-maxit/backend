@@ -190,7 +190,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 			return
 		}
 		if taskResponse.StatusCode == InternalError {
-			err = ql.submissionService.MarkSubmissionFailed(tx, submissionId, taskResponse.Message)
+			err = ql.submissionService.MarkFailed(tx, submissionId, taskResponse.Message)
 			if err != nil {
 				tx.Rollback()
 				err := msg.Reject(true)
@@ -201,7 +201,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 			return
 		}
 
-		err = ql.submissionService.MarkSubmissionComplete(tx, submissionId)
+		err = ql.submissionService.MarkComplete(tx, submissionId)
 		if err != nil {
 			ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
 			tx.Rollback()
@@ -238,7 +238,7 @@ func (ql *QueueListenerImpl) processMessage(msg amqp.Delivery) {
 			return
 		}
 
-		err := ql.languageService.InitLanguages(tx, handshakeResponse)
+		err := ql.languageService.Init(tx, handshakeResponse)
 		if err != nil {
 			ql.logger.Errorf("Failed to initialize languages: %s", err.Error())
 			tx.Rollback()

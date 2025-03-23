@@ -14,12 +14,18 @@ import (
 )
 
 type UserService interface {
-	GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error)
-	GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error)
-	GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error)
-	EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
-	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
+	// ChangePassword changes the password of a user.
 	ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error
+	// ChangeRole changes the role of a user.
+	ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error
+	// Edit updates the information of a user.
+	Edit(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error
+	// GetAll retrieves all users based on the provided query parameters.
+	GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error)
+	// GetByEmail retrieves a user by their email.
+	GetByEmail(tx *gorm.DB, email string) (*schemas.User, error)
+	// Get retrieves a user by their ID.
+	Get(tx *gorm.DB, userId int64) (*schemas.User, error)
 }
 
 type userService struct {
@@ -27,8 +33,8 @@ type userService struct {
 	logger         *zap.SugaredLogger
 }
 
-func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
-	userModel, err := us.userRepository.GetUserByEmail(tx, email)
+func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
+	userModel, err := us.userRepository.GetByEmail(tx, email)
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -40,7 +46,7 @@ func (us *userService) GetUserByEmail(tx *gorm.DB, email string) (*schemas.User,
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface{}) ([]schemas.User, error) {
+func (us *userService) GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error) {
 	limit := queryParams["limit"].(uint64)
 	offset := queryParams["offset"].(uint64)
 	sort := queryParams["sort"].(string)
@@ -48,7 +54,7 @@ func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface
 		sort = "role:desc"
 	}
 
-	userModels, err := us.userRepository.GetAllUsers(tx, int(limit), int(offset), sort)
+	userModels, err := us.userRepository.GetAll(tx, int(limit), int(offset), sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err
@@ -62,8 +68,8 @@ func (us *userService) GetAllUsers(tx *gorm.DB, queryParams map[string]interface
 	return users, nil
 }
 
-func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, error) {
-	userModel, err := us.userRepository.GetUser(tx, userId)
+func (us *userService) Get(tx *gorm.DB, userId int64) (*schemas.User, error) {
+	userModel, err := us.userRepository.Get(tx, userId)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -75,11 +81,11 @@ func (us *userService) GetUserById(tx *gorm.DB, userId int64) (*schemas.User, er
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
+func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
 	if currentUser.Role != types.UserRoleAdmin && currentUser.Id != userId {
 		return errors.ErrNotAuthorized
 	}
-	user, err := us.userRepository.GetUser(tx, userId)
+	user, err := us.userRepository.Get(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrUserNotFound
@@ -95,7 +101,7 @@ func (us *userService) EditUser(tx *gorm.DB, currentUser schemas.User, userId in
 
 	us.updateModel(user, updateInfo)
 
-	err = us.userRepository.EditUser(tx, user)
+	err = us.userRepository.Edit(tx, user)
 	if err != nil {
 		us.logger.Errorf("Error editing user: %v", err.Error())
 		return err
@@ -107,7 +113,7 @@ func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId 
 	if currentUser.Role != types.UserRoleAdmin {
 		return errors.ErrNotAuthorized
 	}
-	user, err := us.userRepository.GetUser(tx, userId)
+	user, err := us.userRepository.Get(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrUserNotFound
@@ -116,7 +122,7 @@ func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId 
 		return err
 	}
 	user.Role = role
-	err = us.userRepository.EditUser(tx, user)
+	err = us.userRepository.Edit(tx, user)
 	if err != nil {
 		us.logger.Errorf("Error changing user role: %v", err.Error())
 		return err
@@ -128,7 +134,7 @@ func (us *userService) ChangePassword(tx *gorm.DB, currentUser schemas.User, use
 	if currentUser.Id != userId && currentUser.Role != types.UserRoleAdmin {
 		return errors.ErrNotAuthorized
 	}
-	user, err := us.userRepository.GetUser(tx, userId)
+	user, err := us.userRepository.Get(tx, userId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrUserNotFound
@@ -159,7 +165,7 @@ func (us *userService) ChangePassword(tx *gorm.DB, currentUser schemas.User, use
 		return err
 	}
 	user.PasswordHash = string(hash)
-	err = us.userRepository.EditUser(tx, user)
+	err = us.userRepository.Edit(tx, user)
 	if err != nil {
 		us.logger.Errorf("Error changing user password: %v", err.Error())
 		return err

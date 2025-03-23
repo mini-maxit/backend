@@ -13,15 +13,24 @@ import (
 )
 
 type GroupService interface {
-	CreateGroup(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error)
-	DeleteGroup(tx *gorm.DB, current_user schemas.User, groupId int64) error
+	// AddUsers adds users to a group.
+	AddUsers(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
+	// Create creates a new group.
+	Create(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error)
+	// Delete removes a group by its Id.
+	Delete(tx *gorm.DB, current_user schemas.User, groupId int64) error
+	// DeleteUsers removes users from a group.
+	DeleteUsers(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
+	// Edit updates the information of a group.
 	Edit(tx *gorm.DB, current_user schemas.User, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
-	GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error)
-	GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error)
-	AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
-	DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error
-	GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
-	GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error)
+	// Get retrieves detailed information about a group by its ID.
+	Get(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error)
+	// GetAll retrieves all groups based on query parameters.
+	GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Group, error)
+	// GetTasks retrieves all tasks associated with a group.
+	GetTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error)
+	// GetUsers retrieves all users associated with a group.
+	GetUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error)
 }
 
 var (
@@ -36,7 +45,7 @@ type groupService struct {
 	userService     UserService
 }
 
-func (gs *groupService) CreateGroup(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error) {
+func (gs *groupService) Create(tx *gorm.DB, current_user schemas.User, group *schemas.Group) (int64, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return 0, err
@@ -55,7 +64,7 @@ func (gs *groupService) CreateGroup(tx *gorm.DB, current_user schemas.User, grou
 		CreatedBy: group.CreatedBy,
 	}
 
-	groupId, err := gs.groupRepository.CreateGroup(tx, model)
+	groupId, err := gs.groupRepository.Create(tx, model)
 	if err != nil {
 		return -1, err
 	}
@@ -63,13 +72,13 @@ func (gs *groupService) CreateGroup(tx *gorm.DB, current_user schemas.User, grou
 	return groupId, nil
 }
 
-func (gs *groupService) DeleteGroup(tx *gorm.DB, current_user schemas.User, groupId int64) error {
+func (gs *groupService) Delete(tx *gorm.DB, current_user schemas.User, groupId int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		return err
 	}
@@ -78,7 +87,7 @@ func (gs *groupService) DeleteGroup(tx *gorm.DB, current_user schemas.User, grou
 		return errors.ErrNotAuthorized
 	}
 
-	return gs.groupRepository.DeleteGroup(tx, groupId)
+	return gs.groupRepository.Delete(tx, groupId)
 }
 
 func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
@@ -95,7 +104,7 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 		return nil, err
 	}
 
-	model, err := gs.groupRepository.GetGroup(tx, groupId)
+	model, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrGroupNotFound
@@ -115,7 +124,7 @@ func (gs *groupService) Edit(tx *gorm.DB, current_user schemas.User, groupId int
 	return GroupToSchema(newModel), nil
 }
 
-func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
+func (gs *groupService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Group, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -131,12 +140,12 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 
 	switch current_user.Role {
 	case types.UserRoleAdmin:
-		groups, err = gs.groupRepository.GetAllGroup(tx, int(offset), int(limit), sort)
+		groups, err = gs.groupRepository.GetAll(tx, int(offset), int(limit), sort)
 		if err != nil {
 			return nil, err
 		}
 	case types.UserRoleTeacher:
-		groups, err = gs.groupRepository.GetAllGroupForTeacher(tx, current_user.Id, int(offset), int(limit), sort)
+		groups, err = gs.groupRepository.GetAllForTeacher(tx, current_user.Id, int(offset), int(limit), sort)
 		if err != nil {
 			return nil, err
 		}
@@ -149,13 +158,13 @@ func (gs *groupService) GetAllGroup(tx *gorm.DB, current_user schemas.User, quer
 	return result, nil
 }
 
-func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error) {
+func (gs *groupService) Get(tx *gorm.DB, current_user schemas.User, groupId int64) (*schemas.GroupDetailed, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrGroupNotFound
@@ -170,13 +179,13 @@ func (gs *groupService) GetGroup(tx *gorm.DB, current_user schemas.User, groupId
 	return GroupToSchemaDetailed(group), nil
 }
 
-func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
+func (gs *groupService) AddUsers(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		return err
 	}
@@ -186,7 +195,7 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 	}
 
 	for _, userId := range userIds {
-		_, err := gs.userRepository.GetUser(tx, userId)
+		_, err := gs.userRepository.Get(tx, userId)
 		if err != nil {
 			return err
 		}
@@ -198,7 +207,7 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 			continue
 		}
 
-		err = gs.groupRepository.AddUserToGroup(tx, groupId, userId)
+		err = gs.groupRepository.AddUser(tx, groupId, userId)
 		if err != nil {
 			return err
 		}
@@ -207,13 +216,13 @@ func (gs *groupService) AddUsersToGroup(tx *gorm.DB, current_user schemas.User, 
 	return nil
 }
 
-func (gs *groupService) DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
+func (gs *groupService) DeleteUsers(tx *gorm.DB, current_user schemas.User, groupId int64, userIds []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		return errors.ErrNotFound
 	}
@@ -223,7 +232,7 @@ func (gs *groupService) DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.U
 	}
 
 	for _, userId := range userIds {
-		_, err := gs.userRepository.GetUser(tx, userId)
+		_, err := gs.userRepository.Get(tx, userId)
 		if err != nil {
 			return errors.ErrUserNotFound
 		}
@@ -235,7 +244,7 @@ func (gs *groupService) DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.U
 			continue
 		}
 
-		err = gs.groupRepository.DeleteUserFromGroup(tx, groupId, userId)
+		err = gs.groupRepository.DeleteUser(tx, groupId, userId)
 		if err != nil {
 			return err
 		}
@@ -244,13 +253,13 @@ func (gs *groupService) DeleteUsersFromGroup(tx *gorm.DB, current_user schemas.U
 	return nil
 }
 
-func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error) {
+func (gs *groupService) GetUsers(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.User, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +268,7 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 		return nil, errors.ErrNotAuthorized
 	}
 
-	users, err := gs.groupRepository.GetGroupUsers(tx, groupId)
+	users, err := gs.groupRepository.GetUsers(tx, groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -272,8 +281,8 @@ func (gs *groupService) GetGroupUsers(tx *gorm.DB, current_user schemas.User, gr
 	return result, nil
 }
 
-func (gs *groupService) GetGroupTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error) {
-	group, err := gs.groupRepository.GetGroup(tx, groupId)
+func (gs *groupService) GetTasks(tx *gorm.DB, current_user schemas.User, groupId int64) ([]schemas.Task, error) {
+	group, err := gs.groupRepository.Get(tx, groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +299,7 @@ func (gs *groupService) GetGroupTasks(tx *gorm.DB, current_user schemas.User, gr
 		}
 	}
 
-	tasks, err := gs.groupRepository.GetGroupTasks(tx, groupId)
+	tasks, err := gs.groupRepository.GetTasks(tx, groupId)
 	if err != nil {
 		return nil, err
 	}

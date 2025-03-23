@@ -6,12 +6,13 @@ import (
 )
 
 type TestRepository interface {
-	CreateTestResults(tx *gorm.DB, testResult models.TestResult) error
+	// Create creates a new test result in the database
+	Create(tx *gorm.DB, testResult models.TestResult) error
 }
 
 type testResultRepository struct{}
 
-func (tr *testResultRepository) CreateTestResults(tx *gorm.DB, testResult models.TestResult) error {
+func (tr *testResultRepository) Create(tx *gorm.DB, testResult models.TestResult) error {
 	err := tx.Create(&testResult).Error
 	return err
 }

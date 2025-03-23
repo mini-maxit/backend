@@ -55,8 +55,8 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 		return
 	}
 }
-func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
-	queryParams := map[string]interface{}{}
+func GetQueryParams(query *url.Values) (map[string]any, error) {
+	queryParams := map[string]any{}
 	for key, value := range *query {
 		if len(value) > 1 {
 			err := QueryError{Filed: key, Detail: MultipleQueryValues}
@@ -125,7 +125,7 @@ func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (stri
 }
 
 // ShouldBindJSON binds the request body to a struct and validates it.
-func ShouldBindJSON(body io.ReadCloser, v interface{}) error {
+func ShouldBindJSON(body io.ReadCloser, v any) error {
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()
 

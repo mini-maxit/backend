@@ -10,9 +10,12 @@ const (
 )
 
 type Submission struct {
-	Id            int64             `gorm:"primaryKey;autoIncrement"`
-	TaskId        int64             `gorm:"not null; foreignKey:TaskID"`
-	UserId        int64             `gorm:"not null; foreignKey:UserID"`
+	Id     int64 `gorm:"primaryKey;autoIncrement"`
+	TaskId int64 `gorm:"not null; foreignKey:TaskID"`
+	UserId int64 `gorm:"not null; foreignKey:UserID"`
+	// Order represents the submission attempt number for a specific task by a user.
+	// The first submission has Order = 1, the second = 2, and so on.
+	// It helps track the sequence of submissions made by a user for a given task.
 	Order         int64             `gorm:"not null"`
 	LanguageId    int64             `gorm:"not null; foreignKey:LanguageID"`
 	Status        string            `gorm:"type:varchar(50);not null"`

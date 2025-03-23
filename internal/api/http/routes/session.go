@@ -44,7 +44,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, err := sr.sessionService.CreateSession(tx, request.UserId)
+	session, err := sr.sessionService.Create(tx, request.UserId)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to create session. "+err.Error())
@@ -79,7 +79,7 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 	}
 
 	var validateSession schemas.ValidateSessionResponse
-	validateSession, err = sr.sessionService.ValidateSession(tx, sessionToken)
+	validateSession, err = sr.sessionService.Validate(tx, sessionToken)
 	if err != nil {
 		db.Rollback()
 		if err == service.ErrSessionNotFound {
@@ -139,7 +139,7 @@ func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = sr.sessionService.InvalidateSession(tx, sessionToken)
+	err = sr.sessionService.Invalidate(tx, sessionToken)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to invalidate session. "+err.Error())

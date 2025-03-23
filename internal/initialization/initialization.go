@@ -142,7 +142,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authService := service.NewAuthService(userRepository, sessionService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
-	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, langService, taskService, userService)
+	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, groupRepository, taskRepository, langService, taskService, userService)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService)

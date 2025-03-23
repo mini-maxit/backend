@@ -109,7 +109,7 @@ func GetSort(str string) string {
 // ValidateStruct validates that every field of a given struct is initialized
 //
 // Source: https://medium.com/@anajankow/fast-check-if-all-struct-fields-are-set-in-golang-bba1917213d2
-func ValidateStruct(s interface{}) (err error) {
+func ValidateStruct(s any) (err error) {
 	// first make sure that the input is a struct
 	// having any other type, especially a pointer to a struct,
 	// might result in panic

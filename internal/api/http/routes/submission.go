@@ -67,7 +67,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	submission, err := s.submissionService.GetById(tx, submissionId, current_user)
+	submission, err := s.submissionService.Get(tx, submissionId, current_user)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submission. "+err.Error())
@@ -164,7 +164,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -221,7 +221,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 	}
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	submissions, err := s.submissionService.GetAllForUserShort(tx, userId, current_user, queryParams)
 	if err != nil {
@@ -279,7 +279,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
 	if err != nil {
@@ -332,7 +332,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
 	if err != nil {
@@ -446,7 +446,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = s.taskService.GetTask(tx, current_user, taskId)
+	_, err = s.taskService.Get(tx, current_user, taskId)
 	if err != nil {
 		db.Rollback()
 		switch err {
@@ -516,7 +516,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Create the submission with the correct order
-	submissionId, err := s.submissionService.CreateSubmission(tx, taskId, userId, languageId, respJson.SubmissionNumber)
+	submissionId, err := s.submissionService.Create(tx, taskId, userId, languageId, respJson.SubmissionNumber)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))

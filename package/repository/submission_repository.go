@@ -7,20 +7,28 @@ import (
 )
 
 type SubmissionRepository interface {
-	GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error)
-	CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error)
-	MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error
-	MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error
-	MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error
+	// Create creates a new submission and returns the submission Id.
+	Create(tx *gorm.DB, submission *models.Submission) (int64, error)
+	// GetAll returns all submissions. The submissions are paginated.
 	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllByUserId(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUser returns all submissions by a user. The submissions are paginated.
+	GetAllByUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
 	GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllForGroupTeacher(tx *gorm.DB, groupId, teacherId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllForTask returns all submissions for a task. The submissions are paginated.
 	GetAllForTask(tx *gorm.DB, taskId int64, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllForTaskTeacher(tx *gorm.DB, taskId, teacherId int64, limit, offset int, sort string) ([]models.Submission, error)
-	GetAllForTaskStudent(tx *gorm.DB, taskId, studentId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
+	GetAllForTaskByUser(tx *gorm.DB, taskId, userId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher. The submissions are paginated.
+	GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset int, sort string) ([]models.Submission, error)
+	// Get returns a submission by its Id.
+	Get(tx *gorm.DB, submissionId int64) (*models.Submission, error)
+	// MarkComplete marks a submission as completed.
+	MarkComplete(tx *gorm.DB, submissionId int64) error
+	// MarkFailed marks a submission as failed.
+	MarkFailed(db *gorm.DB, submissionId int64, errorMsg string) error
+	// MarkProcessing marks a submission as processing.
+	MarkProcessing(tx *gorm.DB, submissionId int64) error
 }
 
 type submissionRepository struct{}
@@ -39,26 +47,6 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 		Preload("User").
 		Preload("Result").
 		Find(&submissions).Error
-	if err != nil {
-		return nil, err
-	}
-	return submissions, nil
-}
-
-func (us *submissionRepository) GetAllForStudent(tx *gorm.DB, currentUserId int64, limit, offset int, sort string) ([]models.Submission, error) {
-	submissions := []models.Submission{}
-
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Model(&models.Submission{}).
-		Preload("Language").
-		Preload("Task").
-		Preload("User").
-		Preload("Result").
-		Where("user_id = ?", currentUserId).Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +72,7 @@ func (us *submissionRepository) GetAllForTeacher(tx *gorm.DB, currentUserId int6
 	return submissions, nil
 }
 
-func (us *submissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
+func (us *submissionRepository) Get(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
 	var submission models.Submission
 	err := tx.Where("id = ?", submissionId).
 		Preload("Language").
@@ -98,7 +86,7 @@ func (us *submissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (
 	return &submission, nil
 }
 
-func (us *submissionRepository) GetAllByUserId(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAllByUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -237,7 +225,7 @@ func (us *submissionRepository) GetAllForTaskStudent(tx *gorm.DB, taskId, studen
 	return submissions, nil
 }
 
-func (us *submissionRepository) CreateSubmission(tx *gorm.DB, submission *models.Submission) (int64, error) {
+func (us *submissionRepository) Create(tx *gorm.DB, submission *models.Submission) (int64, error) {
 	err := tx.Create(submission).Error
 	if err != nil {
 		return 0, err
@@ -245,22 +233,44 @@ func (us *submissionRepository) CreateSubmission(tx *gorm.DB, submission *models
 	return submission.Id, nil
 }
 
-func (us *submissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
+func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionId int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionId).Update("status", "processing").Error
 	return err
 }
 
-func (us *submissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
+func (us *submissionRepository) MarkComplete(tx *gorm.DB, submissionId int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionId).Update("status", "completed").Error
 	return err
 }
 
-func (us *submissionRepository) MarkSubmissionFailed(db *gorm.DB, submissionId int64, errorMsg string) error {
-	err := db.Model(&models.Submission{}).Where("id = ?", submissionId).Updates(map[string]interface{}{
+func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionId).Updates(map[string]any{
 		"status":         "failed",
 		"status_message": errorMsg,
 	}).Error
 	return err
+}
+
+func (us *submissionRepository) GetAllForTaskByUser(tx *gorm.DB, taskId, userId int64, limit, offset int, sort string) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Where("submissions.task_id = ? AND submissions.user_id = ?", taskId, userId).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
 }
 
 func NewSubmissionRepository(db *gorm.DB) (SubmissionRepository, error) {

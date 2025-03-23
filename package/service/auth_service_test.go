@@ -20,7 +20,7 @@ func TestRegister(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("get user by email when user exists", func(t *testing.T) {
-		ur.CreateUser(tx, &models.User{
+		ur.Create(tx, &models.User{
 			Name:         "name",
 			Surname:      "surname",
 			Email:        "email2@email.com",
@@ -94,7 +94,7 @@ func TestLogin(t *testing.T) {
 			Username:     "username",
 			PasswordHash: "password",
 		}
-		ur.CreateUser(tx, user)
+		ur.Create(tx, user)
 		userLogin := schemas.UserLoginRequest{
 			Email:    user.Email,
 			Password: user.PasswordHash,
@@ -115,7 +115,7 @@ func TestLogin(t *testing.T) {
 			Username:     "username",
 			PasswordHash: string(passwordHash),
 		}
-		ur.CreateUser(tx, user)
+		ur.Create(tx, user)
 		userLogin := schemas.UserLoginRequest{
 			Email:    user.Email,
 			Password: password,

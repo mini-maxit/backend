@@ -6,13 +6,13 @@ import (
 )
 
 type SubmissionResultRepository interface {
-	CreateSubmissionResult(tx *gorm.DB, solutionResult models.SubmissionResult) (int64, error)
+	// Create creates a new submission result in the database
+	Create(tx *gorm.DB, solutionResult models.SubmissionResult) (int64, error)
 }
 
 type submissionResultRepository struct{}
 
-// Store the result of the solution in the database
-func (usr *submissionResultRepository) CreateSubmissionResult(tx *gorm.DB, submissionResult models.SubmissionResult) (int64, error) {
+func (usr *submissionResultRepository) Create(tx *gorm.DB, submissionResult models.SubmissionResult) (int64, error) {
 	if err := tx.Create(&submissionResult).Error; err != nil {
 		return 0, err
 	}

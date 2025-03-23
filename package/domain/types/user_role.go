@@ -21,7 +21,7 @@ const (
 	UserRoleAdmin   UserRole = "admin"
 )
 
-func (ur *UserRole) Scan(value interface{}) error {
+func (ur *UserRole) Scan(value any) error {
 	valueString, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("UserRole must be a string")

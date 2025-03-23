@@ -56,8 +56,8 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
-	users, err := u.userService.GetAllUsers(tx, queryParams)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	users, err := u.userService.GetAll(tx, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting users. %s", err.Error()))
@@ -110,7 +110,7 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := u.userService.GetUserById(tx, userId)
+	user, err := u.userService.Get(tx, userId)
 	if err != nil {
 		db.Rollback()
 		if err == errors.ErrUserNotFound {
@@ -143,7 +143,7 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	email := queryParams["email"].(string)
 	if email == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Email query cannot be empty")
@@ -157,7 +157,7 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := u.userService.GetUserByEmail(tx, email)
+	user, err := u.userService.GetByEmail(tx, email)
 	if err != nil {
 		db.Rollback()
 		if err == errors.ErrUserNotFound {
@@ -218,7 +218,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = u.userService.EditUser(tx, currentUser, userId, &request)
+	err = u.userService.Edit(tx, currentUser, userId, &request)
 	if err != nil {
 		db.Rollback()
 		if err == errors.ErrNotAllowed {

@@ -22,7 +22,7 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
 		}
-		sessionResponse, err := sessionService.ValidateSession(tx, sessionHeader)
+		sessionResponse, err := sessionService.Validate(tx, sessionHeader)
 		if err != nil {
 			if err == service.ErrSessionNotFound {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Session not found")
