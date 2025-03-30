@@ -418,56 +418,56 @@ func NewMockTaskRepository(groupRepository *MockGroupRepository) *MockTaskReposi
 	}
 }
 
-type MockSubmissionRepository struct {
-	submissions map[int64]*models.Submission
-	counter     int64
-}
+// type MockSubmissionRepository struct {
+// 	submissions map[int64]*models.Submission
+// 	counter     int64
+// }
 
-func (sr *MockSubmissionRepository) Create(tx *gorm.DB, submission *models.Submission) (int64, error) {
-	sr.counter++
-	submission.Id = sr.counter
-	sr.submissions[submission.Id] = submission
-	return submission.Id, nil
-}
+// func (sr *MockSubmissionRepository) Create(tx *gorm.DB, submission *models.Submission) (int64, error) {
+// 	sr.counter++
+// 	submission.Id = sr.counter
+// 	sr.submissions[submission.Id] = submission
+// 	return submission.Id, nil
+// }
 
-func (sr *MockSubmissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
-	if submission, ok := sr.submissions[submissionId]; ok {
-		return submission, nil
-	}
-	return nil, gorm.ErrRecordNotFound
-}
+// func (sr *MockSubmissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
+// 	if submission, ok := sr.submissions[submissionId]; ok {
+// 		return submission, nil
+// 	}
+// 	return nil, gorm.ErrRecordNotFound
+// }
 
-func (sr *MockSubmissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
-	if submission, ok := sr.submissions[submissionId]; ok {
-		submission.Status = "processing"
-		return nil
-	}
-	return gorm.ErrRecordNotFound
-}
+// func (sr *MockSubmissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
+// 	if submission, ok := sr.submissions[submissionId]; ok {
+// 		submission.Status = "processing"
+// 		return nil
+// 	}
+// 	return gorm.ErrRecordNotFound
+// }
 
-func (sr *MockSubmissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
-	if submission, ok := sr.submissions[submissionId]; ok {
-		submission.Status = "completed"
-		return nil
-	}
-	return gorm.ErrRecordNotFound
-}
+// func (sr *MockSubmissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
+// 	if submission, ok := sr.submissions[submissionId]; ok {
+// 		submission.Status = "completed"
+// 		return nil
+// 	}
+// 	return gorm.ErrRecordNotFound
+// }
 
-func (sr *MockSubmissionRepository) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
-	if submission, ok := sr.submissions[submissionId]; ok {
-		submission.Status = "failed"
-		submission.StatusMessage = errorMsg
-		return nil
-	}
-	return gorm.ErrRecordNotFound
-}
+// func (sr *MockSubmissionRepository) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
+// 	if submission, ok := sr.submissions[submissionId]; ok {
+// 		submission.Status = "failed"
+// 		submission.StatusMessage = errorMsg
+// 		return nil
+// 	}
+// 	return gorm.ErrRecordNotFound
+// }
 
-func NewMockSubmissionRepository() *MockSubmissionRepository {
-	return &MockSubmissionRepository{
-		submissions: make(map[int64]*models.Submission),
-		counter:     0,
-	}
-}
+// func NewMockSubmissionRepository() *MockSubmissionRepository {
+// 	return &MockSubmissionRepository{
+// 		submissions: make(map[int64]*models.Submission),
+// 		counter:     0,
+// 	}
+// }
 
 type MockGroupRepository struct {
 	groups        map[int64]*models.Group
@@ -771,3 +771,41 @@ func (ir *MockInputOutputRepository) DeleteAll(tx *gorm.DB, taskId int64) error 
 func NewMockInputOutputRepository() repository.InputOutputRepository {
 	return &MockInputOutputRepository{counter: 1}
 }
+
+// type MockLanguageRepository struct {
+// 	langs   map[int64]*models.LanguageConfig
+// 	counter int64
+// }
+
+// func (lr *MockLanguageRepository) Get(tx *gorm.DB, id int64) (*models.LanguageConfig, error) {
+// 	if lang, ok := lr.langs[id]; ok {
+// 		return lang, nil
+// 	}
+// 	return nil, gorm.ErrRecordNotFound
+// }
+
+// func (lr *MockLanguageRepository) GetAll(tx *gorm.DB) ([]models.LanguageConfig, error) {
+// 	langs := make([]models.LanguageConfig, 0, len(lr.langs))
+// 	for _, lang := range lr.langs {
+// 		langs = append(langs, *lang)
+// 	}
+// 	return langs, nil
+// }
+
+// func (lr *MockLanguageRepository) Create(tx *gorm.DB, language *models.LanguageConfig) error {
+// 	lr.langs[lr.counter] = language
+// 	lr.counter++
+// 	return nil
+// }
+
+// func (lr *MockLanguageRepository) Delete(tx *gorm.DB, id int64) error {
+// 	if _, ok := lr.langs[id]; ok {
+// 		delete(lr.langs, id)
+// 		return nil
+// 	}
+// 	return gorm.ErrRecordNotFound
+// }
+
+// func NewMockLanguageRepository() repository.LanguageRepository {
+// 	return &MockLanguageRepository{}
+// }
