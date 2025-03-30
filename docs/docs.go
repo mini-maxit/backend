@@ -345,6 +345,69 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Delete users from a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "group"
+                ],
+                "summary": "Delete users from a group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User IDs",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserIds"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ApiResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ApiError"
+                        }
+                    }
+                }
             }
         },
         "/login": {
@@ -1926,7 +1989,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
                 }
             }
         },
@@ -1945,20 +2010,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Task"
-                    }
-                },
                 "updated_at": {
                     "type": "string"
-                },
-                "users": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/User"
-                    }
                 }
             }
         },
@@ -1972,7 +2025,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "language": {
-                    "$ref": "#/definitions/models.LanguageType"
+                    "type": "string"
                 },
                 "version": {
                     "type": "string"
@@ -2090,6 +2143,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -2216,7 +2272,7 @@ const docTemplate = `{
         "UserIds": {
             "type": "object",
             "properties": {
-                "user_ids": {
+                "userIds": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -2288,17 +2344,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "models.LanguageType": {
-            "type": "string",
-            "enum": [
-                "c",
-                "cpp"
-            ],
-            "x-enum-varnames": [
-                "LangTypeC",
-                "LangTypeCPP"
-            ]
         },
         "types.UserRole": {
             "type": "string",

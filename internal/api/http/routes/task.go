@@ -59,10 +59,10 @@ func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllAssignedTasks(tx, current_user, queryParams)
+	task, err := tr.taskService.GetAllAssigned(tx, current_user, queryParams)
 
 	if err != nil {
 		db.Rollback()
@@ -90,10 +90,10 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllCreatedTasks(tx, current_user, queryParams)
+	task, err := tr.taskService.GetAllCreated(tx, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -134,7 +134,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	tasks, err := tr.taskService.GetAll(tx, current_user, queryParams)
 	if err != nil {
 		db.Rollback()
@@ -192,7 +192,7 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetTask(tx, current_user, taskId)
+	task, err := tr.taskService.Get(tx, current_user, taskId)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -245,7 +245,7 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
@@ -345,7 +345,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tr.taskService.ProcessAndUploadTask(tx, currentUser, taskId, filePath)
+	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskId, filePath)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
@@ -404,7 +404,7 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		request.Title = &newTitle
 	}
 
-	err = tr.taskService.EditTask(tx, current_user, taskId, &request)
+	err = tr.taskService.Edit(tx, current_user, taskId, &request)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -434,7 +434,7 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error saving multipart file. %s", err.Error()))
 			return
 		}
-		err = tr.taskService.ProcessAndUploadTask(tx, current_user, taskId, filePath)
+		err = tr.taskService.ProcessAndUpload(tx, current_user, taskId, filePath)
 		if err != nil {
 			db.Rollback()
 			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
@@ -484,7 +484,7 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.DeleteTask(tx, current_user, taskId)
+	err = tr.taskService.Delete(tx, current_user, taskId)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -546,7 +546,7 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignTaskToUsers(tx, current_user, taskId, request.UserIds)
+	err = tr.taskService.AssignToUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -608,7 +608,7 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignTaskToGroups(tx, current_user, taskId, request.GroupIds)
+	err = tr.taskService.AssignToGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -670,7 +670,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.UnAssignTaskFromUsers(tx, current_user, taskId, request.UserIds)
+	err = tr.taskService.UnassignFromUsers(tx, current_user, taskId, request.UserIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -732,7 +732,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 
 	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.UnAssignTaskFromGroups(tx, current_user, taskId, request.GroupIds)
+	err = tr.taskService.UnassignFromGroups(tx, current_user, taskId, request.GroupIds)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

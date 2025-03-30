@@ -46,7 +46,7 @@ func TestLogin(t *testing.T) {
 
 	t.Run("Invalid request body", func(t *testing.T) {
 		tt := []struct {
-			body interface{}
+			body any
 			msg  string
 		}{
 			{
@@ -250,7 +250,7 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		tt := []interface{}{
+		tt := []any{
 			struct {
 				Email string `json:"email"`
 			}{

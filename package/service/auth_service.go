@@ -39,7 +39,7 @@ type authService struct {
 
 // Login implements Login method of [AuthService] interface
 func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	user, err := as.userRepository.GetUserByEmail(tx, userLogin.Email)
+	user, err := as.userRepository.GetByEmail(tx, userLogin.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.ErrUserNotFound
@@ -54,7 +54,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 		return nil, errors.ErrInvalidCredentials
 	}
 
-	session, err := as.sessionService.CreateSession(tx, user.Id)
+	session, err := as.sessionService.Create(tx, user.Id)
 	if err != nil {
 		as.logger.Errorf("Error creating session: %v", err.Error())
 		return nil, err
@@ -65,7 +65,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 
 // Register implements Register method of [AuthService] interface
 func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	user, err := as.userRepository.GetUserByEmail(tx, userRegister.Email)
+	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
@@ -90,13 +90,13 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 		Role:         types.UserRoleStudent,
 	}
 
-	userId, err := as.userRepository.CreateUser(tx, userModel)
+	userId, err := as.userRepository.Create(tx, userModel)
 	if err != nil {
 		as.logger.Errorf("Error creating user: %v", err.Error())
 		return nil, err
 	}
 
-	session, err := as.sessionService.CreateSession(tx, userId)
+	session, err := as.sessionService.Create(tx, userId)
 	if err != nil {
 		as.logger.Errorf("Error creating session: %v", err.Error())
 		return nil, err

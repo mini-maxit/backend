@@ -14,7 +14,7 @@ type Data struct {
 	ptr          *string
 	structMember Impl
 	ifMember     Interfc
-	mapMember    map[string]interface{}
+	mapMember    map[string]any
 	sliceMember  []string
 }
 
@@ -57,7 +57,7 @@ func TestValidateStructEmpty(t *testing.T) {
 
 			ifMember: Impl{},
 
-			mapMember:   make(map[string]interface{}),
+			mapMember:   make(map[string]any),
 			sliceMember: make([]string, 0),
 		}
 

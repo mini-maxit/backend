@@ -22,9 +22,12 @@ var (
 )
 
 type SessionService interface {
-	CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error)
-	ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error)
-	InvalidateSession(tx *gorm.DB, sessionId string) error
+	// Create generates a new session for a given user.
+	Create(tx *gorm.DB, userId int64) (*schemas.Session, error)
+	// Invalidate deletes a session by its Id.
+	Invalidate(tx *gorm.DB, sessionId string) error
+	// Validate checks if a session is valid based on its Id.
+	Validate(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error)
 }
 
 type sessionService struct {
@@ -49,8 +52,8 @@ func (s *sessionService) modelToSchema(session *models.Session) *schemas.Session
 }
 
 // Creates a new session for a given user
-func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Session, error) {
-	user, err := s.userRepository.GetUser(tx, userId)
+func (s *sessionService) Create(tx *gorm.DB, userId int64) (*schemas.Session, error) {
+	user, err := s.userRepository.Get(tx, userId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -59,14 +62,14 @@ func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Sess
 		return nil, err
 	}
 
-	session, err := s.sessionRepository.GetSessionByUserId(tx, userId)
+	session, err := s.sessionRepository.GetByUserId(tx, userId)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		s.logger.Errorf("Error getting session by user id: %v", err.Error())
 		return nil, err
 	} else if err == nil {
 		// If session exists but is expired remove record and create new session
 		if session.ExpiresAt.Before(time.Now()) {
-			err = s.sessionRepository.DeleteSession(tx, session.Id)
+			err = s.sessionRepository.Delete(tx, session.Id)
 			if err != nil {
 				s.logger.Errorf("Error deleting session: %v", err.Error())
 				return nil, err
@@ -83,7 +86,7 @@ func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Sess
 		ExpiresAt: time.Now().Add(time.Hour * 24),
 	}
 
-	err = s.sessionRepository.CreateSession(tx, session)
+	err = s.sessionRepository.Create(tx, session)
 	if err != nil {
 		s.logger.Errorf("Error creating session: %v", err.Error())
 		return nil, err
@@ -94,8 +97,8 @@ func (s *sessionService) CreateSession(tx *gorm.DB, userId int64) (*schemas.Sess
 	return resp, nil
 }
 
-func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
-	session, err := s.sessionRepository.GetSession(tx, sessionId)
+func (s *sessionService) Validate(tx *gorm.DB, sessionId string) (schemas.ValidateSessionResponse, error) {
+	session, err := s.sessionRepository.Get(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error getting session by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -103,7 +106,7 @@ func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas
 		}
 		return schemas.ValidateSessionResponse{Valid: false, User: InvalidUser}, err
 	}
-	current_user_model, err := s.userRepository.GetUser(tx, session.UserId)
+	current_user_model, err := s.userRepository.Get(tx, session.UserId)
 	if err != nil {
 		s.logger.Errorf("Error getting user by id: %v", err.Error())
 		if err == gorm.ErrRecordNotFound {
@@ -129,8 +132,8 @@ func (s *sessionService) ValidateSession(tx *gorm.DB, sessionId string) (schemas
 	return schemas.ValidateSessionResponse{Valid: true, User: current_user}, nil
 }
 
-func (s *sessionService) InvalidateSession(tx *gorm.DB, sessionId string) error {
-	err := s.sessionRepository.DeleteSession(tx, sessionId)
+func (s *sessionService) Invalidate(tx *gorm.DB, sessionId string) error {
+	err := s.sessionRepository.Delete(tx, sessionId)
 	if err != nil {
 		s.logger.Errorf("Error deleting session: %v", err.Error())
 		return err

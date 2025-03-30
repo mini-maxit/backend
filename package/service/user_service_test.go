@@ -31,7 +31,7 @@ func (ust *userServiceTest) createUser(t *testing.T, role types.UserRole) schema
 	if !assert.NoError(t, err) {
 		t.FailNow()
 	}
-	userId, err := ust.ur.CreateUser(ust.tx, &models.User{
+	userId, err := ust.ur.Create(ust.tx, &models.User{
 		Name:         fmt.Sprintf("Test User %d", ust.counter),
 		Surname:      fmt.Sprintf("Test Surname %d", ust.counter),
 		Email:        fmt.Sprintf("email%d@email.com", ust.counter),
@@ -43,7 +43,7 @@ func (ust *userServiceTest) createUser(t *testing.T, role types.UserRole) schema
 		t.FailNow()
 	}
 
-	user_model, err := ust.ur.GetUser(ust.tx, userId)
+	user_model, err := ust.ur.Get(ust.tx, userId)
 	if !assert.NoError(t, err) {
 		t.FailNow()
 	}
@@ -72,7 +72,7 @@ func TestGetUserByEmail(t *testing.T) {
 	ust := newUserServiceTest()
 
 	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
+		user, err := ust.userService.GetByEmail(ust.tx, "nonexistentemail")
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
@@ -86,11 +86,11 @@ func TestGetUserByEmail(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userId, err := ust.ur.CreateUser(ust.tx, user)
+		userId, err := ust.ur.Create(ust.tx, user)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
-		userResp, err := ust.userService.GetUserByEmail(ust.tx, user.Email)
+		userResp, err := ust.userService.GetByEmail(ust.tx, user.Email)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, userResp) {
 			t.FailNow()
@@ -103,7 +103,7 @@ func TestGetUserByEmail(t *testing.T) {
 	})
 
 	t.Run("Non existent email", func(t *testing.T) {
-		user, err := ust.userService.GetUserByEmail(ust.tx, "nonexistentemail")
+		user, err := ust.userService.GetByEmail(ust.tx, "nonexistentemail")
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
@@ -113,7 +113,7 @@ func TestGetUserById(t *testing.T) {
 	ust := newUserServiceTest()
 
 	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.GetUserById(ust.tx, 0)
+		user, err := ust.userService.Get(ust.tx, 0)
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
@@ -126,11 +126,11 @@ func TestGetUserById(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userId, err := ust.ur.CreateUser(ust.tx, user)
+		userId, err := ust.ur.Create(ust.tx, user)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
-		userResp, err := ust.userService.GetUserById(ust.tx, userId)
+		userResp, err := ust.userService.Get(ust.tx, userId)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, userResp) {
 			t.FailNow()
@@ -150,18 +150,18 @@ func TestEditUser(t *testing.T) {
 	student_user := ust.createUser(t, types.UserRoleStudent)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.EditUser(ust.tx, admin_user, 0, &schemas.UserEdit{})
+		err := ust.userService.Edit(ust.tx, admin_user, 0, &schemas.UserEdit{})
 		assert.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := ust.userService.EditUser(ust.tx, student_user, admin_user.Id, &schemas.UserEdit{})
+		err := ust.userService.Edit(ust.tx, student_user, admin_user.Id, &schemas.UserEdit{})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
 		role := types.UserRoleAdmin
-		err := ust.userService.EditUser(ust.tx, student_user, student_user.Id, &schemas.UserEdit{Role: &role})
+		err := ust.userService.Edit(ust.tx, student_user, student_user.Id, &schemas.UserEdit{Role: &role})
 		assert.ErrorIs(t, err, errors.ErrNotAllowed)
 	})
 
@@ -173,7 +173,7 @@ func TestEditUser(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userId, err := ust.ur.CreateUser(ust.tx, user)
+		userId, err := ust.ur.Create(ust.tx, user)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
@@ -181,9 +181,9 @@ func TestEditUser(t *testing.T) {
 		updatedUser := &schemas.UserEdit{
 			Name: &newName,
 		}
-		err = ust.userService.EditUser(ust.tx, admin_user, userId, updatedUser)
+		err = ust.userService.Edit(ust.tx, admin_user, userId, updatedUser)
 		assert.NoError(t, err)
-		userResp, err := ust.userService.GetUserById(ust.tx, userId)
+		userResp, err := ust.userService.Get(ust.tx, userId)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, userResp) {
 			t.FailNow()
@@ -195,10 +195,10 @@ func TestEditUser(t *testing.T) {
 
 func TestGetAllUsers(t *testing.T) {
 	ust := newUserServiceTest()
-	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
-		users, err := ust.userService.GetAllUsers(ust.tx, queryParams)
+		users, err := ust.userService.GetAll(ust.tx, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, users)
 	})
@@ -211,11 +211,11 @@ func TestGetAllUsers(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		_, err := ust.ur.CreateUser(ust.tx, user)
+		_, err := ust.ur.Create(ust.tx, user)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
-		users, err := ust.userService.GetAllUsers(ust.tx, queryParams)
+		users, err := ust.userService.GetAll(ust.tx, queryParams)
 		assert.NoError(t, err)
 		if !assert.Len(t, users, 1) {
 			t.FailNow()
@@ -248,7 +248,7 @@ func TestChangeRole(t *testing.T) {
 		user := ust.createUser(t, types.UserRoleStudent)
 		err := ust.userService.ChangeRole(ust.tx, admin_user, user.Id, types.UserRoleTeacher)
 		assert.NoError(t, err)
-		userResp, err := ust.userService.GetUserById(ust.tx, user.Id)
+		userResp, err := ust.userService.Get(ust.tx, user.Id)
 		assert.NoError(t, err)
 		if !assert.NotNil(t, userResp) {
 			t.FailNow()

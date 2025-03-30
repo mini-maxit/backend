@@ -6,9 +6,12 @@ import (
 )
 
 type InputOutputRepository interface {
+	// Create creates a new input output record in the database
 	Create(tx *gorm.DB, inputOutput *models.InputOutput) error
-	GetInputOutputId(db *gorm.DB, taskId int64, order int64) (int64, error)
+	// DeleteAll deletes all input output records for given task
 	DeleteAll(tx *gorm.DB, taskId int64) error
+	// GetInputOutputId returns the id of the input output record with the given task id and order
+	GetInputOutputId(db *gorm.DB, taskId int64, order int64) (int64, error)
 }
 
 type inputOutputRepository struct{}

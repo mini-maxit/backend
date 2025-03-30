@@ -42,6 +42,7 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
+| DELETE | /api/v1/group/{id}/users | [delete group ID users](#delete-group-id-users) | Delete users from a group |
 | GET | /api/v1/group | [get group](#get-group) | Get all groups |
 | GET | /api/v1/group/{id} | [get group ID](#get-group-id) | Get a group |
 | GET | /api/v1/group/{id}/users | [get group ID users](#get-group-id-users) | Get users in a group |
@@ -103,6 +104,84 @@ This is the API documentation for the Mini Maxit API.
 
 
 ## Paths
+
+### <span id="delete-group-id-users"></span> Delete users from a group (*DeleteGroupIDUsers*)
+
+```
+DELETE /api/v1/group/{id}/users
+```
+
+Delete users from a group
+
+#### Consumes
+  * application/json
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+| body | `body` | [UserIds](#user-ids) | `models.UserIds` | | ✓ | | User IDs |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#delete-group-id-users-200) | OK | OK |  | [schema](#delete-group-id-users-200-schema) |
+| [400](#delete-group-id-users-400) | Bad Request | Bad Request |  | [schema](#delete-group-id-users-400-schema) |
+| [403](#delete-group-id-users-403) | Forbidden | Forbidden |  | [schema](#delete-group-id-users-403-schema) |
+| [405](#delete-group-id-users-405) | Method Not Allowed | Method Not Allowed |  | [schema](#delete-group-id-users-405-schema) |
+| [500](#delete-group-id-users-500) | Internal Server Error | Internal Server Error |  | [schema](#delete-group-id-users-500-schema) |
+
+#### Responses
+
+
+##### <span id="delete-group-id-users-200"></span> 200 - OK
+Status: OK
+
+###### <span id="delete-group-id-users-200-schema"></span> Schema
+   
+  
+
+[APIResponseString](#api-response-string)
+
+##### <span id="delete-group-id-users-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="delete-group-id-users-400-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-group-id-users-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="delete-group-id-users-403-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-group-id-users-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="delete-group-id-users-405-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
+
+##### <span id="delete-group-id-users-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="delete-group-id-users-500-schema"></span> Schema
+   
+  
+
+[APIError](#api-error)
 
 ### <span id="delete-task-id"></span> Delete a task (*DeleteTaskID*)
 
@@ -2540,9 +2619,7 @@ Status: Internal Server Error
 | created_by | integer| `int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | name | string| `string` |  | |  |  |
-| tasks | [][Task](#task)| `[]*Task` |  | |  |  |
 | updated_at | string| `string` |  | |  |  |
-| users | [][User](#user)| `[]*User` |  | |  |  |
 
 
 
@@ -2559,7 +2636,7 @@ Status: Internal Server Error
 |------|------|---------|:--------:| ------- |-------------|---------|
 | file_extension | string| `string` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
-| language | [ModelsLanguageType](#models-language-type)| `ModelsLanguageType` |  | |  |  |
+| language | string| `string` |  | |  |  |
 | version | string| `string` |  | |  |  |
 
 
@@ -2660,6 +2737,7 @@ Status: Internal Server Error
 | created_by | integer| `int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | title | string| `string` |  | |  |  |
+| updated_at | string| `string` |  | |  |  |
 
 
 
@@ -2784,7 +2862,7 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| user_ids | []integer| `[]int64` |  | |  |  |
+| userIds | []integer| `[]int64` |  | |  |  |
 
 
 
@@ -2837,17 +2915,6 @@ Status: Internal Server Error
 |------|------|---------|:--------:| ------- |-------------|---------|
 | code | string| `string` |  | |  |  |
 | message | string| `string` |  | |  |  |
-
-
-
-### <span id="models-language-type"></span> models.LanguageType
-
-
-  
-
-| Name | Type | Go type | Default | Description | Example |
-|------|------|---------| ------- |-------------|---------|
-| models.LanguageType | string| string | |  |  |
 
 
 

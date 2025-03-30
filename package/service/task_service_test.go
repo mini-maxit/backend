@@ -45,7 +45,7 @@ func newTaskServiceTest() *taskServiceTest {
 
 func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
 	tst.counter++
-	userId, err := tst.ur.CreateUser(tst.tx, &models.User{
+	userId, err := tst.ur.Create(tst.tx, &models.User{
 		Name:         fmt.Sprintf("Test User %d", tst.counter),
 		Surname:      fmt.Sprintf("Test Surname %d", tst.counter),
 		Email:        fmt.Sprintf("email%d@email.com", tst.counter),
@@ -57,7 +57,7 @@ func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schema
 		t.FailNow()
 	}
 
-	user_model, err := tst.ur.GetUser(tst.tx, userId)
+	user_model, err := tst.ur.Get(tst.tx, userId)
 	if !assert.NoError(t, err) {
 		t.FailNow()
 	}
@@ -212,14 +212,14 @@ func TestGetTaskByTitle(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		taskResp, err := tst.taskService.GetTaskByTitle(tst.tx, task.Title)
+		taskResp, err := tst.taskService.GetByTitle(tst.tx, task.Title)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		task, err := tst.taskService.GetTaskByTitle(tst.tx, "Nonexistent Task")
+		task, err := tst.taskService.GetByTitle(tst.tx, "Nonexistent Task")
 		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
@@ -227,7 +227,7 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
 		current_user := tst.createUser(t, types.UserRoleAdmin)
 		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
@@ -272,7 +272,7 @@ func TestGetTask(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		current_user := tst.createUser(t, types.UserRoleAdmin)
-		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -280,9 +280,9 @@ func TestGetTask(t *testing.T) {
 
 	t.Run("Sucess with assigned task to user", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		err = tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
-		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
 		fmt.Printf("Error: %v\n", err)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
@@ -293,14 +293,14 @@ func TestGetTask(t *testing.T) {
 		group_model := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		groupId, err := tst.gr.Create(tst.tx, group_model)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
+		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
-		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -315,7 +315,7 @@ func TestGetTask(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		taskResp, err := tst.taskService.GetTask(tst.tx, teacher_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, teacher_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -323,7 +323,7 @@ func TestGetTask(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		taskResp, err := tst.taskService.GetTask(tst.tx, student_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, taskResp)
 	})
@@ -344,25 +344,25 @@ func TestAssignTaskToUsers(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, 0, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, admin_user, 0, []int64{student_user.Id})
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignTaskToUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
 		teacher_user := tst.createUser(t, types.UserRoleTeacher)
-		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{teacher_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{teacher_user.Id})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
@@ -384,9 +384,9 @@ func TestAssignTaskToGroups(t *testing.T) {
 		group_model := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		groupId, err := tst.gr.Create(tst.tx, group_model)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 	})
 
@@ -394,9 +394,9 @@ func TestAssignTaskToGroups(t *testing.T) {
 		group_model := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		groupId, err := tst.gr.Create(tst.tx, group_model)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, 0, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, admin_user, 0, []int64{groupId})
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
@@ -404,12 +404,12 @@ func TestAssignTaskToGroups(t *testing.T) {
 		group_model := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		groupId, err := tst.gr.Create(tst.tx, group_model)
 		assert.NoError(t, err)
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
+		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, student_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, student_user, taskId, []int64{groupId})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
@@ -419,16 +419,16 @@ func TestAssignTaskToGroups(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: teacher_user.Id + 1,
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group_model)
+		groupId, err := tst.gr.Create(tst.tx, group_model)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestGetAllAssignedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	query_params := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	query_params := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
@@ -442,25 +442,25 @@ func TestGetAllAssignedTasks(t *testing.T) {
 
 	t.Run("No tasks", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllAssignedTasks(tst.tx, student_user, query_params)
+		tasks, err := tst.taskService.GetAllAssigned(tst.tx, student_user, query_params)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 		group := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.CreateGroup(tst.tx, group)
+		groupId, err := tst.gr.Create(tst.tx, group)
 		assert.NoError(t, err)
-		err = tst.gr.AddUserToGroup(tst.tx, groupId, student_user.Id)
+		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
 		assert.NoError(t, err)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
-		tasks, err := tst.taskService.GetAllAssignedTasks(tst.tx, student_user, query_params)
+		tasks, err := tst.taskService.GetAllAssigned(tst.tx, student_user, query_params)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Equal(t, 2, len(tasks))
@@ -478,15 +478,15 @@ func TestDeleteTask(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.DeleteTask(tst.tx, current_user, taskId)
+		err = tst.taskService.Delete(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
-		_, err = tst.taskService.GetTask(tst.tx, current_user, taskId)
+		_, err = tst.taskService.Get(tst.tx, current_user, taskId)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		current_user := tst.createUser(t, types.UserRoleAdmin)
-		err := tst.taskService.DeleteTask(tst.tx, current_user, 0)
+		err := tst.taskService.Delete(tst.tx, current_user, 0)
 		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
@@ -500,7 +500,7 @@ func TestDeleteTask(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.DeleteTask(tst.tx, current_user, taskId)
+		err = tst.taskService.Delete(tst.tx, current_user, taskId)
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
@@ -519,9 +519,9 @@ func TestUpdateTask(t *testing.T) {
 		assert.NotEqual(t, 0, taskId)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err = tst.taskService.EditTask(tst.tx, admin_user, taskId, updatedTask)
+		err = tst.taskService.Edit(tst.tx, admin_user, taskId, updatedTask)
 		assert.NoError(t, err)
-		taskResp, err := tst.taskService.GetTask(tst.tx, current_user, taskId)
+		taskResp, err := tst.taskService.Get(tst.tx, current_user, taskId)
 		assert.NoError(t, err)
 		assert.Equal(t, *updatedTask.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -529,19 +529,19 @@ func TestUpdateTask(t *testing.T) {
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err := tst.taskService.EditTask(tst.tx, admin_user, 0, updatedTask)
+		err := tst.taskService.Edit(tst.tx, admin_user, 0, updatedTask)
 		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }
 
 func TestGetAllForGroup(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	group := &models.Group{
 		Name: "Test Group",
 	}
-	groupId, err := tst.gr.CreateGroup(tst.tx, group)
+	groupId, err := tst.gr.Create(tst.tx, group)
 	assert.NoError(t, err)
 
 	t.Run("No tasks", func(t *testing.T) {
@@ -565,7 +565,7 @@ func TestGetAllForGroup(t *testing.T) {
 		taskId, err = tst.taskService.Create(tst.tx, admin_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 		tasks, err := tst.taskService.GetAllForGroup(tst.tx, admin_user, groupId, queryParams)
 		assert.NoError(t, err)
@@ -585,12 +585,12 @@ func TestGetAllForGroup(t *testing.T) {
 
 func TestGetAllCreatedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]interface{}{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
 	admin_user := tst.createUser(t, types.UserRoleAdmin)
 	teacher_user := tst.createUser(t, types.UserRoleTeacher)
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, admin_user, queryParams)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, admin_user, queryParams)
 		assert.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -603,7 +603,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, admin_user, queryParams)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, admin_user, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Equal(t, 1, len(tasks))
@@ -619,7 +619,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, teacher_user, queryParams)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacher_user, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Equal(t, 1, len(tasks))
@@ -636,7 +636,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		taskId, err := tst.taskService.Create(tst.tx, teacher_user2, task)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, teacher_user2, queryParams)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacher_user2, queryParams)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Equal(t, 1, len(tasks))
@@ -646,7 +646,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		student_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllCreatedTasks(tst.tx, student_user, queryParams)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, student_user, queryParams)
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
@@ -667,26 +667,26 @@ func TestUnAssignTaskFromUsers(t *testing.T) {
 	assert.NotEqual(t, 0, taskId)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
+		err = tst.taskService.UnassignFromUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		err = tst.taskService.UnassignFromUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
+		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
+		err = tst.taskService.UnassignFromUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
@@ -708,30 +708,30 @@ func TestUnAssignTaskFromGroups(t *testing.T) {
 	group := &models.Group{
 		Name: "Test Group",
 	}
-	groupId, err := tst.gr.CreateGroup(tst.tx, group)
+	groupId, err := tst.gr.Create(tst.tx, group)
 	assert.NoError(t, err)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err := tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, admin_user, taskId, []int64{groupId})
+		err = tst.taskService.UnassignFromGroups(tst.tx, admin_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		err := tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		err = tst.taskService.UnassignFromGroups(tst.tx, teacher_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignTaskToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
+		err := tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
 		assert.NoError(t, err)
 
-		err = tst.taskService.UnAssignTaskFromGroups(tst.tx, student_user, taskId, []int64{groupId})
+		err = tst.taskService.UnassignFromGroups(tst.tx, student_user, taskId, []int64{groupId})
 		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }

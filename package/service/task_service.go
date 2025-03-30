@@ -21,23 +21,38 @@ import (
 )
 
 type TaskService interface {
-	// Create creates a new empty task and returns the task ID
+	// AssignToGroups assigns a task to multiple groups.
+	AssignToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
+	// AssignToUsers assigns a task to multiple users.
+	AssignToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error
+	// Create creates a new task.
 	Create(tx *gorm.DB, current_user schemas.User, task *schemas.Task) (int64, error)
-	GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
-	GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error)
-	GetTask(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error)
+	// CreateInputOutput creates input and output files for a task.
 	CreateInputOutput(tx *gorm.DB, taskId int64, archivePath string) error
-	GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
-	GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
-	GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error)
-	EditTask(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error
-	AssignTaskToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error
-	AssignTaskToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
-	UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error
-	UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
-	DeleteTask(tx *gorm.DB, current_user schemas.User, taskId int64) error
+	// Delete deletes a task.
+	Delete(tx *gorm.DB, current_user schemas.User, taskId int64) error
+	// Edit edits an existing task.
+	Edit(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error
+	// GetAll retrieves all tasks based on query parameters.
+	GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	// GetAllAssigned retrieves all tasks assigned to the current user.
+	GetAllAssigned(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	// GetAllCreated retrieves all tasks created by the current user.
+	GetAllCreated(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	// GetAllForGroup retrieves all tasks for a specific group.
+	GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]any) ([]schemas.Task, error)
+	// Get retrieves a detailed view of a specific task.
+	Get(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error)
+	// GetByTitle retrieves a task by its title.
+	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
+	// ParseInputOutput parses the input and output files from an archive.
 	ParseInputOutput(archivePath string) (int, error)
-	ProcessAndUploadTask(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error
+	// ProcessAndUpload processes and uploads input and output files for a task.
+	ProcessAndUpload(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error
+	// UnassignFromGroups unassigns a task from multiple groups.
+	UnassignFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error
+	// UnassignFromUsers unassigns a task from multiple users.
+	UnassignFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error
 }
 
 type taskService struct {
@@ -57,7 +72,7 @@ func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *sche
 		return 0, err
 	}
 	// Create a new task
-	_, err = ts.GetTaskByTitle(tx, task.Title)
+	_, err = ts.GetByTitle(tx, task.Title)
 	if err != nil && err != errors.ErrTaskNotFound {
 		ts.logger.Errorf("Error getting task by title: %v", err.Error())
 		return 0, err
@@ -65,7 +80,7 @@ func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *sche
 		return 0, errors.ErrTaskExists
 	}
 
-	author, err := ts.userRepository.GetUser(tx, current_user.Id)
+	author, err := ts.userRepository.Get(tx, current_user.Id)
 	if err != nil {
 		ts.logger.Errorf("Error getting user: %v", err.Error())
 		return 0, err
@@ -85,8 +100,8 @@ func (ts *taskService) Create(tx *gorm.DB, current_user schemas.User, task *sche
 	return taskId, nil
 }
 
-func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
-	task, err := ts.taskRepository.GetTaskByTitle(tx, title)
+func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
+	task, err := ts.taskRepository.GetByTitle(tx, title)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.ErrTaskNotFound
@@ -98,7 +113,7 @@ func (ts *taskService) GetTaskByTitle(tx *gorm.DB, title string) (*schemas.Task,
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	// err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin})
 	// if err != nil {
 	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -112,7 +127,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllTasks(tx, int(limit), int(offset), sort)
+	tasks, err := ts.taskRepository.GetAll(tx, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -127,7 +142,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, current_user schemas.User, queryParam
 	return result, nil
 }
 
-func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]interface{}) ([]schemas.Task, error) {
+func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, groupId int64, queryParams map[string]any) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, errors.ErrNotAuthorized
@@ -155,9 +170,9 @@ func (ts *taskService) GetAllForGroup(tx *gorm.DB, current_user schemas.User, gr
 	return result, nil
 }
 
-func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) Get(tx *gorm.DB, current_user schemas.User, taskId int64) (*schemas.TaskDetailed, error) {
 	// Get the task
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return nil, err
@@ -199,7 +214,7 @@ func (ts *taskService) GetTask(tx *gorm.DB, current_user schemas.User, taskId in
 	return result, nil
 }
 
-func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
+func (ts *taskService) GetAllAssigned(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleStudent})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -212,7 +227,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 		sort = "created_at:desc"
 	}
 
-	tasks, err := ts.taskRepository.GetAllAssignedTasks(tx, current_user.Id, int(limit), int(offset), sort)
+	tasks, err := ts.taskRepository.GetAllAssigned(tx, current_user.Id, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all assigned tasks: %v", err.Error())
 		return nil, err
@@ -227,7 +242,7 @@ func (ts *taskService) GetAllAssignedTasks(tx *gorm.DB, current_user schemas.Use
 	return result, nil
 }
 
-func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User, queryParams map[string]interface{}) ([]schemas.Task, error) {
+func (ts *taskService) GetAllCreated(tx *gorm.DB, current_user schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -240,7 +255,7 @@ func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User
 	if sort == "" {
 		sort = "created_at desc"
 	}
-	tasks, err := ts.taskRepository.GetAllCreatedTasks(tx, current_user.Id, int(limit), int(offset), sort)
+	tasks, err := ts.taskRepository.GetAllCreated(tx, current_user.Id, int(limit), int(offset), sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all created tasks: %v", err.Error())
 		return nil, err
@@ -255,14 +270,14 @@ func (ts *taskService) GetAllCreatedTasks(tx *gorm.DB, current_user schemas.User
 	return result, nil
 }
 
-func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error {
+func (ts *taskService) AssignToUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userIds []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
 
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -272,13 +287,13 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 	}
 
 	for _, userId := range userIds {
-		_, err := ts.userRepository.GetUser(tx, userId)
+		_, err := ts.userRepository.Get(tx, userId)
 		if err != nil {
 			ts.logger.Errorf("Error getting user: %v", err.Error())
 			return err
 		}
 
-		isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskId, userId)
+		isAssigned, err := ts.taskRepository.IsAssignedToUser(tx, taskId, userId)
 		if err != nil {
 			ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
 			return err
@@ -288,7 +303,7 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 			continue
 		}
 
-		err = ts.taskRepository.AssignTaskToUser(tx, taskId, userId)
+		err = ts.taskRepository.AssignToUser(tx, taskId, userId)
 		if err != nil {
 			ts.logger.Errorf("Error assigning task to user: %v", err.Error())
 			return err
@@ -298,14 +313,14 @@ func (ts *taskService) AssignTaskToUsers(tx *gorm.DB, current_user schemas.User,
 	return nil
 }
 
-func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
+func (ts *taskService) AssignToGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
 
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -315,13 +330,13 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 	}
 
 	for _, groupId := range groupIds {
-		_, err := ts.groupRepository.GetGroup(tx, groupId)
+		_, err := ts.groupRepository.Get(tx, groupId)
 		if err != nil {
 			ts.logger.Errorf("Error getting group: %v", err.Error())
 			return err
 		}
 
-		isAssigned, err := ts.taskRepository.IsTaskAssignedToGroup(tx, taskId, groupId)
+		isAssigned, err := ts.taskRepository.IsAssignedToGroup(tx, taskId, groupId)
 		if err != nil {
 			ts.logger.Errorf("Error checking if task is assigned to group: %v", err.Error())
 			return err
@@ -331,7 +346,7 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 			continue
 		}
 
-		err = ts.taskRepository.AssignTaskToGroup(tx, taskId, groupId)
+		err = ts.taskRepository.AssignToGroup(tx, taskId, groupId)
 		if err != nil {
 			ts.logger.Errorf("Error assigning task to group: %v", err.Error())
 			return err
@@ -341,14 +356,14 @@ func (ts *taskService) AssignTaskToGroups(tx *gorm.DB, current_user schemas.User
 	return nil
 }
 
-func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error {
+func (ts *taskService) UnassignFromUsers(tx *gorm.DB, current_user schemas.User, taskId int64, userId []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
 
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -359,7 +374,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 
 	for _, userId := range userId {
 
-		isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskId, userId)
+		isAssigned, err := ts.taskRepository.IsAssignedToUser(tx, taskId, userId)
 		if err != nil {
 			ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
 			return err
@@ -368,7 +383,7 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 			return errors.ErrTaskNotAssignedToUser
 		}
 
-		err = ts.taskRepository.UnAssignTaskFromUser(tx, taskId, userId)
+		err = ts.taskRepository.UnassignFromUser(tx, taskId, userId)
 		if err != nil {
 			ts.logger.Errorf("Error unassigning task from user: %v", err.Error())
 			return err
@@ -378,14 +393,14 @@ func (ts *taskService) UnAssignTaskFromUsers(tx *gorm.DB, current_user schemas.U
 	return nil
 }
 
-func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
+func (ts *taskService) UnassignFromGroups(tx *gorm.DB, current_user schemas.User, taskId int64, groupIds []int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
 
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -396,7 +411,7 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 
 	for _, groupId := range groupIds {
 
-		isAssigned, err := ts.taskRepository.IsTaskAssignedToGroup(tx, taskId, groupId)
+		isAssigned, err := ts.taskRepository.IsAssignedToGroup(tx, taskId, groupId)
 		if err != nil {
 			ts.logger.Errorf("Error checking if task is assigned to group: %v", err.Error())
 			return err
@@ -405,7 +420,7 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 			return errors.ErrTaskNotAssignedToGroup
 		}
 
-		err = ts.taskRepository.UnAssignTaskFromGroup(tx, taskId, groupId)
+		err = ts.taskRepository.UnassignFromGroup(tx, taskId, groupId)
 		if err != nil {
 			ts.logger.Errorf("Error unassigning task from group: %v", err.Error())
 			return err
@@ -415,14 +430,14 @@ func (ts *taskService) UnAssignTaskFromGroups(tx *gorm.DB, current_user schemas.
 	return nil
 }
 
-func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId int64) error {
+func (ts *taskService) Delete(tx *gorm.DB, current_user schemas.User, taskId int64) error {
 	err := utils.ValidateRoleAccess(current_user.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
 
-	task, err := ts.taskRepository.GetTask(tx, taskId)
+	task, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -431,7 +446,7 @@ func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId
 		return errors.ErrNotAuthorized
 	}
 
-	err = ts.taskRepository.DeleteTask(tx, taskId)
+	err = ts.taskRepository.Delete(tx, taskId)
 	if err != nil {
 		ts.logger.Errorf("Error deleting task: %v", err.Error())
 		return err
@@ -440,8 +455,8 @@ func (ts *taskService) DeleteTask(tx *gorm.DB, current_user schemas.User, taskId
 	return nil
 }
 
-func (ts *taskService) EditTask(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error {
-	currentTask, err := ts.taskRepository.GetTask(tx, taskId)
+func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskId int64, updateInfo *schemas.EditTask) error {
+	currentTask, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrTaskNotFound
@@ -456,7 +471,7 @@ func (ts *taskService) EditTask(tx *gorm.DB, currentUser schemas.User, taskId in
 	ts.updateModel(currentTask, updateInfo)
 
 	// Update the task
-	err = ts.taskRepository.EditTask(tx, taskId, currentTask)
+	err = ts.taskRepository.Edit(tx, taskId, currentTask)
 	if err != nil {
 		ts.logger.Errorf("Error updating task: %v", err.Error())
 		return err
@@ -547,7 +562,7 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 }
 
 func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath string) error {
-	_, err := ts.taskRepository.GetTask(tx, taskId)
+	_, err := ts.taskRepository.Get(tx, taskId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return errors.ErrNotFound
@@ -579,7 +594,7 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskId int64, archivePath 
 	return nil
 }
 
-func (ts *taskService) ProcessAndUploadTask(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error {
+func (ts *taskService) ProcessAndUpload(tx *gorm.DB, current_user schemas.User, taskId int64, archivePath string) error {
 	if current_user.Role == types.UserRoleStudent {
 		return errors.ErrNotAllowed
 	}
