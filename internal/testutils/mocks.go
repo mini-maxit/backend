@@ -2,16 +2,19 @@ package testutils
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"time"
+
+	"slices"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	"github.com/mini-maxit/backend/package/errors"
+	myErrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -38,17 +41,17 @@ func (ur *MockUserRepository) Create(tx *gorm.DB, user *models.User) (int64, err
 	}
 	ur.users[user.Email] = user
 	ur.counter++
-	user.Id = ur.counter
+	user.ID = ur.counter
 	return ur.counter, nil
 }
 
-func (ur *MockUserRepository) Get(tx *gorm.DB, userId int64) (*models.User, error) {
+func (ur *MockUserRepository) Get(_ *gorm.DB, userID int64) (*models.User, error) {
 	if ur.failNext {
 		ur.failNext = false
 		return nil, gorm.ErrInvalidDB
 	}
 	for _, user := range ur.users {
-		if user.Id == userId {
+		if user.ID == userID {
 			return user, nil
 		}
 	}
@@ -65,13 +68,16 @@ func (ur *MockUserRepository) GetByEmail(tx *gorm.DB, email string) (*models.Use
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (ur *MockUserRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
+func (ur *MockUserRepository) GetAll(tx *gorm.DB, limit, _ int, _ string) ([]models.User, error) {
 	if tx == nil {
 		return nil, gorm.ErrInvalidDB
 	}
 	users := make([]models.User, 0, len(ur.users))
 	for _, user := range ur.users {
 		users = append(users, *user)
+		if len(users) == limit {
+			break
+		}
 	}
 	return users, nil
 }
@@ -82,7 +88,7 @@ func (ur *MockUserRepository) Edit(tx *gorm.DB, user *models.User) error {
 	}
 	var userModel *models.User
 	for _, u := range ur.users {
-		if u.Id == user.Id {
+		if u.ID == user.ID {
 			userModel = u
 			break
 		}
@@ -115,46 +121,46 @@ func (sr *MockSessionRepository) FailNext() {
 	sr.failNext = true
 }
 
-func (sr *MockSessionRepository) Create(tx *gorm.DB, session *models.Session) error {
-	sr.sessions[session.Id] = session
+func (sr *MockSessionRepository) Create(_ *gorm.DB, session *models.Session) error {
+	sr.sessions[session.ID] = session
 	return nil
 }
 
-func (sr *MockSessionRepository) Get(tx *gorm.DB, sessionId string) (*models.Session, error) {
+func (sr *MockSessionRepository) Get(_ *gorm.DB, sessionID string) (*models.Session, error) {
 	if sr.failNext {
 		sr.failNext = false
 		return nil, gorm.ErrInvalidDB
 	}
-	if session, ok := sr.sessions[sessionId]; ok {
+	if session, ok := sr.sessions[sessionID]; ok {
 		return session, nil
 	}
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (sr *MockSessionRepository) GetByUserId(tx *gorm.DB, userId int64) (*models.Session, error) {
+func (sr *MockSessionRepository) GetByUserID(_ *gorm.DB, userID int64) (*models.Session, error) {
 	if sr.failNext {
 		log.Printf("Failing getsession by user id")
 		sr.failNext = false
 		return nil, gorm.ErrInvalidDB
 	}
 	for _, session := range sr.sessions {
-		if session.UserId == userId {
+		if session.UserID == userID {
 			return session, nil
 		}
 	}
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (sr *MockSessionRepository) UpdateExpiration(tx *gorm.DB, sessionId string, expires_at time.Time) error {
-	if session, ok := sr.sessions[sessionId]; ok {
-		session.ExpiresAt = expires_at
+func (sr *MockSessionRepository) UpdateExpiration(_ *gorm.DB, sessionID string, expiresAt time.Time) error {
+	if session, ok := sr.sessions[sessionID]; ok {
+		session.ExpiresAt = expiresAt
 		return nil
 	}
 	return gorm.ErrRecordNotFound
 }
 
-func (sr *MockSessionRepository) Delete(tx *gorm.DB, sessionId string) error {
-	delete(sr.sessions, sessionId)
+func (sr *MockSessionRepository) Delete(_ *gorm.DB, sessionID string) error {
+	delete(sr.sessions, sessionID)
 	return nil
 }
 
@@ -175,21 +181,21 @@ type MockTaskRepository struct {
 	groupRepository *MockGroupRepository
 }
 
-func (tr *MockTaskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) {
+func (tr *MockTaskRepository) Create(_ *gorm.DB, task *models.Task) (int64, error) {
 	tr.tasksCouter++
-	task.Id = tr.tasksCouter
-	tr.tasks[task.Id] = task
-	return task.Id, nil
+	task.ID = tr.tasksCouter
+	tr.tasks[task.ID] = task
+	return task.ID, nil
 }
 
-func (tr *MockTaskRepository) Get(tx *gorm.DB, taskId int64) (*models.Task, error) {
-	if task, ok := tr.tasks[taskId]; ok {
+func (tr *MockTaskRepository) Get(_ *gorm.DB, taskID int64) (*models.Task, error) {
+	if task, ok := tr.tasks[taskID]; ok {
 		return task, nil
 	}
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAll(_ *gorm.DB, _, _ int, _ string) ([]models.Task, error) {
 	tasks := make([]models.Task, 0, len(tr.tasks))
 	for _, task := range tr.tasks {
 		tasks = append(tasks, *task)
@@ -197,22 +203,27 @@ func (tr *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllForUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllForUser(_ *gorm.DB, _ int64, _, _ int, _ string) ([]models.Task, error) {
 	panic("implement me")
 	// var tasks []models.Task
 	// for _, task := range tr.tasks {
-	// 	if task.CreatedBy == userId {
+	// 	if task.CreatedBy == userID {
 	// 		tasks = append(tasks, *task)
 	// 	}
 	// }
 	// return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllForGroup(
+	_ *gorm.DB,
+	groupID int64,
+	_, _ int,
+	_ string,
+) ([]models.Task, error) {
 	var tasks []models.Task
 	for _, task := range tr.tasks {
 		for _, group := range task.Groups {
-			if group.Id == groupId {
+			if group.ID == groupID {
 				tasks = append(tasks, *task)
 				break
 			}
@@ -221,7 +232,7 @@ func (tr *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, 
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, error) {
+func (tr *MockTaskRepository) GetByTitle(_ *gorm.DB, title string) (*models.Task, error) {
 	for _, task := range tr.tasks {
 		if task.Title == title {
 			return task, nil
@@ -230,17 +241,17 @@ func (tr *MockTaskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Tas
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetTimeLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
+func (tr *MockTaskRepository) GetTimeLimits(_ *gorm.DB, _ int64) ([]int64, error) {
 	panic("implement me")
-	// if task, ok := tr.tasks[taskId]; ok {
+	// if task, ok := tr.tasks[taskID]; ok {
 	// 	return task.TimeLimits, nil
 	// }
 	// return nil, gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetMemoryLimits(tx *gorm.DB, taskId int64) ([]int64, error) {
+func (tr *MockTaskRepository) GetMemoryLimits(_ *gorm.DB, _ int64) ([]int64, error) {
 	panic("implement me")
-	// if task, ok := tr.tasks[taskId]; ok {
+	// if task, ok := tr.tasks[taskID]; ok {
 	// 	return task.MemoryLimits, nil
 	// }
 	// return nil, gorm.ErrRecordNotFound
@@ -251,63 +262,63 @@ func (tr *MockTaskRepository) Clear() {
 	tr.tasksCouter = 0
 }
 
-func (tr *MockTaskRepository) Edit(tx *gorm.DB, taskId int64, task *models.Task) error {
-	if _, ok := tr.tasks[taskId]; ok {
-		tr.tasks[taskId] = task
+func (tr *MockTaskRepository) Edit(_ *gorm.DB, taskID int64, task *models.Task) error {
+	if _, ok := tr.tasks[taskID]; ok {
+		tr.tasks[taskID] = task
 		return nil
 	}
 	return gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) Delete(tx *gorm.DB, taskId int64) error {
-	if _, ok := tr.tasks[taskId]; ok {
-		delete(tr.tasks, taskId)
+func (tr *MockTaskRepository) Delete(_ *gorm.DB, taskID int64) error {
+	if _, ok := tr.tasks[taskID]; ok {
+		delete(tr.tasks, taskID)
 		return nil
 	}
 	return gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) AssignToUser(tx *gorm.DB, taskId, userId int64) error {
-	if _, ok := tr.tasks[taskId]; !ok {
+func (tr *MockTaskRepository) AssignToUser(_ *gorm.DB, taskID, userID int64) error {
+	if _, ok := tr.tasks[taskID]; !ok {
 		return gorm.ErrRecordNotFound
 	}
 
 	for _, taskUser := range tr.taskUsers {
-		if taskUser.TaskId == taskId && taskUser.UserId == userId {
-			return errors.ErrTaskAlreadyAssigned
+		if taskUser.TaskID == taskID && taskUser.UserID == userID {
+			return myErrors.ErrTaskAlreadyAssigned
 		}
 	}
 
 	tr.taskUsers = append(tr.taskUsers, &models.TaskUser{
-		TaskId: taskId,
-		UserId: userId,
+		TaskID: taskID,
+		UserID: userID,
 	})
 	return nil
 }
 
-func (tr *MockTaskRepository) AssignToGroup(tx *gorm.DB, taskId, groupId int64) error {
+func (tr *MockTaskRepository) AssignToGroup(_ *gorm.DB, taskID, groupID int64) error {
 	for _, taskGroup := range tr.taskGroups {
-		if taskGroup.TaskId == taskId && taskGroup.GroupId == groupId {
+		if taskGroup.TaskID == taskID && taskGroup.GroupID == groupID {
 			return nil
 		}
 	}
 	tr.taskGroups = append(tr.taskGroups, &models.TaskGroup{
-		TaskId:  taskId,
-		GroupId: groupId,
+		TaskID:  taskID,
+		GroupID: groupID,
 	})
 	for _, task := range tr.tasks {
-		if task.Id == taskId {
+		if task.ID == taskID {
 			task.Groups = append(task.Groups, models.Group{
-				Id: groupId,
+				ID: groupID,
 			})
 		}
 	}
 	return nil
 }
 
-func (tr *MockTaskRepository) UnassignFromUser(tx *gorm.DB, taskId, userId int64) error {
+func (tr *MockTaskRepository) UnassignFromUser(_ *gorm.DB, taskID, userID int64) error {
 	for i, taskUser := range tr.taskUsers {
-		if taskUser.TaskId == taskId && taskUser.UserId == userId {
+		if taskUser.TaskID == taskID && taskUser.UserID == userID {
 			tr.taskUsers = append(tr.taskUsers[:i], tr.taskUsers[i+1:]...)
 			return nil
 		}
@@ -315,9 +326,9 @@ func (tr *MockTaskRepository) UnassignFromUser(tx *gorm.DB, taskId, userId int64
 	return gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) UnassignFromGroup(tx *gorm.DB, taskId, groupId int64) error {
+func (tr *MockTaskRepository) UnassignFromGroup(_ *gorm.DB, taskID, groupID int64) error {
 	for i, taskGroup := range tr.taskGroups {
-		if taskGroup.TaskId == taskId && taskGroup.GroupId == groupId {
+		if taskGroup.TaskID == taskID && taskGroup.GroupID == groupID {
 			tr.taskGroups = append(tr.taskGroups[:i], tr.taskGroups[i+1:]...)
 			return nil
 		}
@@ -325,11 +336,11 @@ func (tr *MockTaskRepository) UnassignFromGroup(tx *gorm.DB, taskId, groupId int
 	return gorm.ErrRecordNotFound
 }
 
-func (tr *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllAssigned(_ *gorm.DB, userID int64, _, _ int, _ string) ([]models.Task, error) {
 	var tasks []models.Task
 	for _, taskUser := range tr.taskUsers {
-		if taskUser.UserId == userId {
-			if task, ok := tr.tasks[taskUser.TaskId]; ok {
+		if taskUser.UserID == userID {
+			if task, ok := tr.tasks[taskUser.TaskID]; ok {
 				tasks = append(tasks, *task)
 			}
 		}
@@ -338,16 +349,16 @@ func (tr *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userId int64, limit, o
 	var userGroups []int64
 	for _, userGroup := range tr.groupRepository.userGroups {
 		for _, ug := range userGroup {
-			if ug.UserId == userId {
-				userGroups = append(userGroups, ug.GroupId)
+			if ug.UserID == userID {
+				userGroups = append(userGroups, ug.GroupID)
 			}
 		}
 	}
 
 	for _, taskGroup := range tr.taskGroups {
 		for _, ug := range userGroups {
-			if taskGroup.GroupId == ug {
-				if task, ok := tr.tasks[taskGroup.TaskId]; ok {
+			if taskGroup.GroupID == ug {
+				if task, ok := tr.tasks[taskGroup.TaskID]; ok {
 					tasks = append(tasks, *task)
 				}
 			}
@@ -357,28 +368,28 @@ func (tr *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userId int64, limit, o
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) GetAllCreated(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *MockTaskRepository) GetAllCreated(_ *gorm.DB, userID int64, _, _ int, _ string) ([]models.Task, error) {
 	var tasks []models.Task
 	for _, task := range tr.tasks {
-		if task.CreatedBy == userId {
+		if task.CreatedBy == userID {
 			tasks = append(tasks, *task)
 		}
 	}
 	return tasks, nil
 }
 
-func (tr *MockTaskRepository) IsAssignedToGroup(tx *gorm.DB, taskId, groupId int64) (bool, error) {
+func (tr *MockTaskRepository) IsAssignedToGroup(_ *gorm.DB, taskID, groupID int64) (bool, error) {
 	for _, taskGroup := range tr.taskGroups {
-		if taskGroup.TaskId == taskId && taskGroup.GroupId == groupId {
+		if taskGroup.TaskID == taskID && taskGroup.GroupID == groupID {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (tr *MockTaskRepository) IsAssignedToUser(tx *gorm.DB, taskId, userId int64) (bool, error) {
+func (tr *MockTaskRepository) IsAssignedToUser(_ *gorm.DB, taskID, userID int64) (bool, error) {
 	for _, taskUser := range tr.taskUsers {
-		if taskUser.TaskId == taskId && taskUser.UserId == userId {
+		if taskUser.TaskID == taskID && taskUser.UserID == userID {
 			return true, nil
 		}
 	}
@@ -386,16 +397,16 @@ func (tr *MockTaskRepository) IsAssignedToUser(tx *gorm.DB, taskId, userId int64
 	var userGroups []int64
 	for _, userGroup := range tr.groupRepository.userGroups {
 		for _, ug := range userGroup {
-			if ug.UserId == userId {
-				userGroups = append(userGroups, ug.GroupId)
+			if ug.UserID == userID {
+				userGroups = append(userGroups, ug.GroupID)
 			}
 		}
 	}
 
 	for _, taskGroup := range tr.taskGroups {
 		for _, ug := range userGroups {
-			if taskGroup.GroupId == ug {
-				if taskGroup.TaskId == taskId {
+			if taskGroup.GroupID == ug {
+				if taskGroup.TaskID == taskID {
 					return true, nil
 				}
 			}
@@ -425,36 +436,36 @@ func NewMockTaskRepository(groupRepository *MockGroupRepository) *MockTaskReposi
 
 // func (sr *MockSubmissionRepository) Create(tx *gorm.DB, submission *models.Submission) (int64, error) {
 // 	sr.counter++
-// 	submission.Id = sr.counter
-// 	sr.submissions[submission.Id] = submission
-// 	return submission.Id, nil
+// 	submission.ID = sr.counter
+// 	sr.submissions[submission.ID] = submission
+// 	return submission.ID, nil
 // }
 
-// func (sr *MockSubmissionRepository) GetSubmission(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
-// 	if submission, ok := sr.submissions[submissionId]; ok {
+// func (sr *MockSubmissionRepository) GetSubmission(tx *gorm.DB, submissionID int64) (*models.Submission, error) {
+// 	if submission, ok := sr.submissions[submissionID]; ok {
 // 		return submission, nil
 // 	}
 // 	return nil, gorm.ErrRecordNotFound
 // }
 
-// func (sr *MockSubmissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionId int64) error {
-// 	if submission, ok := sr.submissions[submissionId]; ok {
+// func (sr *MockSubmissionRepository) MarkSubmissionProcessing(tx *gorm.DB, submissionID int64) error {
+// 	if submission, ok := sr.submissions[submissionID]; ok {
 // 		submission.Status = "processing"
 // 		return nil
 // 	}
 // 	return gorm.ErrRecordNotFound
 // }
 
-// func (sr *MockSubmissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionId int64) error {
-// 	if submission, ok := sr.submissions[submissionId]; ok {
+// func (sr *MockSubmissionRepository) MarkSubmissionComplete(tx *gorm.DB, submissionID int64) error {
+// 	if submission, ok := sr.submissions[submissionID]; ok {
 // 		submission.Status = "completed"
 // 		return nil
 // 	}
 // 	return gorm.ErrRecordNotFound
 // }
 
-// func (sr *MockSubmissionRepository) MarkSubmissionFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
-// 	if submission, ok := sr.submissions[submissionId]; ok {
+// func (sr *MockSubmissionRepository) MarkSubmissionFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
+// 	if submission, ok := sr.submissions[submissionID]; ok {
 // 		submission.Status = "failed"
 // 		submission.StatusMessage = errorMsg
 // 		return nil
@@ -479,24 +490,24 @@ type MockGroupRepository struct {
 	userRepository *MockUserRepository
 }
 
-func (gr *MockGroupRepository) Create(tx *gorm.DB, group *models.Group) (int64, error) {
+func (gr *MockGroupRepository) Create(_ *gorm.DB, group *models.Group) (int64, error) {
 	gr.groupsCounter++
-	group.Id = gr.groupsCounter
-	gr.groups[group.Id] = group
-	return group.Id, nil
+	group.ID = gr.groupsCounter
+	gr.groups[group.ID] = group
+	return group.ID, nil
 }
 
-func (gr *MockGroupRepository) Delete(tx *gorm.DB, groupId int64) error {
-	if _, ok := gr.groups[groupId]; ok {
-		delete(gr.groups, groupId)
+func (gr *MockGroupRepository) Delete(_ *gorm.DB, groupID int64) error {
+	if _, ok := gr.groups[groupID]; ok {
+		delete(gr.groups, groupID)
 		return nil
 	}
 	return gorm.ErrRecordNotFound
 }
 
-func (gr *MockGroupRepository) Edit(tx *gorm.DB, groupId int64, group *models.Group) (*models.Group, error) {
-	if _, ok := gr.groups[groupId]; ok {
-		gr.groups[groupId] = group
+func (gr *MockGroupRepository) Edit(_ *gorm.DB, groupID int64, group *models.Group) (*models.Group, error) {
+	if _, ok := gr.groups[groupID]; ok {
+		gr.groups[groupID] = group
 		return group, nil
 	}
 	return nil, gorm.ErrRecordNotFound
@@ -510,38 +521,38 @@ func (gr *MockGroupRepository) GetAll(*gorm.DB, int, int, string) ([]models.Grou
 	return groups, nil
 }
 
-func (gr *MockGroupRepository) Get(tx *gorm.DB, groupId int64) (*models.Group, error) {
-	if group, ok := gr.groups[groupId]; ok {
+func (gr *MockGroupRepository) Get(_ *gorm.DB, groupID int64) (*models.Group, error) {
+	if group, ok := gr.groups[groupID]; ok {
 		return group, nil
 	}
 	return nil, gorm.ErrRecordNotFound
 }
 
-func (gr *MockGroupRepository) AddUsersToGroup(tx *gorm.DB, groupId int64, userId []int64) error {
-	for _, id := range userId {
+func (gr *MockGroupRepository) AddUsersToGroup(_ *gorm.DB, groupID int64, userID []int64) error {
+	for _, id := range userID {
 		gr.userGroupsCounter++
 		gr.userGroups[gr.userGroupsCounter] = append(gr.userGroups[gr.userGroupsCounter], &models.UserGroup{
-			GroupId: groupId,
-			UserId:  id,
+			GroupID: groupID,
+			UserID:  id,
 		})
 	}
 	return nil
 }
 
-func (gr *MockGroupRepository) AddUser(tx *gorm.DB, groupId int64, userId int64) error {
+func (gr *MockGroupRepository) AddUser(_ *gorm.DB, groupID int64, userID int64) error {
 	gr.userGroupsCounter++
 	gr.userGroups[gr.userGroupsCounter] = append(gr.userGroups[gr.userGroupsCounter], &models.UserGroup{
-		GroupId: groupId,
-		UserId:  userId,
+		GroupID: groupID,
+		UserID:  userID,
 	})
 	return nil
 }
 
-func (gr *MockGroupRepository) DeleteUser(tx *gorm.DB, groupId int64, userId int64) error {
+func (gr *MockGroupRepository) DeleteUser(_ *gorm.DB, groupID int64, userID int64) error {
 	for i, userGroup := range gr.userGroups {
 		for j, ug := range userGroup {
-			if ug.GroupId == groupId && ug.UserId == userId {
-				gr.userGroups[i] = append(gr.userGroups[i][:j], gr.userGroups[i][j+1:]...)
+			if ug.GroupID == groupID && ug.UserID == userID {
+				gr.userGroups[i] = slices.Delete(gr.userGroups[i], j, j+1)
 				return nil
 			}
 		}
@@ -549,22 +560,22 @@ func (gr *MockGroupRepository) DeleteUser(tx *gorm.DB, groupId int64, userId int
 	return gorm.ErrRecordNotFound
 }
 
-func (gr *MockGroupRepository) GetAllForTeacher(tx *gorm.DB, teacherId int64, offset int, limit int, sort string) ([]models.Group, error) {
+func (gr *MockGroupRepository) GetAllForTeacher(_ *gorm.DB, userID int64, _, _ int, _ string) ([]models.Group, error) {
 	var groups []models.Group
 	for _, group := range gr.groups {
-		if group.CreatedBy == teacherId {
+		if group.CreatedBy == userID {
 			groups = append(groups, *group)
 		}
 	}
 	return groups, nil
 }
 
-func (gr *MockGroupRepository) GetUsers(tx *gorm.DB, groupId int64) ([]models.User, error) {
+func (gr *MockGroupRepository) GetUsers(tx *gorm.DB, groupID int64) ([]models.User, error) {
 	var users []models.User
 	for _, userGroup := range gr.userGroups {
 		for _, ug := range userGroup {
-			if ug.GroupId == groupId {
-				user, err := gr.userRepository.Get(tx, ug.UserId)
+			if ug.GroupID == groupID {
+				user, err := gr.userRepository.Get(tx, ug.UserID)
 				if err == nil {
 					users = append(users, *user)
 				}
@@ -574,10 +585,10 @@ func (gr *MockGroupRepository) GetUsers(tx *gorm.DB, groupId int64) ([]models.Us
 	return users, nil
 }
 
-func (gr *MockGroupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId int64) (bool, error) {
+func (gr *MockGroupRepository) UserBelongsTo(_ *gorm.DB, groupID int64, userID int64) (bool, error) {
 	for _, userGroup := range gr.userGroups {
 		for _, ug := range userGroup {
-			if ug.GroupId == groupId && ug.UserId == userId {
+			if ug.GroupID == groupID && ug.UserID == userID {
 				return true, nil
 			}
 		}
@@ -585,7 +596,7 @@ func (gr *MockGroupRepository) UserBelongsTo(tx *gorm.DB, groupId int64, userId 
 	return false, nil
 }
 
-func (gr *MockGroupRepository) GetTasks(tx *gorm.DB, groupId int64) ([]models.Task, error) {
+func (gr *MockGroupRepository) GetTasks(_ *gorm.DB, _ int64) ([]models.Task, error) {
 	tasks := make([]models.Task, 0)
 	return tasks, nil
 }
@@ -602,32 +613,6 @@ func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
 	}
 }
 
-type MockUserService struct {
-}
-
-func (us *MockUserService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
-	panic("implement me")
-}
-func (us *MockUserService) GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error) {
-	panic("implement me")
-}
-func (us *MockUserService) Get(tx *gorm.DB, userId int64) (*schemas.User, error) {
-	panic("implement me")
-}
-func (us *MockUserService) Edit(tx *gorm.DB, currentUser schemas.User, userId int64, updateInfo *schemas.UserEdit) error {
-	panic("implement me")
-}
-func (us *MockUserService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userId int64, role types.UserRole) error {
-	panic("implement me")
-}
-func (us *MockUserService) ChangePassword(tx *gorm.DB, currentUser schemas.User, userId int64, data *schemas.UserChangePassword) error {
-	panic("implement me")
-}
-
-func NewMockUserService() *MockUserService {
-	return &MockUserService{}
-}
-
 type MockAuthService struct {
 	users map[string]*models.User
 }
@@ -640,29 +625,30 @@ func (as *MockAuthService) ClearUsers() {
 	as.users = make(map[string]*models.User)
 }
 
-func (as *MockAuthService) Login(tx *gorm.DB, request schemas.UserLoginRequest) (*schemas.Session, error) {
+func (as *MockAuthService) Login(_ *gorm.DB, request schemas.UserLoginRequest) (*schemas.Session, error) {
 	user := as.users[request.Email]
 	if user != nil {
 		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password))
-		if err == nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return nil, myErrors.ErrInvalidCredentials
+		case err == nil:
 			return &schemas.Session{
-				Id:        user.Email + request.Email,
-				UserId:    user.Id,
+				ID:        user.Email + request.Email,
+				UserID:    user.ID,
 				ExpiresAt: time.Now().Add(time.Hour),
 			}, nil
-		} else if err == bcrypt.ErrMismatchedHashAndPassword {
-			return nil, errors.ErrInvalidCredentials
-		} else {
+		default:
 			return nil, err
 		}
 	}
-	return nil, errors.ErrUserNotFound
+	return nil, myErrors.ErrUserNotFound
 }
 
-func (as *MockAuthService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
+func (as *MockAuthService) Register(_ *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	user := as.users[userRegister.Email]
 	if user != nil {
-		return nil, errors.ErrUserAlreadyExists
+		return nil, myErrors.ErrUserAlreadyExists
 	}
 	hashPass, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -678,8 +664,8 @@ func (as *MockAuthService) Register(tx *gorm.DB, userRegister schemas.UserRegist
 	}
 	as.users[user.Email] = user
 	return &schemas.Session{
-		Id:        user.Email + userRegister.Email,
-		UserId:    user.Id,
+		ID:        user.Email + userRegister.Email,
+		UserID:    user.ID,
 		UserRole:  string(user.Role),
 		ExpiresAt: time.Now().Add(time.Hour),
 	}, nil
@@ -725,7 +711,7 @@ func (db *MockDatabase) Vaildate() {
 	db.invalid = false
 }
 
-func (db *MockDatabase) Db() *gorm.DB {
+func (db *MockDatabase) DB() *gorm.DB {
 	return &gorm.DB{}
 }
 
@@ -742,24 +728,21 @@ type MockInputOutputRepository struct {
 	counter      int64
 }
 
-func (ir *MockInputOutputRepository) Create(tx *gorm.DB, inputOutput *models.InputOutput) error {
-	for _, io := range ir.inputOutputs {
-		io.Id = ir.counter
-		ir.inputOutputs[ir.counter] = io
-		ir.counter++
-	}
+func (ir *MockInputOutputRepository) Create(_ *gorm.DB, inputOutput *models.InputOutput) error {
+	ir.inputOutputs[ir.counter] = inputOutput
+	ir.counter++
 	return nil
 }
 
-func (ir *MockInputOutputRepository) GetInputOutputId(tx *gorm.DB, taskId, order int64) (int64, error) {
+func (ir *MockInputOutputRepository) GetInputOutputID(_ *gorm.DB, _, _ int64) (int64, error) {
 	panic("implement me")
 }
 
-func (ir *MockInputOutputRepository) DeleteAll(tx *gorm.DB, taskId int64) error {
+func (ir *MockInputOutputRepository) DeleteAll(_ *gorm.DB, taskID int64) error {
 	toDelete := make([]int64, 0)
 	for _, io := range ir.inputOutputs {
-		if io.TaskId == taskId {
-			toDelete = append(toDelete, io.Id)
+		if io.TaskID == taskID {
+			toDelete = append(toDelete, io.ID)
 		}
 	}
 	for _, id := range toDelete {
@@ -769,7 +752,7 @@ func (ir *MockInputOutputRepository) DeleteAll(tx *gorm.DB, taskId int64) error 
 }
 
 func NewMockInputOutputRepository() repository.InputOutputRepository {
-	return &MockInputOutputRepository{counter: 1}
+	return &MockInputOutputRepository{counter: 1, inputOutputs: make(map[int64]*models.InputOutput)}
 }
 
 // type MockLanguageRepository struct {

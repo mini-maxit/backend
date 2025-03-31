@@ -3,7 +3,7 @@ package schemas
 import "encoding/json"
 
 type QueueResponseMessage struct {
-	MessageId string          `json:"message_id"`
+	MessageID string          `json:"message_id"`
 	Type      string          `json:"type"`
 	Ok        bool            `json:"ok"`
 	Payload   json.RawMessage `json:"payload"`

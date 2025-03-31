@@ -2,14 +2,16 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
-func SessionValidationMiddleware(next http.Handler, db database.Database, sessionService service.SessionService) http.Handler {
+func SessionValidationMiddleware(next http.Handler, db database.Database, service service.SessionService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionHeader := r.Header.Get("Session")
 		if sessionHeader == "" {
@@ -22,13 +24,13 @@ func SessionValidationMiddleware(next http.Handler, db database.Database, sessio
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
 		}
-		sessionResponse, err := sessionService.Validate(tx, sessionHeader)
+		sessionResponse, err := service.Validate(tx, sessionHeader)
 		if err != nil {
-			if err == service.ErrSessionNotFound {
+			if errors.Is(err, myerrors.ErrSessionNotFound) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Session not found")
 				return
 			}
-			if err == service.ErrSessionExpired {
+			if errors.Is(err, myerrors.ErrSessionExpired) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Session expired")
 				return
 			}

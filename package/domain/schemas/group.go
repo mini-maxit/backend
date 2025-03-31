@@ -3,7 +3,7 @@ package schemas
 import "time"
 
 type GroupDetailed struct {
-	Id        int64     `json:"id"`
+	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	CreatedBy int64     `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
@@ -13,7 +13,7 @@ type GroupDetailed struct {
 }
 
 type Group struct {
-	Id        int64     `json:"id"`
+	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	CreatedBy int64     `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`

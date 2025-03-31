@@ -24,15 +24,14 @@ type LanguageService interface {
 	Init(tx *gorm.DB, enabledLanguages schemas.HandShakeResponsePayload) error
 }
 
-// languageService implements [LanguageService] interface
+// languageService implements [LanguageService] interface.
 type languageService struct {
 	languageRepository repository.LanguageRepository
 	logger             *zap.SugaredLogger
 }
 
-// Init implements Init method of [LanguageService] interface
+// Init implements Init method of [LanguageService] interface.
 func (l *languageService) Init(tx *gorm.DB, workerLanguages schemas.HandShakeResponsePayload) error {
-
 	l.logger.Infof("Initializing languages: %v", workerLanguages.Languages)
 
 	existingLanguages, err := l.languageRepository.GetAll(tx)
@@ -51,7 +50,7 @@ func (l *languageService) Init(tx *gorm.DB, workerLanguages schemas.HandShakeRes
 				if existingLanguage.Type == language.Type && existingLanguage.Version == language.Version {
 					found = true
 					existingLanguages = append(existingLanguages[:i], existingLanguages[i+1:]...)
-					err := l.languageRepository.MarkEnabled(tx, existingLanguage.Id)
+					err := l.languageRepository.MarkEnabled(tx, existingLanguage.ID)
 					if err != nil {
 						l.logger.Errorf("Error marking language enabled: %v", err.Error())
 					}
@@ -65,13 +64,12 @@ func (l *languageService) Init(tx *gorm.DB, workerLanguages schemas.HandShakeRes
 					return err
 				}
 			}
-
 		}
 	}
 
 	if len(existingLanguages) > 0 {
 		for _, lang := range existingLanguages {
-			err := l.languageRepository.MarkDisabled(tx, lang.Id)
+			err := l.languageRepository.MarkDisabled(tx, lang.ID)
 			if err != nil {
 				l.logger.Errorf("Error marking language disabled: %v", err.Error())
 				return err
@@ -109,7 +107,7 @@ func (l *languageService) GetAllEnabled(tx *gorm.DB) ([]schemas.LanguageConfig, 
 
 func LanguageToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
 	return &schemas.LanguageConfig{
-		Id:            language.Id,
+		ID:            language.ID,
 		Type:          language.Type,
 		Version:       language.Version,
 		FileExtension: language.FileExtension,

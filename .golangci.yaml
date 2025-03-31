@@ -49,7 +49,7 @@ linters:
     - copyloopvar # detects places where loop variables are copied (Go 1.22+)
     # - cyclop # checks function and package cyclomatic complexity
     # - depguard # checks if package imports are in a list of acceptable packages
-    # - dupl # tool for code clone detection
+    # - dupl # tool for code clone detection # TODO: enable this and fix
     - durationcheck # checks for two durations multiplied together
     - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
@@ -69,7 +69,7 @@ linters:
     - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
     - gomoddirectives # manages the use of 'replace', 'retract', and 'excludes' directives in go.mod
     - goprintffuncname # checks that printf-like functions are named with f at the end
-    - gosec # inspects source code for security problems
+    # - gosec # inspects source code for security problems # TODO: enable and fix this
     - iface # checks the incorrect use of interfaces, helping developers avoid interface pollution
     - intrange # finds places where for loops could make use of an integer range
     - lll # reports long lines

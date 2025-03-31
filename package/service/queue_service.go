@@ -15,13 +15,15 @@ import (
 	"gorm.io/gorm"
 )
 
+const publishTimeoutSeconds = 5
+
 type QueueService interface {
 	// PublishTask publishes a task to the queue
-	GetSubmissionId(tx *gorm.DB, messageId string) (int64, error)
+	GetSubmissionID(tx *gorm.DB, messageID string) (int64, error)
 	// PublishHandshake publishes a handshake message to the queue
 	PublishHandshake() error
 	// PublishSubmission publishes a submission message to the queue
-	PublishSubmission(tx *gorm.DB, submissionId int64) error
+	PublishSubmission(tx *gorm.DB, submissionID int64) error
 	// PublishWorkerStatus publishes a worker status message to the queue
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
@@ -45,7 +47,7 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), publishTimeoutSeconds*time.Second)
 	defer cancel()
 
 	err = qs.channel.PublishWithContext(ctx, "", qs.queue.Name, false, false, amqp.Publishing{
@@ -62,35 +64,35 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error {
-	submission, err := qs.submissionRepository.Get(tx, submissionId)
+func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64) error {
+	submission, err := qs.submissionRepository.Get(tx, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err.Error())
 		return err
 	}
 
-	timeLimits, err := qs.taskRepository.GetTimeLimits(tx, submission.TaskId)
+	timeLimits, err := qs.taskRepository.GetTimeLimits(tx, submission.TaskID)
 	if err != nil {
 		qs.logger.Errorf("Error getting task time limits: %v", err.Error())
 		return err
 	}
-	memoryLimits, err := qs.taskRepository.GetMemoryLimits(tx, submission.TaskId)
+	memoryLimits, err := qs.taskRepository.GetMemoryLimits(tx, submission.TaskID)
 	if err != nil {
 		qs.logger.Errorf("Error getting task memory limits: %v", err.Error())
 		return err
 	}
 
 	payload := schemas.TaskQueueMessage{
-		TaskID:           submission.TaskId,
-		UserID:           submission.UserId,
+		TaskID:           submission.TaskID,
+		UserID:           submission.UserID,
 		SubmissionNumber: submission.Order,
-		LanguageType:     string(submission.Language.Type),
+		LanguageType:     submission.Language.Type,
 		LanguageVersion:  submission.Language.Version,
 		TimeLimits:       timeLimits,
 		MemoryLimits:     memoryLimits,
 	}
 
-	payloadJson, err := json.Marshal(payload)
+	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling payload: %v", err.Error())
 		return err
@@ -99,11 +101,11 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error
 	msq := schemas.QueueMessage{
 		MessageID: uuid.New().String(),
 		Type:      schemas.MessageTypeTask,
-		Payload:   payloadJson,
+		Payload:   payloadJSON,
 	}
 	qm := &models.QueueMessage{
-		Id:           msq.MessageID,
-		SubmissionId: submissionId,
+		ID:           msq.MessageID,
+		SubmissionID: submissionID,
 	}
 	_, err = qs.queueRepository.Create(tx, qm)
 	if err != nil {
@@ -112,15 +114,18 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error
 	}
 	err = qs.publishMessage(msq)
 	if err != nil {
-		err2 := qs.submissionRepository.MarkFailed(tx, submissionId, err.Error())
+		err2 := qs.submissionRepository.MarkFailed(tx, submissionID, err.Error())
 		if err2 != nil {
-			qs.logger.Errorf("Error marking submission failed: %v. When error occured publishing message: %s", err2.Error(), err.Error())
+			qs.logger.Errorf("Error marking submission failed: %v. When error occured publishing message: %s",
+				err2.Error(),
+				err.Error(),
+			)
 			return err
 		}
 		qs.logger.Errorf("Error publishing message: %v", err.Error())
 		return err
 	}
-	err = qs.submissionRepository.MarkProcessing(tx, submissionId)
+	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error marking submission processing: %v", err.Error())
 		return err
@@ -129,13 +134,13 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionId int64) error
 	return nil
 }
 
-func (qs *queueService) GetSubmissionId(tx *gorm.DB, messageId string) (int64, error) {
-	queueMessage, err := qs.queueRepository.Get(tx, messageId)
+func (qs *queueService) GetSubmissionID(tx *gorm.DB, messageID string) (int64, error) {
+	queueMessage, err := qs.queueRepository.Get(tx, messageID)
 	if err != nil {
 		return 0, err
 	}
 
-	return queueMessage.SubmissionId, nil
+	return queueMessage.SubmissionID, nil
 }
 
 func (qs *queueService) PublishHandshake() error {
@@ -168,11 +173,19 @@ func (qs *queueService) PublishWorkerStatus() error {
 	return nil
 }
 
-func (q *queueService) UpdateWorkerStatus(tx *gorm.DB, statusResponse schemas.StatusResponsePayload) error {
+func (qs *queueService) UpdateWorkerStatus(_ *gorm.DB, _ schemas.StatusResponsePayload) error {
 	panic("implement me")
 }
 
-func NewQueueService(taskRepository repository.TaskRepository, submissionRepository repository.SubmissionRepository, queueMessageRepository repository.QueueMessageRepository, conn *amqp.Connection, channel *amqp.Channel, queueName string, responseQueueName string) (*queueService, error) {
+func NewQueueService(
+	taskRepository repository.TaskRepository,
+	submissionRepository repository.SubmissionRepository,
+	queueMessageRepository repository.QueueMessageRepository,
+	_ *amqp.Connection, // TODO: review if this is needed
+	channel *amqp.Channel,
+	queueName string,
+	responseQueueName string,
+) (QueueService, error) {
 	args := make(amqp.Table)
 	args["x-max-priority"] = 3
 

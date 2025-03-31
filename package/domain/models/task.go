@@ -5,7 +5,7 @@ import (
 )
 
 type Task struct {
-	Id        int64  `gorm:"primaryKey;autoIncrement"`
+	ID        int64  `gorm:"primaryKey;autoIncrement"`
 	Title     string `gorm:"type:varchar(255)"`
 	CreatedBy int64  `gorm:"foreignKey:UserID"`
 
@@ -13,11 +13,11 @@ type Task struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 	DeletedAt time.Time `gorm:"index;default:null"`
 
-	Author User    `gorm:"foreignKey:CreatedBy; references:Id"`
+	Author User    `gorm:"foreignKey:CreatedBy; references:ID"`
 	Groups []Group `gorm:"many2many:task_groups;"`
 }
 
 type TaskUser struct {
-	TaskId int64 `gorm:"primaryKey"`
-	UserId int64 `gorm:"primaryKey"`
+	TaskID int64 `gorm:"primaryKey"`
+	UserID int64 `gorm:"primaryKey"`
 }

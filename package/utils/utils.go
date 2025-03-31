@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -36,21 +35,23 @@ func ApplyPaginationAndSort(tx *gorm.DB, limit, offset int, sortBy string) (*gor
 			sortFieldParts := strings.Split(sortField, ":")
 			tx = tx.Order(sortFieldParts[0] + " " + sortFieldParts[1])
 		}
-
 	}
+
 	return tx, nil
 }
 
-func usernameValidator(fl validator.FieldLevel) bool {
+func UsernameValidator(fl validator.FieldLevel) bool {
 	username := fl.Field().String()
 	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
 	return re.MatchString(username)
 }
 
-func passwordValidator(fl validator.FieldLevel) bool {
+func PasswordValidator(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
-	if len(password) < 8 {
+	minPassLength := 8
+
+	if len(password) < minPassLength {
 		return false
 	}
 
@@ -67,62 +68,42 @@ func passwordValidator(fl validator.FieldLevel) bool {
 
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	err := validate.RegisterValidation("username", usernameValidator)
+	err := validate.RegisterValidation("username", UsernameValidator)
 	if err != nil {
 		return nil, err
 	}
-	err = validate.RegisterValidation("password", passwordValidator)
+	err = validate.RegisterValidation("password", PasswordValidator)
 	if err != nil {
 		return nil, err
 	}
 	return validate, nil
 }
 
-func GetLimit(str string) (int, error) {
-	limit, err := strconv.ParseInt(str, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return int(limit), nil
-}
-
-func GetOffset(str string) (int, error) {
-	offset, err := strconv.ParseInt(str, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return int(offset), nil
-}
-
-func ValidateRoleAccess(current_role types.UserRole, acceptedRoles []types.UserRole) error {
-	if !slices.Contains(acceptedRoles, current_role) {
+func ValidateRoleAccess(currentRole types.UserRole, acceptedRoles []types.UserRole) error {
+	if !slices.Contains(acceptedRoles, currentRole) {
 		return errors.ErrNotAuthorized
 	}
 	return nil
 }
 
-func GetSort(str string) string {
-	return ""
-	// return str
-}
-
 // ValidateStruct validates that every field of a given struct is initialized
 //
 // Source: https://medium.com/@anajankow/fast-check-if-all-struct-fields-are-set-in-golang-bba1917213d2
-func ValidateStruct(s any) (err error) {
+func ValidateStruct(s any) error {
 	// first make sure that the input is a struct
 	// having any other type, especially a pointer to a struct,
 	// might result in panic
 	structType := reflect.TypeOf(s)
 	if structType.Kind() != reflect.Struct {
-		return fmt.Errorf("input param should be a struct")
+		return errors.ErrExpectedStruct
 	}
 
 	// now go one by one through the fields and validate their value
 	structVal := reflect.ValueOf(s)
 	fieldNum := structVal.NumField()
+	var err error
 
-	for i := 0; i < fieldNum; i++ {
+	for i := range fieldNum {
 		// Field(i) returns i'th value of the struct
 		field := structVal.Field(i)
 		fieldName := structType.Field(i).Name
@@ -137,9 +118,8 @@ func ValidateStruct(s any) (err error) {
 		isSet := field.IsValid() && !field.IsZero()
 
 		if !isSet {
-			err = fmt.Errorf("%v%s in not set; ", err, fieldName)
+			err = fmt.Errorf("%w%s in not set; ", err, fieldName)
 		}
-
 	}
 
 	return err

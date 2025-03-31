@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"slices"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -15,30 +18,38 @@ import (
 
 type SubmissionService interface {
 	// Create creates a new submission for a given task, user, language, and order.
-	Create(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error)
+	Create(tx *gorm.DB, taskID int64, userID int64, languageID int64, order int64) (int64, error)
 	// CreateSubmissionResult creates a new submission result based on the response message.
-	CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.QueueResponseMessage) (int64, error)
+	CreateSubmissionResult(tx *gorm.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
 	GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForGroup retrieves all submissions for a specific group based on the user's role and query parameters.
-	GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
-	GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
-	// GetAllForUserShort retrieves a short version of all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUserShort(tx *gorm.DB, userId int64, user schemas.User, queryParams map[string]any) ([]schemas.SubmissionShort, error)
+	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	// GetAllForUserShort retrieves a short version of all submissions for a specific user
+	// based on the current user's role and query parameters.
+	GetAllForUserShort(
+		tx *gorm.DB,
+		userID int64,
+		user schemas.User,
+		queryParams map[string]any,
+	) ([]schemas.SubmissionShort, error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
-	Get(tx *gorm.DB, submissionId int64, user schemas.User) (schemas.Submission, error)
+	Get(tx *gorm.DB, submissionID int64, user schemas.User) (schemas.Submission, error)
 	// MarkComplete marks a submission as complete.
-	MarkComplete(tx *gorm.DB, submissionId int64) error
+	MarkComplete(tx *gorm.DB, submissionID int64) error
 	// MarkFailed marks a submission as failed with an error message.
-	MarkFailed(tx *gorm.DB, submissionId int64, errorMsg string) error
+	MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
-	MarkProcessing(tx *gorm.DB, submissionId int64) error
+	MarkProcessing(tx *gorm.DB, submissionID int64) error
 }
+
+const defaultSortOrder = "submitted_at:desc"
 
 type submissionService struct {
 	submissionRepository       repository.SubmissionRepository
@@ -53,211 +64,233 @@ type submissionService struct {
 	logger                     *zap.SugaredLogger
 }
 
-func (us *submissionService) GetAll(tx *gorm.DB, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
-	submission_models := []models.Submission{}
+func (ss *submissionService) GetAll(
+	tx *gorm.DB,
+	user schemas.User,
+	queryParams map[string]any,
+) ([]schemas.Submission, error) {
+	submissionModels := []models.Submission{}
 	var err error
 
-	limit := queryParams["limit"].(uint64)
-	offset := queryParams["offset"].(uint64)
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "submitted_at:desc"
+		sort = defaultSortOrder
 	}
 
 	switch user.Role {
-	case "admin":
-		submission_models, err = us.submissionRepository.GetAll(tx, int(limit), int(offset), sort)
-	case "student":
-		submission_models, err = us.submissionRepository.GetAllByUser(tx, user.Id, int(limit), int(offset), sort)
-	case "teacher":
-		submission_models, err = us.submissionRepository.GetAllForTeacher(tx, user.Id, int(limit), int(offset), sort)
+	case types.UserRoleAdmin:
+		submissionModels, err = ss.submissionRepository.GetAll(tx, limit, offset, sort)
+	case types.UserRoleStudent:
+		submissionModels, err = ss.submissionRepository.GetAllByUser(tx, user.ID, limit, offset, sort)
+	case types.UserRoleTeacher:
+		submissionModels, err = ss.submissionRepository.GetAllForTeacher(tx, user.ID, limit, offset, sort)
 	}
 
 	if err != nil {
-		us.logger.Errorf("Error getting all submissions: %v", err.Error())
+		ss.logger.Errorf("Error getting all submissions: %v", err.Error())
 		return nil, err
 	}
 
 	var result []schemas.Submission
-	for _, submission_model := range submission_models {
-		result = append(result, *us.modelToSchema(&submission_model))
+	for _, submissionModel := range submissionModels {
+		result = append(result, *ss.modelToSchema(&submissionModel))
 	}
 
 	return result, nil
 }
 
-func (us *submissionService) Get(tx *gorm.DB, submissionId int64, user schemas.User) (schemas.Submission, error) {
-	submission_model, err := us.submissionRepository.Get(tx, submissionId)
+func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user schemas.User) (schemas.Submission, error) {
+	submissionModel, err := ss.submissionRepository.Get(tx, submissionID)
 	if err != nil {
-		us.logger.Errorf("Error getting submission: %v", err.Error())
+		ss.logger.Errorf("Error getting submission: %v", err.Error())
 		return schemas.Submission{}, err
 	}
 
 	switch user.Role {
-	case "admin":
+	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-	case "student":
+	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
-		if submission_model.UserId != user.Id {
-			us.logger.Errorf("User %v is not allowed to view submission %v", user.Id, submissionId)
+		if submissionModel.UserID != user.ID {
+			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
 			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
-	case "teacher":
+	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
-		if submission_model.Task.CreatedBy != user.Id {
-			us.logger.Errorf("User %v is not allowed to view submission %v", user.Id, submissionId)
+		if submissionModel.Task.CreatedBy != user.ID {
+			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
 			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
 	}
 
-	return *us.modelToSchema(submission_model), nil
+	return *ss.modelToSchema(submissionModel), nil
 }
 
-func (us *submissionService) GetAllForUser(tx *gorm.DB, userId int64, currentUser schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
-	limit := queryParams["limit"].(uint64)
-	offset := queryParams["offset"].(uint64)
+func (ss *submissionService) GetAllForUser(
+	tx *gorm.DB,
+	userID int64,
+	currentUser schemas.User,
+	queryParams map[string]any,
+) ([]schemas.Submission, error) {
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "submitted_at:desc"
+		sort = defaultSortOrder
 	}
 
-	submission_models, err := us.submissionRepository.GetAllByUser(tx, userId, int(limit), int(offset), sort)
+	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
 	if err != nil {
-		us.logger.Errorf("Error getting all submissions for user: %v", err.Error())
+		ss.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
 	}
 
 	switch currentUser.Role {
-	case "admin":
+	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-	case "student":
+	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
-		if userId != currentUser.Id {
-			us.logger.Errorf("User %v is not allowed to view submissions", currentUser.Id)
+		if userID != currentUser.ID {
+			ss.logger.Errorf("User %v is not allowed to view submissions", currentUser.ID)
 			return nil, errors.ErrPermissionDenied
 		}
-	case "teacher":
+	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
-		for i, submission := range submission_models {
-			if submission.Task.CreatedBy != currentUser.Id {
-				submission_models = append(submission_models[:i], submission_models[i+1:]...)
+		for i, submission := range submissionModels {
+			if submission.Task.CreatedBy != currentUser.ID {
+				submissionModels = slices.Delete(submissionModels, i, i+1)
 			}
 		}
 	}
 
 	var result []schemas.Submission
-	for _, submission_model := range submission_models {
-		result = append(result, *us.modelToSchema(&submission_model))
+	for _, submission := range submissionModels {
+		result = append(result, *ss.modelToSchema(&submission))
 	}
 
 	return result, nil
 }
 
-func (us *submissionService) GetAllForUserShort(tx *gorm.DB, userId int64, currentUser schemas.User, queryParams map[string]any) ([]schemas.SubmissionShort, error) {
-	submission_models, err := us.GetAllForUser(tx, userId, currentUser, queryParams)
+func (ss *submissionService) GetAllForUserShort(
+	tx *gorm.DB,
+	userID int64,
+	currentUser schemas.User,
+	queryParams map[string]any,
+) ([]schemas.SubmissionShort, error) {
+	submissionModels, err := ss.GetAllForUser(tx, userID, currentUser, queryParams)
 	if err != nil {
 		return nil, err
 	}
 	result := []schemas.SubmissionShort{}
-	for _, submission := range submission_models {
+	for _, submission := range submissionModels {
 		passed := true
-		how_many := len(submission.Result.TestResults)
-		for _, test_result := range submission.Result.TestResults {
-			if !test_result.Passed {
+		count := len(submission.Result.TestResults)
+		for _, testResult := range submission.Result.TestResults {
+			if !testResult.Passed {
 				passed = false
-				how_many--
+				count--
 			}
 		}
 		result = append(result, schemas.SubmissionShort{
-			Id:            submission.Id,
-			TaskId:        submission.TaskId,
-			UserId:        submission.UserId,
+			ID:            submission.ID,
+			TaskID:        submission.TaskID,
+			UserID:        submission.UserID,
 			Passed:        passed,
-			HowManyPassed: int64(how_many),
+			HowManyPassed: int64(count),
 		})
 	}
 
 	return result, nil
 }
 
-func (us *submissionService) GetAllForGroup(tx *gorm.DB, groupId int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (ss *submissionService) GetAllForGroup(
+	tx *gorm.DB,
+	groupID int64,
+	user schemas.User,
+	queryParams map[string]any,
+) ([]schemas.Submission, error) {
 	var err error
-	submission_models := []models.Submission{}
+	submissionModels := []models.Submission{}
 
-	limit := queryParams["limit"].(uint64)
-	offset := queryParams["offset"].(uint64)
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "submitted_at:desc"
+		sort = defaultSortOrder
 	}
 
 	switch user.Role {
-	case "admin":
+	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-		submission_models, err = us.submissionRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)
-	case "student":
+		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
+	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
 		return nil, errors.ErrPermissionDenied
-	case "teacher":
+	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
-		group, er := us.groupRepository.Get(tx, groupId)
+		group, er := ss.groupRepository.Get(tx, groupID)
 		if er != nil {
-			us.logger.Errorf("Error getting group: %v", er.Error())
+			ss.logger.Errorf("Error getting group: %v", er.Error())
 			return nil, er
 		}
-		if group.CreatedBy != user.Id {
+		if group.CreatedBy != user.ID {
 			return nil, errors.ErrPermissionDenied
 		}
-		submission_models, err = us.submissionRepository.GetAllForGroup(tx, groupId, int(limit), int(offset), sort)
+		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
 	}
 
 	if err != nil {
-		us.logger.Errorf("Error getting all submissions for group: %v", err.Error())
+		ss.logger.Errorf("Error getting all submissions for group: %v", err.Error())
 		return nil, err
 	}
 
 	var result []schemas.Submission
-	for _, submission_model := range submission_models {
-		result = append(result, *us.modelToSchema(&submission_model))
+	for _, submissionModel := range submissionModels {
+		result = append(result, *ss.modelToSchema(&submissionModel))
 	}
 
 	return result, nil
 }
 
-func (us *submissionService) GetAllForTask(tx *gorm.DB, taskId int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (ss *submissionService) GetAllForTask(
+	tx *gorm.DB,
+	taskID int64,
+	user schemas.User,
+	queryParams map[string]any,
+) ([]schemas.Submission, error) {
 	var err error
-	submissions_model := []models.Submission{}
+	submissionModel := []models.Submission{}
 
-	limit := queryParams["limit"].(uint64)
-	offset := queryParams["offset"].(uint64)
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
 	if sort == "" {
-		sort = "submitted_at:desc"
+		sort = defaultSortOrder
 	}
 
 	switch user.Role {
-	case "admin":
-		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId, int(limit), int(offset), sort)
-
-	case "teacher":
-		task, er := us.taskService.Get(tx, user, taskId)
+	case types.UserRoleAdmin:
+		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, limit, offset, sort)
+	case types.UserRoleTeacher:
+		task, er := ss.taskService.Get(tx, user, taskID)
 		if er != nil {
 			return nil, er
 		}
-		if task.CreatedBy != user.Id {
+		if task.CreatedBy != user.ID {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissions_model, err = us.submissionRepository.GetAllForTask(tx, taskId, int(limit), int(offset), sort)
-
-	case "student":
-		isAssigned, er := us.taskRepository.IsAssignedToUser(tx, taskId, user.Id)
+		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, limit, offset, sort)
+	case types.UserRoleStudent:
+		isAssigned, er := ss.taskRepository.IsAssignedToUser(tx, taskID, user.ID)
 		if er != nil {
 			return nil, er
 		}
 		if !isAssigned {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissions_model, err = us.submissionRepository.GetAllForTaskByUser(tx, taskId, user.Id, int(limit), int(offset), sort)
+		submissionModel, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, limit, offset, sort)
 	}
 
 	if err != nil {
@@ -265,66 +298,76 @@ func (us *submissionService) GetAllForTask(tx *gorm.DB, taskId int64, user schem
 	}
 
 	result := []schemas.Submission{}
-	for _, submission := range submissions_model {
-		result = append(result, *us.modelToSchema(&submission))
+	for _, submission := range submissionModel {
+		result = append(result, *ss.modelToSchema(&submission))
 	}
 
 	return result, nil
 }
 
-func (us *submissionService) MarkFailed(tx *gorm.DB, submissionId int64, errorMsg string) error {
-	err := us.submissionRepository.MarkFailed(tx, submissionId, errorMsg)
+func (ss *submissionService) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
+	err := ss.submissionRepository.MarkFailed(tx, submissionID, errorMsg)
 	if err != nil {
-		us.logger.Errorf("Error marking submission failed: %v", err.Error())
+		ss.logger.Errorf("Error marking submission failed: %v", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (us *submissionService) MarkComplete(tx *gorm.DB, submissionId int64) error {
-	err := us.submissionRepository.MarkComplete(tx, submissionId)
+func (ss *submissionService) MarkComplete(tx *gorm.DB, submissionID int64) error {
+	err := ss.submissionRepository.MarkComplete(tx, submissionID)
 	if err != nil {
-		us.logger.Errorf("Error marking submission complete: %v", err.Error())
+		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (us *submissionService) MarkProcessing(tx *gorm.DB, submissionId int64) error {
-	err := us.submissionRepository.MarkProcessing(tx, submissionId)
+func (ss *submissionService) MarkProcessing(tx *gorm.DB, submissionID int64) error {
+	err := ss.submissionRepository.MarkProcessing(tx, submissionID)
 	if err != nil {
-		us.logger.Errorf("Error marking submission processing: %v", err.Error())
+		ss.logger.Errorf("Error marking submission processing: %v", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (us *submissionService) Create(tx *gorm.DB, taskId int64, userId int64, languageId int64, order int64) (int64, error) {
+func (ss *submissionService) Create(
+	tx *gorm.DB,
+	taskID int64,
+	userID int64,
+	languageID int64,
+	order int64,
+) (int64, error) {
 	// Create a new submission
 	submission := &models.Submission{
-		TaskId:     taskId,
-		UserId:     userId,
+		TaskID:     taskID,
+		UserID:     userID,
 		Order:      order,
-		LanguageId: languageId,
+		LanguageID: languageID,
 		Status:     models.StatusReceived,
 	}
-	submissionId, err := us.submissionRepository.Create(tx, submission)
+	submissionID, err := ss.submissionRepository.Create(tx, submission)
 
 	if err != nil {
-		us.logger.Errorf("Error creating submission: %v", err.Error())
+		ss.logger.Errorf("Error creating submission: %v", err.Error())
 		return 0, err
 	}
 
-	return submissionId, nil
+	return submissionID, nil
 }
 
-func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId int64, responseMessage schemas.QueueResponseMessage) (int64, error) {
-	submission, err := us.submissionRepository.Get(tx, submissionId)
+func (ss *submissionService) CreateSubmissionResult(
+	tx *gorm.DB,
+	submissionID int64,
+	responseMessage schemas.QueueResponseMessage,
+) (int64, error) {
+	submission, err := ss.submissionRepository.Get(tx, submissionID)
 	if err != nil {
-		us.logger.Errorf("Error getting submission: %v", err.Error())
+		ss.logger.Errorf("Error getting submission: %v", err.Error())
 		return -1, err
 	}
 
@@ -332,30 +375,30 @@ func (us *submissionService) CreateSubmissionResult(tx *gorm.DB, submissionId in
 
 	err = json.Unmarshal(responseMessage.Payload, &taskResponse)
 	if err != nil {
-		us.logger.Errorf("Error unmarshalling task response: %v", err.Error())
+		ss.logger.Errorf("Error unmarshalling task response: %v", err.Error())
 		return -1, err
 	}
 
 	submissionResult := models.SubmissionResult{
-		SubmissionId: submissionId,
+		SubmissionID: submissionID,
 		Code:         strconv.FormatInt(taskResponse.StatusCode, 10),
 		Message:      taskResponse.Message,
 	}
-	id, err := us.submissionResultRepository.Create(tx, submissionResult)
+	id, err := ss.submissionResultRepository.Create(tx, submissionResult)
 	if err != nil {
-		us.logger.Errorf("Error creating submission result: %v", err.Error())
+		ss.logger.Errorf("Error creating submission result: %v", err.Error())
 		return -1, err
 	}
 	// Save test results
 	for _, testResult := range taskResponse.TestResults {
-		inputOutputId, err := us.inputOutputRepository.GetInputOutputId(tx, submission.TaskId, testResult.Order)
+		inputOutputID, err := ss.inputOutputRepository.GetInputOutputID(tx, submission.TaskID, testResult.Order)
 		if err != nil {
-			us.logger.Errorf("Error getting input output id: %v", err.Error())
+			ss.logger.Errorf("Error getting input output id: %v", err.Error())
 			return -1, err
 		}
-		err = us.createTestResult(tx, id, inputOutputId, testResult)
+		err = ss.createTestResult(tx, id, inputOutputID, testResult)
 		if err != nil {
-			us.logger.Errorf("Error creating test result: %v", err.Error())
+			ss.logger.Errorf("Error creating test result: %v", err.Error())
 			return -1, err
 		}
 	}
@@ -372,18 +415,32 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 
 	return languages, nil
 }
-
-func (us *submissionService) createTestResult(tx *gorm.DB, submissionResultId int64, inputOutputId int64, testResult schemas.QueueTestResult) error {
+func (ss *submissionService) createTestResult(
+	tx *gorm.DB,
+	submissionResultID int64,
+	inputOutputID int64,
+	testResult schemas.QueueTestResult,
+) error {
 	testResultModel := models.TestResult{
-		SubmissionResultId: submissionResultId,
-		InputOutputId:      inputOutputId,
+		SubmissionResultID: submissionResultID,
+		InputOutputID:      inputOutputID,
 		Passed:             testResult.Passed,
 		ErrorMessage:       testResult.ErrorMessage,
 	}
-	return us.testResultRepository.Create(tx, testResultModel)
+	return ss.testResultRepository.Create(tx, testResultModel)
 }
 
-func NewSubmissionService(submissionRepository repository.SubmissionRepository, submissionResultRepository repository.SubmissionResultRepository, inputOutputRepository repository.InputOutputRepository, testResultRepository repository.TestRepository, groupRepository repository.GroupRepository, taskRepository repository.TaskRepository, languageService LanguageService, taskService TaskService, userService UserService) SubmissionService {
+func NewSubmissionService(
+	submissionRepository repository.SubmissionRepository,
+	submissionResultRepository repository.SubmissionResultRepository,
+	inputOutputRepository repository.InputOutputRepository,
+	testResultRepository repository.TestRepository,
+	groupRepository repository.GroupRepository,
+	taskRepository repository.TaskRepository,
+	languageService LanguageService,
+	taskService TaskService,
+	userService UserService,
+) SubmissionService {
 	log := utils.NewNamedLogger("submission_service")
 	return &submissionService{
 		submissionRepository:       submissionRepository,
@@ -399,13 +456,13 @@ func NewSubmissionService(submissionRepository repository.SubmissionRepository, 
 	}
 }
 
-func (us *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
+func (ss *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
 	var result []schemas.TestResult
 	for _, testResult := range testResults {
 		result = append(result, schemas.TestResult{
 			ID:                 testResult.ID,
-			SubmissionResultId: testResult.SubmissionResultId,
-			InputOutputId:      testResult.InputOutputId,
+			SubmissionResultID: testResult.SubmissionResultID,
+			InputOutputID:      testResult.InputOutputID,
 			Passed:             testResult.Passed,
 			ErrorMessage:       testResult.ErrorMessage,
 		})
@@ -413,27 +470,27 @@ func (us *submissionService) testResultsModelToSchema(testResults []models.TestR
 	return result
 }
 
-func (us *submissionService) resultModelToSchema(result *models.SubmissionResult) *schemas.SubmissionResult {
+func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult) *schemas.SubmissionResult {
 	if result == nil {
 		return nil
 	}
 	return &schemas.SubmissionResult{
-		Id:           result.Id,
-		SubmissionId: result.SubmissionId,
+		ID:           result.ID,
+		SubmissionID: result.SubmissionID,
 		Code:         result.Code,
 		Message:      result.Message,
 		CreatedAt:    result.CreatedAt,
-		TestResults:  us.testResultsModelToSchema(result.TestResult),
+		TestResults:  ss.testResultsModelToSchema(result.TestResult),
 	}
 }
 
-func (us *submissionService) modelToSchema(submission *models.Submission) *schemas.Submission {
+func (ss *submissionService) modelToSchema(submission *models.Submission) *schemas.Submission {
 	return &schemas.Submission{
-		Id:            submission.Id,
-		TaskId:        submission.TaskId,
-		UserId:        submission.UserId,
+		ID:            submission.ID,
+		TaskID:        submission.TaskID,
+		UserID:        submission.UserID,
 		Order:         submission.Order,
-		LanguageId:    submission.LanguageId,
+		LanguageID:    submission.LanguageID,
 		Status:        submission.Status,
 		StatusMessage: submission.StatusMessage,
 		SubmittedAt:   submission.SubmittedAt,
@@ -441,6 +498,6 @@ func (us *submissionService) modelToSchema(submission *models.Submission) *schem
 		Language:      *LanguageToSchema(&submission.Language),
 		Task:          *TaskToSchema(&submission.Task),
 		User:          *UserToSchema(&submission.User),
-		Result:        us.resultModelToSchema(submission.Result),
+		Result:        ss.resultModelToSchema(submission.Result),
 	}
 }

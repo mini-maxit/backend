@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	FileStorageUrl string
+	FileStorageURL string
 	DB             DBConfig
-	Api            ApiConfig
-	BrokerConfig   BrokerConfig
+	API            APIConfig
+	Broker         BrokerConfig
 	Dump           bool
 }
 
@@ -24,7 +24,7 @@ type DBConfig struct {
 	Name     string
 }
 
-type ApiConfig struct {
+type APIConfig struct {
 	Port uint16
 }
 
@@ -44,7 +44,7 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultApiPort           = "8080"
+	defaultAPIPort           = "8080"
 	defaultQueueName         = "worker_queue"
 	defaultResponseQueueName = "worker_response_queue"
 )
@@ -79,7 +79,8 @@ const (
 //
 //   - QUEUE_PASSWORD - broker password. Required
 //
-//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will exapnd to [DefaultLanguages]
+//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,cpp:11,cpp:14".
+//     Default will exapnd to [DefaultLanguages]
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
@@ -107,8 +108,8 @@ func NewConfig() *Config {
 
 	appPortStr := os.Getenv("APP_PORT")
 	if appPortStr == "" {
-		log.Warnf("API_PORT is not set. Using default port %s", defaultApiPort)
-		appPortStr = defaultApiPort
+		log.Warnf("API_PORT is not set. Using default port %s", defaultAPIPort)
+		appPortStr = defaultAPIPort
 	}
 	appPort := validatePort(appPortStr, "application", log)
 
@@ -122,7 +123,7 @@ func NewConfig() *Config {
 	}
 	_ = validatePort(fileStoragePortStr, "file storage", log)
 
-	fileStorageUrl := "http://" + fileStorageHost + ":" + fileStoragePortStr
+	fileStorageURL := "http://" + fileStorageHost + ":" + fileStoragePortStr
 
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
@@ -164,10 +165,10 @@ func NewConfig() *Config {
 			Password: dbPassword,
 			Name:     dbName,
 		},
-		Api: ApiConfig{
+		API: APIConfig{
 			Port: appPort,
 		},
-		BrokerConfig: BrokerConfig{
+		Broker: BrokerConfig{
 			QueueName:         queueName,
 			ResponseQueueName: responseQueueName,
 			Host:              queueHost,
@@ -175,7 +176,7 @@ func NewConfig() *Config {
 			User:              queueUser,
 			Password:          queuePassword,
 		},
-		FileStorageUrl: fileStorageUrl,
+		FileStorageURL: fileStorageURL,
 		Dump:           dump,
 	}
 }

@@ -16,7 +16,9 @@ import (
 	"go.uber.org/zap"
 )
 
-const ApiVersion = "v1"
+const APIVersion = "v1"
+const shudownTimeout = 5
+const ReadHeaderTimeout = 3
 
 type Server struct {
 	mux    http.Handler
@@ -29,8 +31,9 @@ func (s *Server) Start() error {
 	signal.Notify(sigChan, syscall.SIGINT, os.Interrupt)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: s.mux,
+		Addr:              fmt.Sprintf(":%d", s.port),
+		Handler:           s.mux,
+		ReadHeaderTimeout: ReadHeaderTimeout * time.Second,
 	}
 	ctx := context.Background()
 	go func() {
@@ -38,7 +41,7 @@ func (s *Server) Start() error {
 		s.logger.Info("Shutting down server...")
 
 		// Create a context with timeout to allow graceful shutdown
-		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, shudownTimeout*time.Second)
 		defer shutdownCancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
@@ -47,12 +50,12 @@ func (s *Server) Start() error {
 	}()
 
 	s.logger.Infof("Starting server on port %d", s.port)
-	return http.ListenAndServe(server.Addr, server.Handler)
+	return server.ListenAndServe()
 }
 
 func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Server {
 	mux := http.NewServeMux()
-	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
+	apiPrefix := "/api/" + APIVersion
 
 	// Auth routes
 	authMux := http.NewServeMux()
@@ -92,15 +95,20 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.Db, init.SessionService))
+	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.DB, init.SessionService))
 	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware
-	httpLoger := utils.NewHttpLogger()
+	httpLoger := utils.NewHTTPLogger()
 	loggingMux := http.NewServeMux()
 	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	httpLoger.Infof("Query params middleware")
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.QueryParamsMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db)), log)))
-	return &Server{mux: mux, port: init.Cfg.Api.Port, logger: log}
+	mux.Handle(apiPrefix+"/", http.StripPrefix(
+		apiPrefix, middleware.RecoveryMiddleware(
+			middleware.QueryParamsMiddleware(
+				middleware.DatabaseMiddleware(loggingMux, init.DB)), log,
+		),
+	))
+	return &Server{mux: mux, port: init.Cfg.API.Port, logger: log}
 }

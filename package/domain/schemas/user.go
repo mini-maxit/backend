@@ -3,7 +3,7 @@ package schemas
 import "github.com/mini-maxit/backend/package/domain/types"
 
 type User struct {
-	Id       int64          `json:"id"`
+	ID       int64          `json:"id"`
 	Name     string         `json:"name"`
 	Surname  string         `json:"surname"`
 	Email    string         `json:"email"`
@@ -19,8 +19,8 @@ type UserEdit struct {
 	Role     *types.UserRole `json:"role,omitempty"`
 }
 
-type UserIds struct {
-	UserIds []int64 `json:"userIds"`
+type UserIDs struct {
+	UserIDs []int64 `json:"userIDs"`
 }
 
 type UserChangePassword struct {

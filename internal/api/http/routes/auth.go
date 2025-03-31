@@ -1,13 +1,14 @@
 package routes
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
@@ -58,15 +59,14 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	session, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
-		if err == errors.ErrUserNotFound {
-			httputils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registerd.")
-			return
+		switch {
+		case errors.Is(err, myerrors.ErrUserNotFound):
+			httputils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registered.")
+		case errors.Is(err, myerrors.ErrInvalidCredentials):
+			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to login. "+err.Error())
 		}
-		if err == errors.ErrInvalidCredentials {
-			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials. Verify your email and password and try again.")
-			return
-		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to login. "+err.Error())
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, session)
@@ -106,16 +106,14 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session, err := ar.authService.Register(tx, request)
-	switch err {
-	case nil:
-		break
-	case errors.ErrUserAlreadyExists:
+	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusConflict, err.Error())
-		return
-	default:
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
+		switch {
+		case errors.Is(err, myerrors.ErrUserAlreadyExists):
+			httputils.ReturnError(w, http.StatusConflict, err.Error())
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
+		}
 		return
 	}
 

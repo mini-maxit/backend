@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /api/v1.
 definitions:
   ApiError:
     properties:
@@ -273,35 +273,6 @@ definitions:
       username:
         type: string
     type: object
-  UserChangePassword:
-    properties:
-      new_password:
-        maxLength: 50
-        minLength: 8
-        type: string
-      new_password_confirm:
-        maxLength: 50
-        minLength: 8
-        type: string
-      old_password:
-        type: string
-    required:
-    - new_password
-    - new_password_confirm
-    type: object
-  UserEdit:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      role:
-        $ref: '#/definitions/types.UserRole'
-      surname:
-        type: string
-      username:
-        type: string
-    type: object
   UserIds:
     properties:
       userIds:
@@ -366,12 +337,8 @@ definitions:
     - UserRoleStudent
     - UserRoleTeacher
     - UserRoleAdmin
-host: localhost:8080
 info:
   contact: {}
-  description: This is the API documentation for the Mini Maxit API.
-  title: Mini Maxit API Documentation testing the workflow
-  version: "1.0"
 paths:
   /group/:
     get:
@@ -847,8 +814,7 @@ paths:
       - submission
   /submission/languages:
     get:
-      description: Get all available languages for submitting solutions. Temporary
-        solution, while all tasks have same languages
+      description: Get all available languages for submitting solutions.
       produces:
       - application/json
       responses:
@@ -865,10 +831,8 @@ paths:
       - submission
   /submission/task/{id}:
     get:
-      description: Gets all submissions for specific task. If the user is a student
-        and has no access to this task, it fails with 403 Forbidden. For teacher it
-        returns all submissions for this task if he created it. For admin it returns
-        all submissions for specific task.
+      description: If the user is a student and has no access to this task, it fails
+        with 403 Forbidden.
       parameters:
       - description: Task ID
         in: path
@@ -912,10 +876,7 @@ paths:
       - submission
   /submission/user/{id}:
     get:
-      description: Gets all submissions for specific group. If the user is a student,
-        it fails with 403 Forbidden. For teacher it returns all submissions from this
-        group for tasks he created. For admin it returns all submissions for specific
-        group.
+      description: If the user is a student, it fails with 403 Forbidden.
       parameters:
       - description: Group ID
         in: path
@@ -1446,98 +1407,10 @@ paths:
       tags:
       - user
     patch:
-      consumes:
-      - application/json
-      description: Edit user
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: User edit object
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/UserEdit'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ApiResponse-string'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ApiError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ApiError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ApiError'
-      summary: Edit user
-      tags:
-      - user
+      responses: {}
   /user/{id}/password:
     patch:
-      consumes:
-      - application/json
-      description: Change user password
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: User change password object
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/UserChangePassword'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ApiResponse-string'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ApiError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/ApiError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ApiError'
-      summary: Change user password
-      tags:
-      - user
+      responses: {}
   /user/email:
     get:
       description: Get user by email

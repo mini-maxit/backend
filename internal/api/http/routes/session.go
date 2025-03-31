@@ -2,12 +2,14 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
@@ -29,7 +31,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 	}
 
 	var request struct {
-		UserId int64 `json:"user_id"`
+		UserID int64 `json:"user_id"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -44,7 +46,7 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, err := sr.sessionService.Create(tx, request.UserId)
+	session, err := sr.sessionService.Create(tx, request.UserID)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to create session. "+err.Error())
@@ -82,15 +84,14 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 	validateSession, err = sr.sessionService.Validate(tx, sessionToken)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrSessionNotFound {
+		switch {
+		case errors.Is(err, myerrors.ErrSessionNotFound):
 			httputils.ReturnError(w, http.StatusUnauthorized, "Session not found")
 			return
-		}
-		if err == service.ErrSessionExpired {
+		case errors.Is(err, myerrors.ErrSessionExpired):
 			httputils.ReturnError(w, http.StatusUnauthorized, "Session expired")
 			return
-		}
-		if err == service.ErrSessionUserNotFound {
+		case errors.Is(err, myerrors.ErrSessionUserNotFound):
 			httputils.ReturnError(w, http.StatusUnauthorized, "User associated with session not found")
 			return
 		}
@@ -101,12 +102,12 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 	if validateSession.Valid {
 		httputils.ReturnSuccess(w, http.StatusOK, validateSession)
 		return
-	} else {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusUnauthorized, "Session was invalid, without any error. If you see this, please report it to the developers.")
-		return
 	}
-
+	db.Rollback()
+	httputils.ReturnError(w,
+		http.StatusUnauthorized,
+		"Session was invalid, without any error. If you see this, please report it to the developers.",
+	)
 }
 
 // InvalidateSession godoc

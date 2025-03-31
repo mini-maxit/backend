@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -9,18 +9,23 @@ import (
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func TestLogin(t *testing.T) {
 	// Setup
-	us := testutils.NewMockUserService()
+	ctrl := gomock.NewController(t)
+	us := mock_service.NewMockUserService(ctrl)
 	as := testutils.NewMockAuthService()
-	route := NewAuthRoute(us, as)
+	route := routes.NewAuthRoute(us, as)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
@@ -210,18 +215,19 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.ApiResponse[schemas.Session]{}
-		json.Unmarshal(bodyBytes, response)
+		response := &httputils.APIResponse[schemas.Session]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
 		assert.IsType(t, schemas.Session{}, response.Data)
 	})
-
 }
 
 func TestRegister(t *testing.T) {
 	// Setup
-	us := testutils.NewMockUserService()
+	ctrl := gomock.NewController(t)
+	us := mock_service.NewMockUserService(ctrl)
 	as := testutils.NewMockAuthService()
-	route := NewAuthRoute(us, as)
+	route := routes.NewAuthRoute(us, as)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
@@ -250,7 +256,7 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		tt := []any{
+		invalidBodies := []any{
 			struct {
 				Email string `json:"email"`
 			}{
@@ -289,99 +295,117 @@ func TestRegister(t *testing.T) {
 				ConfirmPassword: "HardPassowrd123!",
 			},
 		}
-		for _, body := range tt {
-			jsonBody, err := json.Marshal(body)
-			if err != nil {
-				t.Fatalf("Failed to marshal request body: %v", err)
-			}
 
-			resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf("Failed to read response body: %v", err)
-			}
-			bodyString := string(bodyBytes)
-
-			assert.Contains(t, bodyString, "Invalid request body")
+		for _, body := range invalidBodies {
+			testInvalidRequestBody(t, server.URL, body)
 		}
 	})
 
 	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		jsonBody, err := json.Marshal(correctRequest)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		db.Invalidate()
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Vaildate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		testTxNotStarted(t, server.URL, db, correctRequest)
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
 		email := correctRequest.Email
 		correctRequest.Email = existingUser.Email
-		jsonBody, err := json.Marshal(correctRequest)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
+		testUserAlreadyExists(t, server.URL, correctRequest)
 		correctRequest.Email = email
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusConflict, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "user already exists")
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		jsonBody, err := json.Marshal(correctRequest)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		response := &httputils.ApiResponse[schemas.Session]{}
-		json.Unmarshal(bodyBytes, response)
-		assert.IsType(t, schemas.Session{}, response.Data)
+		testSuccess(t, server.URL, correctRequest)
 	})
+}
 
+func testInvalidRequestBody(t *testing.T, url string, body any) {
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Failed to read response body: %v", err)
+	}
+	bodyString := string(bodyBytes)
+
+	assert.Contains(t, bodyString, "Invalid request body")
+}
+
+func testTxNotStarted(t *testing.T, url string, db *testutils.MockDatabase, request schemas.UserRegisterRequest) {
+	jsonBody, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+	db.Invalidate()
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	db.Vaildate()
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Failed to read response body: %v", err)
+	}
+	bodyString := string(bodyBytes)
+
+	assert.Contains(t, bodyString, "Transaction was not started by middleware")
+}
+
+func testUserAlreadyExists(t *testing.T, url string, request schemas.UserRegisterRequest) {
+	jsonBody, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Failed to read response body: %v", err)
+	}
+	bodyString := string(bodyBytes)
+
+	assert.Contains(t, bodyString, "user already exists")
+}
+
+func testSuccess(t *testing.T, url string, request schemas.UserRegisterRequest) {
+	jsonBody, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("Failed to read response body: %v", err)
+	}
+	response := &httputils.APIResponse[schemas.Session]{}
+	err = json.Unmarshal(bodyBytes, response)
+	require.NoError(t, err)
+
+	assert.IsType(t, schemas.Session{}, response.Data)
 }

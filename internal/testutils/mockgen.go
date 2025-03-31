@@ -57,18 +57,18 @@ func (mr *MockSubmissionRepositoryMockRecorder) Create(tx, submission any) *gomo
 }
 
 // Get mocks base method.
-func (m *MockSubmissionRepository) Get(tx *gorm.DB, submissionId int64) (*models.Submission, error) {
+func (m *MockSubmissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", tx, submissionId)
+	ret := m.ctrl.Call(m, "Get", tx, submissionID)
 	ret0, _ := ret[0].(*models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockSubmissionRepositoryMockRecorder) Get(tx, submissionId any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) Get(tx, submissionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSubmissionRepository)(nil).Get), tx, submissionId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSubmissionRepository)(nil).Get), tx, submissionID)
 }
 
 // GetAll mocks base method.
@@ -87,118 +87,118 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAll(tx, limit, offset, sort a
 }
 
 // GetAllByUser mocks base method.
-func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllByUser", tx, userId, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllByUser", tx, userID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllByUser indicates an expected call of GetAllByUser.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUser(tx, userId, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUser(tx, userID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllByUser), tx, userId, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllByUser), tx, userID, limit, offset, sort)
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockSubmissionRepository) GetAllForGroup(tx *gorm.DB, groupId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupId, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllForGroup(tx, groupId, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForGroup(tx, groupID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForGroup), tx, groupId, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForGroup), tx, groupID, limit, offset, sort)
 }
 
 // GetAllForTask mocks base method.
-func (m *MockSubmissionRepository) GetAllForTask(tx *gorm.DB, taskId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskId, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForTask indicates an expected call of GetAllForTask.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTask(tx, taskId, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTask(tx, taskID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTask", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTask), tx, taskId, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTask", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTask), tx, taskID, limit, offset, sort)
 }
 
 // GetAllForTaskByUser mocks base method.
-func (m *MockSubmissionRepository) GetAllForTaskByUser(tx *gorm.DB, taskId, userId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForTaskByUser", tx, taskId, userId, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllForTaskByUser", tx, taskID, userID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForTaskByUser indicates an expected call of GetAllForTaskByUser.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTaskByUser(tx, taskId, userId, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTaskByUser(tx, taskID, userID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTaskByUser), tx, taskId, userId, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTaskByUser), tx, taskID, userID, limit, offset, sort)
 }
 
 // GetAllForTeacher mocks base method.
-func (m *MockSubmissionRepository) GetAllForTeacher(tx *gorm.DB, currentUserId int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForTeacher", tx, currentUserId, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllForTeacher", tx, currentUserID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForTeacher indicates an expected call of GetAllForTeacher.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTeacher(tx, currentUserId, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTeacher(tx, currentUserID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTeacher", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTeacher), tx, currentUserId, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTeacher", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTeacher), tx, currentUserID, limit, offset, sort)
 }
 
 // MarkComplete mocks base method.
-func (m *MockSubmissionRepository) MarkComplete(tx *gorm.DB, submissionId int64) error {
+func (m *MockSubmissionRepository) MarkComplete(tx *gorm.DB, submissionID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkComplete", tx, submissionId)
+	ret := m.ctrl.Call(m, "MarkComplete", tx, submissionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkComplete indicates an expected call of MarkComplete.
-func (mr *MockSubmissionRepositoryMockRecorder) MarkComplete(tx, submissionId any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) MarkComplete(tx, submissionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkComplete", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkComplete), tx, submissionId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkComplete", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkComplete), tx, submissionID)
 }
 
 // MarkFailed mocks base method.
-func (m *MockSubmissionRepository) MarkFailed(db *gorm.DB, submissionId int64, errorMsg string) error {
+func (m *MockSubmissionRepository) MarkFailed(db *gorm.DB, submissionID int64, errorMsg string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkFailed", db, submissionId, errorMsg)
+	ret := m.ctrl.Call(m, "MarkFailed", db, submissionID, errorMsg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkFailed indicates an expected call of MarkFailed.
-func (mr *MockSubmissionRepositoryMockRecorder) MarkFailed(db, submissionId, errorMsg any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) MarkFailed(db, submissionID, errorMsg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkFailed", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkFailed), db, submissionId, errorMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkFailed", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkFailed), db, submissionID, errorMsg)
 }
 
 // MarkProcessing mocks base method.
-func (m *MockSubmissionRepository) MarkProcessing(tx *gorm.DB, submissionId int64) error {
+func (m *MockSubmissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkProcessing", tx, submissionId)
+	ret := m.ctrl.Call(m, "MarkProcessing", tx, submissionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MarkProcessing indicates an expected call of MarkProcessing.
-func (mr *MockSubmissionRepositoryMockRecorder) MarkProcessing(tx, submissionId any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) MarkProcessing(tx, submissionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkProcessing", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkProcessing), tx, submissionId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkProcessing", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkProcessing), tx, submissionID)
 }

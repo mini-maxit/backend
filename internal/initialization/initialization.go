@@ -14,6 +14,7 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"gorm.io/gorm"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -22,7 +23,7 @@ const numTries = 10
 
 type Initialization struct {
 	Cfg *config.Config
-	Db  database.Database
+	DB  database.Database
 
 	TaskService    service.TaskService
 	SessionService service.SessionService
@@ -34,7 +35,7 @@ type Initialization struct {
 	TaskRoute       routes.TaskRoute
 	UserRoute       routes.UserRoute
 
-	QueueListener queue.QueueListener
+	QueueListener queue.Listener
 
 	Dump func(w http.ResponseWriter, r *http.Request)
 }
@@ -44,8 +45,9 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 
 	var err error
 	var conn *amqp.Connection
+	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Broker.User, cfg.Broker.Password, cfg.Broker.Host, cfg.Broker.Port)
 	for v := range numTries {
-		conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
+		conn, err = amqp.Dial(brokerURL)
 		if err != nil {
 			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
 			time.Sleep(2 * time.Second * time.Duration(v))
@@ -63,6 +65,62 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 	}
 
 	return conn, channel
+}
+
+func dump(tx *gorm.DB, authService service.AuthService, userService service.UserService) {
+	log := utils.NewNamedLogger("dumper")
+	fakeUser := schemas.User{
+		Name:     "FakeName",
+		Surname:  "FakeSurname",
+		Email:    "asd@asdf.com",
+		Username: "fake",
+		Role:     types.UserRoleAdmin,
+	}
+	session, err := authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "AdminName",
+		Surname:  "AdminSurname",
+		Email:    "admin@admin.com",
+		Username: "admin",
+		Password: "adminadmin",
+	})
+	if err != nil {
+		log.Warnf("Failed to create admin: %s", err.Error())
+	} else {
+		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleAdmin)
+		if err != nil {
+			log.Warnf("Failed to change admin role: %s", err.Error())
+		}
+	}
+	session, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "TeacherName",
+		Surname:  "TeacherSurname",
+		Email:    "teacher@teacher.com",
+		Username: "teacher",
+		Password: "teacherteacher",
+	})
+	if err != nil {
+		log.Warnf("Failed to create teacher: %s", err.Error())
+	} else {
+		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleTeacher)
+		if err != nil {
+			log.Warnf("Failed to change teacher role: %s", err.Error())
+		}
+	}
+	session, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "StudentName",
+		Surname:  "StudentSurname",
+		Email:    "student@student.com",
+		Username: "student",
+		Password: "studentstudent",
+	})
+	if err != nil {
+		log.Warnf("Failed to create student: %s", err.Error())
+	} else {
+		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleStudent)
+		if err != nil {
+			log.Warnf("Failed to change student role: %s", err.Error())
+		}
+	}
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
@@ -129,8 +187,20 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository, inputOutputRepository, userRepository, groupRepository)
-	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
+	taskService := service.NewTaskService(cfg.FileStorageURL,
+		taskRepository,
+		inputOutputRepository,
+		userRepository,
+		groupRepository,
+	)
+	queueService, err := service.NewQueueService(taskRepository,
+		submissionRepository,
+		queueRepository,
+		conn,
+		channel,
+		cfg.Broker.QueueName,
+		cfg.Broker.ResponseQueueName,
+	)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
@@ -142,89 +212,54 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authService := service.NewAuthService(userRepository, sessionService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
-	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, groupRepository, taskRepository, langService, taskService, userService)
+	submissionService := service.NewSubmissionService(
+		submissionRepository,
+		submissionResultRepository,
+		inputOutputRepository,
+		testResultRepository,
+		groupRepository,
+		taskRepository,
+		langService,
+		taskService,
+		userService,
+	)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService)
 	groupRoute := routes.NewGroupRoute(groupService)
 	sessionRoute := routes.NewSessionRoute(sessionService)
-	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService, taskService)
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
+	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
 	userRoute := routes.NewUserRoute(userService)
 
 	// Queue listener
-	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, langService, cfg.BrokerConfig.ResponseQueueName)
+	queueListener, err := queue.NewListener(
+		conn,
+		channel,
+		db,
+		taskService,
+		queueService,
+		submissionService,
+		langService,
+		cfg.Broker.ResponseQueueName,
+	)
 	if err != nil {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
-
 	if cfg.Dump {
 		tx, err := db.BeginTransaction()
 		if err != nil {
 			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 		}
-		fakeUser := schemas.User{
-			Name:     "FakeName",
-			Surname:  "FakeSurname",
-			Email:    "asd@asdf.com",
-			Username: "fake",
-			Role:     types.UserRoleAdmin,
-		}
-		session, err := authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "AdminName",
-			Surname:  "AdminSurname",
-			Email:    "admin@admin.com",
-			Username: "admin",
-			Password: "adminadmin",
-		})
-		if err != nil {
-			log.Warnf("Failed to create admin: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleAdmin)
-			if err != nil {
-				log.Warnf("Failed to change admin role: %s", err.Error())
-			}
-		}
-		session, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "TeacherName",
-			Surname:  "TeacherSurname",
-			Email:    "teacher@teacher.com",
-			Username: "teacher",
-			Password: "teacherteacher",
-		})
-		if err != nil {
-			log.Warnf("Failed to create teacher: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleTeacher)
-			if err != nil {
-				log.Warnf("Failed to change teacher role: %s", err.Error())
-			}
-		}
-		session, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "StudentName",
-			Surname:  "StudentSurname",
-			Email:    "student@student.com",
-			Username: "student",
-			Password: "studentstudent",
-		})
-		if err != nil {
-			log.Warnf("Failed to create student: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleStudent)
-			if err != nil {
-				log.Warnf("Failed to change student role: %s", err.Error())
-			}
-		}
+		dump(tx, authService, userService)
 		err = db.Commit()
 		if err != nil {
 			log.Warnf("Failed to commit transaction after dump: %s", err.Error())
 		}
-
 	}
-
 	return &Initialization{
 		Cfg: cfg,
-		Db:  db,
+		DB:  db,
 
 		TaskService:    taskService,
 		SessionService: sessionService,

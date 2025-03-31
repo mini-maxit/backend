@@ -675,7 +675,7 @@ const docTemplate = `{
         },
         "/submission/languages": {
             "get": {
-                "description": "Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages",
+                "description": "Get all available languages for submitting solutions.",
                 "produces": [
                     "application/json"
                 ],
@@ -701,7 +701,7 @@ const docTemplate = `{
         },
         "/submission/task/{id}": {
             "get": {
-                "description": "Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.",
+                "description": "If the user is a student and has no access to this task, it fails with 403 Forbidden.",
                 "produces": [
                     "application/json"
                 ],
@@ -767,7 +767,7 @@ const docTemplate = `{
         },
         "/submission/user/{id}": {
             "get": {
-                "description": "Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.",
+                "description": "If the user is a student, it fails with 403 Forbidden.",
                 "produces": [
                     "application/json"
                 ],
@@ -1664,144 +1664,12 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Edit user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "Edit user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "User edit object",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/UserEdit"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "405": {
-                        "description": "Method Not Allowed",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/user/{id}/password": {
             "patch": {
-                "description": "Change user password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "Change user password",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "User change password object",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/UserChangePassword"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "405": {
-                        "description": "Method Not Allowed",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    }
-                }
+                "responses": {}
             }
         }
     },
@@ -2227,48 +2095,6 @@ const docTemplate = `{
                 }
             }
         },
-        "UserChangePassword": {
-            "type": "object",
-            "required": [
-                "new_password",
-                "new_password_confirm"
-            ],
-            "properties": {
-                "new_password": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 8
-                },
-                "new_password_confirm": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 8
-                },
-                "old_password": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserEdit": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "$ref": "#/definitions/types.UserRole"
-                },
-                "surname": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
         "UserIds": {
             "type": "object",
             "properties": {
@@ -2363,12 +2189,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	Version:          "",
+	Host:             "",
+	BasePath:         "/api/v1.",
 	Schemes:          []string{},
-	Title:            "Mini Maxit API Documentation testing the workflow",
-	Description:      "This is the API documentation for the Mini Maxit API.",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

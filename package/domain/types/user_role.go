@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"slices"
 )
@@ -10,7 +11,7 @@ type UserRole string
 
 func (ur UserRole) Value() (driver.Value, error) {
 	if ur == "" {
-		return nil, nil
+		return nil, errors.New("user role is empty")
 	}
 	return string(ur), nil
 }
@@ -24,7 +25,7 @@ const (
 func (ur *UserRole) Scan(value any) error {
 	valueString, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("UserRole must be a string")
+		return errors.New("UserRole must be a string")
 	}
 	role := UserRole(valueString)
 	availableRoles := []UserRole{UserRoleStudent, UserRoleTeacher, UserRoleAdmin}
