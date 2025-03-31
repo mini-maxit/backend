@@ -116,7 +116,7 @@ func DecompressZip(file *os.File, newPath string) error {
 			defer outFile.Close()
 
 			_, err = io.CopyN(outFile, inFile, maxCopyBytes)
-			if err != nil && errors.Is(err, io.EOF) {
+			if err != nil && !errors.Is(err, io.EOF) {
 				return err
 			}
 		}
