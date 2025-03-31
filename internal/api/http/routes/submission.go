@@ -55,9 +55,9 @@ type SumbissionImpl struct {
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission [get]
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -102,9 +102,9 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int		true	"Submission ID"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/{id} [get]
 func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -153,10 +153,10 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id} [get]
 func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -217,10 +217,10 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id}/short [get]
 func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -284,10 +284,10 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id} [get]
 func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -341,10 +341,10 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/task/{id} [get]
 func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -393,8 +393,8 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 // Temporary solution, while all tasks have same languages
 //
 //	@Produce		json
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.LanguageConfig]
-//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
+//	@Failure		500	{object}	httputils.APIError
 //	@Router			/submission/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
@@ -426,10 +426,10 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Param			Session		header		string	true	"Session Token"
-//	@Success		200			{object}	httputils.ApiResponse[schemas.SubmitResponse]
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
+//	@Success		200			{object}	httputils.APIResponse[schemas.SubmitResponse]
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
 func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

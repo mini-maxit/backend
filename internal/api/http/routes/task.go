@@ -119,8 +119,8 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 //	@Summary		Get all tasks
 //	@Description	Returns all tasks
 //	@Produce		json
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/ [get]
 func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -162,11 +162,11 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns a task by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Task ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[schemas.TaskDetailed]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[schemas.TaskDetailed]
 //	@Router			/task/{id} [get]
 func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -215,11 +215,11 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns all tasks for a group by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Group ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/group/{id} [get]
 func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -278,10 +278,10 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Produce		json
 //	@Param			title formData	string	true	"Name of the task"
 //	@Param			archive		formData	file	true	"Task archive"
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[schemas.TaskCreateResponse]
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[schemas.TaskCreateResponse]
 //	@Router			/task/ [post]
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -370,11 +370,11 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 //
 // @Param 			archive	formData	file				false	"New archive for the task"
 //
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [patch]
 func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -462,11 +462,11 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Description	Deletes a task by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Task ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [delete]
 func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -516,11 +516,11 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
 //	@Param			userIDs	body		[]int	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/users [post]
 func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -578,11 +578,11 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 //	@Produce		json
 //	@Param			id			path		int		true	"Task ID"
 //	@Param			groupIDs	body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[string]
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/groups [post]
 func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -640,11 +640,11 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
 //	@Param			userIDs	body		[]int	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/users [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -702,11 +702,11 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 //	@Produce		json
 //	@Param			id			path		int		true	"Task ID"
 //	@Param			groupIDs	body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[string]
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/groups [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

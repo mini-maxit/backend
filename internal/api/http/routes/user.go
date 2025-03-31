@@ -38,9 +38,9 @@ type UserRouteImpl struct {
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/user/ [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -77,11 +77,11 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get user by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"User ID"
-//	@Success		200	{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		404	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.APIResponse[schemas.User]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
 //	@Router			/user/{id} [get]
 func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -130,11 +130,11 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get user by email
 //	@Produce		json
 //	@Param			email	query		string	true	"User email"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		404		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/user/email [get]
 func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -170,6 +170,20 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, user)
 }
 
+//	EditUser godoc
+//
+// @Tags			user
+// @Summary		Edit user
+// @Description	Edit user
+// @Produce		json
+// @Param			id	path		int	true	"User ID"
+// @Param			request	body		schemas.UserEdit	true	"User Edit Request"
+// @Success		200		{object}	httputils.APIResponse[string]
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		405		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
 // @Router			/user/{id} [patch].
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -223,6 +237,19 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, "Update successfull")
 }
 
+// ChangePassword godoc
+//
+// @Tags			user
+// @Summary		Change user password
+// @Description	Change user password
+// @Produce		json
+// @Param			id	path		int	true	"User ID"
+// @Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
+// @Success		200		{object}	httputils.APIResponse[string]
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
 // @Router			/user/{id}/password [patch].
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {

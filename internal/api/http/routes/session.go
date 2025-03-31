@@ -62,10 +62,10 @@ func (sr *SessionRouteImpl) CreateSession(w http.ResponseWriter, r *http.Request
 //	@Description	Validates a session token
 //	@Produce		json
 //	@Param			Session	header		string	true	"Session Token"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		401		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/session/validate [get]
 func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Request) {
 	sessionToken := r.Header.Get("Session")
@@ -117,11 +117,11 @@ func (sr *SessionRouteImpl) ValidateSession(w http.ResponseWriter, r *http.Reque
 //	@Description	Invalidates a session token
 //	@Produce		json
 //	@Param			Session	header		string	true	"Session Token"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		401		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/session/invalidate [post]
 func (sr *SessionRouteImpl) InvalidateSession(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

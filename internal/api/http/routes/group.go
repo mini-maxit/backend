@@ -38,11 +38,11 @@ type GroupRouteImpl struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		CreateGroup	true	"Create Group"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[int64]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[int64]
 //	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -91,11 +91,11 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get a group
 //	@Produce		json
 //	@Param			id	path		int	true	"Group ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[schemas.Group]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[schemas.Group]
 //	@Router			/group/{id} [get]
 func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -143,11 +143,11 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Get all groups
 //	@Description	Get all groups
 //	@Produce		json
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Group]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Group]
 //	@Router			/group/ [get]
 func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -192,11 +192,11 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int			true	"Group ID"
 //	@Param			body	body		EditGroup	true	"Edit Group"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[schemas.Group]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.Group]
 //	@Router			/group/{id} [put]
 func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
@@ -254,11 +254,11 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int				true	"Group ID"
 //	@Param			body	body		schemas.UserIDs	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/group/{id}/users [post]
 func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -316,11 +316,11 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 //	@Produce		json
 //	@Param			id		path		int				true	"Group ID"
 //	@Param			body	body		schemas.UserIDs	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/group/{id}/users [delete]
 func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -383,11 +383,11 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 //	@Description	Get users in a group
 //	@Produce		json
 //	@Param			id	path		int	true	"Group ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[string]
 //	@Router			/group/{id}/users [get]
 func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

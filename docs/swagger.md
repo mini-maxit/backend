@@ -1,15 +1,14 @@
 
 
 
-# Mini Maxit API Documentation testing the workflow
-This is the API documentation for the Mini Maxit API.
+# Mini-Maxit API
   
 
 ## Informations
 
 ### Version
 
-1.0
+1.0.0
 
 ### Contact
 
@@ -33,8 +32,8 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| POST | /api/v1/login | [post login](#post-login) | Login a user |
-| POST | /api/v1/register | [post register](#post-register) | Register a user |
+| POST | /api/v1./login | [post login](#post-login) | Login a user |
+| POST | /api/v1./register | [post register](#post-register) | Register a user |
   
 
 
@@ -42,13 +41,13 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| DELETE | /api/v1/group/{id}/users | [delete group ID users](#delete-group-id-users) | Delete users from a group |
-| GET | /api/v1/group | [get group](#get-group) | Get all groups |
-| GET | /api/v1/group/{id} | [get group ID](#get-group-id) | Get a group |
-| GET | /api/v1/group/{id}/users | [get group ID users](#get-group-id-users) | Get users in a group |
-| POST | /api/v1/group | [post group](#post-group) | Create a group |
-| POST | /api/v1/group/{id}/users | [post group ID users](#post-group-id-users) | Add users to a group |
-| PUT | /api/v1/group/{id} | [put group ID](#put-group-id) | Edit a group |
+| DELETE | /api/v1./group/{id}/users | [delete group ID users](#delete-group-id-users) | Delete users from a group |
+| GET | /api/v1./group | [get group](#get-group) | Get all groups |
+| GET | /api/v1./group/{id} | [get group ID](#get-group-id) | Get a group |
+| GET | /api/v1./group/{id}/users | [get group ID users](#get-group-id-users) | Get users in a group |
+| POST | /api/v1./group | [post group](#post-group) | Create a group |
+| POST | /api/v1./group/{id}/users | [post group ID users](#post-group-id-users) | Add users to a group |
+| PUT | /api/v1./group/{id} | [put group ID](#put-group-id) | Edit a group |
   
 
 
@@ -56,8 +55,8 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| GET | /api/v1/session/validate | [get session validate](#get-session-validate) | Validate a session |
-| POST | /api/v1/session/invalidate | [post session invalidate](#post-session-invalidate) | Invalidate a session |
+| GET | /api/v1./session/validate | [get session validate](#get-session-validate) | Validate a session |
+| POST | /api/v1./session/invalidate | [post session invalidate](#post-session-invalidate) | Invalidate a session |
   
 
 
@@ -65,12 +64,12 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| GET | /api/v1/submission | [get submission](#get-submission) | Get all submissions for the current user |
-| GET | /api/v1/submission/{id} | [get submission ID](#get-submission-id) | Get a submission by ID |
-| GET | /api/v1/submission/languages | [get submission languages](#get-submission-languages) | Get all available languages |
-| GET | /api/v1/submission/task/{id} | [get submission task ID](#get-submission-task-id) | Get all submissions for a task |
-| GET | /api/v1/submission/user/{id} | [get submission user ID](#get-submission-user-id) | Get all submissions for a group |
-| GET | /api/v1/submission/user/{id}/short | [get submission user ID short](#get-submission-user-id-short) | Get all submissions for a user |
+| GET | /api/v1./submission | [get submission](#get-submission) | Get all submissions for the current user |
+| GET | /api/v1./submission/{id} | [get submission ID](#get-submission-id) | Get a submission by ID |
+| GET | /api/v1./submission/languages | [get submission languages](#get-submission-languages) | Get all available languages |
+| GET | /api/v1./submission/task/{id} | [get submission task ID](#get-submission-task-id) | Get all submissions for a task |
+| GET | /api/v1./submission/user/{id} | [get submission user ID](#get-submission-user-id) | Get all submissions for a group |
+| GET | /api/v1./submission/user/{id}/short | [get submission user ID short](#get-submission-user-id-short) | Get all submissions for a user |
   
 
 
@@ -78,16 +77,16 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| DELETE | /api/v1/task/{id} | [delete task ID](#delete-task-id) | Delete a task |
-| DELETE | /api/v1/task/{id}/unassign/groups | [delete task ID unassign groups](#delete-task-id-unassign-groups) | Unassign a task from groups |
-| DELETE | /api/v1/task/{id}/unassign/users | [delete task ID unassign users](#delete-task-id-unassign-users) | Unassign a task from users |
-| GET | /api/v1/task | [get task](#get-task) | Get all tasks |
-| GET | /api/v1/task/group/{id} | [get task group ID](#get-task-group-id) | Get all tasks for a group |
-| GET | /api/v1/task/{id} | [get task ID](#get-task-id) | Get a task |
-| PATCH | /api/v1/task/{id} | [patch task ID](#patch-task-id) | Update a task |
-| POST | /api/v1/task | [post task](#post-task) | Upload a task |
-| POST | /api/v1/task/{id}/assign/groups | [post task ID assign groups](#post-task-id-assign-groups) | Assign a task to groups |
-| POST | /api/v1/task/{id}/assign/users | [post task ID assign users](#post-task-id-assign-users) | Assign a task to users |
+| DELETE | /api/v1./task/{id} | [delete task ID](#delete-task-id) | Delete a task |
+| DELETE | /api/v1./task/{id}/unassign/groups | [delete task ID unassign groups](#delete-task-id-unassign-groups) | Unassign a task from groups |
+| DELETE | /api/v1./task/{id}/unassign/users | [delete task ID unassign users](#delete-task-id-unassign-users) | Unassign a task from users |
+| GET | /api/v1./task | [get task](#get-task) | Get all tasks |
+| GET | /api/v1./task/group/{id} | [get task group ID](#get-task-group-id) | Get all tasks for a group |
+| GET | /api/v1./task/{id} | [get task ID](#get-task-id) | Get a task |
+| PATCH | /api/v1./task/{id} | [patch task ID](#patch-task-id) | Update a task |
+| POST | /api/v1./task | [post task](#post-task) | Upload a task |
+| POST | /api/v1./task/{id}/assign/groups | [post task ID assign groups](#post-task-id-assign-groups) | Assign a task to groups |
+| POST | /api/v1./task/{id}/assign/users | [post task ID assign users](#post-task-id-assign-users) | Assign a task to users |
   
 
 
@@ -95,11 +94,11 @@ This is the API documentation for the Mini Maxit API.
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
-| GET | /api/v1/user | [get user](#get-user) | Get all users |
-| GET | /api/v1/user/email | [get user email](#get-user-email) | Get user by email |
-| GET | /api/v1/user/{id} | [get user ID](#get-user-id) | Get user by ID |
-| PATCH | /api/v1/user/{id} | [patch user ID](#patch-user-id) | Edit user |
-| PATCH | /api/v1/user/{id}/password | [patch user ID password](#patch-user-id-password) | Change user password |
+| GET | /api/v1./user | [get user](#get-user) | Get all users |
+| GET | /api/v1./user/email | [get user email](#get-user-email) | Get user by email |
+| GET | /api/v1./user/{id} | [get user ID](#get-user-id) | Get user by ID |
+| PATCH | /api/v1./user/{id} | [patch user ID](#patch-user-id) | Edit user |
+| PATCH | /api/v1./user/{id}/password | [patch user ID password](#patch-user-id-password) | Change user password |
   
 
 
@@ -108,7 +107,7 @@ This is the API documentation for the Mini Maxit API.
 ### <span id="delete-group-id-users"></span> Delete users from a group (*DeleteGroupIDUsers*)
 
 ```
-DELETE /api/v1/group/{id}/users
+DELETE /api/v1./group/{id}/users
 ```
 
 Delete users from a group
@@ -124,7 +123,7 @@ Delete users from a group
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Group ID |
-| body | `body` | [UserIds](#user-ids) | `models.UserIds` | | ✓ | | User IDs |
+| body | `body` | [UserIDs](#user-i-ds) | `models.UserIDs` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -186,7 +185,7 @@ Status: Internal Server Error
 ### <span id="delete-task-id"></span> Delete a task (*DeleteTaskID*)
 
 ```
-DELETE /api/v1/task/{id}
+DELETE /api/v1./task/{id}
 ```
 
 Deletes a task by ID
@@ -260,7 +259,7 @@ Status: Internal Server Error
 ### <span id="delete-task-id-unassign-groups"></span> Unassign a task from groups (*DeleteTaskIDUnassignGroups*)
 
 ```
-DELETE /api/v1/task/{id}/unassign/groups
+DELETE /api/v1./task/{id}/unassign/groups
 ```
 
 Unassigns a task from groups by task ID and group IDs
@@ -273,7 +272,7 @@ Unassigns a task from groups by task ID and group IDs
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Task ID |
-| groupIds | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
+| groupIDs | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -335,7 +334,7 @@ Status: Internal Server Error
 ### <span id="delete-task-id-unassign-users"></span> Unassign a task from users (*DeleteTaskIDUnassignUsers*)
 
 ```
-DELETE /api/v1/task/{id}/unassign/users
+DELETE /api/v1./task/{id}/unassign/users
 ```
 
 Unassigns a task from users by task ID and user IDs
@@ -348,7 +347,7 @@ Unassigns a task from users by task ID and user IDs
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Task ID |
-| userIds | `body` | []integer | `[]int64` | | ✓ | | User IDs |
+| userIDs | `body` | []integer | `[]int64` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -410,7 +409,7 @@ Status: Internal Server Error
 ### <span id="get-group"></span> Get all groups (*GetGroup*)
 
 ```
-GET /api/v1/group
+GET /api/v1./group
 ```
 
 Get all groups
@@ -478,7 +477,7 @@ Status: Internal Server Error
 ### <span id="get-group-id"></span> Get a group (*GetGroupID*)
 
 ```
-GET /api/v1/group/{id}
+GET /api/v1./group/{id}
 ```
 
 Get a group
@@ -552,7 +551,7 @@ Status: Internal Server Error
 ### <span id="get-group-id-users"></span> Get users in a group (*GetGroupIDUsers*)
 
 ```
-GET /api/v1/group/{id}/users
+GET /api/v1./group/{id}/users
 ```
 
 Get users in a group
@@ -626,7 +625,7 @@ Status: Internal Server Error
 ### <span id="get-session-validate"></span> Validate a session (*GetSessionValidate*)
 
 ```
-GET /api/v1/session/validate
+GET /api/v1./session/validate
 ```
 
 Validates a session token
@@ -690,10 +689,10 @@ Status: Internal Server Error
 ### <span id="get-submission"></span> Get all submissions for the current user (*GetSubmission*)
 
 ```
-GET /api/v1/submission
+GET /api/v1./submission
 ```
 
-Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin
+Depending on the user role, this endpoint will return all submissions for the current user.
 
 #### Produces
   * application/json
@@ -746,10 +745,10 @@ Status: Internal Server Error
 ### <span id="get-submission-id"></span> Get a submission by ID (*GetSubmissionID*)
 
 ```
-GET /api/v1/submission/{id}
+GET /api/v1./submission/{id}
 ```
 
-Get a submission by its ID, if the user is a student, the submission must belong to the user, if the user is a teacher, the submission must belong to a task owned by the teacher, if the user is an admin, the submission can be any submission
+If the user is a student, the submission must belong to the user.
 
 #### Produces
   * application/json
@@ -801,10 +800,10 @@ Status: Internal Server Error
 ### <span id="get-submission-languages"></span> Get all available languages (*GetSubmissionLanguages*)
 
 ```
-GET /api/v1/submission/languages
+GET /api/v1./submission/languages
 ```
 
-Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages
+Get all available languages for submitting solutions.
 
 #### Produces
   * application/json
@@ -839,10 +838,10 @@ Status: Internal Server Error
 ### <span id="get-submission-task-id"></span> Get all submissions for a task (*GetSubmissionTaskID*)
 
 ```
-GET /api/v1/submission/task/{id}
+GET /api/v1./submission/task/{id}
 ```
 
-Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.
+If the user is a student and has no access to this task, it fails with 403 Forbidden.
 
 #### Produces
   * application/json
@@ -906,10 +905,10 @@ Status: Internal Server Error
 ### <span id="get-submission-user-id"></span> Get all submissions for a group (*GetSubmissionUserID*)
 
 ```
-GET /api/v1/submission/user/{id}
+GET /api/v1./submission/user/{id}
 ```
 
-Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.
+If the user is a student, it fails with 403 Forbidden.
 
 #### Produces
   * application/json
@@ -973,10 +972,10 @@ Status: Internal Server Error
 ### <span id="get-submission-user-id-short"></span> Get all submissions for a user (*GetSubmissionUserIDShort*)
 
 ```
-GET /api/v1/submission/user/{id}/short
+GET /api/v1./submission/user/{id}/short
 ```
 
-Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.
+If the user is a student, it fails with 403 Forbidden.
 
 #### Produces
   * application/json
@@ -1040,7 +1039,7 @@ Status: Internal Server Error
 ### <span id="get-task"></span> Get all tasks (*GetTask*)
 
 ```
-GET /api/v1/task
+GET /api/v1./task
 ```
 
 Returns all tasks
@@ -1078,7 +1077,7 @@ Status: Internal Server Error
 ### <span id="get-task-group-id"></span> Get all tasks for a group (*GetTaskGroupID*)
 
 ```
-GET /api/v1/task/group/{id}
+GET /api/v1./task/group/{id}
 ```
 
 Returns all tasks for a group by ID
@@ -1152,7 +1151,7 @@ Status: Internal Server Error
 ### <span id="get-task-id"></span> Get a task (*GetTaskID*)
 
 ```
-GET /api/v1/task/{id}
+GET /api/v1./task/{id}
 ```
 
 Returns a task by ID
@@ -1226,7 +1225,7 @@ Status: Internal Server Error
 ### <span id="get-user"></span> Get all users (*GetUser*)
 
 ```
-GET /api/v1/user
+GET /api/v1./user
 ```
 
 Get all users
@@ -1282,7 +1281,7 @@ Status: Internal Server Error
 ### <span id="get-user-email"></span> Get user by email (*GetUserEmail*)
 
 ```
-GET /api/v1/user/email
+GET /api/v1./user/email
 ```
 
 Get user by email
@@ -1356,7 +1355,7 @@ Status: Internal Server Error
 ### <span id="get-user-id"></span> Get user by ID (*GetUserID*)
 
 ```
-GET /api/v1/user/{id}
+GET /api/v1./user/{id}
 ```
 
 Get user by ID
@@ -1430,7 +1429,7 @@ Status: Internal Server Error
 ### <span id="patch-task-id"></span> Update a task (*PatchTaskID*)
 
 ```
-PATCH /api/v1/task/{id}
+PATCH /api/v1./task/{id}
 ```
 
 Updates a task by ID
@@ -1506,13 +1505,10 @@ Status: Internal Server Error
 ### <span id="patch-user-id"></span> Edit user (*PatchUserID*)
 
 ```
-PATCH /api/v1/user/{id}
+PATCH /api/v1./user/{id}
 ```
 
 Edit user
-
-#### Consumes
-  * application/json
 
 #### Produces
   * application/json
@@ -1522,7 +1518,7 @@ Edit user
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | User ID |
-| body | `body` | [UserEdit](#user-edit) | `models.UserEdit` | | ✓ | | User edit object |
+| request | `body` | [UserEdit](#user-edit) | `models.UserEdit` | | ✓ | | User Edit Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1594,13 +1590,10 @@ Status: Internal Server Error
 ### <span id="patch-user-id-password"></span> Change user password (*PatchUserIDPassword*)
 
 ```
-PATCH /api/v1/user/{id}/password
+PATCH /api/v1./user/{id}/password
 ```
 
 Change user password
-
-#### Consumes
-  * application/json
 
 #### Produces
   * application/json
@@ -1610,7 +1603,7 @@ Change user password
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | User ID |
-| body | `body` | [UserChangePassword](#user-change-password) | `models.UserChangePassword` | | ✓ | | User change password object |
+| request | `body` | [UserChangePassword](#user-change-password) | `models.UserChangePassword` | | ✓ | | User Change Password Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1619,7 +1612,6 @@ Change user password
 | [400](#patch-user-id-password-400) | Bad Request | Bad Request |  | [schema](#patch-user-id-password-400-schema) |
 | [403](#patch-user-id-password-403) | Forbidden | Forbidden |  | [schema](#patch-user-id-password-403-schema) |
 | [404](#patch-user-id-password-404) | Not Found | Not Found |  | [schema](#patch-user-id-password-404-schema) |
-| [405](#patch-user-id-password-405) | Method Not Allowed | Method Not Allowed |  | [schema](#patch-user-id-password-405-schema) |
 | [500](#patch-user-id-password-500) | Internal Server Error | Internal Server Error |  | [schema](#patch-user-id-password-500-schema) |
 
 #### Responses
@@ -1661,15 +1653,6 @@ Status: Not Found
 
 [APIError](#api-error)
 
-##### <span id="patch-user-id-password-405"></span> 405 - Method Not Allowed
-Status: Method Not Allowed
-
-###### <span id="patch-user-id-password-405-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
 ##### <span id="patch-user-id-password-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
 
@@ -1682,7 +1665,7 @@ Status: Internal Server Error
 ### <span id="post-group"></span> Create a group (*PostGroup*)
 
 ```
-POST /api/v1/group
+POST /api/v1./group
 ```
 
 Create a group
@@ -1759,7 +1742,7 @@ Status: Internal Server Error
 ### <span id="post-group-id-users"></span> Add users to a group (*PostGroupIDUsers*)
 
 ```
-POST /api/v1/group/{id}/users
+POST /api/v1./group/{id}/users
 ```
 
 Add users to a group
@@ -1775,7 +1758,7 @@ Add users to a group
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Group ID |
-| body | `body` | [UserIds](#user-ids) | `models.UserIds` | | ✓ | | User IDs |
+| body | `body` | [UserIDs](#user-i-ds) | `models.UserIDs` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1837,7 +1820,7 @@ Status: Internal Server Error
 ### <span id="post-login"></span> Login a user (*PostLogin*)
 
 ```
-POST /api/v1/login
+POST /api/v1./login
 ```
 
 Logs in a user with email and password
@@ -1904,7 +1887,7 @@ Status: Internal Server Error
 ### <span id="post-register"></span> Register a user (*PostRegister*)
 
 ```
-POST /api/v1/register
+POST /api/v1./register
 ```
 
 Registers a user with name, surname, email, username and password
@@ -1981,7 +1964,7 @@ Status: Internal Server Error
 ### <span id="post-session-invalidate"></span> Invalidate a session (*PostSessionInvalidate*)
 
 ```
-POST /api/v1/session/invalidate
+POST /api/v1./session/invalidate
 ```
 
 Invalidates a session token
@@ -2055,7 +2038,7 @@ Status: Internal Server Error
 ### <span id="post-task"></span> Upload a task (*PostTask*)
 
 ```
-POST /api/v1/task
+POST /api/v1./task
 ```
 
 Uploads a task to the FileStorage service
@@ -2123,7 +2106,7 @@ Status: Internal Server Error
 ### <span id="post-task-id-assign-groups"></span> Assign a task to groups (*PostTaskIDAssignGroups*)
 
 ```
-POST /api/v1/task/{id}/assign/groups
+POST /api/v1./task/{id}/assign/groups
 ```
 
 Assigns a task to groups by task ID and group IDs
@@ -2136,7 +2119,7 @@ Assigns a task to groups by task ID and group IDs
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Task ID |
-| groupIds | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
+| groupIDs | `body` | []integer | `[]int64` | | ✓ | | Group IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -2198,7 +2181,7 @@ Status: Internal Server Error
 ### <span id="post-task-id-assign-users"></span> Assign a task to users (*PostTaskIDAssignUsers*)
 
 ```
-POST /api/v1/task/{id}/assign/users
+POST /api/v1./task/{id}/assign/users
 ```
 
 Assigns a task to users by task ID and user IDs
@@ -2211,7 +2194,7 @@ Assigns a task to users by task ID and user IDs
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Task ID |
-| userIds | `body` | []integer | `[]int64` | | ✓ | | User IDs |
+| userIDs | `body` | []integer | `[]int64` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -2273,7 +2256,7 @@ Status: Internal Server Error
 ### <span id="put-group-id"></span> Edit a group (*PutGroupID*)
 
 ```
-PUT /api/v1/group/{id}
+PUT /api/v1./group/{id}
 ```
 
 Edit a group
@@ -2350,7 +2333,7 @@ Status: Internal Server Error
 
 ## Models
 
-### <span id="api-error"></span> ApiError
+### <span id="api-error"></span> APIError
 
 
   
@@ -2366,7 +2349,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-group"></span> ApiResponse-Group
+### <span id="api-response-group"></span> APIResponse-Group
 
 
   
@@ -2382,7 +2365,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-session"></span> ApiResponse-Session
+### <span id="api-response-session"></span> APIResponse-Session
 
 
   
@@ -2398,7 +2381,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-submission"></span> ApiResponse-Submission
+### <span id="api-response-submission"></span> APIResponse-Submission
 
 
   
@@ -2414,7 +2397,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-submit-response"></span> ApiResponse-SubmitResponse
+### <span id="api-response-submit-response"></span> APIResponse-SubmitResponse
 
 
   
@@ -2430,7 +2413,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-task-create-response"></span> ApiResponse-TaskCreateResponse
+### <span id="api-response-task-create-response"></span> APIResponse-TaskCreateResponse
 
 
   
@@ -2446,7 +2429,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-task-detailed"></span> ApiResponse-TaskDetailed
+### <span id="api-response-task-detailed"></span> APIResponse-TaskDetailed
 
 
   
@@ -2462,7 +2445,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-user"></span> ApiResponse-User
+### <span id="api-response-user"></span> APIResponse-User
 
 
   
@@ -2478,7 +2461,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-array-group"></span> ApiResponse-array_Group
+### <span id="api-response-array-group"></span> APIResponse-array_Group
 
 
   
@@ -2494,7 +2477,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-array-language-config"></span> ApiResponse-array_LanguageConfig
+### <span id="api-response-array-language-config"></span> APIResponse-array_LanguageConfig
 
 
   
@@ -2510,7 +2493,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-array-submission"></span> ApiResponse-array_Submission
+### <span id="api-response-array-submission"></span> APIResponse-array_Submission
 
 
   
@@ -2526,7 +2509,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-array-task"></span> ApiResponse-array_Task
+### <span id="api-response-array-task"></span> APIResponse-array_Task
 
 
   
@@ -2542,7 +2525,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-int64"></span> ApiResponse-int64
+### <span id="api-response-int64"></span> APIResponse-int64
 
 
   
@@ -2558,7 +2541,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-string"></span> ApiResponse-string
+### <span id="api-response-string"></span> APIResponse-string
 
 
   
@@ -2851,7 +2834,7 @@ Status: Internal Server Error
 
 
 
-### <span id="user-ids"></span> UserIds
+### <span id="user-i-ds"></span> UserIDs
 
 
   
@@ -2862,7 +2845,7 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| userIds | []integer| `[]int64` |  | |  |  |
+| userIDs | []integer| `[]int64` |  | |  |  |
 
 
 
