@@ -7,8 +7,10 @@ import (
 	"slices"
 )
 
+// UserRole represents the user role.
 type UserRole string
 
+// Value implements the driver.Valuer interface.
 func (ur UserRole) Value() (driver.Value, error) {
 	if ur == "" {
 		return nil, errors.New("user role is empty")
@@ -17,11 +19,15 @@ func (ur UserRole) Value() (driver.Value, error) {
 }
 
 const (
+	// UserRoleStudent represents the student role.
 	UserRoleStudent UserRole = "student"
+	// UserRoleTeacher represents the teacher role.
 	UserRoleTeacher UserRole = "teacher"
-	UserRoleAdmin   UserRole = "admin"
+	// UserRoleAdmin represents the admin role.
+	UserRoleAdmin UserRole = "admin"
 )
 
+// Scan implements the sql.Scanner interface.
 func (ur *UserRole) Scan(value any) error {
 	valueString, ok := value.(string)
 	if !ok {

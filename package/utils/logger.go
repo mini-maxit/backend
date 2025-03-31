@@ -21,6 +21,7 @@ const (
 var sugarLogger *zap.SugaredLogger
 var httpSugarLogger *zap.SugaredLogger
 
+// InitializeLogger initializes the logger.
 func InitializeLogger() {
 	w := zapcore.AddSync(&lumberjack.Logger{
 		Filename: logPath,
@@ -73,6 +74,7 @@ func InitializeLogger() {
 	httpSugarLogger = httpLogger.Sugar()
 }
 
+// NewHTTPLogger a new SugaredLogger.
 func NewHTTPLogger() *zap.SugaredLogger {
 	if httpSugarLogger == nil {
 		InitializeLogger()

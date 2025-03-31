@@ -310,7 +310,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found."+err.Error())
 		return
 	}
-	if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
+	if !strings.HasSuffix(handler.Filename, ".zip") && !strings.HasSuffix(handler.Filename, ".tar.gz") {
 		httputils.ReturnError(w,
 			http.StatusBadRequest,
 			"Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename,

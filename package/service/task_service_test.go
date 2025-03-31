@@ -79,12 +79,12 @@ func addInputOutputFiles(t *testing.T, zipWriter *zip.Writer, count int, inputDi
 	for i := 1; i <= count; i++ {
 		inputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.in", inputDir, i))
 		require.NoError(t, err)
-		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", i)))
+		_, err = fmt.Fprintf(inputFile, "Input data %d", i)
 		require.NoError(t, err)
 
 		outputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.out", outputDir, i))
 		require.NoError(t, err)
-		_, err = outputFile.Write([]byte(fmt.Sprintf("Output data %d", i)))
+		_, err = fmt.Fprintf(outputFile, "Output data %d", i)
 		require.NoError(t, err)
 	}
 }
@@ -121,7 +121,7 @@ func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) str
 		defer os.Remove(tempFile.Name())
 	case "invalid_archive":
 		defer os.Remove(tempFile.Name())
-		file, err := os.CreateTemp(os.TempDir(), "test-archive-*.txt")
+		file, err := os.CreateTemp(t.TempDir(), "test-archive-*.txt")
 		require.NoError(t, err)
 		return file.Name()
 	case "no_output":
@@ -150,7 +150,7 @@ func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) str
 		addInputOutputFiles(t, zipWriter, 3, "folder/input", "folder/output")
 		inputFile, err := zipWriter.Create("folder/input/another.in")
 		require.NoError(t, err)
-		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", 4)))
+		_, err = fmt.Fprintf(inputFile, "Input data %d", 4)
 		require.NoError(t, err)
 	}
 

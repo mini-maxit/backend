@@ -340,9 +340,10 @@ func NewUserRoute(userService service.UserService) UserRoute {
 func RegisterUserRoutes(mux *http.ServeMux, route UserRoute) {
 	mux.HandleFunc("/", route.GetAllUsers)
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
+		switch r.Method {
+		case http.MethodGet:
 			route.GetUserByID(w, r)
-		} else if r.Method == http.MethodPatch {
+		case http.MethodPatch:
 			route.EditUser(w, r)
 		}
 	})

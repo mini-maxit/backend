@@ -13,15 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func TransactionPanicRecover(tx *gorm.DB) {
-	if r := recover(); r != nil {
-		tx.Rollback()
-		panic(r)
-	} else if tx != nil && tx.Error != nil {
-		tx.Rollback()
-	}
-}
-
 // ApplyPaginationAndSort applies pagination and sort to the query.
 //
 // Values recived are guaranteed to be valid by middleware, so no error checking is needed.
@@ -40,12 +31,20 @@ func ApplyPaginationAndSort(tx *gorm.DB, limit, offset int, sortBy string) (*gor
 	return tx, nil
 }
 
+// UsernameValidator validates the username.
 func UsernameValidator(fl validator.FieldLevel) bool {
 	username := fl.Field().String()
 	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
 	return re.MatchString(username)
 }
 
+// PasswordValidator validates the password.
+// Password must:
+// * contain at least 8 characters
+// * one uppercase letter
+// * one lowercase letter
+// * one digit
+// * one special character.
 func PasswordValidator(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
@@ -66,6 +65,7 @@ func PasswordValidator(fl validator.FieldLevel) bool {
 		specialChar.MatchString(password)
 }
 
+// NewValidator creates a new validator with custom validators.
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.RegisterValidation("username", UsernameValidator)
@@ -79,6 +79,7 @@ func NewValidator() (*validator.Validate, error) {
 	return validate, nil
 }
 
+// ValidateRoleAccess validates if the current role has access to the resource.
 func ValidateRoleAccess(currentRole types.UserRole, acceptedRoles []types.UserRole) error {
 	if !slices.Contains(acceptedRoles, currentRole) {
 		return errors.ErrNotAuthorized
