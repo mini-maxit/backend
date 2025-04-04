@@ -1,4 +1,4 @@
-package utils
+package utils_test
 
 import (
 	"testing"
@@ -6,7 +6,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type Data struct {
@@ -31,22 +33,17 @@ func (i Impl) DoIt() {}
 func TestValidateStructEmpty(t *testing.T) {
 	t.Run("empty struct", func(t *testing.T) {
 		var d Data
-		err := ValidateStruct(d)
-		if !assert.Error(t, err) {
-			t.Fatalf("expected error, got nil")
-		}
+		err := utils.ValidateStruct(d)
+		require.Error(t, err)
 	})
 
 	t.Run("nil pointer", func(t *testing.T) {
 		var d *Data
-		err := ValidateStruct(d)
-		if !assert.Error(t, err) {
-			t.Fatalf("expected error, got nil")
-		}
+		err := utils.ValidateStruct(d)
+		require.Error(t, err)
 	})
 
 	t.Run("different field types", func(t *testing.T) {
-
 		emptyString := ""
 
 		d := Data{
@@ -61,10 +58,8 @@ func TestValidateStructEmpty(t *testing.T) {
 			sliceMember: make([]string, 0),
 		}
 
-		err := ValidateStruct(d)
-		if !assert.NoError(t, err) {
-			t.Fatalf("expected no error, got %v", err)
-		}
+		err := utils.ValidateStruct(d)
+		require.NoError(t, err)
 	})
 
 	t.Run("unititialized fields", func(t *testing.T) {
@@ -72,79 +67,41 @@ func TestValidateStructEmpty(t *testing.T) {
 			X Interfc
 		}
 
-		err := ValidateStruct(d)
-		if !assert.Error(t, err) {
-			t.Fatalf("expected error, got nil")
-		}
+		err := utils.ValidateStruct(d)
+		require.Error(t, err)
 	})
-
 }
+
 func TestValidateRoleAccess(t *testing.T) {
 	t.Run("role is accepted", func(t *testing.T) {
 		currentRole := types.UserRole("admin")
 		acceptedRoles := []types.UserRole{"admin", "user"}
 
-		err := ValidateRoleAccess(currentRole, acceptedRoles)
-		assert.NoError(t, err)
+		err := utils.ValidateRoleAccess(currentRole, acceptedRoles)
+		require.NoError(t, err)
 	})
 
 	t.Run("role is not accepted", func(t *testing.T) {
 		currentRole := types.UserRole("guest")
 		acceptedRoles := []types.UserRole{"admin", "user"}
 
-		err := ValidateRoleAccess(currentRole, acceptedRoles)
-		assert.Error(t, err)
+		err := utils.ValidateRoleAccess(currentRole, acceptedRoles)
+		require.Error(t, err)
 		assert.Equal(t, errors.ErrNotAuthorized, err)
 	})
 }
-func TestGetLimit(t *testing.T) {
-	t.Run("valid limit", func(t *testing.T) {
-		limitStr := "10"
-		expectedLimit := 10
 
-		limit, err := GetLimit(limitStr)
-		assert.NoError(t, err)
-		assert.Equal(t, expectedLimit, limit)
-	})
-
-	t.Run("invalid limit", func(t *testing.T) {
-		limitStr := "invalid"
-
-		limit, err := GetLimit(limitStr)
-		assert.Error(t, err)
-		assert.Equal(t, 0, limit)
-	})
-}
-
-func TestGetOffset(t *testing.T) {
-	t.Run("valid offset", func(t *testing.T) {
-		offsetStr := "20"
-		expectedOffset := 20
-
-		offset, err := GetOffset(offsetStr)
-		assert.NoError(t, err)
-		assert.Equal(t, expectedOffset, offset)
-	})
-
-	t.Run("invalid offset", func(t *testing.T) {
-		offsetStr := "invalid"
-
-		offset, err := GetOffset(offsetStr)
-		assert.Error(t, err)
-		assert.Equal(t, 0, offset)
-	})
-}
 func TestUsernameValidator(t *testing.T) {
 	validate := validator.New()
-	err := validate.RegisterValidation("username", usernameValidator)
-	assert.NoError(t, err)
+	err := validate.RegisterValidation("username", utils.UsernameValidator)
+	require.NoError(t, err)
 
 	tests := []struct {
 		username string
 		valid    bool
 	}{
 		{"validUsername", true},
-		{"valid_username123", true},
+		{"validUsername123", true},
 		{"1invalidUsername", false},
 		{"invalid-username", false},
 		{"", false},
@@ -153,17 +110,17 @@ func TestUsernameValidator(t *testing.T) {
 	for _, test := range tests {
 		errs := validate.Var(test.username, "username")
 		if test.valid {
-			assert.NoError(t, errs)
+			require.NoError(t, errs)
 		} else {
-			assert.Error(t, errs)
+			require.Error(t, errs)
 		}
 	}
 }
 
 func TestPasswordValidator(t *testing.T) {
 	validate := validator.New()
-	err := validate.RegisterValidation("password", passwordValidator)
-	assert.NoError(t, err)
+	err := validate.RegisterValidation("password", utils.PasswordValidator)
+	require.NoError(t, err)
 
 	tests := []struct {
 		password string
@@ -179,12 +136,11 @@ func TestPasswordValidator(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.password, func(t *testing.T) {
-
 			errs := validate.Var(test.password, "password")
 			if test.valid {
-				assert.NoError(t, errs)
+				require.NoError(t, errs)
 			} else {
-				assert.Error(t, errs)
+				require.Error(t, errs)
 			}
 		})
 	}

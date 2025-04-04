@@ -16,7 +16,7 @@ func (usr *submissionResultRepository) Create(tx *gorm.DB, submissionResult mode
 	if err := tx.Create(&submissionResult).Error; err != nil {
 		return 0, err
 	}
-	return submissionResult.Id, nil
+	return submissionResult.ID, nil
 }
 
 func NewSubmissionResultRepository(db *gorm.DB) (SubmissionResultRepository, error) {
@@ -26,5 +26,4 @@ func NewSubmissionResultRepository(db *gorm.DB) (SubmissionResultRepository, err
 		}
 	}
 	return &submissionResultRepository{}, nil
-
 }

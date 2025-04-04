@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"testing"
@@ -7,7 +7,9 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -15,18 +17,20 @@ import (
 func TestRegister(t *testing.T) {
 	ur := testutils.NewMockUserRepository()
 	sr := testutils.NewMockSessionRepository()
-	ss := NewSessionService(sr, ur)
-	as := NewAuthService(ur, ss)
+	ss := service.NewSessionService(sr, ur)
+	as := service.NewAuthService(ur, ss)
 	tx := &gorm.DB{}
 
 	t.Run("get user by email when user exists", func(t *testing.T) {
-		ur.Create(tx, &models.User{
+		user := &models.User{
 			Name:         "name",
 			Surname:      "surname",
 			Email:        "email2@email.com",
 			Username:     "username2",
 			PasswordHash: "password",
-		})
+		}
+		_, err := ur.Create(tx, user)
+		require.NoError(t, err)
 		userRegister := schemas.UserRegisterRequest{
 			Name:            "name",
 			Surname:         "surname",
@@ -36,7 +40,7 @@ func TestRegister(t *testing.T) {
 			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(tx, userRegister)
-		assert.ErrorIs(t, err, errors.ErrUserAlreadyExists)
+		require.ErrorIs(t, err, errors.ErrUserAlreadyExists)
 		assert.Nil(t, response)
 	})
 
@@ -50,7 +54,7 @@ func TestRegister(t *testing.T) {
 			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(tx, userRegister)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 	})
 
@@ -64,7 +68,7 @@ func TestRegister(t *testing.T) {
 			ConfirmPassword: "Password123!",
 		}
 		response, err := as.Register(nil, userRegister)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, response)
 	})
 }
@@ -72,8 +76,8 @@ func TestRegister(t *testing.T) {
 func TestLogin(t *testing.T) {
 	ur := testutils.NewMockUserRepository()
 	sr := testutils.NewMockSessionRepository()
-	ss := NewSessionService(sr, ur)
-	as := NewAuthService(ur, ss)
+	ss := service.NewSessionService(sr, ur)
+	as := service.NewAuthService(ur, ss)
 	tx := &gorm.DB{}
 
 	t.Run("get user by email when user does not exist", func(t *testing.T) {
@@ -82,7 +86,7 @@ func TestLogin(t *testing.T) {
 			Password: "password",
 		}
 		response, err := as.Login(tx, userLogin)
-		assert.ErrorIs(t, err, errors.ErrUserNotFound)
+		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, response)
 	})
 
@@ -94,20 +98,21 @@ func TestLogin(t *testing.T) {
 			Username:     "username",
 			PasswordHash: "password",
 		}
-		ur.Create(tx, user)
+		_, err := ur.Create(tx, user)
+		require.NoError(t, err)
 		userLogin := schemas.UserLoginRequest{
 			Email:    user.Email,
 			Password: user.PasswordHash,
 		}
 		response, err := as.Login(tx, userLogin)
-		assert.ErrorIs(t, err, errors.ErrInvalidCredentials)
+		require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 		assert.Nil(t, response)
 	})
 
 	t.Run("successful user login", func(t *testing.T) {
 		password := "supersecretpassword"
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		user := &models.User{
 			Name:         "name",
 			Surname:      "surname",
@@ -115,13 +120,14 @@ func TestLogin(t *testing.T) {
 			Username:     "username",
 			PasswordHash: string(passwordHash),
 		}
-		ur.Create(tx, user)
+		_, err = ur.Create(tx, user)
+		require.NoError(t, err)
 		userLogin := schemas.UserLoginRequest{
 			Email:    user.Email,
 			Password: password,
 		}
 		response, err := as.Login(tx, userLogin)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 	})
 }

@@ -1,40 +1,132 @@
+// Package errors contains the error variables used in the application.
 package errors
 
-import (
-	"fmt"
+import "errors"
+
+// ErrDatabaseConnection is returned when the database connection fails.
+var ErrDatabaseConnection = errors.New("failed to connect to the database")
+
+// ErrTaskExists is returned when a task with the same title already exists.
+var ErrTaskExists = errors.New("task with this title already exists")
+
+// ErrTaskNotFound is returned when the specified task is not found.
+var ErrTaskNotFound = errors.New("task not found")
+
+// ErrNotAuthorized is returned when the user is not authorized to perform the action.
+var ErrNotAuthorized = errors.New("not authorized to perform this action")
+
+// ErrTaskAlreadyAssigned is returned when the task is already assigned to the user.
+var ErrTaskAlreadyAssigned = errors.New("task is already assigned to the user")
+
+// ErrTaskNotAssignedToUser is returned when the task is not assigned to the user.
+var ErrTaskNotAssignedToUser = errors.New("task is not assigned to the user")
+
+// ErrTaskNotAssignedToGroup is returned when the task is not assigned to the group.
+var ErrTaskNotAssignedToGroup = errors.New("task is not assigned to the group")
+
+// ErrNotAllowed is returned when the action is not allowed.
+var ErrNotAllowed = errors.New("not allowed to perform this action")
+
+// ErrUserNotFound is returned when the specified user is not found.
+var ErrUserNotFound = errors.New("user not found")
+
+// ErrUserAlreadyExists is returned when the user already exists.
+var ErrUserAlreadyExists = errors.New("user already exists")
+
+// ErrInvalidCredentials is returned when the provided credentials are invalid.
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
+// ErrPermissionDenied is returned when the user is not allowed to view the submission.
+var ErrPermissionDenied = errors.New("user is not allowed to view this submission")
+
+// ErrInvalidData is returned when the provided data is invalid.
+var ErrInvalidData = errors.New("invalid data")
+
+// ErrInvalidInputOuput is returned when the input or output is invalid.
+var ErrInvalidInputOuput = errors.New("invalid input or output")
+
+// ErrNotFound is returned when the requested resource is not found.
+var ErrNotFound = errors.New("request resource not found")
+
+// ErrFileOpen is returned when the file fails to open.
+var ErrFileOpen = errors.New("failed to open file")
+
+// ErrTempDirCreate is returned when the temporary directory creation fails.
+var ErrTempDirCreate = errors.New("failed to create temp directory")
+
+// ErrDecompressArchive is returned when the archive decompression fails.
+var ErrDecompressArchive = errors.New("failed to decompress archive")
+
+// ErrNoInputDirectory is returned when no input directory is found.
+var ErrNoInputDirectory = errors.New("no input directory found")
+
+// ErrNoOutputDirectory is returned when no output directory is found.
+var ErrNoOutputDirectory = errors.New("no output directory found")
+
+// ErrIOCountMismatch is returned when the input and output file count mismatch.
+var ErrIOCountMismatch = errors.New("input and output file count mismatch")
+
+// ErrInputContainsDir is returned when the input contains a directory.
+var ErrInputContainsDir = errors.New("input contains a directory")
+
+// ErrOutputContainsDir is returned when the output contains a directory.
+var ErrOutputContainsDir = errors.New("output contains a directory")
+
+// ErrInvalidInExtention is returned when the input file extension is invalid.
+var ErrInvalidInExtention = errors.New("invalid input file extension")
+
+// ErrInvalidOutExtention is returned when the output file extension is invalid.
+var ErrInvalidOutExtention = errors.New("invalid output file extension")
+
+// ErrWriteTaskID is returned when writing the task ID to the form fails.
+var ErrWriteTaskID = errors.New("error writing task ID to form")
+
+// ErrWriteOverwrite is returned when writing overwrite to the form fails.
+var ErrWriteOverwrite = errors.New("error writing overwrite to form")
+
+// ErrCreateFormFile is returned when creating the form file fails.
+var ErrCreateFormFile = errors.New("error creating form file")
+
+// ErrCopyFile is returned when copying the file to the form fails.
+var ErrCopyFile = errors.New("error copying file to form")
+
+// ErrSendRequest is returned when sending the request to FileStorage fails.
+var ErrSendRequest = errors.New("error sending request to FileStorage")
+
+// ErrReadResponse is returned when reading the response from FileStorage fails.
+var ErrReadResponse = errors.New("error reading response from FileStorage")
+
+// ErrResponseFromFileStorage is returned when there is an error response from FileStorage.
+var ErrResponseFromFileStorage = errors.New("error response from FileStorage")
+
+var (
+	// ErrGroupNotFound is returned when the specified group is not found.
+	ErrGroupNotFound = errors.New("group not found")
+
+	// ErrInvalidLimitParam is returned when the limit parameter is invalid.
+	ErrInvalidLimitParam = errors.New("invalid limit parameter")
+
+	// ErrInvalidOffsetParam is returned when the offset parameter is invalid.
+	ErrInvalidOffsetParam = errors.New("invalid offset parameter")
 )
 
-var ErrDatabaseConnection = fmt.Errorf("failed to connect to the database")
-var ErrTaskExists = fmt.Errorf("task with this title already exists")
-var ErrTaskNotFound = fmt.Errorf("task not found")
-var ErrNotAuthorized = fmt.Errorf("not authorized to perform this action")
-var ErrTaskAlreadyAssigned = fmt.Errorf("task is already assigned to the user")
-var ErrTaskNotAssignedToUser = fmt.Errorf("task is not assigned to the user")
-var ErrTaskNotAssignedToGroup = fmt.Errorf("task is not assigned to the group")
-var ErrNotAllowed = fmt.Errorf("not allowed to perform this action")
-var ErrUserNotFound = fmt.Errorf("user not found")
-var ErrUserAlreadyExists = fmt.Errorf("user already exists")
-var ErrInvalidCredentials = fmt.Errorf("invalid credentials")
-var ErrPermissionDenied = fmt.Errorf("user is not allowed to view this submission")
-var ErrInvalidData = fmt.Errorf("invalid data")
-var ErrInvalidInputOuput = fmt.Errorf("invalid input or output")
-var ErrNotFound = fmt.Errorf("request resource not found")
+var (
+	// ErrSessionNotFound is returned when the session is not found.
+	ErrSessionNotFound = errors.New("session not found")
 
-var ErrFileOpen = fmt.Errorf("failed to open file")
-var ErrTempDirCreate = fmt.Errorf("failed to create temp directory")
-var ErrDecompressArchive = fmt.Errorf("failed to decompress archive")
-var ErrNoInputDirectory = fmt.Errorf("no input directory found")
-var ErrNoOutputDirectory = fmt.Errorf("no output directory found")
-var ErrIOCountMismatch = fmt.Errorf("input and output file count mismatch")
-var ErrInputContainsDir = fmt.Errorf("input contains a directory")
-var ErrOutputContainsDir = fmt.Errorf("output contains a directory")
-var ErrInvalidInExtention = fmt.Errorf("invalid input file extension")
-var ErrInvalidOutExtention = fmt.Errorf("invalid output file extension")
+	// ErrSessionExpired is returned when the session has expired.
+	ErrSessionExpired = errors.New("session expired")
 
-var ErrWriteTaskID = fmt.Errorf("error writing task ID to form")
-var ErrWriteOverwrite = fmt.Errorf("error writing overwrite to form")
-var ErrCreateFormFile = fmt.Errorf("error creating form file")
-var ErrCopyFile = fmt.Errorf("error copying file to form")
-var ErrSendRequest = fmt.Errorf("error sending request to FileStorage")
-var ErrReadResponse = fmt.Errorf("error reading response from FileStorage")
-var ErrResponseFromFileStorage = fmt.Errorf("error response from FileStorage")
+	// ErrSessionUserNotFound is returned when the session user is not found.
+	ErrSessionUserNotFound = errors.New("session user not found")
+
+	// ErrSessionRefresh is returned when the session refresh fails.
+	ErrSessionRefresh = errors.New("session refresh failed")
+)
+
+// ErrInvalidArchive is returned when the archive contains a single file, expected a single directory or.
+var ErrInvalidArchive = errors.New(`archive contains a single file, expected a single directory or
+[input/ output/ description.pdf]`)
+
+// ErrExpectedStruct is returned when the input parameter should be a struct.
+var ErrExpectedStruct = errors.New("input param should be a struct")

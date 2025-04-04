@@ -9,17 +9,15 @@ type LanguageRepository interface {
 	// Create creates a new language
 	Create(tx *gorm.DB, language *models.LanguageConfig) error
 	// Delete deletes a language
-	Delete(tx *gorm.DB, languageId int64) error
-	// Get returns a language by id
-	Get(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error)
+	Delete(tx *gorm.DB, languageID int64) error
 	// GetAll returns all languages
 	GetAll(tx *gorm.DB) ([]models.LanguageConfig, error)
 	// GetEnabled returns all enabled languages
 	GetEnabled(tx *gorm.DB) ([]models.LanguageConfig, error)
 	// MarkDisabled marks a language as disabled
-	MarkDisabled(tx *gorm.DB, languageId int64) error
+	MarkDisabled(tx *gorm.DB, languageID int64) error
 	// MarkEnabled marks a language as enabled
-	MarkEnabled(tx *gorm.DB, languageId int64) error
+	MarkEnabled(tx *gorm.DB, languageID int64) error
 }
 
 type languageRepository struct {
@@ -34,27 +32,23 @@ func (l *languageRepository) GetAll(tx *gorm.DB) ([]models.LanguageConfig, error
 	return tasks, nil
 }
 
-func (l *languageRepository) Get(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error) {
-	panic("implement me")
-}
-
 func (l *languageRepository) Create(tx *gorm.DB, language *models.LanguageConfig) error {
 	err := tx.Model(models.LanguageConfig{}).Create(&language).Error
 	return err
 }
 
-func (l *languageRepository) Delete(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Delete(&models.LanguageConfig{}).Error
+func (l *languageRepository) Delete(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Delete(&models.LanguageConfig{}).Error
 	return err
 }
 
-func (l *languageRepository) MarkDisabled(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("disabled", true).Error
+func (l *languageRepository) MarkDisabled(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Update("disabled", true).Error
 	return err
 }
 
-func (l *languageRepository) MarkEnabled(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Update("disabled", false).Error
+func (l *languageRepository) MarkEnabled(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Update("disabled", false).Error
 	return err
 }
 

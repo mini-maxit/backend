@@ -1,10 +1,12 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -30,31 +32,30 @@ type AuthService interface {
 	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error)
 }
 
-// authService implements AuthService interface
+// authService implements AuthService interface.
 type authService struct {
 	userRepository repository.UserRepository
 	sessionService SessionService
 	logger         *zap.SugaredLogger
 }
 
-// Login implements Login method of [AuthService] interface
+// Login implements Login method of [AuthService] interface.
 func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
 	user, err := as.userRepository.GetByEmail(tx, userLogin.Email)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.ErrUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrUserNotFound
 		}
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
-
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userLogin.Password)) != nil {
-		as.logger.Errorf("Error comparing password hash: %v", errors.ErrInvalidCredentials.Error())
-		return nil, errors.ErrInvalidCredentials
+		as.logger.Errorf("Error comparing password hash: %v", myerrors.ErrInvalidCredentials.Error())
+		return nil, myerrors.ErrInvalidCredentials
 	}
 
-	session, err := as.sessionService.Create(tx, user.Id)
+	session, err := as.sessionService.Create(tx, user.ID)
 	if err != nil {
 		as.logger.Errorf("Error creating session: %v", err.Error())
 		return nil, err
@@ -63,17 +64,17 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 	return session, nil
 }
 
-// Register implements Register method of [AuthService] interface
+// Register implements Register method of [AuthService] interface.
 func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
 	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
 	}
 
 	if user != nil {
 		as.logger.Errorf("User already exists")
-		return nil, errors.ErrUserAlreadyExists
+		return nil, myerrors.ErrUserAlreadyExists
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
@@ -90,13 +91,13 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 		Role:         types.UserRoleStudent,
 	}
 
-	userId, err := as.userRepository.Create(tx, userModel)
+	userID, err := as.userRepository.Create(tx, userModel)
 	if err != nil {
 		as.logger.Errorf("Error creating user: %v", err.Error())
 		return nil, err
 	}
 
-	session, err := as.sessionService.Create(tx, userId)
+	session, err := as.sessionService.Create(tx, userID)
 	if err != nil {
 		as.logger.Errorf("Error creating session: %v", err.Error())
 		return nil, err
@@ -106,7 +107,7 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 	return session, nil
 }
 
-// NewAuthService creates new instance of [authService]
+// NewAuthService creates new instance of [authService].
 func NewAuthService(userRepository repository.UserRepository, sessionService SessionService) AuthService {
 	log := utils.NewNamedLogger("auth_service")
 	return &authService{

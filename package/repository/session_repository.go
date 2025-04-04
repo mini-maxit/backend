@@ -11,11 +11,11 @@ type SessionRepository interface {
 	// Create creates a new session in the database.
 	Create(tx *gorm.DB, session *models.Session) error
 	// Delete deletes a session from the database.
-	Delete(tx *gorm.DB, sessionId string) error
-	// Get retrieves a session from the database by its Id.
-	Get(tx *gorm.DB, sessionId string) (*models.Session, error)
-	// GetByUserId retrieves a session from the database by the user Id.
-	GetByUserId(tx *gorm.DB, userId int64) (*models.Session, error)
+	Delete(tx *gorm.DB, sessionID string) error
+	// Get retrieves a session from the database by its ID.
+	Get(tx *gorm.DB, sessionID string) (*models.Session, error)
+	// GetByUserID retrieves a session from the database by the user ID.
+	GetByUserID(tx *gorm.DB, userID int64) (*models.Session, error)
 }
 
 type sessionRepository struct {
@@ -26,31 +26,31 @@ func (s *sessionRepository) Create(tx *gorm.DB, session *models.Session) error {
 	return err
 }
 
-func (s *sessionRepository) Get(tx *gorm.DB, sessionId string) (*models.Session, error) {
+func (s *sessionRepository) Get(tx *gorm.DB, sessionID string) (*models.Session, error) {
 	session := &models.Session{}
-	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).Take(session).Error
+	err := tx.Model(&models.Session{}).Where("id = ?", sessionID).Take(session).Error
 	if err != nil {
 		return nil, err
 	}
 	return session, nil
 }
 
-func (s *sessionRepository) GetByUserId(tx *gorm.DB, userId int64) (*models.Session, error) {
+func (s *sessionRepository) GetByUserID(tx *gorm.DB, userID int64) (*models.Session, error) {
 	session := &models.Session{}
-	err := tx.Model(&models.Session{}).Preload("User").Where("user_id = ?", userId).Take(session).Error
+	err := tx.Model(&models.Session{}).Preload("User").Where("user_id = ?", userID).Take(session).Error
 	if err != nil {
 		return nil, err
 	}
 	return session, nil
 }
 
-func (s *sessionRepository) UpdateExpiration(tx *gorm.DB, sessionId string, expires_at time.Time) error {
-	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).Update("expires_at", expires_at).Error
+func (s *sessionRepository) UpdateExpiration(tx *gorm.DB, sessionID string, expiresAt time.Time) error {
+	err := tx.Model(&models.Session{}).Where("id = ?", sessionID).Update("expires_at", expiresAt).Error
 	return err
 }
 
-func (s *sessionRepository) Delete(tx *gorm.DB, sessionId string) error {
-	err := tx.Model(&models.Session{}).Where("id = ?", sessionId).Delete(&models.Session{}).Error
+func (s *sessionRepository) Delete(tx *gorm.DB, sessionID string) error {
+	err := tx.Model(&models.Session{}).Where("id = ?", sessionID).Delete(&models.Session{}).Error
 	return err
 }
 

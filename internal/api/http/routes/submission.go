@@ -2,8 +2,9 @@ package routes
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -13,7 +14,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
@@ -21,7 +22,7 @@ import (
 type SubmissionRoutes interface {
 	// Get requests
 	GetAll(w http.ResponseWriter, r *http.Request)
-	GetById(w http.ResponseWriter, r *http.Request)
+	GetByID(w http.ResponseWriter, r *http.Request)
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
 	GetAllForUserShort(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
@@ -32,10 +33,12 @@ type SubmissionRoutes interface {
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
 }
 
+const submissionBodyLimit = 2 << 20
+
 type SumbissionImpl struct {
 	submissionService service.SubmissionService
 	taskService       service.TaskService
-	fileStorageUrl    string
+	fileStorageURL    string
 	queueService      service.QueueService
 }
 
@@ -43,14 +46,18 @@ type SumbissionImpl struct {
 //
 //	@Tags			submission
 //	@Summary		Get all submissions for the current user
-//	@Description	Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin
+//	@Description	Depending on the user role, this endpoint will return all submissions for the current user.
+//
+// If user is student, all submissions to owned tasks.
+// If user is teacher or admin, and all submissions in database.
+//
 //	@Produce		json
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission [get]
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -65,11 +72,11 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAll(tx, current_user, queryParams)
+	submissions, err := s.submissionService.GetAll(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
@@ -83,19 +90,23 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
-// GetById godoc
+// GetByID godoc
 //
 //	@Tags			submission
 //	@Summary		Get a submission by ID
-//	@Description	Get a submission by its ID, if the user is a student, the submission must belong to the user, if the user is a teacher, the submission must belong to a task owned by the teacher, if the user is an admin, the submission can be any submission
+//	@Description	If the user is a student, the submission must belong to the user.
+//
+// If the user is a teacher, the submission must belong to a task owned by the teacher.
+// If the user is an admin, the submission can be any submission
+//
 //	@Produce		json
 //	@Param			id		path		int		true	"Submission ID"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/{id} [get]
-func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
+func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -108,17 +119,17 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submissionIdStr := r.PathValue("id")
-	submissionId, err := strconv.ParseInt(submissionIdStr, 10, 64)
+	submissionIDStr := r.PathValue("id")
+	submissionID, err := strconv.ParseInt(submissionIDStr, 10, 64)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid submission id. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	submission, err := s.submissionService.Get(tx, submissionId, current_user)
+	submission, err := s.submissionService.Get(tx, submissionID, currentUser)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submission. "+err.Error())
@@ -132,16 +143,20 @@ func (s *SumbissionImpl) GetById(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			submission
 //	@Summary		Get all submissions for a user
-//	@Description	Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.
+//	@Description	If the user is a student, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions from this user for tasks owned by the teacher.
+// For admin it returns all submissions for specific user.
+//
 //	@Produce		json
 //	@Param			id		path		int		true	"User ID"
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id} [get]
 func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -149,8 +164,8 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdStr := r.PathValue("id")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userIDStr := r.PathValue("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
 		return
@@ -163,15 +178,18 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForUser(tx, userId, current_user, queryParams)
+	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
-		switch err {
-		case errors.ErrPermissionDenied:
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
+		switch {
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w,
+				http.StatusForbidden,
+				"Permission denied. Current user is not allowed to view submissions for this user.",
+			)
 		default:
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
 		}
@@ -189,16 +207,20 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			submission
 //	@Summary		Get all submissions for a user
-//	@Description	Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.
+//	@Description	If the user is a student, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions from this user for tasks owned by the teacher.
+// For admin it returns all submissions for specific user.
+//
 //	@Produce		json
 //	@Param			id		path		int		true	"User ID"
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id}/short [get]
 func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -206,8 +228,8 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userIdStr := r.PathValue("id")
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userIDStr := r.PathValue("id")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
 		return
@@ -220,17 +242,23 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForUserShort(tx, userId, current_user, queryParams)
+	submissions, err := s.submissionService.GetAllForUserShort(tx, userID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
-		switch err {
-		case errors.ErrPermissionDenied:
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to view submissions for this user.")
+		switch {
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w,
+				http.StatusForbidden,
+				"Permission denied. Current user is not allowed to view submissions for this user.",
+			)
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+			httputils.ReturnError(w,
+				http.StatusInternalServerError,
+				"Failed to get submissions. "+err.Error(),
+			)
 		}
 		return
 	}
@@ -246,16 +274,20 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 //
 //	@Tags			submission
 //	@Summary		Get all submissions for a group
-//	@Description	Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.
+//	@Description	If the user is a student, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions from this group for tasks he created.
+// For admin it returns all submissions for specific group.
+//
 //	@Produce		json
 //	@Param			id		path		int		true	"Group ID"
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/user/{id} [get]
 func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -263,8 +295,8 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	groupIdStr := r.PathValue("id")
-	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	groupIDStr := r.PathValue("id")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id. "+err.Error())
 		return
@@ -277,11 +309,11 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForGroup(tx, groupId, current_user, queryParams)
+	submissions, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
@@ -299,16 +331,20 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //
 //	@Tags			submission
 //	@Summary		Get all submissions for a task
-//	@Description	Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.
+//	@Description	If the user is a student and has no access to this task, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions for this task if he created it.
+// For admin it returns all submissions for specific task.
+//
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			Session	header		string	true	"Session Token"
-//	@Success		200		{object}	httputils.ApiResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/submission/task/{id} [get]
 func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -316,15 +352,15 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskIDStr := r.PathValue("id")
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task id. "+err.Error())
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -334,7 +370,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForTask(tx, taskId, current_user, queryParams)
+	submissions, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
@@ -352,10 +388,13 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			submission
 //	@Summary		Get all available languages
-//	@Description	Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages
+//	@Description	Get all available languages for submitting solutions.
+//
+// Temporary solution, while all tasks have same languages
+//
 //	@Produce		json
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.LanguageConfig]
-//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
+//	@Failure		500	{object}	httputils.APIError
 //	@Router			/submission/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
@@ -376,17 +415,21 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //
 //	@Tags			submission
 //	@Summary		Submit a solution
-//	@Description	Submit a solution to a task, the solution is uploaded to the FileStorage service and a submission is created in the database. The submission is then published to the queue for processing. The response contains the submission ID. Fails if user has no access to provided task.
+//	@Description	The solution is uploaded to the FileStorage service and a submission is created in the database.
+//
+// The submission is then published to the queue for processing. The response contains the submission ID.
+// Fails if user has no access to provided task.
+//
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			taskID		formData	int		true	"Task ID"
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Param			Session		header		string	true	"Session Token"
-//	@Success		200			{object}	httputils.ApiResponse[schemas.SubmitResponse]
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
+//	@Success		200			{object}	httputils.APIResponse[schemas.SubmitResponse]
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
 func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -394,21 +437,21 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Limit the size of the incoming request to 10 MB
-	r.Body = http.MaxBytesReader(w, r.Body, 10*1024*1024)
+	r.Body = http.MaxBytesReader(w, r.Body, submissionBodyLimit)
 
 	// Parse the multipart form data
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
+	if err := r.ParseMultipartForm(submissionBodyLimit); err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "The uploaded files are too large.")
 		return
 	}
 
 	// Extract the task ID
-	taskIdStr := r.FormValue("taskID")
-	if taskIdStr == "" {
+	taskIDStr := r.FormValue("taskID")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -423,9 +466,9 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	defer file.Close()
 
 	// Extract user ID
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
-	userId := current_user.Id
-	userIDStr := strconv.FormatInt(userId, 10)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	userID := currentUser.ID
+	userIDStr := strconv.FormatInt(userID, 10)
 
 	// Extract language
 	languageStr := r.FormValue("languageID")
@@ -433,7 +476,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		httputils.ReturnError(w, http.StatusBadRequest, "Language ID is required.")
 		return
 	}
-	languageId, err := strconv.ParseInt(languageStr, 10, 64)
+	languageID, err := strconv.ParseInt(languageStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid language ID.")
 		return
@@ -446,17 +489,24 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = s.taskService.Get(tx, current_user, taskId)
+	_, err = s.taskService.Get(tx, currentUser, taskID)
 	if err != nil {
 		db.Rollback()
-		switch err {
-		case errors.ErrPermissionDenied:
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to submit solutions for this task.")
-		case errors.ErrTaskNotFound:
+		switch {
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w,
+				http.StatusForbidden,
+				"Permission denied. Current user is not allowed to submit solutions for this task.",
+			)
+		case errors.Is(err, myerrors.ErrTaskNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get task. "+err.Error())
+			httputils.ReturnError(w,
+				http.StatusInternalServerError,
+				"Failed to get task. "+err.Error(),
+			)
 		}
+		return
 	}
 
 	// Create a multipart writer for the HTTP request to FileStorage service
@@ -464,25 +514,37 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	writer := multipart.NewWriter(body)
 
 	// Add form fields
-	err = writer.WriteField("taskID", taskIdStr)
+	err = writer.WriteField("taskID", taskIDStr)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error writing taskID to FileStorage request. "+err.Error())
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error writing taskID to FileStorage request. "+err.Error(),
+		)
 		return
 	}
 	err = writer.WriteField("userID", userIDStr)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error writing userID to FileStorage request. "+err.Error())
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error writing userID to FileStorage request. "+err.Error(),
+		)
 		return
 	}
 
 	// Create a form file field and copy the uploaded file to it
 	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error creating form file for FileStorage. "+err.Error())
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error creating form file for FileStorage. "+err.Error(),
+		)
 		return
 	}
 	if _, err := io.Copy(part, file); err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error copying file to FileStorage request. "+err.Error())
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error copying file to FileStorage request. "+err.Error(),
+		)
 		return
 	}
 
@@ -490,54 +552,86 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 
 	// Send the request to FileStorage service
 	client := &http.Client{}
-	resp, err := client.Post(s.fileStorageUrl+"/submit", writer.FormDataContentType(), body)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, s.fileStorageURL+"/submit", body)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error sending file to FileStorage service. %s", err.Error()))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error creating request to FileStorage service. "+err.Error(),
+		)
+		return
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	resp, err := client.Do(req)
+	if err != nil {
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error sending file to FileStorage service. "+err.Error(),
+		)
 		return
 	}
 	defer resp.Body.Close()
 
 	resBody, err := io.ReadAll(resp.Body)
 	if err != nil && len(resBody) == 0 {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error reading response from FileStorage. %s", err.Error()))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error reading response from FileStorage. "+err.Error(),
+		)
 		return
 	}
 	// Handle response from FileStorage
 	if resp.StatusCode != http.StatusOK {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to upload file to FileStorage. %s", string(resBody)))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Failed to upload file to FileStorage. "+string(resBody),
+		)
 		return
 	}
 
-	respJson := schemas.SubmitResponse{}
-	err = json.Unmarshal(resBody, &respJson)
+	respJSON := schemas.SubmitResponse{}
+	err = json.Unmarshal(resBody, &respJSON)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error parsing response from FileStorage. %s", err.Error()))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error parsing response from FileStorage. "+err.Error(),
+		)
 		return
 	}
 
 	// Create the submission with the correct order
-	submissionId, err := s.submissionService.Create(tx, taskId, userId, languageId, respJson.SubmissionNumber)
+	submissionID, err := s.submissionService.Create(tx, taskID, userID, languageID, respJSON.SubmissionNumber)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error creating submission. %s", err.Error()))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error creating submission. "+err.Error(),
+		)
 		return
 	}
 
-	err = s.queueService.PublishSubmission(tx, submissionId)
+	err = s.queueService.PublishSubmission(tx, submissionID)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error publishing submission to the queue. %s", err.Error()))
+		httputils.ReturnError(w,
+			http.StatusInternalServerError,
+			"Error publishing submission to the queue. "+err.Error(),
+		)
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, "Solution submitted successfully")
 }
 
-// New Instance
-func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorageUrl string, queueService service.QueueService, taskService service.TaskService) SubmissionRoutes {
+// New Instance.
+func NewSubmissionRoutes(
+	submissionService service.SubmissionService,
+	fileStorageURL string,
+	queueService service.QueueService,
+	taskService service.TaskService,
+) SubmissionRoutes {
 	route := &SumbissionImpl{
 		submissionService: submissionService,
-		fileStorageUrl:    fileStorageUrl,
+		fileStorageURL:    fileStorageURL,
 		queueService:      queueService,
 		taskService:       taskService,
 	}
@@ -548,10 +642,10 @@ func NewSubmissionRoutes(submissionService service.SubmissionService, fileStorag
 	return route
 }
 
-// RegisterSubmissionRoutes registers handlers for the submission routes
+// RegisterSubmissionRoutes registers handlers for the submission routes.
 func RegisterSubmissionRoutes(mux *http.ServeMux, route SubmissionRoutes) {
 	mux.HandleFunc("/", route.GetAll)
-	mux.HandleFunc("/{id}", route.GetById)
+	mux.HandleFunc("/{id}", route.GetByID)
 	mux.HandleFunc("/user/{id}", route.GetAllForUser)
 	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
 	mux.HandleFunc("/group/{id}", route.GetAllForGroup)

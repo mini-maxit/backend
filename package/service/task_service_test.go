@@ -1,4 +1,4 @@
-package service
+package service_test
 
 import (
 	"archive/zip"
@@ -12,7 +12,9 @@ import (
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +23,7 @@ type taskServiceTest struct {
 	ur          repository.UserRepository
 	tr          repository.TaskRepository
 	gr          repository.GroupRepository
-	taskService TaskService
+	taskService service.TaskService
 	counter     int64
 }
 
@@ -32,7 +34,7 @@ func newTaskServiceTest() *taskServiceTest {
 	gr := testutils.NewMockGroupRepository(ur)
 	tr := testutils.NewMockTaskRepository(gr)
 	io := testutils.NewMockInputOutputRepository()
-	ts := NewTaskService(config.FileStorageUrl, tr, io, ur, gr)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
 
 	return &taskServiceTest{
 		tx:          tx,
@@ -45,7 +47,7 @@ func newTaskServiceTest() *taskServiceTest {
 
 func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
 	tst.counter++
-	userId, err := tst.ur.Create(tst.tx, &models.User{
+	userID, err := tst.ur.Create(tst.tx, &models.User{
 		Name:         fmt.Sprintf("Test User %d", tst.counter),
 		Surname:      fmt.Sprintf("Test Surname %d", tst.counter),
 		Email:        fmt.Sprintf("email%d@email.com", tst.counter),
@@ -53,18 +55,14 @@ func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schema
 		Role:         role,
 		PasswordHash: "password",
 	})
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	require.NoError(t, err)
 
-	user_model, err := tst.ur.Get(tst.tx, userId)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	userModel, err := tst.ur.Get(tst.tx, userID)
+	require.NoError(t, err)
 
 	user := schemas.User{
-		Id:   user_model.Id,
-		Role: user_model.Role,
+		ID:   userModel.ID,
+		Role: userModel.Role,
 	}
 	return user
 }
@@ -72,28 +70,28 @@ func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schema
 func addDescription(t *testing.T, zipWriter *zip.Writer) {
 	// Create description.pdf
 	descriptionFile, err := zipWriter.Create("folder/description.pdf")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = descriptionFile.Write([]byte("This is a test description."))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func addInputOutputFiles(t *testing.T, zipWriter *zip.Writer, count int, inputDir, outputDir string) {
 	for i := 1; i <= count; i++ {
 		inputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.in", inputDir, i))
-		assert.NoError(t, err)
-		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", i)))
-		assert.NoError(t, err)
+		require.NoError(t, err)
+		_, err = fmt.Fprintf(inputFile, "Input data %d", i)
+		require.NoError(t, err)
 
 		outputFile, err := zipWriter.Create(fmt.Sprintf("%s/%d.out", outputDir, i))
-		assert.NoError(t, err)
-		_, err = outputFile.Write([]byte(fmt.Sprintf("Output data %d", i)))
-		assert.NoError(t, err)
+		require.NoError(t, err)
+		_, err = fmt.Fprintf(outputFile, "Output data %d", i)
+		require.NoError(t, err)
 	}
 }
 
 func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) string {
-	tempFile, err := os.CreateTemp(os.TempDir(), "test-archive-*.zip")
-	assert.NoError(t, err)
+	tempFile, err := os.CreateTemp(t.TempDir(), "test-archive-*.zip")
+	require.NoError(t, err)
 	defer tempFile.Close()
 
 	zipWriter := zip.NewWriter(tempFile)
@@ -108,23 +106,23 @@ func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) str
 		addDescription(t, zipWriter)
 		addInputOutputFiles(t, zipWriter, 2, "folder/input", "folder/output")
 		outputFile, err := zipWriter.Create("folder/output/3.out")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = outputFile.Write([]byte("Output data 3"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	case "invalid_structure":
 		addDescription(t, zipWriter)
 		addInputOutputFiles(t, zipWriter, 4, "folder", "folder")
 	case "single_file":
 		// Create only one input and output file
 		_, err := zipWriter.Create("1.in")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	case "nonexistent_file":
 		// Create an invalid archive
 		defer os.Remove(tempFile.Name())
 	case "invalid_archive":
 		defer os.Remove(tempFile.Name())
-		file, err := os.CreateTemp(os.TempDir(), "test-archive-*.txt")
-		assert.NoError(t, err)
+		file, err := os.CreateTemp(t.TempDir(), "test-archive-*.txt")
+		require.NoError(t, err)
 		return file.Name()
 	case "no_output":
 		// Create only input files
@@ -138,22 +136,22 @@ func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) str
 		// input dir contains another dir
 		addDescription(t, zipWriter)
 		_, err := zipWriter.Create("folder/input/another.in/input.in")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		addInputOutputFiles(t, zipWriter, 3, "folder/input", "folder/output")
 		outputFile, err := zipWriter.Create(fmt.Sprintf("folder/output/%d.out", 4))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = outputFile.Write([]byte("Output data"))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	case "output_dir":
 		// output dir contains another dir
 		addDescription(t, zipWriter)
 		_, err := zipWriter.Create("folder/output/another.out/output.out")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		addInputOutputFiles(t, zipWriter, 3, "folder/input", "folder/output")
 		inputFile, err := zipWriter.Create("folder/input/another.in")
-		assert.NoError(t, err)
-		_, err = inputFile.Write([]byte(fmt.Sprintf("Input data %d", 4)))
-		assert.NoError(t, err)
+		require.NoError(t, err)
+		_, err = fmt.Fprintf(inputFile, "Input data %d", 4)
+		require.NoError(t, err)
 	}
 
 	return tempFile.Name()
@@ -163,450 +161,442 @@ func TestCreateTask(t *testing.T) {
 	tst := newTaskServiceTest()
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
-		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
 	})
 
 	// We want to have clear task repository for this state, and this is the quickest way
 	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
-		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, int64(0), taskId)
-		taskId, err = tst.taskService.Create(tst.tx, current_user, &schemas.Task{
+		require.NoError(t, err)
+		assert.NotEqual(t, int64(0), taskID)
+		taskID, err = tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		})
-		assert.ErrorIs(t, err, errors.ErrTaskExists)
-		assert.Equal(t, int64(0), taskId)
+		require.ErrorIs(t, err, errors.ErrTaskExists)
+		assert.Equal(t, int64(0), taskID)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleStudent)
-		taskId, err := tst.taskService.Create(tst.tx, current_user, &schemas.Task{
+		currentUser := tst.createUser(t, types.UserRoleStudent)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
 			Title:     "Test Student Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
-		assert.Equal(t, int64(0), taskId)
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Equal(t, int64(0), taskID)
 	})
 }
 
 func TestGetTaskByTitle(t *testing.T) {
 	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
 		taskResp, err := tst.taskService.GetByTitle(tst.tx, task.Title)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		task, err := tst.taskService.GetByTitle(tst.tx, "Nonexistent Task")
-		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
+		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
 
 func TestGetAllTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
+	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
 	t.Run("No tasks", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
-		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
-		assert.NoError(t, err)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
+		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
-		assert.NoError(t, err)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAll(tst.tx, current_user, queryParams)
-		assert.NoError(t, err)
+		currentUser := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 	})
 }
 
 func TestGetTask(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: admin_user.Id,
+		CreatedBy: adminUser.ID,
 	}
 
-	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+	require.NoError(t, err)
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
-		taskResp, err := tst.taskService.Get(tst.tx, current_user, taskId)
-		assert.NoError(t, err)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		taskResp, err := tst.taskService.Get(tst.tx, currentUser, taskID)
+		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
-		fmt.Printf("Error: %v\n", err)
-		assert.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err = tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
+		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
+		t.Logf("Error: %v\n", err)
+		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		group_model := &models.Group{
+		groupModel := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.Create(tst.tx, group_model)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
-		assert.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
-		assert.NoError(t, err)
+		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
+		require.NoError(t, err)
+		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
+		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Success with created task", func(t *testing.T) {
-		teacher_user := tst.createUser(t, types.UserRoleTeacher)
+		teacherUser := tst.createUser(t, types.UserRoleTeacher)
 		task := &schemas.Task{
 			Title:     "Test Task 2",
-			CreatedBy: teacher_user.Id,
+			CreatedBy: teacherUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		taskResp, err := tst.taskService.Get(tst.tx, teacher_user, taskId)
-		assert.NoError(t, err)
+		taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		taskResp, err := tst.taskService.Get(tst.tx, teacherUser, taskID)
+		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		taskResp, err := tst.taskService.Get(tst.tx, student_user, taskId)
-		assert.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
+		require.NoError(t, err)
 		assert.NotEmpty(t, taskResp)
 	})
 }
 
 func TestAssignTaskToUsers(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: admin_user.Id,
+		CreatedBy: adminUser.ID,
 	}
 
-	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+	require.NoError(t, err)
 
 	t.Run("Success", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, admin_user, 0, []int64{student_user.Id})
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err := tst.taskService.AssignToUsers(tst.tx, adminUser, 0, []int64{studentUser.ID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err := tst.taskService.AssignToUsers(tst.tx, studentUser, taskID, []int64{studentUser.ID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
-		teacher_user := tst.createUser(t, types.UserRoleTeacher)
-		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{teacher_user.Id})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		teacherUser := tst.createUser(t, types.UserRoleTeacher)
+		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{teacherUser.ID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestAssignTaskToGroups(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: admin_user.Id,
+		CreatedBy: adminUser.ID,
 	}
 
-	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+	require.NoError(t, err)
 
 	t.Run("Success", func(t *testing.T) {
-		group_model := &models.Group{
+		groupModel := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.Create(tst.tx, group_model)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		group_model := &models.Group{
+		groupModel := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.Create(tst.tx, group_model)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, admin_user, 0, []int64{groupId})
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, adminUser, 0, []int64{groupID})
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized student", func(t *testing.T) {
-		group_model := &models.Group{
+		groupModel := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.Create(tst.tx, group_model)
-		assert.NoError(t, err)
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, student_user, taskId, []int64{groupId})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		require.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, studentUser, taskID, []int64{groupID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
-		teacher_user := tst.createUser(t, types.UserRoleTeacher)
-		group_model := &models.Group{
+		teacherUser := tst.createUser(t, types.UserRoleTeacher)
+		groupModel := &models.Group{
 			Name:      "Test Group",
-			CreatedBy: teacher_user.Id + 1,
+			CreatedBy: teacherUser.ID + 1,
 		}
-		groupId, err := tst.gr.Create(tst.tx, group_model)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestGetAllAssignedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	query_params := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: admin_user.Id,
+		CreatedBy: adminUser.ID,
 	}
 
-	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-	if !assert.NoError(t, err) {
-		t.FailNow()
-	}
+	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+	require.NoError(t, err)
 
 	t.Run("No tasks", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllAssigned(tst.tx, student_user, query_params)
-		assert.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAllAssigned(tst.tx, studentUser, queryParams)
+		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 		group := &models.Group{
 			Name: "Test Group",
 		}
-		groupId, err := tst.gr.Create(tst.tx, group)
-		assert.NoError(t, err)
-		err = tst.gr.AddUser(tst.tx, groupId, student_user.Id)
-		assert.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
-		tasks, err := tst.taskService.GetAllAssigned(tst.tx, student_user, query_params)
-		assert.NoError(t, err)
+		groupID, err := tst.gr.Create(tst.tx, group)
+		require.NoError(t, err)
+		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
+		require.NoError(t, err)
+		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
+		tasks, err := tst.taskService.GetAllAssigned(tst.tx, studentUser, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		assert.Equal(t, 2, len(tasks))
+		assert.Len(t, tasks, 2)
 	})
 }
 
 func TestDeleteTask(t *testing.T) {
 	tst := newTaskServiceTest()
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.Delete(tst.tx, current_user, taskId)
-		assert.NoError(t, err)
-		_, err = tst.taskService.Get(tst.tx, current_user, taskId)
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		err = tst.taskService.Delete(tst.tx, currentUser, taskID)
+		require.NoError(t, err)
+		_, err = tst.taskService.Get(tst.tx, currentUser, taskID)
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
-		err := tst.taskService.Delete(tst.tx, current_user, 0)
-		assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		err := tst.taskService.Delete(tst.tx, currentUser, 0)
+		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleStudent)
-		admin_user := tst.createUser(t, types.UserRoleAdmin)
+		currentUser := tst.createUser(t, types.UserRoleStudent)
+		adminUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.Delete(tst.tx, current_user, taskId)
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		err = tst.taskService.Delete(tst.tx, currentUser, taskID)
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 func TestUpdateTask(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 
 	t.Run("Success", func(t *testing.T) {
-		current_user := tst.createUser(t, types.UserRoleAdmin)
+		currentUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: current_user.Id,
+			CreatedBy: currentUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, current_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
+		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err = tst.taskService.Edit(tst.tx, admin_user, taskId, updatedTask)
-		assert.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, current_user, taskId)
-		assert.NoError(t, err)
+		err = tst.taskService.Edit(tst.tx, adminUser, taskID, updatedTask)
+		require.NoError(t, err)
+		taskResp, err := tst.taskService.Get(tst.tx, currentUser, taskID)
+		require.NoError(t, err)
 		assert.Equal(t, *updatedTask.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err := tst.taskService.Edit(tst.tx, admin_user, 0, updatedTask)
-		assert.ErrorIs(t, err, errors.ErrTaskNotFound)
+		err := tst.taskService.Edit(tst.tx, adminUser, 0, updatedTask)
+		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }
 
-func TestGetAllForGroup(t *testing.T) {
+func TestTaskGetAllForGroup(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	group := &models.Group{
 		Name: "Test Group",
 	}
-	groupId, err := tst.gr.Create(tst.tx, group)
-	assert.NoError(t, err)
+	groupID, err := tst.gr.Create(tst.tx, group)
+	require.NoError(t, err)
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, admin_user, groupId, queryParams)
-		assert.NoError(t, err)
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, adminUser, groupID, queryParams)
+		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: admin_user.Id,
+			CreatedBy: adminUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
+		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
 		task = &schemas.Task{
 			Title:     "Test Task2",
-			CreatedBy: admin_user.Id,
+			CreatedBy: adminUser.ID,
 		}
-		taskId, err = tst.taskService.Create(tst.tx, admin_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		err = tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, admin_user, groupId, queryParams)
-		assert.NoError(t, err)
+		taskID, err = tst.taskService.Create(tst.tx, adminUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, adminUser, groupID, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		assert.Equal(t, 1, len(tasks))
+		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, student_user, groupId, queryParams)
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAllForGroup(tst.tx, studentUser, groupID, queryParams)
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
 }
 
 func TestGetAllCreatedTasks(t *testing.T) {
 	tst := newTaskServiceTest()
-	queryParams := map[string]any{"limit": uint64(10), "offset": uint64(0), "sort": "id:asc"}
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
-	teacher_user := tst.createUser(t, types.UserRoleTeacher)
+	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
+	teacherUser := tst.createUser(t, types.UserRoleTeacher)
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, admin_user, queryParams)
-		assert.NoError(t, err)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, adminUser, queryParams)
+		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success with admin", func(t *testing.T) {
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: admin_user.Id,
+			CreatedBy: adminUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, admin_user, queryParams)
-		assert.NoError(t, err)
+		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, adminUser, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		assert.Equal(t, 1, len(tasks))
+		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
 	})
@@ -614,157 +604,157 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	t.Run("Success with teacher", func(t *testing.T) {
 		task := &schemas.Task{
 			Title:     "Teacher Task",
-			CreatedBy: teacher_user.Id,
+			CreatedBy: teacherUser.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacher_user, queryParams)
-		assert.NoError(t, err)
+		taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacherUser, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		assert.Equal(t, 1, len(tasks))
+		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
 	})
 
 	t.Run("Different teachers", func(t *testing.T) {
-		teacher_user2 := tst.createUser(t, types.UserRoleTeacher)
+		teacherUser2 := tst.createUser(t, types.UserRoleTeacher)
 		task := &schemas.Task{
 			Title:     "Teacher Task 2",
-			CreatedBy: teacher_user2.Id,
+			CreatedBy: teacherUser2.ID,
 		}
-		taskId, err := tst.taskService.Create(tst.tx, teacher_user2, task)
-		assert.NoError(t, err)
-		assert.NotEqual(t, 0, taskId)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacher_user2, queryParams)
-		assert.NoError(t, err)
+		taskID, err := tst.taskService.Create(tst.tx, teacherUser2, task)
+		require.NoError(t, err)
+		assert.NotEqual(t, 0, taskID)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacherUser2, queryParams)
+		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
-		assert.Equal(t, 1, len(tasks))
+		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		student_user := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, student_user, queryParams)
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		studentUser := tst.createUser(t, types.UserRoleStudent)
+		tasks, err := tst.taskService.GetAllCreated(tst.tx, studentUser, queryParams)
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
 }
 
 func TestUnAssignTaskFromUsers(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
-	teacher_user := tst.createUser(t, types.UserRoleTeacher)
-	student_user := tst.createUser(t, types.UserRoleStudent)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
+	teacherUser := tst.createUser(t, types.UserRoleTeacher)
+	studentUser := tst.createUser(t, types.UserRoleStudent)
 
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: teacher_user.Id,
+		CreatedBy: teacherUser.ID,
 	}
-	taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
-	assert.NoError(t, err)
-	assert.NotEqual(t, 0, taskId)
+	taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
+	require.NoError(t, err)
+	assert.NotEqual(t, 0, taskID)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromUsers(tst.tx, admin_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		err = tst.taskService.UnassignFromUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		err = tst.taskService.UnassignFromUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, teacher_user, taskId, []int64{student_user.Id})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromUsers(tst.tx, student_user, taskId, []int64{student_user.Id})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		err = tst.taskService.UnassignFromUsers(tst.tx, studentUser, taskID, []int64{studentUser.ID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestUnAssignTaskFromGroups(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
-	teacher_user := tst.createUser(t, types.UserRoleTeacher)
-	student_user := tst.createUser(t, types.UserRoleStudent)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
+	teacherUser := tst.createUser(t, types.UserRoleTeacher)
+	studentUser := tst.createUser(t, types.UserRoleStudent)
 
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: teacher_user.Id,
+		CreatedBy: teacherUser.ID,
 	}
-	taskId, err := tst.taskService.Create(tst.tx, teacher_user, task)
-	assert.NoError(t, err)
-	assert.NotEqual(t, 0, taskId)
+	taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
+	require.NoError(t, err)
+	assert.NotEqual(t, 0, taskID)
 
 	group := &models.Group{
 		Name: "Test Group",
 	}
-	groupId, err := tst.gr.Create(tst.tx, group)
-	assert.NoError(t, err)
+	groupID, err := tst.gr.Create(tst.tx, group)
+	require.NoError(t, err)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromGroups(tst.tx, admin_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		err = tst.taskService.UnassignFromGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromGroups(tst.tx, teacher_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		err = tst.taskService.UnassignFromGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, teacher_user, taskId, []int64{groupId})
-		assert.NoError(t, err)
+		err := tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		require.NoError(t, err)
 
-		err = tst.taskService.UnassignFromGroups(tst.tx, student_user, taskId, []int64{groupId})
-		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		err = tst.taskService.UnassignFromGroups(tst.tx, studentUser, taskID, []int64{groupID})
+		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestCreateInputOutput(t *testing.T) {
 	tst := newTaskServiceTest()
-	admin_user := tst.createUser(t, types.UserRoleAdmin)
+	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	task := &schemas.Task{
 		Title:     "Test Task",
-		CreatedBy: admin_user.Id,
+		CreatedBy: adminUser.ID,
 	}
 
-	taskId, err := tst.taskService.Create(tst.tx, admin_user, task)
-	assert.NoError(t, err)
-	assert.NotEqual(t, 0, taskId)
+	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
+	require.NoError(t, err)
+	assert.NotEqual(t, 0, taskID)
 
 	t.Run("Success", func(t *testing.T) {
 		pathToArchive := tst.createTestArchive(t, "valid")
 		defer os.Remove(pathToArchive)
-		err := tst.taskService.CreateInputOutput(tst.tx, taskId, pathToArchive)
-		assert.NoError(t, err)
+		err := tst.taskService.CreateInputOutput(tst.tx, taskID, pathToArchive)
+		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		pathToArchive := tst.createTestArchive(t, "valid")
 		defer os.Remove(pathToArchive)
 		err := tst.taskService.CreateInputOutput(tst.tx, -1, pathToArchive)
-		assert.ErrorIs(t, err, errors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
-		err := tst.taskService.CreateInputOutput(tst.tx, taskId, "INVALIDPATH")
-		assert.Error(t, err)
+		err := tst.taskService.CreateInputOutput(tst.tx, taskID, "INVALIDPATH")
+		require.Error(t, err)
 	})
 }
 
@@ -828,18 +818,20 @@ func TestParseInputOutput(t *testing.T) {
 	},
 	}
 	for _, tt := range tests {
-		pathToArchive := tst.createTestArchive(t, tt.caseType)
-		numFiles, err := tst.taskService.ParseInputOutput(pathToArchive)
-		if tt.isError {
-			if tt.expectedError != nil {
-				assert.ErrorIs(t, err, tt.expectedError)
+		t.Run(tt.name, func(t *testing.T) {
+			pathToArchive := tst.createTestArchive(t, tt.caseType)
+			numFiles, err := tst.taskService.ParseInputOutput(pathToArchive)
+			if tt.isError {
+				if tt.expectedError != nil {
+					require.ErrorIs(t, err, tt.expectedError)
+				} else {
+					require.Error(t, err)
+				}
+				assert.Equal(t, tt.expected, numFiles)
 			} else {
-				assert.Error(t, err)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, numFiles)
 			}
-			assert.Equal(t, tt.expected, numFiles)
-		} else {
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, numFiles)
-		}
+		})
 	}
 }

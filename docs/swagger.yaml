@@ -1,62 +1,62 @@
-basePath: /api/v1
+basePath: /api/v1.
 definitions:
-  ApiError:
+  APIError:
     properties:
       data:
         $ref: '#/definitions/errorStruct'
       ok:
         type: boolean
     type: object
-  ApiResponse-Group:
+  APIResponse-Group:
     properties:
       data:
         $ref: '#/definitions/Group'
       ok:
         type: boolean
     type: object
-  ApiResponse-Session:
+  APIResponse-Session:
     properties:
       data:
         $ref: '#/definitions/Session'
       ok:
         type: boolean
     type: object
-  ApiResponse-Submission:
+  APIResponse-Submission:
     properties:
       data:
         $ref: '#/definitions/Submission'
       ok:
         type: boolean
     type: object
-  ApiResponse-SubmitResponse:
+  APIResponse-SubmitResponse:
     properties:
       data:
         $ref: '#/definitions/SubmitResponse'
       ok:
         type: boolean
     type: object
-  ApiResponse-TaskCreateResponse:
+  APIResponse-TaskCreateResponse:
     properties:
       data:
         $ref: '#/definitions/TaskCreateResponse'
       ok:
         type: boolean
     type: object
-  ApiResponse-TaskDetailed:
+  APIResponse-TaskDetailed:
     properties:
       data:
         $ref: '#/definitions/TaskDetailed'
       ok:
         type: boolean
     type: object
-  ApiResponse-User:
+  APIResponse-User:
     properties:
       data:
         $ref: '#/definitions/User'
       ok:
         type: boolean
     type: object
-  ApiResponse-array_Group:
+  APIResponse-array_Group:
     properties:
       data:
         items:
@@ -65,7 +65,7 @@ definitions:
       ok:
         type: boolean
     type: object
-  ApiResponse-array_LanguageConfig:
+  APIResponse-array_LanguageConfig:
     properties:
       data:
         items:
@@ -74,7 +74,7 @@ definitions:
       ok:
         type: boolean
     type: object
-  ApiResponse-array_Submission:
+  APIResponse-array_Submission:
     properties:
       data:
         items:
@@ -83,7 +83,7 @@ definitions:
       ok:
         type: boolean
     type: object
-  ApiResponse-array_Task:
+  APIResponse-array_Task:
     properties:
       data:
         items:
@@ -92,14 +92,14 @@ definitions:
       ok:
         type: boolean
     type: object
-  ApiResponse-int64:
+  APIResponse-int64:
     properties:
       data:
         type: integer
       ok:
         type: boolean
     type: object
-  ApiResponse-string:
+  APIResponse-string:
     properties:
       data:
         type: string
@@ -302,9 +302,9 @@ definitions:
       username:
         type: string
     type: object
-  UserIds:
+  UserIDs:
     properties:
-      userIds:
+      userIDs:
         items:
           type: integer
         type: array
@@ -366,12 +366,10 @@ definitions:
     - UserRoleStudent
     - UserRoleTeacher
     - UserRoleAdmin
-host: localhost:8080
 info:
   contact: {}
-  description: This is the API documentation for the Mini Maxit API.
-  title: Mini Maxit API Documentation testing the workflow
-  version: "1.0"
+  title: Mini-Maxit API
+  version: 1.0.0
 paths:
   /group/:
     get:
@@ -382,23 +380,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Group'
+            $ref: '#/definitions/APIResponse-array_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all groups
       tags:
       - group
@@ -419,23 +417,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-int64'
+            $ref: '#/definitions/APIResponse-int64'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Create a group
       tags:
       - group
@@ -454,23 +452,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a group
       tags:
       - group
@@ -496,23 +494,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Edit a group
       tags:
       - group
@@ -532,30 +530,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UserIds'
+          $ref: '#/definitions/UserIDs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Delete users from a group
       tags:
       - group
@@ -573,23 +571,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get users in a group
       tags:
       - group
@@ -608,30 +606,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UserIds'
+          $ref: '#/definitions/UserIDs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Add users to a group
       tags:
       - group
@@ -653,19 +651,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-Session'
+            $ref: '#/definitions/APIResponse-Session'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Login a user
       tags:
       - auth
@@ -687,23 +685,23 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/ApiResponse-Session'
+            $ref: '#/definitions/APIResponse-Session'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Register a user
       tags:
       - auth
@@ -722,23 +720,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Invalidate a session
       tags:
       - session
@@ -757,27 +755,26 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Task'
+            $ref: '#/definitions/APIResponse-array_Task'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Validate a session
       tags:
       - session
   /submission:
     get:
       description: Depending on the user role, this endpoint will return all submissions
-        for the current user if user is student, all submissions to owned tasks if
-        user is teacher, and all submissions in database if user is admin
+        for the current user.
       parameters:
       - description: Limit the number of returned submissions
         in: query
@@ -798,24 +795,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Submission'
+            $ref: '#/definitions/APIResponse-array_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for the current user
       tags:
       - submission
   /submission/{id}:
     get:
-      description: Get a submission by its ID, if the user is a student, the submission
-        must belong to the user, if the user is a teacher, the submission must belong
-        to a task owned by the teacher, if the user is an admin, the submission can
-        be any submission
+      description: If the user is a student, the submission must belong to the user.
       parameters:
       - description: Submission ID
         in: path
@@ -833,42 +827,39 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a submission by ID
       tags:
       - submission
   /submission/languages:
     get:
-      description: Get all available languages for submitting solutions. Temporary
-        solution, while all tasks have same languages
+      description: Get all available languages for submitting solutions.
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_LanguageConfig'
+            $ref: '#/definitions/APIResponse-array_LanguageConfig'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all available languages
       tags:
       - submission
   /submission/task/{id}:
     get:
-      description: Gets all submissions for specific task. If the user is a student
-        and has no access to this task, it fails with 403 Forbidden. For teacher it
-        returns all submissions for this task if he created it. For admin it returns
-        all submissions for specific task.
+      description: If the user is a student and has no access to this task, it fails
+        with 403 Forbidden.
       parameters:
       - description: Task ID
         in: path
@@ -894,28 +885,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Submission'
+            $ref: '#/definitions/APIResponse-array_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for a task
       tags:
       - submission
   /submission/user/{id}:
     get:
-      description: Gets all submissions for specific group. If the user is a student,
-        it fails with 403 Forbidden. For teacher it returns all submissions from this
-        group for tasks he created. For admin it returns all submissions for specific
-        group.
+      description: If the user is a student, it fails with 403 Forbidden.
       parameters:
       - description: Group ID
         in: path
@@ -941,28 +929,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Submission'
+            $ref: '#/definitions/APIResponse-array_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for a group
       tags:
       - submission
   /submission/user/{id}/short:
     get:
-      description: Gets all submissions for specific user. If the user is a student,
-        it fails with 403 Forbidden. For teacher it returns all submissions from this
-        user for tasks owned by the teacher. For admin it returns all submissions
-        for specific user.
+      description: If the user is a student, it fails with 403 Forbidden.
       parameters:
       - description: User ID
         in: path
@@ -988,19 +973,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Submission'
+            $ref: '#/definitions/APIResponse-array_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for a user
       tags:
       - submission
@@ -1013,11 +998,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Task'
+            $ref: '#/definitions/APIResponse-array_Task'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all tasks
       tags:
       - task
@@ -1042,19 +1027,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-TaskCreateResponse'
+            $ref: '#/definitions/APIResponse-TaskCreateResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Upload a task
       tags:
       - task
@@ -1073,23 +1058,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Delete a task
       tags:
       - task
@@ -1107,23 +1092,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-TaskDetailed'
+            $ref: '#/definitions/APIResponse-TaskDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a task
       tags:
       - task
@@ -1149,23 +1134,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Update a task
       tags:
       - task
@@ -1180,7 +1165,7 @@ paths:
         type: integer
       - description: Group IDs
         in: body
-        name: groupIds
+        name: groupIDs
         required: true
         schema:
           items:
@@ -1192,23 +1177,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Assign a task to groups
       tags:
       - task
@@ -1223,7 +1208,7 @@ paths:
         type: integer
       - description: User IDs
         in: body
-        name: userIds
+        name: userIDs
         required: true
         schema:
           items:
@@ -1235,23 +1220,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Assign a task to users
       tags:
       - task
@@ -1266,7 +1251,7 @@ paths:
         type: integer
       - description: Group IDs
         in: body
-        name: groupIds
+        name: groupIDs
         required: true
         schema:
           items:
@@ -1278,23 +1263,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Unassign a task from groups
       tags:
       - task
@@ -1309,7 +1294,7 @@ paths:
         type: integer
       - description: User IDs
         in: body
-        name: userIds
+        name: userIDs
         required: true
         schema:
           items:
@@ -1321,23 +1306,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Unassign a task from users
       tags:
       - task
@@ -1356,23 +1341,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-array_Task'
+            $ref: '#/definitions/APIResponse-array_Task'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all tasks for a group
       tags:
       - task
@@ -1398,15 +1383,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-User'
+            $ref: '#/definitions/APIResponse-User'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all users
       tags:
       - user
@@ -1425,29 +1410,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-User'
+            $ref: '#/definitions/APIResponse-User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get user by ID
       tags:
       - user
     patch:
-      consumes:
-      - application/json
       description: Edit user
       parameters:
       - description: User ID
@@ -1455,9 +1438,9 @@ paths:
         name: id
         required: true
         type: integer
-      - description: User edit object
+      - description: User Edit Request
         in: body
-        name: body
+        name: request
         required: true
         schema:
           $ref: '#/definitions/UserEdit'
@@ -1467,34 +1450,32 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Edit user
       tags:
       - user
   /user/{id}/password:
     patch:
-      consumes:
-      - application/json
       description: Change user password
       parameters:
       - description: User ID
@@ -1502,9 +1483,9 @@ paths:
         name: id
         required: true
         type: integer
-      - description: User change password object
+      - description: User Change Password Request
         in: body
-        name: body
+        name: request
         required: true
         schema:
           $ref: '#/definitions/UserChangePassword'
@@ -1514,27 +1495,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-string'
+            $ref: '#/definitions/APIResponse-string'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Change user password
       tags:
       - user
@@ -1553,23 +1530,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ApiResponse-User'
+            $ref: '#/definitions/APIResponse-User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get user by email
       tags:
       - user

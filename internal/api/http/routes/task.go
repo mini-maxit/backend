@@ -2,7 +2,7 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,7 +11,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
@@ -31,19 +31,21 @@ type TaskRoute interface {
 	UploadTask(w http.ResponseWriter, r *http.Request)
 }
 
+const taskBodyLimit = 50 << 20
+
 type TaskRouteImpl struct {
-	fileStorageUrl string
+	fileStorageURL string
 
 	// Service that handles task-related operations
 	taskService service.TaskService
 }
 
 type usersRequest struct {
-	UserIds []int64 `json:"userIds"`
+	UserIDs []int64 `json:"userIDs"`
 }
 
 type groupsRequest struct {
-	GroupIds []int64 `json:"groupIds"`
+	GroupIDs []int64 `json:"groupIDs"`
 }
 
 func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Request) {
@@ -60,13 +62,13 @@ func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Requ
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllAssigned(tx, current_user, queryParams)
+	task, err := tr.taskService.GetAllAssigned(tx, currentUser, queryParams)
 
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -91,16 +93,16 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllCreated(tx, current_user, queryParams)
+	task, err := tr.taskService.GetAllCreated(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -117,8 +119,8 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 //	@Summary		Get all tasks
 //	@Description	Returns all tasks
 //	@Produce		json
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/ [get]
 func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -133,16 +135,16 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	tasks, err := tr.taskService.GetAll(tx, current_user, queryParams)
+	tasks, err := tr.taskService.GetAll(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -160,11 +162,11 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns a task by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Task ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[schemas.TaskDetailed]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[schemas.TaskDetailed]
 //	@Router			/task/{id} [get]
 func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -172,12 +174,12 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -190,16 +192,16 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.Get(tx, current_user, taskId)
+	task, err := tr.taskService.Get(tx, currentUser, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -213,11 +215,11 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 //	@Description	Returns all tasks for a group by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Group ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[[]schemas.Task]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/group/{id} [get]
 func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -225,14 +227,14 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	groupIdStr := r.PathValue("id")
+	groupIDStr := r.PathValue("id")
 
-	if groupIdStr == "" {
+	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
 		return
 	}
 
-	groupId, err := strconv.ParseInt(groupIdStr, 10, 64)
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
 		return
@@ -247,16 +249,16 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	tasks, err := tr.taskService.GetAllForGroup(tx, current_user, groupId, queryParams)
+	tasks, err := tr.taskService.GetAllForGroup(tx, currentUser, groupID, queryParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -276,10 +278,10 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Produce		json
 //	@Param			title formData	string	true	"Name of the task"
 //	@Param			archive		formData	file	true	"Task archive"
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[schemas.TaskCreateResponse]
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[schemas.TaskCreateResponse]
 //	@Router			/task/ [post]
 func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -288,10 +290,10 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Limit the size of the incoming request
-	r.Body = http.MaxBytesReader(w, r.Body, 50*1024*1024) // 50 MB limit
+	r.Body = http.MaxBytesReader(w, r.Body, taskBodyLimit) // 50 MB limit
 
 	// Parse the multipart form data
-	if err := r.ParseMultipartForm(50 << 20); err != nil {
+	if err := r.ParseMultipartForm(taskBodyLimit); err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "The uploaded files are too large.")
 		return
 	}
@@ -308,14 +310,17 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found."+err.Error())
 		return
 	}
-	if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename)
+	if !strings.HasSuffix(handler.Filename, ".zip") && !strings.HasSuffix(handler.Filename, ".tar.gz") {
+		httputils.ReturnError(w,
+			http.StatusBadRequest,
+			"Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename,
+		)
 		return
 	}
 	defer file.Close()
 	filePath, err := httputils.SaveMultiPartFile(file, handler)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error saving multipart file. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
 		return
 	}
 
@@ -325,7 +330,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 	// Create empty task to get the task ID
 	task := schemas.Task{
 		Title:     title,
-		CreatedBy: currentUser.Id,
+		CreatedBy: currentUser.ID,
 	}
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
@@ -334,24 +339,24 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskId, err := tr.taskService.Create(tx, currentUser, &task)
+	taskID, err := tr.taskService.Create(tx, currentUser, &task)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
-	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskId, filePath)
+	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error processing and uploading task. "+err.Error())
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{Id: taskId})
+	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{ID: taskID})
 }
 
 // EditTask godoc
@@ -365,11 +370,11 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 //
 // @Param 			archive	formData	file				false	"New archive for the task"
 //
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [patch]
 func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -377,13 +382,13 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
 
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -396,7 +401,7 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	request := schemas.EditTask{}
 	newTitle := r.FormValue("title")
@@ -404,44 +409,49 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 		request.Title = &newTitle
 	}
 
-	err = tr.taskService.Edit(tx, current_user, taskId, &request)
+	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
 	file, handler, err := r.FormFile("archive")
 	if err != nil {
-		if err == http.ErrMissingFile {
+		if errors.Is(err, http.ErrMissingFile) {
 			httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
 			return
 		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
 		return
-	} else {
-		defer file.Close()
-		if !(strings.HasSuffix(handler.Filename, ".zip") || strings.HasSuffix(handler.Filename, ".tar.gz")) {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename)
-			return
-		}
-		filePath, err := httputils.SaveMultiPartFile(file, handler)
-		if err != nil {
-			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error saving multipart file. %s", err.Error()))
-			return
-		}
-		err = tr.taskService.ProcessAndUpload(tx, current_user, taskId, filePath)
-		if err != nil {
-			db.Rollback()
-			httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error processing and uploading task. %s", err.Error()))
-			return
-		}
 	}
 
+	defer file.Close()
+
+	// Validate file format
+	if !isValidFileFormat(handler.Filename) {
+		httputils.ReturnError(w, http.StatusBadRequest,
+			"Invalid file format. Only .zip and .tar.gz files are allowed as task upload. Received: "+handler.Filename)
+		return
+	}
+
+	// Save the file
+	filePath, err := httputils.SaveMultiPartFile(file, handler)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
+		return
+	}
+
+	// Process and upload
+	if err := tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath); err != nil {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error processing and uploading task. "+err.Error())
+		return
+	}
 	httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
 }
 
@@ -452,11 +462,11 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Description	Deletes a task by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"Task ID"
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		403	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
-//	@Success		200	{object}	httputils.ApiResponse[string]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [delete]
 func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -464,12 +474,12 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -482,16 +492,16 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.Delete(tx, current_user, taskId)
+	err = tr.taskService.Delete(tx, currentUser, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -505,12 +515,12 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Description	Assigns a task to users by task ID and user IDs
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
-//	@Param			userIds	body		[]int	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Param			userIDs	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/users [post]
 func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -518,12 +528,12 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -544,16 +554,16 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignToUsers(tx, current_user, taskId, request.UserIds)
+	err = tr.taskService.AssignToUsers(tx, currentUser, taskID, request.UserIDs)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error assigning task. "+err.Error())
 		return
 	}
 
@@ -567,12 +577,12 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 //	@Description	Assigns a task to groups by task ID and group IDs
 //	@Produce		json
 //	@Param			id			path		int		true	"Task ID"
-//	@Param			groupIds	body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[string]
+//	@Param			groupIDs	body		[]int	true	"Group IDs"
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/groups [post]
 func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -580,12 +590,12 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -606,16 +616,16 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.AssignToGroups(tx, current_user, taskId, request.GroupIds)
+	err = tr.taskService.AssignToGroups(tx, currentUser, taskID, request.GroupIDs)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error assigning task. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error assigning task. "+err.Error())
 		return
 	}
 
@@ -629,12 +639,12 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 //	@Description	Unassigns a task from users by task ID and user IDs
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
-//	@Param			userIds	body		[]int	true	"User IDs"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		403		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[string]
+//	@Param			userIDs	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/users [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -642,12 +652,12 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -668,16 +678,16 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.UnassignFromUsers(tx, current_user, taskId, request.UserIds)
+	err = tr.taskService.UnassignFromUsers(tx, currentUser, taskID, request.UserIDs)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error unassigning task. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error unassigning task. "+err.Error())
 		return
 	}
 
@@ -691,12 +701,12 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 //	@Description	Unassigns a task from groups by task ID and group IDs
 //	@Produce		json
 //	@Param			id			path		int		true	"Task ID"
-//	@Param			groupIds	body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.ApiError
-//	@Failure		403			{object}	httputils.ApiError
-//	@Failure		405			{object}	httputils.ApiError
-//	@Failure		500			{object}	httputils.ApiError
-//	@Success		200			{object}	httputils.ApiResponse[string]
+//	@Param			groupIDs	body		[]int	true	"Group IDs"
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/groups [delete]
 func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -704,12 +714,12 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	taskIdStr := r.PathValue("id")
-	if taskIdStr == "" {
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
 	}
-	taskId, err := strconv.ParseInt(taskIdStr, 10, 64)
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
 		return
@@ -730,24 +740,24 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	current_user := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = tr.taskService.UnassignFromGroups(tx, current_user, taskId, request.GroupIds)
+	err = tr.taskService.UnassignFromGroups(tx, currentUser, taskID, request.GroupIDs)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if err == errors.ErrNotAuthorized {
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, fmt.Sprintf("Error unassigning task. %s", err.Error()))
+		httputils.ReturnError(w, status, "Error unassigning task. "+err.Error())
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
 }
 
-func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRoute {
-	route := &TaskRouteImpl{fileStorageUrl: fileStorageUrl, taskService: taskService}
+func NewTaskRoute(fileStorageURL string, taskService service.TaskService) TaskRoute {
+	route := &TaskRouteImpl{fileStorageURL: fileStorageURL, taskService: taskService}
 
 	err := utils.ValidateStruct(*route)
 	if err != nil {
@@ -755,6 +765,10 @@ func NewTaskRoute(fileStorageUrl string, taskService service.TaskService) TaskRo
 	}
 
 	return route
+}
+
+func isValidFileFormat(filename string) bool {
+	return strings.HasSuffix(filename, ".zip") || strings.HasSuffix(filename, ".tar.gz")
 }
 
 func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {

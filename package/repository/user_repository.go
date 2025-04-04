@@ -13,8 +13,8 @@ type UserRepository interface {
 	Edit(tx *gorm.DB, user *models.User) error
 	// GetAll returns all users with pagination and sorting
 	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
-	// Get returns a user by Id
-	Get(tx *gorm.DB, userId int64) (*models.User, error)
+	// Get returns a user by ID
+	Get(tx *gorm.DB, userID int64) (*models.User, error)
 	//
 	GetByEmail(tx *gorm.DB, email string) (*models.User, error)
 }
@@ -27,12 +27,12 @@ func (ur *userRepository) Create(tx *gorm.DB, user *models.User) (int64, error) 
 	if err != nil {
 		return 0, err
 	}
-	return user.Id, nil
+	return user.ID, nil
 }
 
-func (ur *userRepository) Get(tx *gorm.DB, userId int64) (*models.User, error) {
+func (ur *userRepository) Get(tx *gorm.DB, userID int64) (*models.User, error) {
 	user := &models.User{}
-	err := tx.Model(&models.User{}).Where("id = ?", userId).Take(user).Error
+	err := tx.Model(&models.User{}).Where("id = ?", userID).Take(user).Error
 	if err != nil {
 		return nil, err
 	}
