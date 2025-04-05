@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -12,11 +11,8 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/domain/types"
 	myErrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -610,70 +606,6 @@ func NewMockGroupRepository(userRepo *MockUserRepository) *MockGroupRepository {
 		userGroupsCounter: 0,
 
 		userRepository: userRepo,
-	}
-}
-
-type MockAuthService struct {
-	users map[string]*models.User
-}
-
-func (as *MockAuthService) SetUser(user *models.User) {
-	as.users[user.Email] = user
-}
-
-func (as *MockAuthService) ClearUsers() {
-	as.users = make(map[string]*models.User)
-}
-
-func (as *MockAuthService) Login(_ *gorm.DB, request schemas.UserLoginRequest) (*schemas.Session, error) {
-	user := as.users[request.Email]
-	if user != nil {
-		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password))
-		switch {
-		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-			return nil, myErrors.ErrInvalidCredentials
-		case err == nil:
-			return &schemas.Session{
-				ID:        user.Email + request.Email,
-				UserID:    user.ID,
-				ExpiresAt: time.Now().Add(time.Hour),
-			}, nil
-		default:
-			return nil, err
-		}
-	}
-	return nil, myErrors.ErrUserNotFound
-}
-
-func (as *MockAuthService) Register(_ *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	user := as.users[userRegister.Email]
-	if user != nil {
-		return nil, myErrors.ErrUserAlreadyExists
-	}
-	hashPass, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	user = &models.User{
-		Name:         userRegister.Name,
-		Surname:      userRegister.Surname,
-		Email:        userRegister.Email,
-		Username:     userRegister.Username,
-		PasswordHash: string(hashPass),
-		Role:         types.UserRoleStudent,
-	}
-	as.users[user.Email] = user
-	return &schemas.Session{
-		ID:        user.Email + userRegister.Email,
-		UserID:    user.ID,
-		UserRole:  string(user.Role),
-		ExpiresAt: time.Now().Add(time.Hour),
-	}, nil
-}
-
-func NewMockAuthService() *MockAuthService {
-	return &MockAuthService{
-		users: make(map[string]*models.User),
 	}
 }
 

@@ -296,15 +296,21 @@ func (gs *groupService) GetTasks(tx *gorm.DB, currentUser schemas.User, groupID 
 		return nil, err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
-	}
-	exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, currentUser.ID)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser.Role == types.UserRoleStudent && !exists {
-		return nil, myerrors.ErrNotAuthorized
+	switch currentUser.Role {
+	case types.UserRoleAdmin:
+		break
+	case types.UserRoleTeacher:
+		if group.CreatedBy != currentUser.ID {
+			return nil, myerrors.ErrNotAuthorized
+		}
+	case types.UserRoleStudent:
+		exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, currentUser.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, myerrors.ErrNotAuthorized
+		}
 	}
 
 	tasks, err := gs.groupRepository.GetTasks(tx, groupID)
