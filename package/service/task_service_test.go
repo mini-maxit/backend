@@ -11,61 +11,13 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
-	"github.com/mini-maxit/backend/package/repository"
+	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
-
-type taskServiceTest struct {
-	tx          *gorm.DB
-	ur          repository.UserRepository
-	tr          repository.TaskRepository
-	gr          repository.GroupRepository
-	taskService service.TaskService
-	counter     int64
-}
-
-func newTaskServiceTest() *taskServiceTest {
-	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
-	ur := testutils.NewMockUserRepository()
-	gr := testutils.NewMockGroupRepository(ur)
-	tr := testutils.NewMockTaskRepository(gr)
-	io := testutils.NewMockInputOutputRepository()
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
-
-	return &taskServiceTest{
-		tx:          tx,
-		ur:          ur,
-		tr:          tr,
-		gr:          gr,
-		taskService: ts,
-	}
-}
-
-func (tst *taskServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
-	tst.counter++
-	userID, err := tst.ur.Create(tst.tx, &models.User{
-		Name:         fmt.Sprintf("Test User %d", tst.counter),
-		Surname:      fmt.Sprintf("Test Surname %d", tst.counter),
-		Email:        fmt.Sprintf("email%d@email.com", tst.counter),
-		Username:     fmt.Sprintf("testuser%d", tst.counter),
-		Role:         role,
-		PasswordHash: "password",
-	})
-	require.NoError(t, err)
-
-	userModel, err := tst.ur.Get(tst.tx, userID)
-	require.NoError(t, err)
-
-	user := schemas.User{
-		ID:   userModel.ID,
-		Role: userModel.Role,
-	}
-	return user
-}
 
 func addDescription(t *testing.T, zipWriter *zip.Writer) {
 	// Create description.pdf
@@ -89,7 +41,7 @@ func addInputOutputFiles(t *testing.T, zipWriter *zip.Writer, count int, inputDi
 	}
 }
 
-func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) string {
+func createTestArchive(t *testing.T, caseType string) string {
 	tempFile, err := os.CreateTemp(t.TempDir(), "test-archive-*.zip")
 	require.NoError(t, err)
 	defer tempFile.Close()
@@ -158,41 +110,50 @@ func (tst *taskServiceTest) createTestArchive(t *testing.T, caseType string) str
 }
 
 func TestCreateTask(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
+		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
-		})
+			CreatedBy: adminUser.ID,
+		}
+		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
+		tr.EXPECT().GetByTitle(tx, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+
+		taskID, err := ts.Create(tx, adminUser, task)
 		require.NoError(t, err)
 		assert.NotEqual(t, 0, taskID)
 	})
 
-	// We want to have clear task repository for this state, and this is the quickest way
-	tst = newTaskServiceTest()
 	t.Run("Non unique title", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
+		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
-		})
-		require.NoError(t, err)
-		assert.NotEqual(t, int64(0), taskID)
-		taskID, err = tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
-			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
-		})
+			CreatedBy: adminUser.ID,
+		}
+		tr.EXPECT().GetByTitle(tx, task.Title).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		taskID, err := ts.Create(tx, adminUser, task)
 		require.ErrorIs(t, err, errors.ErrTaskExists)
 		assert.Equal(t, int64(0), taskID)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleStudent)
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, &schemas.Task{
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		taskID, err := ts.Create(tx, studentUser, &schemas.Task{
 			Title:     "Test Student Task",
-			CreatedBy: currentUser.ID,
+			CreatedBy: studentUser.ID,
 		})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Equal(t, int64(0), taskID)
@@ -200,257 +161,308 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestGetTaskByTitle(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+
 	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
+		taskID := int64(1)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
+			CreatedBy: adminUser.ID,
 		}
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		taskResp, err := tst.taskService.GetByTitle(tst.tx, task.Title)
+		tr.EXPECT().GetByTitle(tx, task.Title).Return(&models.Task{
+			ID:        taskID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		taskResp, err := ts.GetByTitle(tx, task.Title)
 		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		task, err := tst.taskService.GetByTitle(tst.tx, "Nonexistent Task")
+		taskTitle := "Nonexistent Task"
+		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, errors.ErrTaskNotFound).Times(1)
+		task, err := ts.GetByTitle(tx, taskTitle)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
 
 func TestGetAllTasks(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+
 	t.Run("No tasks", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
+		tr.EXPECT().GetAll(tx,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{}, nil).Times(1)
+		tasks, err := ts.GetAll(tx, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		task := &schemas.Task{
-			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
+		currentUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+		tasks := []models.Task{
+			{
+				ID:        1,
+				Title:     "Test Task",
+				CreatedBy: currentUser.ID,
+			},
 		}
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
-		require.NoError(t, err)
-		assert.NotEmpty(t, tasks)
-	})
+		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, nil).Times(1)
 
-	t.Run("Not authorized", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAll(tst.tx, currentUser, queryParams)
+		resultTasks, err := ts.GetAll(tx, currentUser, queryParams)
 		require.NoError(t, err)
-		assert.NotEmpty(t, tasks)
+		assert.NotEmpty(t, resultTasks)
 	})
 }
 
 func TestGetTask(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: adminUser.ID,
 	}
 
-	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-	require.NoError(t, err)
-
 	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		taskResp, err := tst.taskService.Get(tst.tx, currentUser, taskID)
+		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		taskResp, err := ts.Get(tx, adminUser, task.ID)
 		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err = tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		tr.EXPECT().Get(gomock.Any(), task.ID).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+
+		// tr.EXPECT().IsAssignedToUser(tx, task.ID, studentUser.ID).Return(true, nil).Times(1)
+		taskResp, err := ts.Get(tx, studentUser, task.ID)
 		require.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
-		t.Logf("Error: %v\n", err)
-		require.NoError(t, err)
+		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		groupModel := &models.Group{
-			Name: "Test Group",
-		}
-		groupID, err := tst.gr.Create(tst.tx, groupModel)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+
+		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+
+		taskResp, err := ts.Get(tx, studentUser, task.ID)
 		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
-		require.NoError(t, err)
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
-		require.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
-		require.NoError(t, err)
+		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
 
 	t.Run("Success with created task", func(t *testing.T) {
-		teacherUser := tst.createUser(t, types.UserRoleTeacher)
-		task := &schemas.Task{
-			Title:     "Test Task 2",
-			CreatedBy: teacherUser.ID,
-		}
-		taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
+		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
+		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		taskResp, err := ts.Get(tx, teacherUser, task.ID)
 		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		taskResp, err := tst.taskService.Get(tst.tx, teacherUser, taskID)
-		require.NoError(t, err)
+		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
-	})
-
-	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		taskResp, err := tst.taskService.Get(tst.tx, studentUser, taskID)
-		require.NoError(t, err)
-		assert.NotEmpty(t, taskResp)
 	})
 }
 
 func TestAssignTaskToUsers(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	task := &schemas.Task{
-		Title:     "Test Task",
-		CreatedBy: adminUser.ID,
-	}
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
 
-	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-	require.NoError(t, err)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	taskID := int64(1)
 
 	t.Run("Success", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		studentUser := schemas.User{ID: 2}
+		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 2, Role: types.UserRoleStudent}, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+			ID: taskID,
+		}, nil).Times(1)
+		tr.EXPECT().IsAssignedToUser(tx, taskID, studentUser.ID).Return(false, nil).Times(1)
+		tr.EXPECT().AssignToUser(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		err := ts.AssignToUsers(tx, adminUser, taskID, []int64{studentUser.ID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, adminUser, 0, []int64{studentUser.ID})
+		studentUser := schemas.User{ID: 2}
+		tr.EXPECT().Get(tx, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := ts.AssignToUsers(tx, adminUser, taskID, []int64{studentUser.ID})
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, studentUser, taskID, []int64{studentUser.ID})
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		err := ts.AssignToUsers(tx, studentUser, taskID, []int64{studentUser.ID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
-		teacherUser := tst.createUser(t, types.UserRoleTeacher)
-		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{teacherUser.ID})
+		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
+		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+			ID:        taskID,
+			CreatedBy: adminUser.ID,
+		}, nil).Times(1)
+		err := ts.AssignToUsers(tx, teacherUser, taskID, []int64{teacherUser.ID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestAssignTaskToGroups(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
+		ID:        int64(1),
 		Title:     "Test Task",
 		CreatedBy: adminUser.ID,
 	}
 
-	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-	require.NoError(t, err)
-
 	t.Run("Success", func(t *testing.T) {
-		groupModel := &models.Group{
+		groupID := int64(1)
+		gr.EXPECT().Get(tx, groupID).Return(&models.Group{
+			ID:   groupID,
 			Name: "Test Group",
-		}
-		groupID, err := tst.gr.Create(tst.tx, groupModel)
-		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		}, nil).Times(1)
+		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		tr.EXPECT().AssignToGroup(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		tr.EXPECT().IsAssignedToGroup(tx, task.ID, groupID).Return(false, nil).Times(1)
+		err := ts.AssignToGroups(tx, adminUser, task.ID, []int64{groupID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		groupModel := &models.Group{
-			Name: "Test Group",
-		}
-		groupID, err := tst.gr.Create(tst.tx, groupModel)
-		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, adminUser, 0, []int64{groupID})
+		groupID := int64(1)
+		tr.EXPECT().Get(tx, int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := ts.AssignToGroups(tx, adminUser, int64(0), []int64{groupID})
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized student", func(t *testing.T) {
-		groupModel := &models.Group{
-			Name: "Test Group",
-		}
-		groupID, err := tst.gr.Create(tst.tx, groupModel)
-		require.NoError(t, err)
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
-		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, studentUser, taskID, []int64{groupID})
+		groupID := int64(1)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		err := ts.AssignToGroups(tx, studentUser, task.ID, []int64{groupID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
-		teacherUser := tst.createUser(t, types.UserRoleTeacher)
-		groupModel := &models.Group{
-			Name:      "Test Group",
-			CreatedBy: teacherUser.ID + 1,
-		}
-		groupID, err := tst.gr.Create(tst.tx, groupModel)
-		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
+		groupID := int64(1)
+		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+			ID: task.ID,
+		}, nil).Times(1)
+		err := ts.AssignToGroups(tx, teacherUser, task.ID, []int64{groupID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestGetAllAssignedTasks(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	task := &schemas.Task{
-		Title:     "Test Task",
-		CreatedBy: adminUser.ID,
-	}
-
-	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-	require.NoError(t, err)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("No tasks", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllAssigned(tst.tx, studentUser, queryParams)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		tr.EXPECT().GetAllAssigned(
+			tx,
+			studentUser.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{}, nil).Times(1)
+
+		tasks, err := ts.GetAllAssigned(tx, studentUser, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
-		require.NoError(t, err)
-		group := &models.Group{
-			Name: "Test Group",
-		}
-		groupID, err := tst.gr.Create(tst.tx, group)
-		require.NoError(t, err)
-		err = tst.gr.AddUser(tst.tx, groupID, studentUser.ID)
-		require.NoError(t, err)
-		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
-		require.NoError(t, err)
-		tasks, err := tst.taskService.GetAllAssigned(tst.tx, studentUser, queryParams)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		taskID := int64(1)
+
+		tr.EXPECT().GetAllAssigned(
+			tx,
+			studentUser.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{
+			{ID: taskID, Title: "Test Task 1", CreatedBy: adminUser.ID},
+			{ID: taskID, Title: "Test Task 2", CreatedBy: adminUser.ID},
+		}, nil).Times(1)
+
+		tasks, err := ts.GetAllAssigned(tx, studentUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 2)
@@ -458,129 +470,160 @@ func TestGetAllAssignedTasks(t *testing.T) {
 }
 
 func TestDeleteTask(t *testing.T) {
-	tst := newTaskServiceTest()
-	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		task := &schemas.Task{
-			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
-		}
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	taskID := int64(1)
+
+	t.Run("Success for admin", func(t *testing.T) {
+		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		tr.EXPECT().Get(gomock.Any(), taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		err := ts.Delete(tx, adminUser, taskID)
 		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		err = tst.taskService.Delete(tst.tx, currentUser, taskID)
-		require.NoError(t, err)
-		_, err = tst.taskService.Get(tst.tx, currentUser, taskID)
-		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
-		err := tst.taskService.Delete(tst.tx, currentUser, 0)
+		tr.EXPECT().Get(gomock.Any(), int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := ts.Delete(tx, adminUser, 0)
 		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleStudent)
-		adminUser := tst.createUser(t, types.UserRoleAdmin)
-		task := &schemas.Task{
-			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
-		}
-		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		err = tst.taskService.Delete(tst.tx, currentUser, taskID)
+		currentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		err := ts.Delete(tx, currentUser, taskID)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
-func TestUpdateTask(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
+
+func TestEditTask(t *testing.T) {
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	taskID := int64(1)
 
 	t.Run("Success", func(t *testing.T) {
-		currentUser := tst.createUser(t, types.UserRoleAdmin)
 		task := &schemas.Task{
 			Title:     "Test Task",
-			CreatedBy: currentUser.ID,
+			CreatedBy: adminUser.ID,
 		}
-		taskID, err := tst.taskService.Create(tst.tx, currentUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
+		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+			ID:        taskID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+		}, nil).Times(1)
+		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err = tst.taskService.Edit(tst.tx, adminUser, taskID, updatedTask)
+		err := ts.Edit(tx, adminUser, taskID, updatedTask)
 		require.NoError(t, err)
-		taskResp, err := tst.taskService.Get(tst.tx, currentUser, taskID)
-		require.NoError(t, err)
-		assert.Equal(t, *updatedTask.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
+
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err := tst.taskService.Edit(tst.tx, adminUser, 0, updatedTask)
+		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
+		ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+		err := ts.Edit(tx, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 }
 
 func TestTaskGetAllForGroup(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	taskID := int64(1)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
 	group := &models.Group{
+		ID:   int64(1),
 		Name: "Test Group",
 	}
-	groupID, err := tst.gr.Create(tst.tx, group)
-	require.NoError(t, err)
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, adminUser, groupID, queryParams)
+		groupID := int64(1)
+		tr.EXPECT().GetAllForGroup(
+			tx,
+			groupID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{}, nil).Times(1)
+		tasks, err := ts.GetAllForGroup(tx, adminUser, groupID, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		task := &schemas.Task{
-			Title:     "Test Task",
-			CreatedBy: adminUser.ID,
-		}
-		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		task = &schemas.Task{
-			Title:     "Test Task2",
-			CreatedBy: adminUser.ID,
-		}
-		taskID, err = tst.taskService.Create(tst.tx, adminUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		err = tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
-		require.NoError(t, err)
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, adminUser, groupID, queryParams)
+		tr.EXPECT().GetAllForGroup(
+			tx,
+			group.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{
+			{
+				ID: taskID,
+			},
+		}, nil).Times(1)
+		tasks, err := ts.GetAllForGroup(tx, adminUser, group.ID, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
-		assert.Equal(t, task.Title, tasks[0].Title)
-		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+		assert.Equal(t, tasks[0].ID, taskID)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllForGroup(tst.tx, studentUser, groupID, queryParams)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		tasks, err := ts.GetAllForGroup(tx, studentUser, group.ID, queryParams)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
 }
 
 func TestGetAllCreatedTasks(t *testing.T) {
-	tst := newTaskServiceTest()
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	taskID := int64(1)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	teacherUser := tst.createUser(t, types.UserRoleTeacher)
 
 	t.Run("No tasks", func(t *testing.T) {
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, adminUser, queryParams)
+		tr.EXPECT().GetAllCreated(
+			tx,
+			adminUser.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{}, nil).Times(1)
+		tasks, err := ts.GetAllCreated(tx, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -590,10 +633,20 @@ func TestGetAllCreatedTasks(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
 		}
-		taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, adminUser, queryParams)
+		tr.EXPECT().GetAllCreated(
+			tx,
+			adminUser.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{
+			{
+				ID:        taskID,
+				Title:     task.Title,
+				CreatedBy: task.CreatedBy,
+			},
+		}, nil).Times(1)
+		tasks, err := ts.GetAllCreated(tx, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
@@ -602,14 +655,25 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
+		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		task := &schemas.Task{
 			Title:     "Teacher Task",
 			CreatedBy: teacherUser.ID,
 		}
-		taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacherUser, queryParams)
+		tr.EXPECT().GetAllCreated(
+			tx,
+			teacherUser.ID,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.Task{
+			{
+				ID:        taskID,
+				Title:     task.Title,
+				CreatedBy: task.CreatedBy,
+			},
+		}, nil).Times(1)
+		tasks, err := ts.GetAllCreated(tx, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
@@ -618,15 +682,24 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Different teachers", func(t *testing.T) {
-		teacherUser2 := tst.createUser(t, types.UserRoleTeacher)
+		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		task := &schemas.Task{
 			Title:     "Teacher Task 2",
-			CreatedBy: teacherUser2.ID,
+			CreatedBy: teacherUser.ID,
 		}
-		taskID, err := tst.taskService.Create(tst.tx, teacherUser2, task)
-		require.NoError(t, err)
-		assert.NotEqual(t, 0, taskID)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, teacherUser2, queryParams)
+		tr.EXPECT().GetAllCreated(
+			tx,
+			teacherUser.ID,
+			queryParams["limit"],
+			queryParams["offset"], queryParams["sort"],
+		).Return([]models.Task{
+			{
+				ID:        taskID,
+				Title:     task.Title,
+				CreatedBy: task.CreatedBy,
+			},
+		}, nil).Times(1)
+		tasks, err := ts.GetAllCreated(tx, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
@@ -635,131 +708,150 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := tst.createUser(t, types.UserRoleStudent)
-		tasks, err := tst.taskService.GetAllCreated(tst.tx, studentUser, queryParams)
+		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+		tasks, err := ts.GetAllCreated(tx, studentUser, queryParams)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})
 }
 
 func TestUnAssignTaskFromUsers(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	teacherUser := tst.createUser(t, types.UserRoleTeacher)
-	studentUser := tst.createUser(t, types.UserRoleStudent)
-
-	task := &schemas.Task{
-		Title:     "Test Task",
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
+	studentUser := schemas.User{ID: 3, Role: types.UserRoleStudent}
+	task := &models.Task{
+		ID:        int64(1),
 		CreatedBy: teacherUser.ID,
 	}
-	taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
-	require.NoError(t, err)
-	assert.NotEqual(t, 0, taskID)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
-		require.NoError(t, err)
+		tr.EXPECT().IsAssignedToUser(tx, task.ID, studentUser.ID).Return(true, nil).Times(1)
+		tr.EXPECT().UnassignFromUser(tx, task.ID, studentUser.ID).Return(nil).Times(1)
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
 
-		err = tst.taskService.UnassignFromUsers(tst.tx, adminUser, taskID, []int64{studentUser.ID})
+		err := ts.UnassignFromUsers(tx, adminUser, task.ID, []int64{studentUser.ID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
-		require.NoError(t, err)
+		tr.EXPECT().IsAssignedToUser(tx, task.ID, studentUser.ID).Return(true, nil).Times(1)
+		tr.EXPECT().UnassignFromUser(tx, task.ID, studentUser.ID).Return(nil).Times(1)
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
 
-		err = tst.taskService.UnassignFromUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
+		err := ts.UnassignFromUsers(tx, teacherUser, task.ID, []int64{studentUser.ID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignToUsers(tst.tx, teacherUser, taskID, []int64{studentUser.ID})
-		require.NoError(t, err)
-
-		err = tst.taskService.UnassignFromUsers(tst.tx, studentUser, taskID, []int64{studentUser.ID})
+		err := ts.UnassignFromUsers(tx, studentUser, task.ID, []int64{studentUser.ID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestUnAssignTaskFromGroups(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	teacherUser := tst.createUser(t, types.UserRoleTeacher)
-	studentUser := tst.createUser(t, types.UserRoleStudent)
-
-	task := &schemas.Task{
-		Title:     "Test Task",
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
+	studentUser := schemas.User{ID: 3, Role: types.UserRoleStudent}
+	task := &models.Task{
+		ID:        int64(1),
 		CreatedBy: teacherUser.ID,
 	}
-	taskID, err := tst.taskService.Create(tst.tx, teacherUser, task)
-	require.NoError(t, err)
-	assert.NotEqual(t, 0, taskID)
-
-	group := &models.Group{
-		Name: "Test Group",
-	}
-	groupID, err := tst.gr.Create(tst.tx, group)
-	require.NoError(t, err)
 
 	t.Run("Success with admin", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, adminUser, taskID, []int64{groupID})
-		require.NoError(t, err)
+		groupID := int64(1)
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+		tr.EXPECT().IsAssignedToGroup(tx, task.ID, groupID).Return(true, nil).Times(1)
+		tr.EXPECT().UnassignFromGroup(tx, task.ID, groupID).Return(nil).Times(1)
 
-		err = tst.taskService.UnassignFromGroups(tst.tx, adminUser, taskID, []int64{groupID})
+		err := ts.UnassignFromGroups(tx, adminUser, task.ID, []int64{groupID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
-		require.NoError(t, err)
+		groupID := int64(1)
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+		tr.EXPECT().IsAssignedToGroup(tx, task.ID, groupID).Return(true, nil).Times(1)
+		tr.EXPECT().UnassignFromGroup(tx, task.ID, groupID).Return(nil).Times(1)
 
-		err = tst.taskService.UnassignFromGroups(tst.tx, teacherUser, taskID, []int64{groupID})
+		err := ts.UnassignFromGroups(tx, teacherUser, task.ID, []int64{groupID})
 		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := tst.taskService.AssignToGroups(tst.tx, teacherUser, taskID, []int64{groupID})
-		require.NoError(t, err)
-
-		err = tst.taskService.UnassignFromGroups(tst.tx, studentUser, taskID, []int64{groupID})
+		groupID := int64(1)
+		err := ts.UnassignFromGroups(tx, studentUser, task.ID, []int64{groupID})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 }
 
 func TestCreateInputOutput(t *testing.T) {
-	tst := newTaskServiceTest()
-	adminUser := tst.createUser(t, types.UserRoleAdmin)
-	task := &schemas.Task{
-		Title:     "Test Task",
-		CreatedBy: adminUser.ID,
+	tx := &gorm.DB{}
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	teacherUser := schemas.User{ID: 2}
+	task := &models.Task{
+		ID:        int64(1),
+		CreatedBy: teacherUser.ID,
 	}
 
-	taskID, err := tst.taskService.Create(tst.tx, adminUser, task)
-	require.NoError(t, err)
-	assert.NotEqual(t, 0, taskID)
-
 	t.Run("Success", func(t *testing.T) {
-		pathToArchive := tst.createTestArchive(t, "valid")
-		defer os.Remove(pathToArchive)
-		err := tst.taskService.CreateInputOutput(tst.tx, taskID, pathToArchive)
+		io.EXPECT().DeleteAll(tx, task.ID).Return(nil).Times(1)
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+		io.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(4)
+		pathToArchive := createTestArchive(t, "valid")
+		err := ts.CreateInputOutput(tx, task.ID, pathToArchive)
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		pathToArchive := tst.createTestArchive(t, "valid")
+		pathToArchive := createTestArchive(t, "valid")
 		defer os.Remove(pathToArchive)
-		err := tst.taskService.CreateInputOutput(tst.tx, -1, pathToArchive)
+		tr.EXPECT().Get(tx, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := ts.CreateInputOutput(tx, task.ID, pathToArchive)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
-		err := tst.taskService.CreateInputOutput(tst.tx, taskID, "INVALIDPATH")
+		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+
+		err := ts.CreateInputOutput(tx, task.ID, "INVALIDPATH")
 		require.Error(t, err)
 	})
 }
 
 func TestParseInputOutput(t *testing.T) {
-	tst := newTaskServiceTest()
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
 	tests := []struct {
 		name          string
 		caseType      string
@@ -819,8 +911,9 @@ func TestParseInputOutput(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pathToArchive := tst.createTestArchive(t, tt.caseType)
-			numFiles, err := tst.taskService.ParseInputOutput(pathToArchive)
+			pathToArchive := createTestArchive(t, tt.caseType)
+
+			numFiles, err := ts.ParseInputOutput(pathToArchive)
 			if tt.isError {
 				if tt.expectedError != nil {
 					require.ErrorIs(t, err, tt.expectedError)

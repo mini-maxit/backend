@@ -1,130 +1,83 @@
 package service_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
-	"github.com/mini-maxit/backend/package/repository"
+	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-type userServiceTest struct {
-	tx          *gorm.DB
-	config      *config.Config
-	ur          repository.UserRepository
-	userService service.UserService
-	counter     int
-}
-
-func (ust *userServiceTest) createUser(t *testing.T, role types.UserRole) schemas.User {
-	ust.counter++
-	passHash, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
-	require.NoError(t, err)
-
-	userID, err := ust.ur.Create(ust.tx, &models.User{
-		Name:         fmt.Sprintf("Test User %d", ust.counter),
-		Surname:      fmt.Sprintf("Test Surname %d", ust.counter),
-		Email:        fmt.Sprintf("email%d@email.com", ust.counter),
-		Username:     fmt.Sprintf("testuser%d", ust.counter),
-		Role:         role,
-		PasswordHash: string(passHash),
-	})
-	require.NoError(t, err)
-
-	userModel, err := ust.ur.Get(ust.tx, userID)
-	require.NoError(t, err)
-
-	user := schemas.User{
-		ID:   userModel.ID,
-		Role: userModel.Role,
-	}
-	return user
-}
-
-func newUserServiceTest() *userServiceTest {
-	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
-	ur := testutils.NewMockUserRepository()
-	us := service.NewUserService(ur)
-	return &userServiceTest{
-		tx:          tx,
-		config:      config,
-		ur:          ur,
-		userService: us,
-	}
-}
-
 func TestGetUserByEmail(t *testing.T) {
-	ust := newUserServiceTest()
+	ctrl := gomock.NewController(t)
+	tx := &gorm.DB{}
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.GetByEmail(ust.tx, "nonexistentemail")
+		ur.EXPECT().GetByEmail(tx, "nonexistentemail").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		user, err := us.GetByEmail(tx, "nonexistentemail")
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
 
-	ust = newUserServiceTest()
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
+			ID:           int64(1),
 			Name:         "Test User",
 			Surname:      "Test Surname",
 			Email:        "email@email.com",
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userID, err := ust.ur.Create(ust.tx, user)
-		require.NoError(t, err)
-		userResp, err := ust.userService.GetByEmail(ust.tx, user.Email)
+		ur.EXPECT().GetByEmail(tx, user.Email).Return(user, nil).Times(1)
+		userResp, err := us.GetByEmail(tx, user.Email)
 		require.NoError(t, err)
 		assert.NotNil(t, userResp)
-		assert.Equal(t, userID, userResp.ID)
+		assert.Equal(t, user.ID, userResp.ID)
 		assert.Equal(t, user.Email, userResp.Email)
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
 		assert.Equal(t, user.Username, userResp.Username)
 	})
-
-	t.Run("Non existent email", func(t *testing.T) {
-		user, err := ust.userService.GetByEmail(ust.tx, "nonexistentemail")
-		require.ErrorIs(t, err, errors.ErrUserNotFound)
-		assert.Nil(t, user)
-	})
 }
 
 func TestGetUserByID(t *testing.T) {
-	ust := newUserServiceTest()
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		user, err := ust.userService.Get(ust.tx, 0)
+		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		user, err := us.Get(tx, int64(1))
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
-	ust = newUserServiceTest()
+
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
+			ID:           int64(1),
 			Name:         "Test User",
 			Surname:      "Test Surname",
 			Email:        "email@email.com",
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userID, err := ust.ur.Create(ust.tx, user)
-		require.NoError(t, err)
-		userResp, err := ust.userService.Get(ust.tx, userID)
+		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
+		userResp, err := us.Get(tx, user.ID)
 		require.NoError(t, err)
 		assert.NotNil(t, userResp)
-		assert.Equal(t, userID, userResp.ID)
+		assert.Equal(t, user.ID, userResp.ID)
 		assert.Equal(t, user.Email, userResp.Email)
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
@@ -133,56 +86,80 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestEditUser(t *testing.T) {
-	ust := newUserServiceTest()
-	adminUser := ust.createUser(t, types.UserRoleAdmin)
-	studentUser := ust.createUser(t, types.UserRoleStudent)
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
+
+	adminUser := schemas.User{
+		ID:   1,
+		Role: types.UserRoleAdmin,
+	}
+	studentUser := schemas.User{
+		ID:   2,
+		Role: types.UserRoleStudent,
+	}
 
 	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.Edit(ust.tx, adminUser, 0, &schemas.UserEdit{})
+		ur.EXPECT().Get(tx, studentUser.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.Edit(tx, adminUser, studentUser.ID, &schemas.UserEdit{})
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := ust.userService.Edit(ust.tx, studentUser, adminUser.ID, &schemas.UserEdit{})
+		err := us.Edit(tx, studentUser, adminUser.ID, &schemas.UserEdit{})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
 		role := types.UserRoleAdmin
-		err := ust.userService.Edit(ust.tx, studentUser, studentUser.ID, &schemas.UserEdit{Role: &role})
+		ur.EXPECT().Get(tx, studentUser.ID).Return(&models.User{
+			ID:   studentUser.ID,
+			Role: types.UserRoleStudent,
+		}, nil).Times(1)
+		err := us.Edit(
+			tx,
+			studentUser,
+			studentUser.ID,
+			&schemas.UserEdit{Role: &role})
 		require.ErrorIs(t, err, errors.ErrNotAllowed)
 	})
 
 	t.Run("Success", func(t *testing.T) {
 		user := &models.User{
+			ID:           3,
 			Name:         "Test User",
 			Surname:      "Test Surname",
 			Email:        "email@email.com",
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		userID, err := ust.ur.Create(ust.tx, user)
-		require.NoError(t, err)
 		newName := "New Name"
 		updatedUser := &schemas.UserEdit{
 			Name: &newName,
 		}
-		err = ust.userService.Edit(ust.tx, adminUser, userID, updatedUser)
+		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
+		ur.EXPECT().Edit(tx, user).Return(nil).Times(1)
+		err := us.Edit(tx, adminUser, user.ID, updatedUser)
 		require.NoError(t, err)
-		userResp, err := ust.userService.Get(ust.tx, userID)
-		require.NoError(t, err)
-		assert.NotNil(t, userResp)
-		assert.Equal(t, userID, userResp.ID)
-		assert.Equal(t, newName, userResp.Name)
 	})
 }
 
 func TestGetAllUsers(t *testing.T) {
-	ust := newUserServiceTest()
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
-		users, err := ust.userService.GetAll(ust.tx, queryParams)
+		ur.EXPECT().GetAll(
+			tx,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.User{}, nil).Times(1)
+		users, err := us.GetAll(tx, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, users)
 	})
@@ -195,9 +172,13 @@ func TestGetAllUsers(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		_, err := ust.ur.Create(ust.tx, user)
-		require.NoError(t, err)
-		users, err := ust.userService.GetAll(ust.tx, queryParams)
+		ur.EXPECT().GetAll(
+			tx,
+			queryParams["limit"],
+			queryParams["offset"],
+			queryParams["sort"],
+		).Return([]models.User{*user}, nil).Times(1)
+		users, err := us.GetAll(tx, queryParams)
 		require.NoError(t, err)
 		assert.Len(t, users, 1)
 		assert.Equal(t, user.Email, users[0].Email)
@@ -210,69 +191,104 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestChangeRole(t *testing.T) {
-	ust := newUserServiceTest()
-	adminUser := ust.createUser(t, types.UserRoleAdmin)
-	studentUser := ust.createUser(t, types.UserRoleStudent)
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
+
+	adminUser := schemas.User{
+		ID:   1,
+		Role: types.UserRoleAdmin,
+	}
+	studentUser := schemas.User{
+		ID:   2,
+		Role: types.UserRoleStudent,
+	}
 
 	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.ChangeRole(ust.tx, adminUser, 0, types.UserRoleAdmin)
+		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.ChangeRole(tx, adminUser, int64(1), types.UserRoleAdmin)
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := ust.userService.ChangeRole(ust.tx, studentUser, adminUser.ID, types.UserRoleAdmin)
+		err := us.ChangeRole(tx, studentUser, adminUser.ID, types.UserRoleAdmin)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		user := ust.createUser(t, types.UserRoleStudent)
-		err := ust.userService.ChangeRole(ust.tx, adminUser, user.ID, types.UserRoleTeacher)
+		ur.EXPECT().Get(tx, studentUser.ID).Return(&models.User{
+			ID:   studentUser.ID,
+			Role: types.UserRoleStudent,
+		}, nil).Times(1)
+		ur.EXPECT().Edit(tx, &models.User{
+			ID:   studentUser.ID,
+			Role: types.UserRoleTeacher,
+		}).Times(1)
+		err := us.ChangeRole(tx, adminUser, studentUser.ID, types.UserRoleTeacher)
 		require.NoError(t, err)
-		userResp, err := ust.userService.Get(ust.tx, user.ID)
-		require.NoError(t, err)
-		if !assert.NotNil(t, userResp) {
-			t.FailNow()
-		}
-		assert.Equal(t, types.UserRoleTeacher, userResp.Role)
 	})
 }
 
 func TestChangePassword(t *testing.T) {
-	ust := newUserServiceTest()
-	user := ust.createUser(t, types.UserRoleStudent)
-	adminUser := ust.createUser(t, types.UserRoleAdmin)
-	randomUser := ust.createUser(t, types.UserRoleStudent)
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur)
+
+	password := "password"
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	require.NoError(t, err)
+	user := &models.User{
+		ID:           1,
+		Role:         types.UserRoleStudent,
+		PasswordHash: string(hash),
+	}
+	newPassword := "VeryStrongPass123!"
+	adminUser := schemas.User{
+		ID:   2,
+		Role: types.UserRoleAdmin,
+	}
+	randomUser := schemas.User{
+		ID:   3,
+		Role: types.UserRoleStudent,
+	}
 	t.Run("User does not exist", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, adminUser, 0, &schemas.UserChangePassword{})
+		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.ChangePassword(tx, adminUser, 1, &schemas.UserChangePassword{})
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, randomUser, user.ID, &schemas.UserChangePassword{})
+		err := us.ChangePassword(tx, randomUser, user.ID, &schemas.UserChangePassword{})
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 	})
 
 	t.Run("Invalid old password", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, adminUser, user.ID, &schemas.UserChangePassword{
+		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
+		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
 			OldPassword:        "invalidpassword",
-			NewPassword:        "VeryStrongPass123!",
-			NewPasswordConfirm: "VeryStrongPass123!"})
+			NewPassword:        newPassword,
+			NewPasswordConfirm: newPassword})
 		require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 	})
 
 	t.Run("Invalid data", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, adminUser, user.ID, &schemas.UserChangePassword{
-			OldPassword:        "password",
-			NewPassword:        "VeryStrongPass123!",
-			NewPasswordConfirm: "VeryStrongPass1234!"})
+		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
+		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
+			OldPassword:        password,
+			NewPassword:        newPassword,
+			NewPasswordConfirm: newPassword + "123"})
 		assert.IsType(t, validator.ValidationErrors{}, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		err := ust.userService.ChangePassword(ust.tx, adminUser, user.ID, &schemas.UserChangePassword{
-			OldPassword:        "password",
-			NewPassword:        "VeryStrongPass123!",
-			NewPasswordConfirm: "VeryStrongPass123!"})
+		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
+		ur.EXPECT().Edit(tx, gomock.Any()).Return(nil).Times(1)
+		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
+			OldPassword:        password,
+			NewPassword:        newPassword,
+			NewPasswordConfirm: newPassword})
 		require.NoError(t, err)
 	})
 }

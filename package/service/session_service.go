@@ -61,15 +61,16 @@ func (s *sessionService) Create(tx *gorm.DB, userID int64) (*schemas.Session, er
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		s.logger.Errorf("Error getting session by user id: %v", err.Error())
 		return nil, err
-	} else if err == nil {
-		// If session exists but is expired remove record and create new session
-		if session.ExpiresAt.Before(time.Now()) {
-			err = s.sessionRepository.Delete(tx, session.ID)
-			if err != nil {
-				s.logger.Errorf("Error deleting session: %v", err.Error())
-				return nil, err
-			}
+	}
+
+	// If session exists but is expired remove record and create new session
+	if err == nil && session.ExpiresAt.Before(time.Now()) {
+		err = s.sessionRepository.Delete(tx, session.ID)
+		if err != nil {
+			s.logger.Errorf("Error deleting session: %v", err.Error())
+			return nil, err
 		}
+	} else if err == nil {
 		return s.modelToSchema(session), nil
 	}
 
@@ -129,6 +130,9 @@ func (s *sessionService) Validate(tx *gorm.DB, sessionID string) (schemas.Valida
 func (s *sessionService) Invalidate(tx *gorm.DB, sessionID string) error {
 	err := s.sessionRepository.Delete(tx, sessionID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrSessionNotFound
+		}
 		s.logger.Errorf("Error deleting session: %v", err.Error())
 		return err
 	}
