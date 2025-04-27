@@ -425,6 +425,8 @@ func (ss *submissionService) createTestResult(
 		SubmissionResultID: submissionResultID,
 		InputOutputID:      inputOutputID,
 		Passed:             testResult.Passed,
+		StatusCode:         testResult.StatusCode,
+		ExecutionTime:      testResult.ExecutionTime,
 		ErrorMessage:       testResult.ErrorMessage,
 	}
 	return ss.testResultRepository.Create(tx, testResultModel)
