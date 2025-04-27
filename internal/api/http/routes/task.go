@@ -21,7 +21,7 @@ type TaskRoute interface {
 	AssignTaskToUsers(w http.ResponseWriter, r *http.Request)
 	DeleteTask(w http.ResponseWriter, r *http.Request)
 	EditTask(w http.ResponseWriter, r *http.Request)
-	GetAllAssingedTasks(w http.ResponseWriter, r *http.Request)
+	GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
 	GetAllCreatedTasks(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
@@ -50,7 +50,7 @@ type groupsRequest struct {
 	GroupIDs []int64 `json:"groupIDs"`
 }
 
-func (tr *taskRoute) GetAllAssingedTasks(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -915,6 +915,6 @@ func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
 		}
 	})
 	// mux.HandleFunc("/group/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/assigned", route.GetAllAssingedTasks)
+	mux.HandleFunc("/assigned", route.GetAllAssignedTasks)
 	mux.HandleFunc("/created", route.GetAllCreatedTasks)
 }

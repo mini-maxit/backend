@@ -691,13 +691,13 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID i
 		return nil, err
 	}
 
-	inputOuput, err := ts.inputOutputRepository.GetByTask(tx, taskID)
+	inputOutput, err := ts.inputOutputRepository.GetByTask(tx, taskID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]schemas.InputOutput, len(inputOuput))
-	for i, io := range inputOuput {
+	result := make([]schemas.InputOutput, len(inputOutput))
+	for i, io := range inputOutput {
 		result[i] = *InputOutputToSchema(&io)
 	}
 	return result, nil
