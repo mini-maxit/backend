@@ -84,6 +84,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	sessionMux.HandleFunc("/validate", init.SessionRoute.ValidateSession)
 	sessionMux.HandleFunc("/invalidate", init.SessionRoute.InvalidateSession)
 
+	// Worker routes
+	workerMux := http.NewServeMux()
+	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
+
 	// Secure routes (require authentication)
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
@@ -91,6 +95,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
+	secureMux.Handle("/worker/", http.StripPrefix("/worker", workerMux))
 
 	// API routes
 	apiMux := http.NewServeMux()

@@ -1892,6 +1892,44 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/worker/status": {
+            "get": {
+                "description": "Returns the current status of all worker nodes",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "worker"
+                ],
+                "summary": "Get worker status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-WorkerStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized - requires teacher or admin role",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "504": {
+                        "description": "Gateway timeout - worker status request timed out",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1977,6 +2015,17 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/User"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "APIResponse-WorkerStatus": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/WorkerStatus"
                 },
                 "ok": {
                     "type": "boolean"
@@ -2445,6 +2494,26 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
+                }
+            }
+        },
+        "WorkerStatus": {
+            "type": "object",
+            "properties": {
+                "busy_workers": {
+                    "type": "integer"
+                },
+                "status_time": {
+                    "type": "string"
+                },
+                "total_workers": {
+                    "type": "integer"
+                },
+                "worker_status": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             }
         },

@@ -281,7 +281,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			return
 		}
 
-		err := ql.queueService.UpdateWorkerStatus(tx, statusResponse)
+		err := ql.queueService.UpdateWorkerStatus(statusResponse)
 		if err != nil {
 			ql.logger.Errorf("Failed to update worker status: %s", err.Error())
 			tx.Rollback()

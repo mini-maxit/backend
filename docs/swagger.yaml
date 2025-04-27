@@ -56,6 +56,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-WorkerStatus:
+    properties:
+      data:
+        $ref: '#/definitions/WorkerStatus'
+      ok:
+        type: boolean
+    type: object
   APIResponse-array_Group:
     properties:
       data:
@@ -364,6 +371,19 @@ definitions:
     - password
     - surname
     - username
+    type: object
+  WorkerStatus:
+    properties:
+      busy_workers:
+        type: integer
+      status_time:
+        type: string
+      total_workers:
+        type: integer
+      worker_status:
+        additionalProperties:
+          type: string
+        type: object
     type: object
   errorStruct:
     properties:
@@ -1633,4 +1653,29 @@ paths:
       summary: Get user by email
       tags:
       - user
+  /worker/status:
+    get:
+      description: Returns the current status of all worker nodes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-WorkerStatus'
+        "401":
+          description: Not authorized - requires teacher or admin role
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/APIError'
+        "504":
+          description: Gateway timeout - worker status request timed out
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get worker status
+      tags:
+      - worker
 swagger: "2.0"
