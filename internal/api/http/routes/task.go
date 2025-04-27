@@ -21,11 +21,13 @@ type TaskRoute interface {
 	AssignTaskToUsers(w http.ResponseWriter, r *http.Request)
 	DeleteTask(w http.ResponseWriter, r *http.Request)
 	EditTask(w http.ResponseWriter, r *http.Request)
-	GetAllAssingedTasks(w http.ResponseWriter, r *http.Request)
+	GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
 	GetAllCreatedTasks(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
+	GetLimits(w http.ResponseWriter, r *http.Request)
+	PutLimits(w http.ResponseWriter, r *http.Request)
 	UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request)
 	UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
@@ -33,7 +35,7 @@ type TaskRoute interface {
 
 const taskBodyLimit = 50 << 20
 
-type TaskRouteImpl struct {
+type taskRoute struct {
 	fileStorageURL string
 
 	// Service that handles task-related operations
@@ -48,7 +50,7 @@ type groupsRequest struct {
 	GroupIDs []int64 `json:"groupIDs"`
 }
 
-func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -79,7 +81,7 @@ func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Requ
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
-func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -122,7 +124,7 @@ func (tr *TaskRouteImpl) GetAllCreatedTasks(w http.ResponseWriter, r *http.Reque
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/ [get]
-func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -168,7 +170,7 @@ func (tr *TaskRouteImpl) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[schemas.TaskDetailed]
 //	@Router			/task/{id} [get]
-func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -221,7 +223,7 @@ func (tr *TaskRouteImpl) GetTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/task/group/{id} [get]
-func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -283,7 +285,7 @@ func (tr *TaskRouteImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[schemas.TaskCreateResponse]
 //	@Router			/task/ [post]
-func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -376,7 +378,7 @@ func (tr *TaskRouteImpl) UploadTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [patch]
-func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -468,7 +470,7 @@ func (tr *TaskRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[string]
 //	@Router			/task/{id} [delete]
-func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -522,7 +524,7 @@ func (tr *TaskRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/users [post]
-func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -584,7 +586,7 @@ func (tr *TaskRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Reques
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/assign/groups [post]
-func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -646,7 +648,7 @@ func (tr *TaskRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Reque
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/users [delete]
-func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -708,7 +710,7 @@ func (tr *TaskRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Re
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[string]
 //	@Router			/task/{id}/unassign/groups [delete]
-func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
+func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -756,8 +758,112 @@ func (tr *TaskRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.R
 	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
 }
 
+// GetLimits godoc
+//
+// @Tags task
+// @Summary		Gets task limits
+// @Description	Gets task limits by task ID
+// @Produce		json
+// @Param			id			path		int		true	"Task ID"
+// @Failure		400			{object}	httputils.APIError
+// @Failure		404			{object}	httputils.APIError
+// @Failure		500			{object}	httputils.APIError
+// @Success		200			{object}	httputils.APIResponse[string]
+// @Router			/task/{id}/limits [get]
+func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
+	if err != nil {
+		// TODO: more verbose error handling
+		httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, limits)
+}
+
+// PutLimits godoc
+//
+// @Tags task
+// @Summary		Updates task limits
+// @Description	Updates task limits by task ID
+// @Produce		json
+// @Param			id			path		int		true	"Task ID"
+// @Param			limits		body		schemas.PutInputOutputRequest	true	"Task limits"
+// @Failure		400			{object}	httputils.APIError
+// @Failure		404			{object}	httputils.APIError
+// @Failure		500			{object}	httputils.APIError
+// @Success		200			{object}	httputils.APIResponse[string]
+// @Router			/task/{id}/limits [put]
+func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	taskIDStr := r.PathValue("id")
+	if taskIDStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID.")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	request := schemas.PutInputOutputRequest{}
+	err = httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
+	if err != nil {
+		// TODO: more verbose error handling
+		httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, nil)
+}
+
 func NewTaskRoute(fileStorageURL string, taskService service.TaskService) TaskRoute {
-	route := &TaskRouteImpl{fileStorageURL: fileStorageURL, taskService: taskService}
+	route := &taskRoute{fileStorageURL: fileStorageURL, taskService: taskService}
 
 	err := utils.ValidateStruct(*route)
 	if err != nil {
@@ -798,7 +904,17 @@ func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
 	mux.HandleFunc("/{id}/assign/groups", route.AssignTaskToGroups)
 	mux.HandleFunc("/{id}/unassign/users", route.UnAssignTaskFromUsers)
 	mux.HandleFunc("/{id}/unassign/groups", route.UnAssignTaskFromGroups)
-	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/assigned", route.GetAllAssingedTasks)
+	mux.HandleFunc("/{id}/limits", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetLimits(w, r)
+		case http.MethodPut:
+			route.PutLimits(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+	// mux.HandleFunc("/group/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/assigned", route.GetAllAssignedTasks)
 	mux.HandleFunc("/created", route.GetAllCreatedTasks)
 }

@@ -51,6 +51,8 @@ type TaskService interface {
 	Get(tx *gorm.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
 	// GetByTitle retrieves a task by its title.
 	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
+	// GetLimits retrieves limits associated with each input/output
+	GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error)
 	// ParseInputOutput parses the input and output files from an archive.
 	ParseInputOutput(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
@@ -59,6 +61,8 @@ type TaskService interface {
 	UnassignFromGroups(tx *gorm.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error
 	// UnassignFromUsers unassigns a task from multiple users.
 	UnassignFromUsers(tx *gorm.DB, currentUser schemas.User, taskID int64, userID []int64) error
+	// PutLimits updates limits associated with each input/output.
+	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutInputOutputRequest) error
 }
 
 const defaultTaskSort = "created_at:desc"
@@ -678,6 +682,68 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, t
 	return nil
 }
 
+func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error) {
+	_, err := ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	inputOutput, err := ts.inputOutputRepository.GetByTask(tx, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.InputOutput, len(inputOutput))
+	for i, io := range inputOutput {
+		result[i] = *InputOutputToSchema(&io)
+	}
+	return result, nil
+}
+
+func (ts *taskService) PutLimits(
+	tx *gorm.DB,
+	currentUser schemas.User,
+	taskID int64,
+	newLimits schemas.PutInputOutputRequest,
+) error {
+	task, err := ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	if task.CreatedBy != currentUser.ID && currentUser.Role != types.UserRoleAdmin {
+		return myerrors.ErrNotAuthorized
+	}
+
+	for _, io := range newLimits.Limits {
+		ioID, err := ts.inputOutputRepository.GetInputOutputID(tx, taskID, io.Order)
+		if err != nil {
+			return err
+		}
+
+		current, err := ts.inputOutputRepository.Get(tx, ioID)
+		if err != nil {
+			return err
+		}
+
+		current.MemoryLimit = io.MemoryLimit
+		current.TimeLimit = io.TimeLimit
+
+		err = ts.inputOutputRepository.Put(tx, current)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schemas.EditTask) {
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title
@@ -691,6 +757,16 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 		CreatedBy: model.CreatedBy,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
+	}
+}
+
+func InputOutputToSchema(model *models.InputOutput) *schemas.InputOutput {
+	return &schemas.InputOutput{
+		ID:          model.ID,
+		TaskID:      model.TaskID,
+		Order:       model.Order,
+		TimeLimit:   model.TimeLimit,
+		MemoryLimit: model.MemoryLimit,
 	}
 }
 

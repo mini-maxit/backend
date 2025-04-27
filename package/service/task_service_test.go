@@ -928,3 +928,86 @@ func TestParseInputOutput(t *testing.T) {
 		})
 	}
 }
+
+func TestGetLimits(t *testing.T) {
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	tx := &gorm.DB{}
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	taskID := int64(1)
+
+	teacherUser := schemas.User{ID: 2}
+	t.Run("Success", func(t *testing.T) {
+		io.EXPECT().GetByTask(tx, taskID).Return([]models.InputOutput{{
+			ID:          1,
+			TaskID:      taskID,
+			Order:       1,
+			TimeLimit:   10,
+			MemoryLimit: 10,
+		}}, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+			ID: 1,
+		}, nil).Times(1)
+
+		result, err := ts.GetLimits(tx, teacherUser, taskID)
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+	})
+}
+
+func TestPutLimit(t *testing.T) {
+	config := testutils.NewTestConfig()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	tx := &gorm.DB{}
+	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	taskID := int64(1)
+	ioID := int64(1)
+	inputOutput := &models.InputOutput{
+		ID:          ioID,
+		TaskID:      taskID,
+		Order:       1,
+		TimeLimit:   10,
+		MemoryLimit: 10,
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		teacherUser := schemas.User{ID: 2}
+		io.EXPECT().GetInputOutputID(tx, taskID, inputOutput.Order).Return(inputOutput.ID, nil).Times(1)
+		io.EXPECT().Get(tx, ioID).Return(inputOutput, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+			ID:        taskID,
+			CreatedBy: teacherUser.ID,
+		}, nil).Times(1)
+
+		newLimits := schemas.PutInputOutputRequest{
+			Limits: []schemas.PutInputOutput{
+				{
+					Order:       1,
+					TimeLimit:   20,
+					MemoryLimit: 20,
+				},
+			},
+		}
+		expectedModel := &models.InputOutput{
+			ID:          ioID,
+			TaskID:      taskID,
+			Order:       inputOutput.Order,
+			TimeLimit:   newLimits.Limits[0].TimeLimit,
+			MemoryLimit: newLimits.Limits[0].MemoryLimit,
+		}
+		io.EXPECT().Put(tx, expectedModel).Return(nil).Times(1)
+
+		err := ts.PutLimits(tx, teacherUser, taskID, newLimits)
+		require.NoError(t, err)
+	})
+}

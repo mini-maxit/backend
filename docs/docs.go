@@ -1376,6 +1376,107 @@ const docTemplate = `{
                 }
             }
         },
+        "/task/{id}/limits": {
+            "get": {
+                "description": "Gets task limits by task ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Gets task limits",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates task limits by task ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Updates task limits",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Task limits",
+                        "name": "limits",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PutInputOutputRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/task/{id}/unassign/groups": {
             "delete": {
                 "description": "Unassigns a task from groups by task ID and group IDs",
@@ -2020,6 +2121,31 @@ const docTemplate = `{
                 }
             }
         },
+        "PutInputOutput": {
+            "type": "object",
+            "properties": {
+                "memory_limit": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "time_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PutInputOutputRequest": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PutInputOutput"
+                    }
+                }
+            }
+        },
         "Session": {
             "type": "object",
             "properties": {
@@ -2349,7 +2475,7 @@ const docTemplate = `{
     }
 }`
 
-// SwaggerInfo holds exported Swagger Info so clients can modify it.
+// SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0.0",
 	Host:             "",

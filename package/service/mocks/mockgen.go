@@ -285,6 +285,21 @@ func (mr *MockTaskServiceMockRecorder) GetByTitle(tx, title any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTitle", reflect.TypeOf((*MockTaskService)(nil).GetByTitle), tx, title)
 }
 
+// GetLimits mocks base method.
+func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLimits", tx, currentUser, taskID)
+	ret0, _ := ret[0].([]schemas.InputOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLimits indicates an expected call of GetLimits.
+func (mr *MockTaskServiceMockRecorder) GetLimits(tx, currentUser, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), tx, currentUser, taskID)
+}
+
 // ParseInputOutput mocks base method.
 func (m *MockTaskService) ParseInputOutput(archivePath string) (int, error) {
 	m.ctrl.T.Helper()
@@ -312,6 +327,20 @@ func (m *MockTaskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User
 func (mr *MockTaskServiceMockRecorder) ProcessAndUpload(tx, currentUser, taskID, archivePath any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAndUpload", reflect.TypeOf((*MockTaskService)(nil).ProcessAndUpload), tx, currentUser, taskID, archivePath)
+}
+
+// PutLimits mocks base method.
+func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutInputOutputRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutLimits", tx, currentUser, taskID, limits)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PutLimits indicates an expected call of PutLimits.
+func (mr *MockTaskServiceMockRecorder) PutLimits(tx, currentUser, taskID, limits any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutLimits", reflect.TypeOf((*MockTaskService)(nil).PutLimits), tx, currentUser, taskID, limits)
 }
 
 // UnassignFromGroups mocks base method.
