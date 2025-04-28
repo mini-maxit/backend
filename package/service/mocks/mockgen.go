@@ -7,9 +7,9 @@ package mock_service
 import (
 	reflect "reflect"
 
-	gomock "go.uber.org/mock/gomock"
 	schemas "github.com/mini-maxit/backend/package/domain/schemas"
 	types "github.com/mini-maxit/backend/package/domain/types"
+	gomock "go.uber.org/mock/gomock"
 	gorm "gorm.io/gorm"
 )
 

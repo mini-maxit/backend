@@ -164,11 +164,12 @@ func TestCreateGroup(t *testing.T) {
 			CreatedBy: 1, // Match the mock user ID
 		}
 
-		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
-			assert.Equal(t, expectedGroup.Name, group.Name)
-			assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
-			return 0, myerrors.ErrNotAuthorized
-		}).Times(1)
+		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+				assert.Equal(t, expectedGroup.Name, group.Name)
+				assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
+				return 0, myerrors.ErrNotAuthorized
+			}).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -224,11 +225,12 @@ func TestCreateGroup(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
-			assert.Equal(t, "Test Group", group.Name)
-			assert.Equal(t, int64(1), group.CreatedBy)
-			return 1, nil
-		}).Times(1)
+		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+				assert.Equal(t, "Test Group", group.Name)
+				assert.Equal(t, int64(1), group.CreatedBy)
+				return 1, nil
+			}).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -440,11 +442,12 @@ func TestGetAllGroup(t *testing.T) {
 	})
 
 	t.Run("Limit and offset query params", func(t *testing.T) {
-		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
-			assert.Equal(t, "2", queryParams["limit"])
-			assert.Equal(t, "0", queryParams["offset"])
-			return []schemas.Group{}, nil
-		}).Times(1)
+		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
+				assert.Equal(t, "2", queryParams["limit"])
+				assert.Equal(t, "0", queryParams["offset"])
+				return []schemas.Group{}, nil
+			}).Times(1)
 		resp, err := http.Get(server.URL + "/?limit=2&offset=0")
 		require.NoError(t, err)
 		defer resp.Body.Close()
@@ -1251,5 +1254,4 @@ func TestGetGroupTasks(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, tasks, response.Data)
 	})
-
 }
