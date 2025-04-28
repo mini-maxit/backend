@@ -274,7 +274,6 @@ func TestGetGroup(t *testing.T) {
 	}))
 	defer server.Close()
 
-
 	t.Run("Accept only GET", func(t *testing.T) {
 		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
@@ -337,8 +336,8 @@ func TestGetGroup(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		group := schemas.GroupDetailed{
-			ID:   1,
-			Name: "Test Group",
+			ID:        1,
+			Name:      "Test Group",
 			CreatedBy: 1,
 		}
 		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(&group, nil).Times(1)
@@ -381,7 +380,7 @@ func TestGetAllGroup(t *testing.T) {
 
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]interface{}{
-			"limit": "2",
+			"limit":  "2",
 			"offset": "0",
 		})
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -447,7 +446,7 @@ func TestGetAllGroup(t *testing.T) {
 			return []schemas.Group{}, nil
 		}).Times(1)
 		resp, err := http.Get(server.URL + "/?limit=2&offset=0")
-		require.NoError(t, err)	
+		require.NoError(t, err)
 		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		bodyBytes, err := io.ReadAll(resp.Body)
@@ -627,4 +626,630 @@ func TestEditGroup(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, updated, response.Data)
 	})
+}
+
+func TestAddUsersToGroup(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	gs := mock_service.NewMockGroupService(ctrl)
+	route := routes.NewGroupRoute(gs)
+	db := &testutils.MockDatabase{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
+		route.AddUsersToGroup(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only POST", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/users", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid request body", func(t *testing.T) {
+		resp, err := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBufferString(`{invalid_json}`))
+		require.NoError(t, err)
+
+		resp.Header.Set("Content-Type", "application/json")
+		res, err := http.DefaultClient.Do(resp)
+		require.NoError(t, err)
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		bodyBytes, _ := io.ReadAll(res.Body)
+		assert.Contains(t, string(bodyBytes), "Invalid request body")
+	})
+
+	t.Run("Transaction not started", func(t *testing.T) {
+		db.Invalidate()
+
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		res, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		db.Vaildate()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		bodyBytes, _ := io.ReadAll(res.Body)
+		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+	})
+
+	t.Run("Invalid group ID in path", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/invalid/users", bytes.NewBuffer(jsonBody))
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(myerrors.ErrNotAuthorized).Times(1)
+
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "not authorized")
+	})
+
+	t.Run("Invalid user IDs", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(gorm.ErrRecordNotFound).Times(1)
+
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "record not found")
+	})
+	t.Run("Group not found", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(myerrors.ErrGroupNotFound).Times(1)
+
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "group not found")
+	})
+
+	t.Run("Internal server error", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(gorm.ErrInvalidDB).Times(1)
+
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(nil).Times(1)
+
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		response := &httputils.APIResponse[any]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Contains(t, string(bodyBytes), "Users added")
+	})
+}
+
+func TestDeleteUsersFromGroup(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	gs := mock_service.NewMockGroupService(ctrl)
+	route := routes.NewGroupRoute(gs)
+	db := &testutils.MockDatabase{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
+		route.DeleteUsersFromGroup(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only DELETE", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/users", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid request body", func(t *testing.T) {
+		resp, err := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBufferString(`{invalid_json}`))
+		require.NoError(t, err)
+
+		resp.Header.Set("Content-Type", "application/json")
+		res, err := http.DefaultClient.Do(resp)
+		require.NoError(t, err)
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
+		bodyBytes, _ := io.ReadAll(res.Body)
+		assert.Contains(t, string(bodyBytes), "Invalid request body")
+	})
+
+	t.Run("Transaction not started", func(t *testing.T) {
+		db.Invalidate()
+
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		res, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		db.Vaildate()
+		defer res.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
+		bodyBytes, _ := io.ReadAll(res.Body)
+		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+	})
+
+	t.Run("Invalid group ID in path", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/invalid/users", bytes.NewBuffer(jsonBody))
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(myerrors.ErrNotAuthorized).Times(1)
+
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "not authorized")
+	})
+
+	t.Run("Invalid user IDs", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(gorm.ErrRecordNotFound).Times(1)
+
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "record not found")
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(myerrors.ErrGroupNotFound).Times(1)
+
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "group not found")
+	})
+
+	t.Run("Internal server error", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(gorm.ErrInvalidDB).Times(1)
+
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := schemas.UserIDs{
+			UserIDs: []int64{1, 2, 3},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
+			Return(nil).Times(1)
+
+		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		response := &httputils.APIResponse[any]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Contains(t, string(bodyBytes), "Users deleted")
+	})
+}
+
+func TestGetGroupUsers(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	gs := mock_service.NewMockGroupService(ctrl)
+	route := routes.NewGroupRoute(gs)
+	db := &testutils.MockDatabase{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
+		route.GetGroupUsers(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/users", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid group ID", func(t *testing.T) {
+		resp, err := http.Get(server.URL + "/invalid/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Invalid group ID")
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(999)).Return(nil, myerrors.ErrGroupNotFound).Times(1)
+
+		resp, err := http.Get(server.URL + "/999/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "group not found")
+	})
+
+	t.Run("Database error", func(t *testing.T) {
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "not authorized")
+	})
+
+	t.Run("No users found", func(t *testing.T) {
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return([]schemas.User{}, nil).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		response := &httputils.APIResponse[[]schemas.User]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Empty(t, response.Data)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		users := []schemas.User{
+			{ID: 1, Email: "test@example.com"},
+			{ID: 2, Email: "test@example.com"},
+		}
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(users, nil).Times(1)
+		resp, err := http.Get(server.URL + "/1/users")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		response := &httputils.APIResponse[[]schemas.User]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Equal(t, users, response.Data)
+	})
+}
+
+func TestGetGroupTasks(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	gs := mock_service.NewMockGroupService(ctrl)
+	route := routes.NewGroupRoute(gs)
+	db := &testutils.MockDatabase{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+		route.GetGroupTasks(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/tasks", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid group ID", func(t *testing.T) {
+		resp, err := http.Get(server.URL + "/invalid/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Invalid group ID")
+	})
+
+	t.Run("Group not found", func(t *testing.T) {
+		gs.EXPECT().GetTasks(gomock.Any(), gomock.Any(), int64(999)).Return(nil, myerrors.ErrGroupNotFound).Times(1)
+
+		resp, err := http.Get(server.URL + "/999/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "group not found")
+	})
+
+	t.Run("Database error", func(t *testing.T) {
+		gs.EXPECT().GetTasks(gomock.Any(), gomock.Any(), int64(1)).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		gs.EXPECT().GetTasks(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		assert.Contains(t, string(bodyBytes), "not authorized")
+	})
+
+	t.Run("No tasks found", func(t *testing.T) {
+		gs.EXPECT().GetTasks(gomock.Any(), gomock.Any(), int64(1)).Return([]schemas.Task{}, nil).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		response := &httputils.APIResponse[[]schemas.Task]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Empty(t, response.Data)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		tasks := []schemas.Task{
+			{ID: 1, Title: "Task 1"},
+			{ID: 2, Title: "Task 2"},
+		}
+		gs.EXPECT().GetTasks(gomock.Any(), gomock.Any(), int64(1)).Return(tasks, nil).Times(1)
+		resp, err := http.Get(server.URL + "/1/tasks")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		response := &httputils.APIResponse[[]schemas.Task]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.Equal(t, tasks, response.Data)
+	})
+
 }

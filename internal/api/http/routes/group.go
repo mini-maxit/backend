@@ -311,6 +311,8 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
 		return
@@ -378,6 +380,8 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 			status = http.StatusBadRequest
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
+		case errors.Is(err, myerrors.ErrGroupNotFound):
+			status = http.StatusNotFound
 		default:
 			status = http.StatusInternalServerError
 		}
@@ -433,6 +437,8 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to get group users. "+err.Error())
 		return
@@ -474,6 +480,8 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to get group tasks. "+err.Error())
 		return
