@@ -279,18 +279,18 @@ func (mr *MockTaskServiceMockRecorder) GetByTitle(arg0, arg1 interface{}) *gomoc
 }
 
 // GetLimits mocks base method.
-func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error) {
+func (m *MockTaskService) GetLimits(arg0 *gorm.DB, arg1 schemas.User, arg2 int64) ([]schemas.InputOutput, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLimits", tx, currentUser, taskID)
+	ret := m.ctrl.Call(m, "GetLimits", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]schemas.InputOutput)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLimits indicates an expected call of GetLimits.
-func (mr *MockTaskServiceMockRecorder) GetLimits(tx, currentUser, taskID any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) GetLimits(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), tx, currentUser, taskID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), arg0, arg1, arg2)
 }
 
 // ParseInputOutput mocks base method.
@@ -323,17 +323,17 @@ func (mr *MockTaskServiceMockRecorder) ProcessAndUpload(arg0, arg1, arg2, arg3 i
 }
 
 // PutLimits mocks base method.
-func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutInputOutputRequest) error {
+func (m *MockTaskService) PutLimits(arg0 *gorm.DB, arg1 schemas.User, arg2 int64, arg3 schemas.PutInputOutputRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PutLimits", tx, currentUser, taskID, limits)
+	ret := m.ctrl.Call(m, "PutLimits", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PutLimits indicates an expected call of PutLimits.
-func (mr *MockTaskServiceMockRecorder) PutLimits(tx, currentUser, taskID, limits any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) PutLimits(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutLimits", reflect.TypeOf((*MockTaskService)(nil).PutLimits), tx, currentUser, taskID, limits)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutLimits", reflect.TypeOf((*MockTaskService)(nil).PutLimits), arg0, arg1, arg2, arg3)
 }
 
 // UnassignFromGroups mocks base method.
@@ -747,126 +747,4 @@ func (m *MockGroupService) GetUsers(arg0 *gorm.DB, arg1 schemas.User, arg2 int64
 func (mr *MockGroupServiceMockRecorder) GetUsers(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockGroupService)(nil).GetUsers), arg0, arg1, arg2)
-}
-
-// MockSessionService is a mock of SessionService interface.
-type MockSessionService struct {
-	ctrl     *gomock.Controller
-	recorder *MockSessionServiceMockRecorder
-	isgomock struct{}
-}
-
-// MockSessionServiceMockRecorder is the mock recorder for MockSessionService.
-type MockSessionServiceMockRecorder struct {
-	mock *MockSessionService
-}
-
-// NewMockSessionService creates a new mock instance.
-func NewMockSessionService(ctrl *gomock.Controller) *MockSessionService {
-	mock := &MockSessionService{ctrl: ctrl}
-	mock.recorder = &MockSessionServiceMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSessionService) EXPECT() *MockSessionServiceMockRecorder {
-	return m.recorder
-}
-
-// Create mocks base method.
-func (m *MockSessionService) Create(tx *gorm.DB, userID int64) (*schemas.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", tx, userID)
-	ret0, _ := ret[0].(*schemas.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Create indicates an expected call of Create.
-func (mr *MockSessionServiceMockRecorder) Create(tx, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSessionService)(nil).Create), tx, userID)
-}
-
-// Invalidate mocks base method.
-func (m *MockSessionService) Invalidate(tx *gorm.DB, sessionID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Invalidate", tx, sessionID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Invalidate indicates an expected call of Invalidate.
-func (mr *MockSessionServiceMockRecorder) Invalidate(tx, sessionID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invalidate", reflect.TypeOf((*MockSessionService)(nil).Invalidate), tx, sessionID)
-}
-
-// Validate mocks base method.
-func (m *MockSessionService) Validate(tx *gorm.DB, sessionID string) (schemas.ValidateSessionResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Validate", tx, sessionID)
-	ret0, _ := ret[0].(schemas.ValidateSessionResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Validate indicates an expected call of Validate.
-func (mr *MockSessionServiceMockRecorder) Validate(tx, sessionID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockSessionService)(nil).Validate), tx, sessionID)
-}
-
-// MockAuthService is a mock of AuthService interface.
-type MockAuthService struct {
-	ctrl     *gomock.Controller
-	recorder *MockAuthServiceMockRecorder
-	isgomock struct{}
-}
-
-// MockAuthServiceMockRecorder is the mock recorder for MockAuthService.
-type MockAuthServiceMockRecorder struct {
-	mock *MockAuthService
-}
-
-// NewMockAuthService creates a new mock instance.
-func NewMockAuthService(ctrl *gomock.Controller) *MockAuthService {
-	mock := &MockAuthService{ctrl: ctrl}
-	mock.recorder = &MockAuthServiceMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder {
-	return m.recorder
-}
-
-// Login mocks base method.
-func (m *MockAuthService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Login", tx, userLogin)
-	ret0, _ := ret[0].(*schemas.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Login indicates an expected call of Login.
-func (mr *MockAuthServiceMockRecorder) Login(tx, userLogin any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Login", reflect.TypeOf((*MockAuthService)(nil).Login), tx, userLogin)
-}
-
-// Register mocks base method.
-func (m *MockAuthService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Register", tx, userRegister)
-	ret0, _ := ret[0].(*schemas.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Register indicates an expected call of Register.
-func (mr *MockAuthServiceMockRecorder) Register(tx, userRegister any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockAuthService)(nil).Register), tx, userRegister)
 }
