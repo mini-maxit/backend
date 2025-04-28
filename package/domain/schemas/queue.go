@@ -37,7 +37,7 @@ type StatusResponsePayload struct {
 }
 
 type QueueTestResult struct {
-	Order        int64  `json:"Order"`
+	Order        int    `json:"Order"`
 	Passed       bool   `json:"Passed"`
 	ErrorMessage string `json:"ErrorMessage"`
 }

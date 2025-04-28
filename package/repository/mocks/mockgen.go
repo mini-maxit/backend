@@ -441,8 +441,38 @@ func (mr *MockInputOutputRepositoryMockRecorder) DeleteAll(tx, taskID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAll", reflect.TypeOf((*MockInputOutputRepository)(nil).DeleteAll), tx, taskID)
 }
 
+// Get mocks base method.
+func (m *MockInputOutputRepository) Get(tx *gorm.DB, ioID int64) (*models.InputOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", tx, ioID)
+	ret0, _ := ret[0].(*models.InputOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockInputOutputRepositoryMockRecorder) Get(tx, ioID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockInputOutputRepository)(nil).Get), tx, ioID)
+}
+
+// GetByTask mocks base method.
+func (m *MockInputOutputRepository) GetByTask(db *gorm.DB, taskID int64) ([]models.InputOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByTask", db, taskID)
+	ret0, _ := ret[0].([]models.InputOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByTask indicates an expected call of GetByTask.
+func (mr *MockInputOutputRepositoryMockRecorder) GetByTask(db, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTask", reflect.TypeOf((*MockInputOutputRepository)(nil).GetByTask), db, taskID)
+}
+
 // GetInputOutputID mocks base method.
-func (m *MockInputOutputRepository) GetInputOutputID(db *gorm.DB, taskID, order int64) (int64, error) {
+func (m *MockInputOutputRepository) GetInputOutputID(db *gorm.DB, taskID int64, order int) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInputOutputID", db, taskID, order)
 	ret0, _ := ret[0].(int64)
@@ -454,6 +484,20 @@ func (m *MockInputOutputRepository) GetInputOutputID(db *gorm.DB, taskID, order 
 func (mr *MockInputOutputRepositoryMockRecorder) GetInputOutputID(db, taskID, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInputOutputID", reflect.TypeOf((*MockInputOutputRepository)(nil).GetInputOutputID), db, taskID, order)
+}
+
+// Put mocks base method.
+func (m *MockInputOutputRepository) Put(tx *gorm.DB, inputOutput *models.InputOutput) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Put", tx, inputOutput)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Put indicates an expected call of Put.
+func (mr *MockInputOutputRepositoryMockRecorder) Put(tx, inputOutput any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockInputOutputRepository)(nil).Put), tx, inputOutput)
 }
 
 // MockLanguageRepository is a mock of LanguageRepository interface.
@@ -506,21 +550,6 @@ func (m *MockLanguageRepository) Delete(tx *gorm.DB, languageID int64) error {
 func (mr *MockLanguageRepositoryMockRecorder) Delete(tx, languageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockLanguageRepository)(nil).Delete), tx, languageID)
-}
-
-// Get mocks base method.
-func (m *MockLanguageRepository) Get(tx *gorm.DB, languageID int64) (*models.LanguageConfig, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", tx, languageID)
-	ret0, _ := ret[0].(*models.LanguageConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get.
-func (mr *MockLanguageRepositoryMockRecorder) Get(tx, languageID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockLanguageRepository)(nil).Get), tx, languageID)
 }
 
 // GetAll mocks base method.

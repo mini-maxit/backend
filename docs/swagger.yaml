@@ -146,6 +146,22 @@ definitions:
       version:
         type: string
     type: object
+  PutInputOutput:
+    properties:
+      memory_limit:
+        type: integer
+      order:
+        type: integer
+      time_limit:
+        type: integer
+    type: object
+  PutInputOutputRequest:
+    properties:
+      limits:
+        items:
+          $ref: '#/definitions/PutInputOutput'
+        type: array
+    type: object
   Session:
     properties:
       expires_at:
@@ -1238,6 +1254,73 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Assign a task to users
+      tags:
+      - task
+  /task/{id}/limits:
+    get:
+      description: Gets task limits by task ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Gets task limits
+      tags:
+      - task
+    put:
+      description: Updates task limits by task ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task limits
+        in: body
+        name: limits
+        required: true
+        schema:
+          $ref: '#/definitions/PutInputOutputRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-string'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Updates task limits
       tags:
       - task
   /task/{id}/unassign/groups:

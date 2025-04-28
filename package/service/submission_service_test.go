@@ -176,8 +176,8 @@ func TestCreateSubmissionResult(t *testing.T) {
 					gomock.Any(),
 					gomock.Any(),
 					gomock.Any(),
-				).DoAndReturn(func(_ *gorm.DB, _, order int64) (int64, error) {
-					return order, nil
+				).DoAndReturn(func(_ *gorm.DB, _ int64, order int) (int64, error) {
+					return int64(order), nil
 				}).Times(1)
 				mTestRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(gorm.ErrInvalidData).Times(1)
 			},
@@ -203,8 +203,8 @@ func TestCreateSubmissionResult(t *testing.T) {
 					gomock.Any(),
 					gomock.Any(),
 					gomock.Any(),
-				).DoAndReturn(func(_ *gorm.DB, _, order int64) (int64, error) {
-					return order, nil
+				).DoAndReturn(func(_ *gorm.DB, _ int64, order int) (int64, error) {
+					return int64(order), nil
 				}).Times(2)
 				mTestRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 			},

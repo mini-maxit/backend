@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -170,8 +171,8 @@ func (us *userService) ChangePassword(
 		return myerrors.ErrInvalidData
 	}
 
-	// user.PasswordHash =
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.NewPassword), bcrypt.DefaultCost)
+	log.Printf("from pass: %s new hash %s\n", data.NewPassword, hash)
 	if err != nil {
 		return err
 	}

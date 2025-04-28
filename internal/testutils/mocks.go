@@ -4,9 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
-
-	"slices"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -653,74 +650,3 @@ func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handle
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
-type MockInputOutputRepository struct {
-	repository.InputOutputRepository
-	inputOutputs map[int64]*models.InputOutput
-	counter      int64
-}
-
-func (ir *MockInputOutputRepository) Create(_ *gorm.DB, inputOutput *models.InputOutput) error {
-	ir.inputOutputs[ir.counter] = inputOutput
-	ir.counter++
-	return nil
-}
-
-func (ir *MockInputOutputRepository) GetInputOutputID(_ *gorm.DB, _, _ int64) (int64, error) {
-	panic("implement me")
-}
-
-func (ir *MockInputOutputRepository) DeleteAll(_ *gorm.DB, taskID int64) error {
-	toDelete := make([]int64, 0)
-	for _, io := range ir.inputOutputs {
-		if io.TaskID == taskID {
-			toDelete = append(toDelete, io.ID)
-		}
-	}
-	for _, id := range toDelete {
-		delete(ir.inputOutputs, id)
-	}
-	return nil
-}
-
-func NewMockInputOutputRepository() repository.InputOutputRepository {
-	return &MockInputOutputRepository{counter: 1, inputOutputs: make(map[int64]*models.InputOutput)}
-}
-
-// type MockLanguageRepository struct {
-// 	langs   map[int64]*models.LanguageConfig
-// 	counter int64
-// }
-
-// func (lr *MockLanguageRepository) Get(tx *gorm.DB, id int64) (*models.LanguageConfig, error) {
-// 	if lang, ok := lr.langs[id]; ok {
-// 		return lang, nil
-// 	}
-// 	return nil, gorm.ErrRecordNotFound
-// }
-
-// func (lr *MockLanguageRepository) GetAll(tx *gorm.DB) ([]models.LanguageConfig, error) {
-// 	langs := make([]models.LanguageConfig, 0, len(lr.langs))
-// 	for _, lang := range lr.langs {
-// 		langs = append(langs, *lang)
-// 	}
-// 	return langs, nil
-// }
-
-// func (lr *MockLanguageRepository) Create(tx *gorm.DB, language *models.LanguageConfig) error {
-// 	lr.langs[lr.counter] = language
-// 	lr.counter++
-// 	return nil
-// }
-
-// func (lr *MockLanguageRepository) Delete(tx *gorm.DB, id int64) error {
-// 	if _, ok := lr.langs[id]; ok {
-// 		delete(lr.langs, id)
-// 		return nil
-// 	}
-// 	return gorm.ErrRecordNotFound
-// }
-
-// func NewMockLanguageRepository() repository.LanguageRepository {
-// 	return &MockLanguageRepository{}
-// }
