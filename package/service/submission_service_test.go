@@ -157,14 +157,14 @@ func TestCreateSubmissionResult(t *testing.T) {
 			expectedID:  int64(-1),
 			expectedErr: true,
 			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{"success":true,
-				"statuscode":1,
+				{
+				"status_code":1,
 				"message":"solution executed successfully",
-				"testresults":
+				"test_results":
 				[
-					{"passed":false,"errormessage":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
+					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
 					"order":1},
-					{"passed":true,"errormessage":"","order":2}]}
+					{"passed":true,"error_message":"","order":2}]}
 			`)},
 		},
 		{
@@ -184,14 +184,14 @@ func TestCreateSubmissionResult(t *testing.T) {
 			expectedID:  int64(-1),
 			expectedErr: true,
 			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{"success":true,
-				"statuscode":1,
+				{
+				"status_code":1,
 				"message":"solution executed successfully",
-				"testresults":
+				"test_results":
 				[
-					{"passed":false,"errormessage":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
+					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
 					"order":1},
-					{"passed":true,"errormessage":"","order":2}]}
+					{"passed":true,"error_message":"","order":2}]}
 			`)},
 		},
 		{
@@ -211,14 +211,14 @@ func TestCreateSubmissionResult(t *testing.T) {
 			expectedID:  submissionResultID,
 			expectedErr: false,
 			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{"success":true,
+				{
 				"statuscode":1,
 				"message":"solution executed successfully",
-				"testresults":
+				"test_results":
 				[
-					{"passed":false,"errormessage":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
+					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
 					"order":1},
-					{"passed":true,"errormessage":"","order":2}]}
+					{"passed":true,"error_message":"","order":2}]}
 			`)},
 		},
 	}

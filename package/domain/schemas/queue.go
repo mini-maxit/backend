@@ -9,18 +9,10 @@ type QueueResponseMessage struct {
 	Payload   json.RawMessage `json:"payload"`
 }
 
-type QueueResult struct {
-	Success     bool              `json:"Success"`
-	StatusCode  int64             `json:"StatusCode"`
-	Message     string            `json:"Message"`
-	TestResults []QueueTestResult `json:"TestResults"`
-}
-
 type TaskResponsePayload struct {
-	Success     bool              `json:"Success"`
-	StatusCode  int64             `json:"StatusCode"`
-	Message     string            `json:"Message"`
-	TestResults []QueueTestResult `json:"TestResults"`
+	StatusCode  int64             `json:"status_code"`
+	Message     string            `json:"message"`
+	TestResults []QueueTestResult `json:"test_results"`
 }
 
 type HandShakeResponsePayload struct {
@@ -37,7 +29,9 @@ type StatusResponsePayload struct {
 }
 
 type QueueTestResult struct {
-	Order        int    `json:"Order"`
-	Passed       bool   `json:"Passed"`
-	ErrorMessage string `json:"ErrorMessage"`
+	Passed        bool    `json:"passed"`
+	ExecutionTime float64 `json:"execution_time"`
+	StatusCode    int     `json:"status_code"`
+	ErrorMessage  string  `json:"error_message"`
+	Order         int     `json:"order"`
 }
