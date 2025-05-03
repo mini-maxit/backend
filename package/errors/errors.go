@@ -130,3 +130,6 @@ var ErrInvalidArchive = errors.New(`archive contains a single file, expected a s
 
 // ErrExpectedStruct is returned when the input parameter should be a struct.
 var ErrExpectedStruct = errors.New("input param should be a struct")
+
+// ErrTimeout is returned when the operation times out.
+var ErrTimeout = errors.New("timeout waiting for response")

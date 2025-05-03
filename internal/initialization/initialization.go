@@ -34,6 +34,7 @@ type Initialization struct {
 	SubmissionRoute routes.SubmissionRoutes
 	TaskRoute       routes.TaskRoute
 	UserRoute       routes.UserRoute
+	WorkerRoute     routes.WorkerRoute
 
 	QueueListener queue.Listener
 
@@ -223,6 +224,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		taskService,
 		userService,
 	)
+	workerService := service.NewWorkerService(queueService)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService)
@@ -231,6 +233,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
 	userRoute := routes.NewUserRoute(userService)
+	workerRoute := routes.NewWorkerRoute(workerService)
 
 	// Queue listener
 	queueListener, err := queue.NewListener(
@@ -270,6 +273,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SubmissionRoute: submissionRoute,
 		TaskRoute:       taskRoute,
 		UserRoute:       userRoute,
+		WorkerRoute:     workerRoute,
 
 		QueueListener: queueListener,
 	}
