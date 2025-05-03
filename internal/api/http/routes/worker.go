@@ -32,6 +32,10 @@ type workerRoute struct {
 // @Success      200 {object} httputils.APIResponse[schemas.WorkerStatus]
 // @Router       /worker/status [get]
 func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	status, err := wr.workserService.GetStatus(currentUser)
