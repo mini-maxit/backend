@@ -52,9 +52,8 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.CreateGroup
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&request); err != nil {
+	err := httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -75,8 +74,8 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	group := &schemas.Group{
 		Name:      request.Name,
 		CreatedBy: currentUser.ID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 
 	groupID, err := gr.groupService.Create(tx, currentUser, group)
