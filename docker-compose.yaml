@@ -35,3 +35,14 @@ services:
       - "8888:8888"
     image: maxit/file-storage
     pull_policy: never
+  worker:
+    image: maxit/worker
+    pull_policy: never
+    depends_on:
+      - backend
+      - file-storage
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest

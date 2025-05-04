@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,7 +28,10 @@ type QueueService interface {
 	// PublishWorkerStatus publishes a worker status message to the queue
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
-	UpdateWorkerStatus(tx *gorm.DB, statusResponse schemas.StatusResponsePayload) error
+	UpdateWorkerStatus(statusResponse schemas.StatusResponsePayload) error
+	StatusMux() *sync.Mutex
+	StatusCond() *sync.Cond
+	LastWorkerStatus() schemas.WorkerStatus
 }
 
 type queueService struct {
@@ -37,7 +41,12 @@ type queueService struct {
 	channel              *amqp.Channel
 	queue                amqp.Queue
 	responseQueueName    string
-	logger               *zap.SugaredLogger
+
+	statusMux        *sync.Mutex
+	statusCond       *sync.Cond
+	lastWorkerStatus schemas.WorkerStatus
+
+	logger *zap.SugaredLogger
 }
 
 func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
@@ -173,8 +182,33 @@ func (qs *queueService) PublishWorkerStatus() error {
 	return nil
 }
 
-func (qs *queueService) UpdateWorkerStatus(_ *gorm.DB, _ schemas.StatusResponsePayload) error {
-	panic("implement me")
+func (qs *queueService) UpdateWorkerStatus(recievedStatus schemas.StatusResponsePayload) error {
+	qs.statusMux.Lock()
+	defer qs.statusMux.Unlock()
+
+	lastStatus := schemas.WorkerStatus{
+		BusyWorkers:  recievedStatus.BusyWorkers,
+		TotalWorkers: recievedStatus.TotalWorkers,
+		WorkerStatus: recievedStatus.WorkerStatus,
+		StatusTime:   time.Now(),
+	}
+	qs.lastWorkerStatus = lastStatus // Update the last worker status
+
+	qs.statusCond.Broadcast() // Notify any waiting goroutines that the status has changed
+
+	return nil
+}
+
+func (qs *queueService) LastWorkerStatus() schemas.WorkerStatus {
+	return qs.lastWorkerStatus
+}
+
+func (qs *queueService) StatusCond() *sync.Cond {
+	return qs.statusCond
+}
+
+func (qs *queueService) StatusMux() *sync.Mutex {
+	return qs.statusMux
 }
 
 func NewQueueService(
@@ -201,13 +235,18 @@ func NewQueueService(
 		return nil, err
 	}
 	log := utils.NewNamedLogger("queue_service")
-	return &queueService{
+	s := &queueService{
 		taskRepository:       taskRepository,
 		submissionRepository: submissionRepository,
 		queueRepository:      queueMessageRepository,
 		queue:                q,
 		channel:              channel,
 		responseQueueName:    responseQueueName,
-		logger:               log,
-	}, nil
+
+		statusMux:        &sync.Mutex{},
+		lastWorkerStatus: schemas.WorkerStatus{},
+		logger:           log,
+	}
+	s.statusCond = sync.NewCond(s.statusMux)
+	return s, nil
 }

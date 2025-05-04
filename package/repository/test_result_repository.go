@@ -23,6 +23,11 @@ func NewTestResultRepository(db *gorm.DB) (TestRepository, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		err := db.Migrator().AutoMigrate(&models.TestResult{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &testResultRepository{}, nil
 }

@@ -47,6 +47,7 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
+		Preload("Result.TestResult").
 		Find(&submissions).Error
 	if err != nil {
 		return nil, err

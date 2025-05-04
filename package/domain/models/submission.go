@@ -43,6 +43,8 @@ type TestResult struct {
 	SubmissionResultID int64            `gorm:"not null"`
 	InputOutputID      int64            `gorm:"not null"`
 	Passed             bool             `gorm:"not null"`
+	ExecutionTime      float64          `gorm:"not null"`
+	StatusCode         int              `gorm:"not null"`
 	ErrorMessage       string           `gorm:"type:varchar"`
 	InputOutput        InputOutput      `gorm:"foreignKey:InputOutputID;references:ID"`
 	SubmissionResult   SubmissionResult `gorm:"foreignKey:SubmissionResultID;references:ID"`

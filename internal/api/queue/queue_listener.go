@@ -162,7 +162,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		}
 		return
 	}
-	ql.logger.Infof("Received message: %s", queueMessage.MessageID)
+	ql.logger.Infof("Received message: %s of type %s", queueMessage.MessageID, queueMessage.Type)
 
 	session := ql.database.NewSession()
 	tx, err := session.BeginTransaction()
@@ -187,6 +187,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			}
 			return
 		}
+		ql.logger.Infof("Received task message for submission %d", submissionID)
 		taskResponse := schemas.TaskResponsePayload{}
 		err = json.Unmarshal(queueMessage.Payload, &taskResponse)
 		if err != nil {
@@ -198,6 +199,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			}
 			return
 		}
+		ql.logger.Infof("Received task response for submission %d with status code %d", submissionID, taskResponse.StatusCode)
 		if taskResponse.StatusCode == InternalError {
 			err = ql.submissionService.MarkFailed(tx, submissionID, taskResponse.Message)
 			if err != nil {
@@ -207,6 +209,8 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 					ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
 				}
 			}
+			tx.Commit()
+			ql.logger.Infof("Submission %d marked as failed because %s", submissionID, taskResponse.Message)
 			return
 		}
 
@@ -220,6 +224,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			}
 			return
 		}
+		ql.logger.Infof("Submission %d marked as complete", submissionID)
 		_, err = ql.submissionService.CreateSubmissionResult(tx, submissionID, queueMessage)
 		if err != nil {
 			ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
@@ -230,6 +235,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			}
 			return
 		}
+		ql.logger.Infof("Submission %d result created", submissionID)
 		tx.Commit()
 		ql.logger.Infof("Succesfuly processed message: %s", queueMessage.MessageID)
 	case MessageTypeHandshake:
@@ -275,7 +281,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 			return
 		}
 
-		err := ql.queueService.UpdateWorkerStatus(tx, statusResponse)
+		err := ql.queueService.UpdateWorkerStatus(statusResponse)
 		if err != nil {
 			ql.logger.Errorf("Failed to update worker status: %s", err.Error())
 			tx.Rollback()
