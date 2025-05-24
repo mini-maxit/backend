@@ -21,7 +21,10 @@ services:
     environment:
       - DB_HOST=db
       - QUEUE_HOST=rabbitmq
+<<<<<<< HEAD
       - FILE_STORAGE_HOST=file-storage
+=======
+>>>>>>> 94bacc0 (Refactor code structure for improved readability and maintainability)
   db:
     image: postgres:17
     ports:
