@@ -14,7 +14,6 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -25,12 +24,11 @@ type Initialization struct {
 	Cfg *config.Config
 	DB  database.Database
 
-	TaskService    service.TaskService
-	SessionService service.SessionService
+	TaskService service.TaskService
+	JWTService  service.JWTService
 
 	AuthRoute       routes.AuthRoute
 	GroupRoute      routes.GroupRoute
-	SessionRoute    routes.SessionRoute
 	SubmissionRoute routes.SubmissionRoutes
 	TaskRoute       routes.TaskRoute
 	UserRoute       routes.UserRoute
@@ -66,62 +64,6 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 	}
 
 	return conn, channel
-}
-
-func dump(tx *gorm.DB, authService service.AuthService, userService service.UserService) {
-	log := utils.NewNamedLogger("dumper")
-	fakeUser := schemas.User{
-		Name:     "FakeName",
-		Surname:  "FakeSurname",
-		Email:    "asd@asdf.com",
-		Username: "fake",
-		Role:     types.UserRoleAdmin,
-	}
-	session, err := authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "AdminName",
-		Surname:  "AdminSurname",
-		Email:    "admin@admin.com",
-		Username: "admin",
-		Password: "adminadmin",
-	})
-	if err != nil {
-		log.Warnf("Failed to create admin: %s", err.Error())
-	} else {
-		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleAdmin)
-		if err != nil {
-			log.Warnf("Failed to change admin role: %s", err.Error())
-		}
-	}
-	session, err = authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "TeacherName",
-		Surname:  "TeacherSurname",
-		Email:    "teacher@teacher.com",
-		Username: "teacher",
-		Password: "teacherteacher",
-	})
-	if err != nil {
-		log.Warnf("Failed to create teacher: %s", err.Error())
-	} else {
-		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleTeacher)
-		if err != nil {
-			log.Warnf("Failed to change teacher role: %s", err.Error())
-		}
-	}
-	session, err = authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "StudentName",
-		Surname:  "StudentSurname",
-		Email:    "student@student.com",
-		Username: "student",
-		Password: "studentstudent",
-	})
-	if err != nil {
-		log.Warnf("Failed to create student: %s", err.Error())
-	} else {
-		err = userService.ChangeRole(tx, fakeUser, session.UserID, types.UserRoleStudent)
-		if err != nil {
-			log.Warnf("Failed to change student role: %s", err.Error())
-		}
-	}
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
@@ -173,10 +115,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create queue repository: %s", err.Error())
 	}
-	sessionRepository, err := repository.NewSessionRepository(tx)
-	if err != nil {
-		log.Panicf("Failed to create session repository: %s", err.Error())
-	}
 	submissionResultRepository, err := repository.NewSubmissionResultRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
@@ -209,8 +147,8 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to publish handshake: %s", err.Error())
 	}
-	sessionService := service.NewSessionService(sessionRepository, userRepository)
-	authService := service.NewAuthService(userRepository, sessionService)
+	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
+	authService := service.NewAuthService(userRepository, jwtService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
@@ -229,7 +167,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService)
 	groupRoute := routes.NewGroupRoute(groupService)
-	sessionRoute := routes.NewSessionRoute(sessionService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
 	userRoute := routes.NewUserRoute(userService)
@@ -254,7 +191,74 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		if err != nil {
 			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 		}
-		dump(tx, authService, userService)
+		fakeUser := schemas.User{
+			Name:     "FakeName",
+			Surname:  "FakeSurname",
+			Email:    "asd@asdf.com",
+			Username: "fake",
+			Role:     types.UserRoleAdmin,
+		}
+		tokens, err := authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "AdminName",
+			Surname:  "AdminSurname",
+			Email:    "admin@admin.com",
+			Username: "admin",
+			Password: "adminadmin",
+		})
+		if err != nil {
+			log.Warnf("Failed to create admin: %s", err.Error())
+		} else {
+			// Extract user ID from JWT claims for role change
+			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
+			if err != nil {
+				log.Warnf("Failed to validate admin token: %s", err.Error())
+			} else {
+				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleAdmin)
+				if err != nil {
+					log.Warnf("Failed to change admin role: %s", err.Error())
+				}
+			}
+		}
+		tokens, err = authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "TeacherName",
+			Surname:  "TeacherSurname",
+			Email:    "teacher@teacher.com",
+			Username: "teacher",
+			Password: "teacherteacher",
+		})
+		if err != nil {
+			log.Warnf("Failed to create teacher: %s", err.Error())
+		} else {
+			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
+			if err != nil {
+				log.Warnf("Failed to validate teacher token: %s", err.Error())
+			} else {
+				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleTeacher)
+				if err != nil {
+					log.Warnf("Failed to change teacher role: %s", err.Error())
+				}
+			}
+		}
+		tokens, err = authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     "StudentName",
+			Surname:  "StudentSurname",
+			Email:    "student@student.com",
+			Username: "student",
+			Password: "studentstudent",
+		})
+		if err != nil {
+			log.Warnf("Failed to create student: %s", err.Error())
+		} else {
+			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
+			if err != nil {
+				log.Warnf("Failed to validate student token: %s", err.Error())
+			} else {
+				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleStudent)
+				if err != nil {
+					log.Warnf("Failed to change student role: %s", err.Error())
+				}
+			}
+		}
 		err = db.Commit()
 		if err != nil {
 			log.Warnf("Failed to commit transaction after dump: %s", err.Error())
@@ -264,12 +268,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		Cfg: cfg,
 		DB:  db,
 
-		TaskService:    taskService,
-		SessionService: sessionService,
+		TaskService: taskService,
+		JWTService:  jwtService,
 
 		AuthRoute:       authRoute,
 		GroupRoute:      groupRoute,
-		SessionRoute:    sessionRoute,
 		SubmissionRoute: submissionRoute,
 		TaskRoute:       taskRoute,
 		UserRoute:       userRoute,

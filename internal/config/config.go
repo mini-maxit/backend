@@ -13,6 +13,7 @@ type Config struct {
 	DB             DBConfig
 	API            APIConfig
 	Broker         BrokerConfig
+	JWTSecretKey   string
 	Dump           bool
 }
 
@@ -79,8 +80,9 @@ const (
 //
 //   - QUEUE_PASSWORD - broker password. Required
 //
-//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,cpp:11,cpp:14".
-//     Default will exapnd to [DefaultLanguages]
+//   - JWT_SECRET_KEY - secret key for JWT token signing. Required
+//
+//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will exapnd to [DefaultLanguages]
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
@@ -154,6 +156,11 @@ func NewConfig() *Config {
 		log.Panic("QUEUE_PASSWORD is not set")
 	}
 
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		log.Panic("JWT_SECRET_KEY is not set")
+	}
+
 	dumpStr := os.Getenv("DUMP")
 	dump := dumpStr == "true"
 
@@ -177,6 +184,7 @@ func NewConfig() *Config {
 			Password:          queuePassword,
 		},
 		FileStorageURL: fileStorageURL,
+		JWTSecretKey:   jwtSecretKey,
 		Dump:           dump,
 	}
 }

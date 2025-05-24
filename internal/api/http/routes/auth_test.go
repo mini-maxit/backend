@@ -447,3 +447,70 @@ func TestRegister(t *testing.T) {
 		assert.IsType(t, schemas.Session{}, response.Data)
 	})
 }
+
+func TestRefreshToken(t *testing.T) {
+	// Setup
+	us := testutils.NewMockUserService()
+	as := testutils.NewMockAuthService()
+	route := NewAuthRoute(us, as)
+	db := &testutils.MockDatabase{}
+	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	t.Run("Accept only post", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			assert.HTTPStatusCode(t, route.RefreshToken, method, "", nil, http.StatusMethodNotAllowed)
+		}
+	})
+
+	t.Run("Invalid request body", func(t *testing.T) {
+		body := struct {
+			InvalidField string `json:"invalid_field"`
+		}{
+			InvalidField: "invalid",
+		}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := schemas.RefreshTokenRequest{
+			RefreshToken: "valid_refresh_token",
+		}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		response := &httputils.ApiResponse[schemas.JWTTokens]{}
+		json.Unmarshal(bodyBytes, response)
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.NotEmpty(t, response.Data.AccessToken)
+		assert.NotEmpty(t, response.Data.RefreshToken)
+		assert.Equal(t, "Bearer", response.Data.TokenType)
+	})
+}
