@@ -18,6 +18,9 @@ services:
       - db
     env_file:
       - .env
+    environment:
+      - DB_HOST=db
+      - QUEUE_HOST=rabbitmq
   db:
     image: postgres:17
     ports:

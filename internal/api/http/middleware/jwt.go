@@ -2,11 +2,13 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
@@ -40,15 +42,16 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 		tokenResponse, err := jwtService.ValidateToken(tx, token)
 		if err != nil {
 			tx.Rollback()
-			if err == service.ErrInvalidToken {
+
+			if errors.Is(err, myerrors.ErrInvalidToken) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Invalid token")
 				return
 			}
-			if err == service.ErrTokenExpired {
+			if errors.Is(err, myerrors.ErrTokenExpired) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Token expired")
 				return
 			}
-			if err == service.ErrTokenUserNotFound {
+			if errors.Is(err, myerrors.ErrTokenUserNotFound) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "User associated with token not found")
 				return
 			}

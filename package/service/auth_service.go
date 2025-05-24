@@ -70,7 +70,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 // Register implements Register method of [AuthService] interface.
 func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
 	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
 	}
@@ -111,7 +111,10 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 }
 
 // RefreshTokens implements RefreshTokens method of [AuthService] interface
-func (as *authService) RefreshTokens(tx *gorm.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error) {
+func (as *authService) RefreshTokens(
+	tx *gorm.DB,
+	refreshRequest schemas.RefreshTokenRequest,
+) (*schemas.JWTTokens, error) {
 	tokens, err := as.jwtService.RefreshTokens(tx, refreshRequest.RefreshToken)
 	if err != nil {
 		as.logger.Errorf("Error refreshing JWT tokens: %v", err.Error())

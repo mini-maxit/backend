@@ -1,24 +1,21 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-var (
-	ErrInvalidToken      = fmt.Errorf("invalid token")
-	ErrTokenExpired      = fmt.Errorf("token expired")
-	ErrTokenUserNotFound = fmt.Errorf("token user not found")
-	ErrInvalidTokenType  = fmt.Errorf("invalid token type")
-)
+var ()
 
 const (
 	AccessTokenDuration  = time.Hour * 1      // 1 hour
@@ -81,22 +78,22 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 
 	if err != nil {
 		j.logger.Errorf("Error parsing token: %v", err)
-		return nil, ErrInvalidToken
+		return nil, myerrors.ErrInvalidToken
 	}
 
 	if !token.Valid {
-		return nil, ErrInvalidToken
+		return nil, myerrors.ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, ErrInvalidToken
+		return nil, myerrors.ErrInvalidToken
 	}
 
 	// Check expiration
 	if exp, ok := claims["exp"].(float64); ok {
 		if time.Now().Unix() > int64(exp) {
-			return nil, ErrTokenExpired
+			return nil, myerrors.ErrTokenExpired
 		}
 	}
 
@@ -115,8 +112,8 @@ func (j *jwtService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTToke
 	user, err := j.userRepository.Get(tx, userId)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
-		if err == gorm.ErrRecordNotFound {
-			return nil, ErrTokenUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrTokenUserNotFound
 		}
 		return nil, err
 	}
@@ -172,7 +169,7 @@ func (j *jwtService) ValidateAccessToken(tokenString string) (*schemas.JWTClaims
 	}
 
 	if claims.Type != TokenTypeAccess {
-		return nil, ErrInvalidTokenType
+		return nil, myerrors.ErrInvalidTokenType
 	}
 
 	return claims, nil
@@ -186,7 +183,7 @@ func (j *jwtService) ValidateRefreshToken(tokenString string) (*schemas.JWTClaim
 	}
 
 	if claims.Type != TokenTypeRefresh {
-		return nil, ErrInvalidTokenType
+		return nil, myerrors.ErrInvalidTokenType
 	}
 
 	return claims, nil
@@ -214,8 +211,8 @@ func (j *jwtService) ValidateToken(tx *gorm.DB, tokenString string) (schemas.Val
 	user, err := j.userRepository.Get(tx, claims.UserID)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
-		if err == gorm.ErrRecordNotFound {
-			return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, ErrTokenUserNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrTokenUserNotFound
 		}
 		return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}

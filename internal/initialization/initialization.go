@@ -10,10 +10,10 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -187,82 +187,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
 	if cfg.Dump {
-		tx, err := db.BeginTransaction()
-		if err != nil {
-			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
-		}
-		fakeUser := schemas.User{
-			Name:     "FakeName",
-			Surname:  "FakeSurname",
-			Email:    "asd@asdf.com",
-			Username: "fake",
-			Role:     types.UserRoleAdmin,
-		}
-		tokens, err := authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "AdminName",
-			Surname:  "AdminSurname",
-			Email:    "admin@admin.com",
-			Username: "admin",
-			Password: "adminadmin",
-		})
-		if err != nil {
-			log.Warnf("Failed to create admin: %s", err.Error())
-		} else {
-			// Extract user ID from JWT claims for role change
-			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
-			if err != nil {
-				log.Warnf("Failed to validate admin token: %s", err.Error())
-			} else {
-				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleAdmin)
-				if err != nil {
-					log.Warnf("Failed to change admin role: %s", err.Error())
-				}
-			}
-		}
-		tokens, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "TeacherName",
-			Surname:  "TeacherSurname",
-			Email:    "teacher@teacher.com",
-			Username: "teacher",
-			Password: "teacherteacher",
-		})
-		if err != nil {
-			log.Warnf("Failed to create teacher: %s", err.Error())
-		} else {
-			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
-			if err != nil {
-				log.Warnf("Failed to validate teacher token: %s", err.Error())
-			} else {
-				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleTeacher)
-				if err != nil {
-					log.Warnf("Failed to change teacher role: %s", err.Error())
-				}
-			}
-		}
-		tokens, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "StudentName",
-			Surname:  "StudentSurname",
-			Email:    "student@student.com",
-			Username: "student",
-			Password: "studentstudent",
-		})
-		if err != nil {
-			log.Warnf("Failed to create student: %s", err.Error())
-		} else {
-			claims, err := jwtService.ValidateAccessToken(tokens.AccessToken)
-			if err != nil {
-				log.Warnf("Failed to validate student token: %s", err.Error())
-			} else {
-				err = userService.ChangeRole(tx, fakeUser, claims.UserID, types.UserRoleStudent)
-				if err != nil {
-					log.Warnf("Failed to change student role: %s", err.Error())
-				}
-			}
-		}
-		err = db.Commit()
-		if err != nil {
-			log.Warnf("Failed to commit transaction after dump: %s", err.Error())
-		}
+		dump(db, log, authService)
 	}
 	return &Initialization{
 		Cfg: cfg,
@@ -279,5 +204,48 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		WorkerRoute:     workerRoute,
 
 		QueueListener: queueListener,
+	}
+}
+
+func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.AuthService) {
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		log.Warnf("Failed to connect to database to init dump: %s", err.Error())
+	}
+
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "AdminName",
+		Surname:  "AdminSurname",
+		Email:    "admin@admin.com",
+		Username: "admin",
+		Password: "adminadmin",
+	})
+	if err != nil {
+		log.Warnf("Failed to create admin: %s", err.Error())
+	}
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "TeacherName",
+		Surname:  "TeacherSurname",
+		Email:    "teacher@teacher.com",
+		Username: "teacher",
+		Password: "teacherteacher",
+	})
+	if err != nil {
+		log.Warnf("Failed to create teacher: %s", err.Error())
+	}
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "StudentName",
+		Surname:  "StudentSurname",
+		Email:    "student@student.com",
+		Username: "student",
+		Password: "studentstudent",
+	})
+	if err != nil {
+		log.Warnf("Failed to create student: %s", err.Error())
+	}
+
+	err = db.Commit()
+	if err != nil {
+		log.Warnf("Failed to commit transaction after dump: %s", err.Error())
 	}
 }

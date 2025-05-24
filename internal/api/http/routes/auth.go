@@ -108,17 +108,14 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens, err := ar.authService.Register(tx, request)
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		break
-	case myerrors.ErrUserAlreadyExists:
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrUserAlreadyExists):
-			httputils.ReturnError(w, http.StatusConflict, err.Error())
-		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
-		}
+	case errors.Is(err, myerrors.ErrUserAlreadyExists):
+		httputils.ReturnError(w, http.StatusConflict, err.Error())
+		return
+	default:
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
 		return
 	}
 
@@ -162,7 +159,9 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	tokens, err := ar.authService.RefreshTokens(tx, request)
 	if err != nil {
 		db.Rollback()
-		if err == service.ErrInvalidToken || err == service.ErrTokenExpired || err == service.ErrInvalidTokenType {
+		if errors.Is(err, myerrors.ErrInvalidToken) ||
+			errors.Is(err, myerrors.ErrTokenExpired) ||
+			errors.Is(err, myerrors.ErrInvalidTokenType) {
 			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
 			return
 		}

@@ -82,7 +82,8 @@ const (
 //
 //   - JWT_SECRET_KEY - secret key for JWT token signing. Required
 //
-//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will exapnd to [DefaultLanguages]
+//   - LANGUAGES - comma-separated list of languages with their version,
+//     e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will expand to [DefaultLanguages]
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
