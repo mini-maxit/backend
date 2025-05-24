@@ -76,6 +76,9 @@ func (gs *groupService) Delete(tx *gorm.DB, currentUser schemas.User, groupID in
 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrGroupNotFound
+		}
 		return err
 	}
 
@@ -196,6 +199,9 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrGroupNotFound
+		}
 		return err
 	}
 
@@ -233,7 +239,10 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
-		return myerrors.ErrNotFound
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrGroupNotFound
+		}
+		return err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
@@ -270,6 +279,9 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrGroupNotFound
+		}
 		return nil, err
 	}
 
@@ -293,6 +305,9 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 func (gs *groupService) GetTasks(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrGroupNotFound
+		}
 		return nil, err
 	}
 

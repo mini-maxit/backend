@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -51,9 +52,13 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.CreateGroup
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+	if request.Name == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. Group name cannot be empty")
 		return
 	}
 
@@ -69,7 +74,10 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	group := &schemas.Group{
 		Name:      request.Name,
 		CreatedBy: currentUser.ID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
+
 	groupID, err := gr.groupService.Create(tx, currentUser, group)
 	if err != nil {
 		db.Rollback()
@@ -127,10 +135,12 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
 		}
-		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to get group. "+err.Error())
 		return
 	}
 
@@ -300,6 +310,8 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
 		return
@@ -367,6 +379,8 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 			status = http.StatusBadRequest
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
+		case errors.Is(err, myerrors.ErrGroupNotFound):
+			status = http.StatusNotFound
 		default:
 			status = http.StatusInternalServerError
 		}
@@ -422,6 +436,8 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to get group users. "+err.Error())
 		return
@@ -463,6 +479,8 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Failed to get group tasks. "+err.Error())
 		return
