@@ -71,12 +71,6 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.Commit()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
-		return
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, tokens)
 }
 
@@ -128,12 +122,6 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.Commit()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
-		return
-	}
-
 	httputils.ReturnSuccess(w, http.StatusCreated, tokens)
 }
 
@@ -179,12 +167,6 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to refresh tokens. "+err.Error())
-		return
-	}
-
-	err = db.Commit()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())
 		return
 	}
 

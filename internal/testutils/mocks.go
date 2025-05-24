@@ -2,10 +2,8 @@ package testutils
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -103,65 +101,6 @@ func NewMockUserRepository() *MockUserRepository {
 	return &MockUserRepository{
 		users:   make(map[string]*models.User),
 		counter: 0,
-	}
-}
-
-type MockSessionRepository struct {
-	repository.SessionRepository
-	sessions map[string]*models.Session
-	failNext bool
-}
-
-func (sr *MockSessionRepository) FailNext() {
-	sr.failNext = true
-}
-
-func (sr *MockSessionRepository) Create(_ *gorm.DB, session *models.Session) error {
-	sr.sessions[session.ID] = session
-	return nil
-}
-
-func (sr *MockSessionRepository) Get(_ *gorm.DB, sessionID string) (*models.Session, error) {
-	if sr.failNext {
-		sr.failNext = false
-		return nil, gorm.ErrInvalidDB
-	}
-	if session, ok := sr.sessions[sessionID]; ok {
-		return session, nil
-	}
-	return nil, gorm.ErrRecordNotFound
-}
-
-func (sr *MockSessionRepository) GetByUserID(_ *gorm.DB, userID int64) (*models.Session, error) {
-	if sr.failNext {
-		log.Printf("Failing getsession by user id")
-		sr.failNext = false
-		return nil, gorm.ErrInvalidDB
-	}
-	for _, session := range sr.sessions {
-		if session.UserID == userID {
-			return session, nil
-		}
-	}
-	return nil, gorm.ErrRecordNotFound
-}
-
-func (sr *MockSessionRepository) UpdateExpiration(_ *gorm.DB, sessionID string, expiresAt time.Time) error {
-	if session, ok := sr.sessions[sessionID]; ok {
-		session.ExpiresAt = expiresAt
-		return nil
-	}
-	return gorm.ErrRecordNotFound
-}
-
-func (sr *MockSessionRepository) Delete(_ *gorm.DB, sessionID string) error {
-	delete(sr.sessions, sessionID)
-	return nil
-}
-
-func NewMockSessionRepository() *MockSessionRepository {
-	return &MockSessionRepository{
-		sessions: make(map[string]*models.Session),
 	}
 }
 

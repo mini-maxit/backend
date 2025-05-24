@@ -22,8 +22,6 @@ type ContextKey string
 const (
 	// TokenKey is the key used to store the JWT token in the context.
 	TokenKey ContextKey = "token"
-	// SessionKey is the key used to store the session in the context (deprecated, use TokenKey).
-	SessionKey ContextKey = "session"
 	// UserIDKey is the key used to store the user ID in the context.
 	UserIDKey ContextKey = "userID"
 	// UserKey is the key used to store the user in the context.

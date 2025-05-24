@@ -485,61 +485,6 @@ type MockSessionServiceMockRecorder struct {
 	mock *MockSessionService
 }
 
-// NewMockSessionService creates a new mock instance.
-func NewMockSessionService(ctrl *gomock.Controller) *MockSessionService {
-	mock := &MockSessionService{ctrl: ctrl}
-	mock.recorder = &MockSessionServiceMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSessionService) EXPECT() *MockSessionServiceMockRecorder {
-	return m.recorder
-}
-
-// Create mocks base method.
-func (m *MockSessionService) Create(arg0 *gorm.DB, arg1 int64) (*schemas.Session, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
-	ret0, _ := ret[0].(*schemas.Session)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Create indicates an expected call of Create.
-func (mr *MockSessionServiceMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSessionService)(nil).Create), arg0, arg1)
-}
-
-// Invalidate mocks base method.
-func (m *MockSessionService) Invalidate(arg0 *gorm.DB, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Invalidate", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Invalidate indicates an expected call of Invalidate.
-func (mr *MockSessionServiceMockRecorder) Invalidate(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invalidate", reflect.TypeOf((*MockSessionService)(nil).Invalidate), arg0, arg1)
-}
-
-// Validate mocks base method.
-func (m *MockSessionService) Validate(arg0 *gorm.DB, arg1 string) (schemas.ValidateSessionResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Validate", arg0, arg1)
-	ret0, _ := ret[0].(schemas.ValidateSessionResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Validate indicates an expected call of Validate.
-func (mr *MockSessionServiceMockRecorder) Validate(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockSessionService)(nil).Validate), arg0, arg1)
-}
 
 // MockAuthService is a mock of AuthService interface.
 type MockAuthService struct {
