@@ -71,7 +71,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 // Register implements Register method of [AuthService] interface.
 func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
 	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
 	}
