@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -215,7 +214,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var request schemas.EditGroup
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return

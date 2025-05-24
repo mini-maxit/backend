@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -542,10 +541,9 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := usersRequest{}
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 
@@ -604,10 +602,9 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 	}
 
 	request := groupsRequest{}
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 
@@ -666,10 +663,9 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 	}
 
 	request := usersRequest{}
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user IDs.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 
@@ -728,10 +724,9 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 	}
 
 	request := groupsRequest{}
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group IDs.")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
 

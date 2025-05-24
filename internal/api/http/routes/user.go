@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -201,7 +200,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
@@ -269,7 +268,7 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request := &schemas.UserChangePassword{}
-	err = json.NewDecoder(r.Body).Decode(request)
+	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
