@@ -39,7 +39,7 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 			return
 		}
 
-		tokenResponse, err := jwtService.ValidateToken(tx, token)
+		tokenResponse, err := jwtService.AuthenticateToken(tx, token)
 		if err != nil {
 			tx.Rollback()
 

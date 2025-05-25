@@ -30,7 +30,7 @@ type JWTService interface {
 	ValidateAccessToken(tokenString string) (*schemas.JWTClaims, error)
 	ValidateRefreshToken(tokenString string) (*schemas.JWTClaims, error)
 	RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error)
-	ValidateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error)
+	AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error)
 }
 
 type jwtService struct {
@@ -200,8 +200,8 @@ func (j *jwtService) RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.J
 	return j.GenerateTokens(tx, claims.UserID)
 }
 
-// ValidateToken validates a token and returns user information
-func (j *jwtService) ValidateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
+// AuthenticateToken validates a token and returns user information
+func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
 	claims, err := j.ValidateAccessToken(tokenString)
 	if err != nil {
 		j.logger.Errorf("Error validating access token: %v", err)

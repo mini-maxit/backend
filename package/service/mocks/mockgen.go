@@ -506,6 +506,21 @@ func (m *MockJWTService) EXPECT() *MockJWTServiceMockRecorder {
 	return m.recorder
 }
 
+// AuthenticateToken mocks base method.
+func (m *MockJWTService) AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AuthenticateToken", tx, tokenString)
+	ret0, _ := ret[0].(schemas.ValidateTokenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AuthenticateToken indicates an expected call of AuthenticateToken.
+func (mr *MockJWTServiceMockRecorder) AuthenticateToken(tx, tokenString any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticateToken", reflect.TypeOf((*MockJWTService)(nil).AuthenticateToken), tx, tokenString)
+}
+
 // GenerateTokens mocks base method.
 func (m *MockJWTService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
@@ -564,21 +579,6 @@ func (m *MockJWTService) ValidateRefreshToken(tokenString string) (*schemas.JWTC
 func (mr *MockJWTServiceMockRecorder) ValidateRefreshToken(tokenString any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateRefreshToken", reflect.TypeOf((*MockJWTService)(nil).ValidateRefreshToken), tokenString)
-}
-
-// ValidateToken mocks base method.
-func (m *MockJWTService) ValidateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateToken", tx, tokenString)
-	ret0, _ := ret[0].(schemas.ValidateTokenResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidateToken indicates an expected call of ValidateToken.
-func (mr *MockJWTServiceMockRecorder) ValidateToken(tx, tokenString any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateToken", reflect.TypeOf((*MockJWTService)(nil).ValidateToken), tx, tokenString)
 }
 
 // MockAuthService is a mock of AuthService interface.
