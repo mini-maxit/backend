@@ -142,7 +142,11 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	email := queryParams["email"].(string)
+	emailQuery, ok := queryParams["email"]
+	email := ""
+	if ok {
+		email = emailQuery.(string)
+	}
 	if email == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Email query cannot be empty")
 		return
