@@ -112,9 +112,11 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		break
 	case errors.Is(err, myerrors.ErrUserAlreadyExists):
+		db.Rollback()
 		httputils.ReturnError(w, http.StatusConflict, err.Error())
 		return
 	default:
+		db.Rollback()
 		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
 		return
 	}
