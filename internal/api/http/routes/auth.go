@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -17,6 +18,7 @@ type AuthRoute interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
 	RefreshToken(w http.ResponseWriter, r *http.Request)
+	Validate(w http.ResponseWriter, r *http.Request)
 }
 
 type AuthRouteImpl struct {
@@ -172,6 +174,57 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, tokens)
+}
+
+func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	tokenHeader := r.Header.Get("Authorization")
+	if tokenHeader == "" {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Authorization header is required")
+		return
+	}
+	if !strings.HasPrefix(tokenHeader, "Bearer ") {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid authorization header format. Expected 'Bearer <token>'")
+		return
+	}
+
+	token := strings.TrimPrefix(tokenHeader, "Bearer ")
+	if token == "" {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Token is empty")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	response, err := ar.authService.AuthenticateToken(tx, token)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrInvalidToken) ||
+			errors.Is(err, myerrors.ErrTokenExpired) ||
+			errors.Is(err, myerrors.ErrInvalidTokenType) {
+			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired access token")
+			return
+		}
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate token. "+err.Error())
+		return
+	}
+
+	if !response.Valid {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid access token")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService) AuthRoute {

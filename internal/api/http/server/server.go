@@ -62,6 +62,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	authMux.HandleFunc("/login", init.AuthRoute.Login)
 	authMux.HandleFunc("/register", init.AuthRoute.Register)
 	authMux.HandleFunc("/refresh", init.AuthRoute.RefreshToken)
+	authMux.HandleFunc("/validate", init.AuthRoute.Validate)
 
 	// Task routes
 	taskMux := http.NewServeMux()

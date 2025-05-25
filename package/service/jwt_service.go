@@ -28,7 +28,7 @@ const (
 type JWTService interface {
 	GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTTokens, error)
 	RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error)
-	AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error)
+	AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error)
 }
 
 type jwtService struct {
@@ -165,6 +165,7 @@ func (j *jwtService) validateAccessToken(tokenString string) (*schemas.JWTClaims
 	if err != nil {
 		return nil, err
 	}
+	j.logger.Debugf("Parsed claims: %+v", claims)
 
 	if claims.Type != TokenTypeAccess {
 		return nil, myerrors.ErrInvalidTokenType
@@ -199,20 +200,20 @@ func (j *jwtService) RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.J
 }
 
 // AuthenticateToken validates a token and returns user information
-func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
+func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error) {
 	claims, err := j.validateAccessToken(tokenString)
 	if err != nil {
 		j.logger.Errorf("Error validating access token: %v", err)
-		return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
+		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}
 
 	user, err := j.userRepository.Get(tx, claims.UserID)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrTokenUserNotFound
+			return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrTokenUserNotFound
 		}
-		return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
+		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}
 
 	currentUser := schemas.User{
@@ -224,5 +225,5 @@ func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (schemas
 		Surname:  user.Surname,
 	}
 
-	return schemas.ValidateTokenResponse{Valid: true, User: currentUser}, nil
+	return &schemas.ValidateTokenResponse{Valid: true, User: currentUser}, nil
 }
