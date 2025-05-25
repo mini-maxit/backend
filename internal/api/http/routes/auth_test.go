@@ -321,7 +321,7 @@ func TestRegister(t *testing.T) {
 				Username        string `json:"username"`
 				Email           string `json:"email"`
 				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirm_password"`
+				ConfirmPassword string `json:"confirmPassword"`
 				Invalid         string `json:"invalid"`
 			}{
 				Name:            "name",
@@ -338,7 +338,7 @@ func TestRegister(t *testing.T) {
 				Username        string `json:"username"`
 				Email           string `json:"email"`
 				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirm_password"`
+				ConfirmPassword string `json:"confirmPassword"`
 			}{
 				Name:            "name",
 				Surname:         "surname",

@@ -4,25 +4,25 @@ import "time"
 
 // JWTTokens represents the response containing access and refresh tokens
 type JWTTokens struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	TokenType    string    `json:"token_type"`
+	AccessToken  string    `json:"accessToken"`
+	RefreshToken string    `json:"refreshToken"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	TokenType    string    `json:"tokenType"`
 }
 
 // JWTClaims represents the claims stored in JWT tokens
 type JWTClaims struct {
-	UserID   int64  `json:"user_id"`
+	UserID   int64  `json:"userId"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
-	TokenID  string `json:"token_id"`
+	TokenID  string `json:"tokenId"`
 	Type     string `json:"type"` // "access" or "refresh"
 }
 
 // RefreshTokenRequest represents the request to refresh tokens
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
 
 // ValidateTokenResponse represents the response from token validation
