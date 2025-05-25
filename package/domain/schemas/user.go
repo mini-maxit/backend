@@ -28,7 +28,7 @@ type UserIDs struct {
 
 // UserChangePassword represents the user change password request.
 type UserChangePassword struct {
-	OldPassword        string `json:"old_password"`
-	NewPassword        string `json:"new_password" validate:"required,password,gte=8,lte=50"`
-	NewPasswordConfirm string `json:"new_password_confirm" validate:"required,eqfield=NewPassword,gte=8,lte=50"`
+	OldPassword        string `json:"oldPassword"`
+	NewPassword        string `json:"newPassword" validate:"required,password,gte=8,lte=50"`
+	NewPasswordConfirm string `json:"newPasswordConfirm" validate:"required,eqfield=NewPassword,gte=8,lte=50"`
 }

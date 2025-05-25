@@ -1,7 +1,9 @@
 // Package errors contains the error variables used in the application.
 package errors
 
-import "errors"
+import (
+	"errors"
+)
 
 // ErrDatabaseConnection is returned when the database connection fails.
 var ErrDatabaseConnection = errors.New("failed to connect to the database")
@@ -133,3 +135,15 @@ var ErrExpectedStruct = errors.New("input param should be a struct")
 
 // ErrTimeout is returned when the operation times out.
 var ErrTimeout = errors.New("timeout waiting for response")
+
+// ErrInvalidToken is returned when the token is invalid.
+var ErrInvalidToken = errors.New("invalid token")
+
+// ErrInvalidTokenType is returned when the token type is invalid.
+var ErrTokenExpired = errors.New("token expired")
+
+// ErrTokenUserNotFound is returned when the user associated with the token is not found.
+var ErrTokenUserNotFound = errors.New("token user not found")
+
+// ErrInvalidTokenType is returned when the token type is invalid.
+var ErrInvalidTokenType = errors.New("invalid token type")

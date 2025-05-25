@@ -4,14 +4,14 @@ import "time"
 
 type Submission struct {
 	ID            int64             `json:"id"`
-	TaskID        int64             `json:"task_id"`
-	UserID        int64             `json:"user_id"`
+	TaskID        int64             `json:"taskId"`
+	UserID        int64             `json:"userId"`
 	Order         int64             `json:"order"`
-	LanguageID    int64             `json:"language_id"`
+	LanguageID    int64             `json:"languageId"`
 	Status        string            `json:"status"`
-	StatusMessage string            `json:"status_message"`
-	SubmittedAt   time.Time         `json:"submitted_at"`
-	CheckedAt     time.Time         `json:"checked_at"`
+	StatusMessage string            `json:"statusMessage"`
+	SubmittedAt   time.Time         `json:"submittedAt"`
+	CheckedAt     time.Time         `json:"checkedAt"`
 	Language      LanguageConfig    `json:"language"`
 	Task          Task              `json:"task"`
 	User          User              `json:"user"`
@@ -20,25 +20,25 @@ type Submission struct {
 
 type SubmissionShort struct {
 	ID            int64 `json:"id"`
-	TaskID        int64 `json:"task_id"`
-	UserID        int64 `json:"user_id"`
+	TaskID        int64 `json:"taskId"`
+	UserID        int64 `json:"userId"`
 	Passed        bool  `json:"passed"`
-	HowManyPassed int64 `json:"how_many_passed"`
+	HowManyPassed int64 `json:"howManyPassed"`
 }
 
 type SubmissionResult struct {
 	ID           int64        `json:"id"`
-	SubmissionID int64        `json:"submission_id"`
+	SubmissionID int64        `json:"submissionId"`
 	Code         string       `json:"code"`
 	Message      string       `json:"message"`
-	CreatedAt    time.Time    `json:"created_at"`
-	TestResults  []TestResult `json:"test_results"`
+	CreatedAt    time.Time    `json:"createdAt"`
+	TestResults  []TestResult `json:"testResults"`
 }
 
 type TestResult struct {
 	ID                 int64  `json:"id"`
-	SubmissionResultID int64  `json:"submission_result_id"`
-	InputOutputID      int64  `json:"input_output_id"`
+	SubmissionResultID int64  `json:"submissionResultId"`
+	InputOutputID      int64  `json:"inputOutputId"`
 	Passed             bool   `json:"passed"`
 	ErrorMessage       string `json:"-"`
 }

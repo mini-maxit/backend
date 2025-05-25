@@ -23,6 +23,8 @@ import (
 func TestLogin(t *testing.T) {
 	// Setup
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
 	route := routes.NewAuthRoute(us, as)
@@ -231,7 +233,7 @@ func TestLogin(t *testing.T) {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}{
-			Email:    "email@email.com",
+			Email:    "test@email.com",
 			Password: "password",
 		}
 		jsonBody, err := json.Marshal(body)
@@ -239,7 +241,13 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(&schemas.Session{}, nil).Times(1)
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "access_token",
+			RefreshToken: "refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -253,16 +261,18 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[schemas.Session]{}
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.IsType(t, schemas.Session{}, response.Data)
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
 	})
 }
 
 func TestRegister(t *testing.T) {
 	// Setup
 	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
 	route := routes.NewAuthRoute(us, as)
@@ -270,6 +280,7 @@ func TestRegister(t *testing.T) {
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
+
 	correctRequest := schemas.UserRegisterRequest{
 		Name:            "name",
 		Surname:         "surname",
@@ -283,7 +294,17 @@ func TestRegister(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
-			assert.HTTPStatusCode(t, route.Register, method, "", nil, http.StatusMethodNotAllowed)
+			req, err := http.NewRequest(method, server.URL, nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 		}
 	})
 
@@ -300,7 +321,7 @@ func TestRegister(t *testing.T) {
 				Username        string `json:"username"`
 				Email           string `json:"email"`
 				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirm_password"`
+				ConfirmPassword string `json:"confirmPassword"`
 				Invalid         string `json:"invalid"`
 			}{
 				Name:            "name",
@@ -317,7 +338,7 @@ func TestRegister(t *testing.T) {
 				Username        string `json:"username"`
 				Email           string `json:"email"`
 				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirm_password"`
+				ConfirmPassword string `json:"confirmPassword"`
 			}{
 				Name:            "name",
 				Surname:         "surname",
@@ -378,6 +399,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("User already exists", func(t *testing.T) {
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserAlreadyExists).Times(1)
+
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
@@ -401,6 +423,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("Internal server error", func(t *testing.T) {
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
@@ -423,7 +446,14 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(&schemas.Session{}, nil).Times(1)
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "access_token",
+			RefreshToken: "refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
+
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
@@ -440,10 +470,101 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[schemas.Session]{}
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 
-		assert.IsType(t, schemas.Session{}, response.Data)
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+	})
+}
+
+func TestRefreshToken(t *testing.T) {
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	us := mock_service.NewMockUserService(ctrl)
+	as := mock_service.NewMockAuthService(ctrl)
+	route := routes.NewAuthRoute(us, as)
+	db := &testutils.MockDatabase{}
+	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	t.Run("Accept only post", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL, nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid request body", func(t *testing.T) {
+		body := struct {
+			InvalidField string `json:"invalid_field"`
+		}{
+			InvalidField: "invalid",
+		}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := schemas.RefreshTokenRequest{
+			RefreshToken: "valid_refresh_token",
+		}
+
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "new_access_token",
+			RefreshToken: "new_refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
+
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.Equal(t, "new_access_token", response.Data.AccessToken)
+		assert.Equal(t, "new_refresh_token", response.Data.RefreshToken)
+		assert.Equal(t, "Bearer", response.Data.TokenType)
 	})
 }

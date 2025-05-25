@@ -61,6 +61,8 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	authMux := http.NewServeMux()
 	authMux.HandleFunc("/login", init.AuthRoute.Login)
 	authMux.HandleFunc("/register", init.AuthRoute.Register)
+	authMux.HandleFunc("/refresh", init.AuthRoute.RefreshToken)
+	authMux.HandleFunc("/validate", init.AuthRoute.Validate)
 
 	// Task routes
 	taskMux := http.NewServeMux()
@@ -78,20 +80,13 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	groupMux := http.NewServeMux()
 	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
-	// Session routes
-	sessionMux := http.NewServeMux()
-	sessionMux.HandleFunc("/", init.SessionRoute.CreateSession)
-	sessionMux.HandleFunc("/validate", init.SessionRoute.ValidateSession)
-	sessionMux.HandleFunc("/invalidate", init.SessionRoute.InvalidateSession)
-
 	// Worker routes
 	workerMux := http.NewServeMux()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
 
-	// Secure routes (require authentication)
+	// Secure routes (require authentication with JWT)
 	secureMux := http.NewServeMux()
 	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
-	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
 	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
@@ -100,7 +95,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	// API routes
 	apiMux := http.NewServeMux()
 	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.DB, init.SessionService))
+	apiMux.Handle("/", middleware.JWTValidationMiddleware(secureMux, init.DB, init.JWTService))
 	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
 
 	// Logging middleware

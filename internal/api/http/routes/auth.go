@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -16,6 +17,8 @@ import (
 type AuthRoute interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
+	RefreshToken(w http.ResponseWriter, r *http.Request)
+	Validate(w http.ResponseWriter, r *http.Request)
 }
 
 type AuthRouteImpl struct {
@@ -27,14 +30,14 @@ type AuthRouteImpl struct {
 //
 //	@Tags			auth
 //	@Summary		Login a user
-//	@Description	Logs in a user with email and password
+//	@Description	Logs in a user with email and password, returns JWT tokens
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.UserLoginRequest	true	"User Login Request"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		401		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.Session]
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		401		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[schemas.JWTTokens]
 //	@Router			/login [post]
 func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -56,7 +59,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := ar.authService.Login(tx, request)
+	tokens, err := ar.authService.Login(tx, request)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -69,22 +72,23 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, session)
+
+	httputils.ReturnSuccess(w, http.StatusOK, tokens)
 }
 
 // Register godoc
 //
 //	@Tags			auth
 //	@Summary		Register a user
-//	@Description	Registers a user with name, surname, email, username and password
+//	@Description	Registers a user with name, surname, email, username and password, returns JWT tokens
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.UserRegisterRequest	true	"User Register Request"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		409		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		201		{object}	httputils.APIResponse[schemas.Session]
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		409		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		201		{object}	httputils.ApiResponse[schemas.JWTTokens]
 //	@Router			/register [post]
 func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -105,19 +109,122 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := ar.authService.Register(tx, request)
-	if err != nil {
+	tokens, err := ar.authService.Register(tx, request)
+	switch {
+	case err == nil:
+		break
+	case errors.Is(err, myerrors.ErrUserAlreadyExists):
 		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrUserAlreadyExists):
-			httputils.ReturnError(w, http.StatusConflict, err.Error())
-		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
-		}
+		httputils.ReturnError(w, http.StatusConflict, err.Error())
+		return
+	default:
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to register. "+err.Error())
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusCreated, session)
+	httputils.ReturnSuccess(w, http.StatusCreated, tokens)
+}
+
+// RefreshToken godoc
+//
+//	@Tags			auth
+//	@Summary		Refresh JWT tokens
+//	@Description	Refreshes JWT tokens using a valid refresh token
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		schemas.RefreshTokenRequest	true	"Refresh Token Request"
+//	@Failure		400		{object}	httputils.ApiError
+//	@Failure		401		{object}	httputils.ApiError
+//	@Failure		405		{object}	httputils.ApiError
+//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.ApiResponse[schemas.JWTTokens]
+//	@Router			/auth/refresh [post]
+func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	var request schemas.RefreshTokenRequest
+	err := httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	tokens, err := ar.authService.RefreshTokens(tx, request)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrInvalidToken) ||
+			errors.Is(err, myerrors.ErrTokenExpired) ||
+			errors.Is(err, myerrors.ErrInvalidTokenType) {
+			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+			return
+		}
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to refresh tokens. "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, tokens)
+}
+
+func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	tokenHeader := r.Header.Get("Authorization")
+	if tokenHeader == "" {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Authorization header is required")
+		return
+	}
+	if !strings.HasPrefix(tokenHeader, "Bearer ") {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid authorization header format. Expected 'Bearer <token>'")
+		return
+	}
+
+	token := strings.TrimPrefix(tokenHeader, "Bearer ")
+	if token == "" {
+		httputils.ReturnError(w, http.StatusUnauthorized, "Token is empty")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	response, err := ar.authService.AuthenticateToken(tx, token)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrInvalidToken) ||
+			errors.Is(err, myerrors.ErrTokenExpired) ||
+			errors.Is(err, myerrors.ErrInvalidTokenType) {
+			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired access token")
+			return
+		}
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate token. "+err.Error())
+		return
+	}
+
+	if !response.Valid {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid access token")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService) AuthRoute {
