@@ -551,36 +551,6 @@ func (mr *MockJWTServiceMockRecorder) RefreshTokens(tx, refreshToken any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshTokens", reflect.TypeOf((*MockJWTService)(nil).RefreshTokens), tx, refreshToken)
 }
 
-// ValidateAccessToken mocks base method.
-func (m *MockJWTService) ValidateAccessToken(tokenString string) (*schemas.JWTClaims, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateAccessToken", tokenString)
-	ret0, _ := ret[0].(*schemas.JWTClaims)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidateAccessToken indicates an expected call of ValidateAccessToken.
-func (mr *MockJWTServiceMockRecorder) ValidateAccessToken(tokenString any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAccessToken", reflect.TypeOf((*MockJWTService)(nil).ValidateAccessToken), tokenString)
-}
-
-// ValidateRefreshToken mocks base method.
-func (m *MockJWTService) ValidateRefreshToken(tokenString string) (*schemas.JWTClaims, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateRefreshToken", tokenString)
-	ret0, _ := ret[0].(*schemas.JWTClaims)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ValidateRefreshToken indicates an expected call of ValidateRefreshToken.
-func (mr *MockJWTServiceMockRecorder) ValidateRefreshToken(tokenString any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateRefreshToken", reflect.TypeOf((*MockJWTService)(nil).ValidateRefreshToken), tokenString)
-}
-
 // MockAuthService is a mock of AuthService interface.
 type MockAuthService struct {
 	ctrl     *gomock.Controller

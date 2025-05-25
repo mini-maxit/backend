@@ -27,8 +27,6 @@ const (
 
 type JWTService interface {
 	GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTTokens, error)
-	ValidateAccessToken(tokenString string) (*schemas.JWTClaims, error)
-	ValidateRefreshToken(tokenString string) (*schemas.JWTClaims, error)
 	RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error)
 	AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error)
 }
@@ -161,8 +159,8 @@ func (j *jwtService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTToke
 	}, nil
 }
 
-// ValidateAccessToken validates an access token
-func (j *jwtService) ValidateAccessToken(tokenString string) (*schemas.JWTClaims, error) {
+// validateAccessToken validates an access token
+func (j *jwtService) validateAccessToken(tokenString string) (*schemas.JWTClaims, error) {
 	claims, err := j.parseToken(tokenString)
 	if err != nil {
 		return nil, err
@@ -175,8 +173,8 @@ func (j *jwtService) ValidateAccessToken(tokenString string) (*schemas.JWTClaims
 	return claims, nil
 }
 
-// ValidateRefreshToken validates a refresh token
-func (j *jwtService) ValidateRefreshToken(tokenString string) (*schemas.JWTClaims, error) {
+// validateRefreshToken validates a refresh token
+func (j *jwtService) validateRefreshToken(tokenString string) (*schemas.JWTClaims, error) {
 	claims, err := j.parseToken(tokenString)
 	if err != nil {
 		return nil, err
@@ -191,7 +189,7 @@ func (j *jwtService) ValidateRefreshToken(tokenString string) (*schemas.JWTClaim
 
 // RefreshTokens generates new tokens using a valid refresh token
 func (j *jwtService) RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error) {
-	claims, err := j.ValidateRefreshToken(refreshToken)
+	claims, err := j.validateRefreshToken(refreshToken)
 	if err != nil {
 		j.logger.Errorf("Error validating refresh token: %v", err)
 		return nil, err
@@ -202,7 +200,7 @@ func (j *jwtService) RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.J
 
 // AuthenticateToken validates a token and returns user information
 func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (schemas.ValidateTokenResponse, error) {
-	claims, err := j.ValidateAccessToken(tokenString)
+	claims, err := j.validateAccessToken(tokenString)
 	if err != nil {
 		j.logger.Errorf("Error validating access token: %v", err)
 		return schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
