@@ -1,0 +1,6 @@
+coverage.*
+.env
+logs/
+.github/
+README.md
+run-tests.sh
