@@ -199,8 +199,11 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		switch {
+		case errors.Is(err, myerrors.ErrNotAuthorized):
 			status = http.StatusForbidden
+		case errors.Is(err, myerrors.ErrNotFound):
+			status = http.StatusNotFound
 		}
 		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
