@@ -48,7 +48,7 @@ var ErrInvalidData = errors.New("invalid data")
 var ErrInvalidInputOuput = errors.New("invalid input or output")
 
 // ErrNotFound is returned when the requested resource is not found.
-var ErrNotFound = errors.New("request resource not found")
+var ErrNotFound = errors.New("requested was resource not found")
 
 // ErrFileOpen is returned when the file fails to open.
 var ErrFileOpen = errors.New("failed to open file")
