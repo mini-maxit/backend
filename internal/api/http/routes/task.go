@@ -205,7 +205,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Error getting task. "+err.Error())
 		return
 	}
 
