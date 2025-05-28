@@ -288,7 +288,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission/user/{id} [get]
+//	@Router			/submission/group/{id} [get]
 func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

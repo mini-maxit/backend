@@ -15,6 +15,64 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/refresh": {
+            "post": {
+                "description": "Refreshes JWT tokens using a valid refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh JWT tokens",
+                "parameters": [
+                    {
+                        "description": "Refresh Token Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_JWTTokens"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/group/": {
             "get": {
                 "description": "Get all groups",
@@ -29,31 +87,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Group"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -77,7 +135,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateGroup"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.CreateGroup"
                         }
                     }
                 ],
@@ -85,31 +143,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-int64"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-int64"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -138,31 +196,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-Group"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -193,7 +251,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/EditGroup"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.EditGroup"
                         }
                     }
                 ],
@@ -201,31 +259,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-Group"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -254,31 +312,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -309,7 +367,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserIDs"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserIDs"
                         }
                     }
                 ],
@@ -317,31 +375,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -372,7 +430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserIDs"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserIDs"
                         }
                     }
                 ],
@@ -380,31 +438,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -412,7 +470,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "Logs in a user with email and password",
+                "description": "Logs in a user with email and password, returns JWT tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -430,7 +488,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserLoginRequest"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest"
                         }
                     }
                 ],
@@ -438,25 +496,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-Session"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_JWTTokens"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -464,7 +522,7 @@ const docTemplate = `{
         },
         "/register": {
             "post": {
-                "description": "Registers a user with name, surname, email, username and password",
+                "description": "Registers a user with name, surname, email, username and password, returns JWT tokens",
                 "consumes": [
                     "application/json"
                 ],
@@ -482,7 +540,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserRegisterRequest"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest"
                         }
                     }
                 ],
@@ -490,131 +548,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-Session"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_JWTTokens"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/invalidate": {
-            "post": {
-                "description": "Invalidates a session token",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "session"
-                ],
-                "summary": "Invalidate a session",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session Token",
-                        "name": "Session",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    },
-                    "405": {
-                        "description": "Method Not Allowed",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/validate": {
-            "get": {
-                "description": "Validates a session token",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "session"
-                ],
-                "summary": "Validate a session",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session Token",
-                        "name": "Session",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Task"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -655,19 +613,85 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Submission"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submission/group/{id}": {
+            "get": {
+                "description": "If the user is a student, it fails with 403 Forbidden.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Get all submissions for a group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit the number of returned submissions",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset the returned submissions",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Session Token",
+                        "name": "Session",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -687,13 +711,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_LanguageConfig"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_LanguageConfig"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -741,25 +765,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Submission"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -774,11 +798,11 @@ const docTemplate = `{
                 "tags": [
                     "submission"
                 ],
-                "summary": "Get all submissions for a group",
+                "summary": "Get all submissions for a user",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Group ID",
+                        "description": "User ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -807,25 +831,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Submission"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -873,25 +897,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Submission"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -927,19 +951,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-Submission"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -959,13 +983,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Task"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1002,25 +1026,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-TaskCreateResponse"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1049,31 +1073,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-array_Task"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1102,31 +1126,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-TaskDetailed"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1153,31 +1177,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1216,31 +1240,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1281,31 +1305,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1346,31 +1370,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1399,25 +1423,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1445,7 +1469,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PutInputOutputRequest"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.PutInputOutputRequest"
                         }
                     }
                 ],
@@ -1453,25 +1477,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1512,31 +1536,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1577,31 +1601,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1641,19 +1665,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-User"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1682,31 +1706,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-User"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1735,31 +1759,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-User"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1787,7 +1811,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserEdit"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserEdit"
                         }
                     }
                 ],
@@ -1795,37 +1819,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1855,7 +1879,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserChangePassword"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserChangePassword"
                         }
                     }
                 ],
@@ -1863,31 +1887,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-string"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1907,25 +1931,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/APIResponse-WorkerStatus"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus"
                         }
                     },
                     "401": {
                         "description": "Not authorized - requires teacher or admin role",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     },
                     "504": {
                         "description": "Gateway timeout - worker status request timed out",
                         "schema": {
-                            "$ref": "#/definitions/APIError"
+                            "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError"
                         }
                     }
                 }
@@ -1933,112 +1957,24 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "APIError": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIError": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/errorStruct"
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct"
                 },
                 "ok": {
                     "type": "boolean"
                 }
             }
         },
-        "APIResponse-Group": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/Group"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-Session": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/Session"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-Submission": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/Submission"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-SubmitResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/SubmitResponse"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-TaskCreateResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/TaskCreateResponse"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-TaskDetailed": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/TaskDetailed"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-User": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/User"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-WorkerStatus": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/WorkerStatus"
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "APIResponse-array_Group": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Group": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Group"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Group"
                     }
                 },
                 "ok": {
@@ -2046,13 +1982,13 @@ const docTemplate = `{
                 }
             }
         },
-        "APIResponse-array_LanguageConfig": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_LanguageConfig": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/LanguageConfig"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig"
                     }
                 },
                 "ok": {
@@ -2060,13 +1996,13 @@ const docTemplate = `{
                 }
             }
         },
-        "APIResponse-array_Submission": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Submission"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Submission"
                     }
                 },
                 "ok": {
@@ -2074,13 +2010,13 @@ const docTemplate = `{
                 }
             }
         },
-        "APIResponse-array_Task": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Task"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task"
                     }
                 },
                 "ok": {
@@ -2088,7 +2024,95 @@ const docTemplate = `{
                 }
             }
         },
-        "APIResponse-int64": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Group"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_JWTTokens": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.JWTTokens"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Submission": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Submission"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_SubmitResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SubmitResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskCreateResponse"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.WorkerStatus"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-int64": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2099,7 +2123,7 @@ const docTemplate = `{
                 }
             }
         },
-        "APIResponse-string": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string": {
             "type": "object",
             "properties": {
                 "data": {
@@ -2110,7 +2134,18 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateGroup": {
+        "github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.CreateGroup": {
             "type": "object",
             "required": [
                 "name"
@@ -2123,7 +2158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "EditGroup": {
+        "github_com_mini-maxit_backend_package_domain_schemas.EditGroup": {
             "type": "object",
             "properties": {
                 "name": {
@@ -2133,13 +2168,13 @@ const docTemplate = `{
                 }
             }
         },
-        "Group": {
+        "github_com_mini-maxit_backend_package_domain_schemas.Group": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "created_by": {
+                "createdBy": {
                     "type": "integer"
                 },
                 "id": {
@@ -2148,15 +2183,32 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "LanguageConfig": {
+        "github_com_mini-maxit_backend_package_domain_schemas.JWTTokens": {
             "type": "object",
             "properties": {
-                "file_extension": {
+                "accessToken": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "type": "string"
+                },
+                "tokenType": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig": {
+            "type": "object",
+            "properties": {
+                "fileExtension": {
                     "type": "string"
                 },
                 "id": {
@@ -2170,99 +2222,93 @@ const docTemplate = `{
                 }
             }
         },
-        "PutInputOutput": {
+        "github_com_mini-maxit_backend_package_domain_schemas.PutInputOutput": {
             "type": "object",
             "properties": {
-                "memory_limit": {
+                "memoryLimit": {
                     "type": "integer"
                 },
                 "order": {
                     "type": "integer"
                 },
-                "time_limit": {
+                "timeLimit": {
                     "type": "integer"
                 }
             }
         },
-        "PutInputOutputRequest": {
+        "github_com_mini-maxit_backend_package_domain_schemas.PutInputOutputRequest": {
             "type": "object",
             "properties": {
                 "limits": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PutInputOutput"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.PutInputOutput"
                     }
                 }
             }
         },
-        "Session": {
+        "github_com_mini-maxit_backend_package_domain_schemas.RefreshTokenRequest": {
             "type": "object",
+            "required": [
+                "refreshToken"
+            ],
             "properties": {
-                "expires_at": {
-                    "type": "string"
-                },
-                "session": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "user_role": {
+                "refreshToken": {
                     "type": "string"
                 }
             }
         },
-        "Submission": {
+        "github_com_mini-maxit_backend_package_domain_schemas.Submission": {
             "type": "object",
             "properties": {
-                "checked_at": {
+                "checkedAt": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
                 "language": {
-                    "$ref": "#/definitions/LanguageConfig"
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig"
                 },
-                "language_id": {
+                "languageId": {
                     "type": "integer"
                 },
                 "order": {
                     "type": "integer"
                 },
                 "result": {
-                    "$ref": "#/definitions/SubmissionResult"
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SubmissionResult"
                 },
                 "status": {
                     "type": "string"
                 },
-                "status_message": {
+                "statusMessage": {
                     "type": "string"
                 },
-                "submitted_at": {
+                "submittedAt": {
                     "type": "string"
                 },
                 "task": {
-                    "$ref": "#/definitions/Task"
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task"
                 },
-                "task_id": {
+                "taskId": {
                     "type": "integer"
                 },
                 "user": {
-                    "$ref": "#/definitions/User"
+                    "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User"
                 },
-                "user_id": {
+                "userId": {
                     "type": "integer"
                 }
             }
         },
-        "SubmissionResult": {
+        "github_com_mini-maxit_backend_package_domain_schemas.SubmissionResult": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "id": {
@@ -2271,18 +2317,18 @@ const docTemplate = `{
                 "message": {
                     "type": "string"
                 },
-                "submission_id": {
+                "submissionId": {
                     "type": "integer"
                 },
-                "test_results": {
+                "testResults": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TestResult"
+                        "$ref": "#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TestResult"
                     }
                 }
             }
         },
-        "SubmitResponse": {
+        "github_com_mini-maxit_backend_package_domain_schemas.SubmitResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -2293,13 +2339,13 @@ const docTemplate = `{
                 }
             }
         },
-        "Task": {
+        "github_com_mini-maxit_backend_package_domain_schemas.Task": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "created_by": {
+                "createdBy": {
                     "type": "integer"
                 },
                 "id": {
@@ -2308,12 +2354,12 @@ const docTemplate = `{
                 "title": {
                     "type": "string"
                 },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "TaskCreateResponse": {
+        "github_com_mini-maxit_backend_package_domain_schemas.TaskCreateResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -2321,22 +2367,22 @@ const docTemplate = `{
                 }
             }
         },
-        "TaskDetailed": {
+        "github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "created_by": {
+                "createdBy": {
                     "type": "integer"
                 },
-                "created_by_name": {
+                "createdByName": {
                     "type": "string"
                 },
-                "description_url": {
+                "descriptionUrl": {
                     "type": "string"
                 },
-                "group_ids": {
+                "groupIds": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -2350,24 +2396,24 @@ const docTemplate = `{
                 }
             }
         },
-        "TestResult": {
+        "github_com_mini-maxit_backend_package_domain_schemas.TestResult": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "integer"
                 },
-                "input_output_id": {
+                "inputOutputId": {
                     "type": "integer"
                 },
                 "passed": {
                     "type": "boolean"
                 },
-                "submission_result_id": {
+                "submissionResultId": {
                     "type": "integer"
                 }
             }
         },
-        "User": {
+        "github_com_mini-maxit_backend_package_domain_schemas.User": {
             "type": "object",
             "properties": {
                 "email": {
@@ -2390,29 +2436,29 @@ const docTemplate = `{
                 }
             }
         },
-        "UserChangePassword": {
+        "github_com_mini-maxit_backend_package_domain_schemas.UserChangePassword": {
             "type": "object",
             "required": [
-                "new_password",
-                "new_password_confirm"
+                "newPassword",
+                "newPasswordConfirm"
             ],
             "properties": {
-                "new_password": {
+                "newPassword": {
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 8
                 },
-                "new_password_confirm": {
+                "newPasswordConfirm": {
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 8
                 },
-                "old_password": {
+                "oldPassword": {
                     "type": "string"
                 }
             }
         },
-        "UserEdit": {
+        "github_com_mini-maxit_backend_package_domain_schemas.UserEdit": {
             "type": "object",
             "properties": {
                 "email": {
@@ -2432,7 +2478,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UserIDs": {
+        "github_com_mini-maxit_backend_package_domain_schemas.UserIDs": {
             "type": "object",
             "properties": {
                 "userIDs": {
@@ -2443,7 +2489,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UserLoginRequest": {
+        "github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2458,10 +2504,10 @@ const docTemplate = `{
                 }
             }
         },
-        "UserRegisterRequest": {
+        "github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest": {
             "type": "object",
             "required": [
-                "confirm_password",
+                "confirmPassword",
                 "email",
                 "name",
                 "password",
@@ -2469,7 +2515,7 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
-                "confirm_password": {
+                "confirmPassword": {
                     "type": "string"
                 },
                 "email": {
@@ -2497,34 +2543,23 @@ const docTemplate = `{
                 }
             }
         },
-        "WorkerStatus": {
+        "github_com_mini-maxit_backend_package_domain_schemas.WorkerStatus": {
             "type": "object",
             "properties": {
-                "busy_workers": {
+                "busyWorkers": {
                     "type": "integer"
                 },
-                "status_time": {
+                "statusTime": {
                     "type": "string"
                 },
-                "total_workers": {
+                "totalWorkers": {
                     "type": "integer"
                 },
-                "worker_status": {
+                "workerStatus": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
-                }
-            }
-        },
-        "errorStruct": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
                 }
             }
         },
