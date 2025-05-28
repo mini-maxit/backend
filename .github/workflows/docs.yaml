@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Swagger tools
         run: |
-          go install github.com/mini-maxit/swag/cmd/swag@latest
+          go install github.com/swaggo/swag/cmd/swag@latest
           go get -u github.com/swaggo/http-swagger
           go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
