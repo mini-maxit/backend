@@ -32,6 +32,7 @@
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
+| POST | /api/v1./auth/refresh | [post auth refresh](#post-auth-refresh) | Refresh JWT tokens |
 | POST | /api/v1./login | [post login](#post-login) | Login a user |
 | POST | /api/v1./register | [post register](#post-register) | Register a user |
   
@@ -51,24 +52,16 @@
   
 
 
-###  session
-
-| Method  | URI     | Name   | Summary |
-|---------|---------|--------|---------|
-| GET | /api/v1./session/validate | [get session validate](#get-session-validate) | Validate a session |
-| POST | /api/v1./session/invalidate | [post session invalidate](#post-session-invalidate) | Invalidate a session |
-  
-
-
 ###  submission
 
 | Method  | URI     | Name   | Summary |
 |---------|---------|--------|---------|
 | GET | /api/v1./submission | [get submission](#get-submission) | Get all submissions for the current user |
+| GET | /api/v1./submission/group/{id} | [get submission group ID](#get-submission-group-id) | Get all submissions for a group |
 | GET | /api/v1./submission/{id} | [get submission ID](#get-submission-id) | Get a submission by ID |
 | GET | /api/v1./submission/languages | [get submission languages](#get-submission-languages) | Get all available languages |
 | GET | /api/v1./submission/task/{id} | [get submission task ID](#get-submission-task-id) | Get all submissions for a task |
-| GET | /api/v1./submission/user/{id} | [get submission user ID](#get-submission-user-id) | Get all submissions for a group |
+| GET | /api/v1./submission/user/{id} | [get submission user ID](#get-submission-user-id) | Get all submissions for a user |
 | GET | /api/v1./submission/user/{id}/short | [get submission user ID short](#get-submission-user-id-short) | Get all submissions for a user |
   
 
@@ -83,10 +76,12 @@
 | GET | /api/v1./task | [get task](#get-task) | Get all tasks |
 | GET | /api/v1./task/group/{id} | [get task group ID](#get-task-group-id) | Get all tasks for a group |
 | GET | /api/v1./task/{id} | [get task ID](#get-task-id) | Get a task |
+| GET | /api/v1./task/{id}/limits | [get task ID limits](#get-task-id-limits) | Gets task limits |
 | PATCH | /api/v1./task/{id} | [patch task ID](#patch-task-id) | Update a task |
 | POST | /api/v1./task | [post task](#post-task) | Upload a task |
 | POST | /api/v1./task/{id}/assign/groups | [post task ID assign groups](#post-task-id-assign-groups) | Assign a task to groups |
 | POST | /api/v1./task/{id}/assign/users | [post task ID assign users](#post-task-id-assign-users) | Assign a task to users |
+| PUT | /api/v1./task/{id}/limits | [put task ID limits](#put-task-id-limits) | Updates task limits |
   
 
 
@@ -99,6 +94,14 @@
 | GET | /api/v1./user/{id} | [get user ID](#get-user-id) | Get user by ID |
 | PATCH | /api/v1./user/{id} | [patch user ID](#patch-user-id) | Edit user |
 | PATCH | /api/v1./user/{id}/password | [patch user ID password](#patch-user-id-password) | Change user password |
+  
+
+
+###  worker
+
+| Method  | URI     | Name   | Summary |
+|---------|---------|--------|---------|
+| GET | /api/v1./worker/status | [get worker status](#get-worker-status) | Get worker status |
   
 
 
@@ -123,7 +126,7 @@ Delete users from a group
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Group ID |
-| body | `body` | [UserIDs](#user-i-ds) | `models.UserIDs` | | ✓ | | User IDs |
+| body | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserIDs](#github-com-mini-maxit-backend-package-domain-schemas-user-i-ds) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserIDs` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -144,7 +147,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="delete-group-id-users-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -153,7 +156,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-group-id-users-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -162,7 +165,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-group-id-users-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -171,7 +174,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-group-id-users-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -180,7 +183,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="delete-task-id"></span> Delete a task (*DeleteTaskID*)
 
@@ -218,7 +221,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="delete-task-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -227,7 +230,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -236,7 +239,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -245,7 +248,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -254,7 +257,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="delete-task-id-unassign-groups"></span> Unassign a task from groups (*DeleteTaskIDUnassignGroups*)
 
@@ -293,7 +296,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="delete-task-id-unassign-groups-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -302,7 +305,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-groups-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -311,7 +314,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-groups-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -320,7 +323,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-groups-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -329,7 +332,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="delete-task-id-unassign-users"></span> Unassign a task from users (*DeleteTaskIDUnassignUsers*)
 
@@ -368,7 +371,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="delete-task-id-unassign-users-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -377,7 +380,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-users-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -386,7 +389,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-users-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -395,7 +398,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="delete-task-id-unassign-users-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -404,7 +407,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-group"></span> Get all groups (*GetGroup*)
 
@@ -436,7 +439,7 @@ Status: OK
    
   
 
-[APIResponseArrayGroup](#api-response-array-group)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasGroup](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-group)
 
 ##### <span id="get-group-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -445,7 +448,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -454,7 +457,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -463,7 +466,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -472,7 +475,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-group-id"></span> Get a group (*GetGroupID*)
 
@@ -510,7 +513,7 @@ Status: OK
    
   
 
-[APIResponseGroup](#api-response-group)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasGroup](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-group)
 
 ##### <span id="get-group-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -519,7 +522,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -528,7 +531,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -537,7 +540,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -546,7 +549,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-group-id-users"></span> Get users in a group (*GetGroupIDUsers*)
 
@@ -584,7 +587,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="get-group-id-users-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -593,7 +596,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-users-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -602,7 +605,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-users-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -611,7 +614,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-group-id-users-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -620,71 +623,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
-
-### <span id="get-session-validate"></span> Validate a session (*GetSessionValidate*)
-
-```
-GET /api/v1./session/validate
-```
-
-Validates a session token
-
-#### Produces
-  * application/json
-
-#### Parameters
-
-| Name | Source | Type | Go type | Separator | Required | Default | Description |
-|------|--------|------|---------|-----------| :------: |---------|-------------|
-| Session | `header` | string | `string` |  | ✓ |  | Session Token |
-
-#### All responses
-| Code | Status | Description | Has headers | Schema |
-|------|--------|-------------|:-----------:|--------|
-| [200](#get-session-validate-200) | OK | OK |  | [schema](#get-session-validate-200-schema) |
-| [400](#get-session-validate-400) | Bad Request | Bad Request |  | [schema](#get-session-validate-400-schema) |
-| [401](#get-session-validate-401) | Unauthorized | Unauthorized |  | [schema](#get-session-validate-401-schema) |
-| [500](#get-session-validate-500) | Internal Server Error | Internal Server Error |  | [schema](#get-session-validate-500-schema) |
-
-#### Responses
-
-
-##### <span id="get-session-validate-200"></span> 200 - OK
-Status: OK
-
-###### <span id="get-session-validate-200-schema"></span> Schema
-   
-  
-
-[APIResponseArrayTask](#api-response-array-task)
-
-##### <span id="get-session-validate-400"></span> 400 - Bad Request
-Status: Bad Request
-
-###### <span id="get-session-validate-400-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
-##### <span id="get-session-validate-401"></span> 401 - Unauthorized
-Status: Unauthorized
-
-###### <span id="get-session-validate-401-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
-##### <span id="get-session-validate-500"></span> 500 - Internal Server Error
-Status: Internal Server Error
-
-###### <span id="get-session-validate-500-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-submission"></span> Get all submissions for the current user (*GetSubmission*)
 
@@ -722,7 +661,7 @@ Status: OK
    
   
 
-[APIResponseArraySubmission](#api-response-array-submission)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission)
 
 ##### <span id="get-submission-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -731,7 +670,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -740,7 +679,74 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+### <span id="get-submission-group-id"></span> Get all submissions for a group (*GetSubmissionGroupID*)
+
+```
+GET /api/v1./submission/group/{id}
+```
+
+If the user is a student, it fails with 403 Forbidden.
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+| Session | `header` | string | `string` |  | ✓ |  | Session Token |
+| limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
+| offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-submission-group-id-200) | OK | OK |  | [schema](#get-submission-group-id-200-schema) |
+| [400](#get-submission-group-id-400) | Bad Request | Bad Request |  | [schema](#get-submission-group-id-400-schema) |
+| [403](#get-submission-group-id-403) | Forbidden | Forbidden |  | [schema](#get-submission-group-id-403-schema) |
+| [500](#get-submission-group-id-500) | Internal Server Error | Internal Server Error |  | [schema](#get-submission-group-id-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-submission-group-id-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-submission-group-id-200-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission)
+
+##### <span id="get-submission-group-id-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-submission-group-id-400-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-submission-group-id-403"></span> 403 - Forbidden
+Status: Forbidden
+
+###### <span id="get-submission-group-id-403-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-submission-group-id-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-submission-group-id-500-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-submission-id"></span> Get a submission by ID (*GetSubmissionID*)
 
@@ -777,7 +783,7 @@ Status: OK
    
   
 
-[APIResponseSubmission](#api-response-submission)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-submission)
 
 ##### <span id="get-submission-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -786,7 +792,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -795,7 +801,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-submission-languages"></span> Get all available languages (*GetSubmissionLanguages*)
 
@@ -824,7 +830,7 @@ Status: OK
    
   
 
-[APIResponseArrayLanguageConfig](#api-response-array-language-config)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasLanguageConfig](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-language-config)
 
 ##### <span id="get-submission-languages-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -833,7 +839,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-submission-task-id"></span> Get all submissions for a task (*GetSubmissionTaskID*)
 
@@ -873,7 +879,7 @@ Status: OK
    
   
 
-[APIResponseArraySubmission](#api-response-array-submission)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission)
 
 ##### <span id="get-submission-task-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -882,7 +888,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-task-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -891,7 +897,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-task-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -900,9 +906,9 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
-### <span id="get-submission-user-id"></span> Get all submissions for a group (*GetSubmissionUserID*)
+### <span id="get-submission-user-id"></span> Get all submissions for a user (*GetSubmissionUserID*)
 
 ```
 GET /api/v1./submission/user/{id}
@@ -917,7 +923,7 @@ If the user is a student, it fails with 403 Forbidden.
 
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
-| id | `path` | integer | `int64` |  | ✓ |  | Group ID |
+| id | `path` | integer | `int64` |  | ✓ |  | User ID |
 | Session | `header` | string | `string` |  | ✓ |  | Session Token |
 | limit | `query` | integer | `int64` |  |  |  | Limit the number of returned submissions |
 | offset | `query` | integer | `int64` |  |  |  | Offset the returned submissions |
@@ -940,7 +946,7 @@ Status: OK
    
   
 
-[APIResponseArraySubmission](#api-response-array-submission)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission)
 
 ##### <span id="get-submission-user-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -949,7 +955,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-user-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -958,7 +964,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-user-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -967,7 +973,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-submission-user-id-short"></span> Get all submissions for a user (*GetSubmissionUserIDShort*)
 
@@ -1007,7 +1013,7 @@ Status: OK
    
   
 
-[APIResponseArraySubmission](#api-response-array-submission)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission)
 
 ##### <span id="get-submission-user-id-short-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1016,7 +1022,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-user-id-short-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1025,7 +1031,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-submission-user-id-short-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1034,7 +1040,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-task"></span> Get all tasks (*GetTask*)
 
@@ -1063,7 +1069,7 @@ Status: OK
    
   
 
-[APIResponseArrayTask](#api-response-array-task)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasTask](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-task)
 
 ##### <span id="get-task-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1072,7 +1078,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-task-group-id"></span> Get all tasks for a group (*GetTaskGroupID*)
 
@@ -1110,7 +1116,7 @@ Status: OK
    
   
 
-[APIResponseArrayTask](#api-response-array-task)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseArrayGithubComMiniMaxitBackendPackageDomainSchemasTask](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-task)
 
 ##### <span id="get-task-group-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1119,7 +1125,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-group-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1128,7 +1134,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-group-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1137,7 +1143,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-group-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1146,7 +1152,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-task-id"></span> Get a task (*GetTaskID*)
 
@@ -1184,7 +1190,7 @@ Status: OK
    
   
 
-[APIResponseTaskDetailed](#api-response-task-detailed)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasTaskDetailed](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-task-detailed)
 
 ##### <span id="get-task-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1193,7 +1199,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1202,7 +1208,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1211,7 +1217,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-task-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1220,7 +1226,71 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+### <span id="get-task-id-limits"></span> Gets task limits (*GetTaskIDLimits*)
+
+```
+GET /api/v1./task/{id}/limits
+```
+
+Gets task limits by task ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-task-id-limits-200) | OK | OK |  | [schema](#get-task-id-limits-200-schema) |
+| [400](#get-task-id-limits-400) | Bad Request | Bad Request |  | [schema](#get-task-id-limits-400-schema) |
+| [404](#get-task-id-limits-404) | Not Found | Not Found |  | [schema](#get-task-id-limits-404-schema) |
+| [500](#get-task-id-limits-500) | Internal Server Error | Internal Server Error |  | [schema](#get-task-id-limits-500-schema) |
+
+#### Responses
+
+
+##### <span id="get-task-id-limits-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-task-id-limits-200-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
+
+##### <span id="get-task-id-limits-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="get-task-id-limits-400-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-task-id-limits-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="get-task-id-limits-404-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-task-id-limits-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="get-task-id-limits-500-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-user"></span> Get all users (*GetUser*)
 
@@ -1258,7 +1328,7 @@ Status: OK
    
   
 
-[APIResponseUser](#api-response-user)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasUser](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-user)
 
 ##### <span id="get-user-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1267,7 +1337,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1276,7 +1346,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-user-email"></span> Get user by email (*GetUserEmail*)
 
@@ -1314,7 +1384,7 @@ Status: OK
    
   
 
-[APIResponseUser](#api-response-user)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasUser](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-user)
 
 ##### <span id="get-user-email-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1323,7 +1393,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-email-404"></span> 404 - Not Found
 Status: Not Found
@@ -1332,7 +1402,7 @@ Status: Not Found
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-email-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1341,7 +1411,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-email-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1350,7 +1420,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="get-user-id"></span> Get user by ID (*GetUserID*)
 
@@ -1388,7 +1458,7 @@ Status: OK
    
   
 
-[APIResponseUser](#api-response-user)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasUser](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-user)
 
 ##### <span id="get-user-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1397,7 +1467,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-id-404"></span> 404 - Not Found
 Status: Not Found
@@ -1406,7 +1476,7 @@ Status: Not Found
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1415,7 +1485,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="get-user-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1424,7 +1494,65 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+### <span id="get-worker-status"></span> Get worker status (*GetWorkerStatus*)
+
+```
+GET /api/v1./worker/status
+```
+
+Returns the current status of all worker nodes
+
+#### Produces
+  * application/json
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#get-worker-status-200) | OK | OK |  | [schema](#get-worker-status-200-schema) |
+| [401](#get-worker-status-401) | Unauthorized | Not authorized - requires teacher or admin role |  | [schema](#get-worker-status-401-schema) |
+| [500](#get-worker-status-500) | Internal Server Error | Internal server error |  | [schema](#get-worker-status-500-schema) |
+| [504](#get-worker-status-504) | Gateway Timeout | Gateway timeout - worker status request timed out |  | [schema](#get-worker-status-504-schema) |
+
+#### Responses
+
+
+##### <span id="get-worker-status-200"></span> 200 - OK
+Status: OK
+
+###### <span id="get-worker-status-200-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasWorkerStatus](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-worker-status)
+
+##### <span id="get-worker-status-401"></span> 401 - Not authorized - requires teacher or admin role
+Status: Unauthorized
+
+###### <span id="get-worker-status-401-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-worker-status-500"></span> 500 - Internal server error
+Status: Internal Server Error
+
+###### <span id="get-worker-status-500-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="get-worker-status-504"></span> 504 - Gateway timeout - worker status request timed out
+Status: Gateway Timeout
+
+###### <span id="get-worker-status-504-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="patch-task-id"></span> Update a task (*PatchTaskID*)
 
@@ -1464,7 +1592,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="patch-task-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1473,7 +1601,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-task-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1482,7 +1610,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-task-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1491,7 +1619,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-task-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1500,7 +1628,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="patch-user-id"></span> Edit user (*PatchUserID*)
 
@@ -1518,7 +1646,7 @@ Edit user
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | User ID |
-| request | `body` | [UserEdit](#user-edit) | `models.UserEdit` | | ✓ | | User Edit Request |
+| request | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserEdit](#github-com-mini-maxit-backend-package-domain-schemas-user-edit) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserEdit` | | ✓ | | User Edit Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1540,7 +1668,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="patch-user-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1549,7 +1677,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1558,7 +1686,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-404"></span> 404 - Not Found
 Status: Not Found
@@ -1567,7 +1695,7 @@ Status: Not Found
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1576,7 +1704,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1585,7 +1713,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="patch-user-id-password"></span> Change user password (*PatchUserIDPassword*)
 
@@ -1603,7 +1731,7 @@ Change user password
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | User ID |
-| request | `body` | [UserChangePassword](#user-change-password) | `models.UserChangePassword` | | ✓ | | User Change Password Request |
+| request | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserChangePassword](#github-com-mini-maxit-backend-package-domain-schemas-user-change-password) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserChangePassword` | | ✓ | | User Change Password Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1624,7 +1752,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="patch-user-id-password-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1633,7 +1761,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-password-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1642,7 +1770,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-password-404"></span> 404 - Not Found
 Status: Not Found
@@ -1651,7 +1779,7 @@ Status: Not Found
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="patch-user-id-password-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1660,7 +1788,84 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+### <span id="post-auth-refresh"></span> Refresh JWT tokens (*PostAuthRefresh*)
+
+```
+POST /api/v1./auth/refresh
+```
+
+Refreshes JWT tokens using a valid refresh token
+
+#### Consumes
+  * application/json
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| request | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasRefreshTokenRequest](#github-com-mini-maxit-backend-package-domain-schemas-refresh-token-request) | `models.GithubComMiniMaxitBackendPackageDomainSchemasRefreshTokenRequest` | | ✓ | | Refresh Token Request |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#post-auth-refresh-200) | OK | OK |  | [schema](#post-auth-refresh-200-schema) |
+| [400](#post-auth-refresh-400) | Bad Request | Bad Request |  | [schema](#post-auth-refresh-400-schema) |
+| [401](#post-auth-refresh-401) | Unauthorized | Unauthorized |  | [schema](#post-auth-refresh-401-schema) |
+| [405](#post-auth-refresh-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-auth-refresh-405-schema) |
+| [500](#post-auth-refresh-500) | Internal Server Error | Internal Server Error |  | [schema](#post-auth-refresh-500-schema) |
+
+#### Responses
+
+
+##### <span id="post-auth-refresh-200"></span> 200 - OK
+Status: OK
+
+###### <span id="post-auth-refresh-200-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasJWTTokens](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens)
+
+##### <span id="post-auth-refresh-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="post-auth-refresh-400-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="post-auth-refresh-401"></span> 401 - Unauthorized
+Status: Unauthorized
+
+###### <span id="post-auth-refresh-401-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="post-auth-refresh-405"></span> 405 - Method Not Allowed
+Status: Method Not Allowed
+
+###### <span id="post-auth-refresh-405-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="post-auth-refresh-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="post-auth-refresh-500-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-group"></span> Create a group (*PostGroup*)
 
@@ -1680,7 +1885,7 @@ Create a group
 
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
-| body | `body` | [CreateGroup](#create-group) | `models.CreateGroup` | | ✓ | | Create Group |
+| body | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasCreateGroup](#github-com-mini-maxit-backend-package-domain-schemas-create-group) | `models.GithubComMiniMaxitBackendPackageDomainSchemasCreateGroup` | | ✓ | | Create Group |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1701,7 +1906,7 @@ Status: OK
    
   
 
-[APIResponseInt64](#api-response-int64)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseInt64](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-int64)
 
 ##### <span id="post-group-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1710,7 +1915,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1719,7 +1924,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1728,7 +1933,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1737,7 +1942,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-group-id-users"></span> Add users to a group (*PostGroupIDUsers*)
 
@@ -1758,7 +1963,7 @@ Add users to a group
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Group ID |
-| body | `body` | [UserIDs](#user-i-ds) | `models.UserIDs` | | ✓ | | User IDs |
+| body | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserIDs](#github-com-mini-maxit-backend-package-domain-schemas-user-i-ds) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserIDs` | | ✓ | | User IDs |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1779,7 +1984,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="post-group-id-users-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1788,7 +1993,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-id-users-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -1797,7 +2002,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-id-users-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1806,7 +2011,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-group-id-users-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1815,7 +2020,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-login"></span> Login a user (*PostLogin*)
 
@@ -1823,7 +2028,7 @@ Status: Internal Server Error
 POST /api/v1./login
 ```
 
-Logs in a user with email and password
+Logs in a user with email and password, returns JWT tokens
 
 #### Consumes
   * application/json
@@ -1835,7 +2040,7 @@ Logs in a user with email and password
 
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
-| request | `body` | [UserLoginRequest](#user-login-request) | `models.UserLoginRequest` | | ✓ | | User Login Request |
+| request | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserLoginRequest](#github-com-mini-maxit-backend-package-domain-schemas-user-login-request) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserLoginRequest` | | ✓ | | User Login Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1855,7 +2060,7 @@ Status: OK
    
   
 
-[APIResponseSession](#api-response-session)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasJWTTokens](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens)
 
 ##### <span id="post-login-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1864,7 +2069,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-login-401"></span> 401 - Unauthorized
 Status: Unauthorized
@@ -1873,7 +2078,7 @@ Status: Unauthorized
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-login-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1882,7 +2087,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-register"></span> Register a user (*PostRegister*)
 
@@ -1890,7 +2095,7 @@ Status: Internal Server Error
 POST /api/v1./register
 ```
 
-Registers a user with name, surname, email, username and password
+Registers a user with name, surname, email, username and password, returns JWT tokens
 
 #### Consumes
   * application/json
@@ -1902,7 +2107,7 @@ Registers a user with name, surname, email, username and password
 
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
-| request | `body` | [UserRegisterRequest](#user-register-request) | `models.UserRegisterRequest` | | ✓ | | User Register Request |
+| request | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasUserRegisterRequest](#github-com-mini-maxit-backend-package-domain-schemas-user-register-request) | `models.GithubComMiniMaxitBackendPackageDomainSchemasUserRegisterRequest` | | ✓ | | User Register Request |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -1923,7 +2128,7 @@ Status: Created
    
   
 
-[APIResponseSession](#api-response-session)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasJWTTokens](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens)
 
 ##### <span id="post-register-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -1932,7 +2137,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-register-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -1941,7 +2146,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-register-409"></span> 409 - Conflict
 Status: Conflict
@@ -1950,7 +2155,7 @@ Status: Conflict
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-register-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -1959,81 +2164,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
-
-### <span id="post-session-invalidate"></span> Invalidate a session (*PostSessionInvalidate*)
-
-```
-POST /api/v1./session/invalidate
-```
-
-Invalidates a session token
-
-#### Produces
-  * application/json
-
-#### Parameters
-
-| Name | Source | Type | Go type | Separator | Required | Default | Description |
-|------|--------|------|---------|-----------| :------: |---------|-------------|
-| Session | `header` | string | `string` |  | ✓ |  | Session Token |
-
-#### All responses
-| Code | Status | Description | Has headers | Schema |
-|------|--------|-------------|:-----------:|--------|
-| [200](#post-session-invalidate-200) | OK | OK |  | [schema](#post-session-invalidate-200-schema) |
-| [400](#post-session-invalidate-400) | Bad Request | Bad Request |  | [schema](#post-session-invalidate-400-schema) |
-| [401](#post-session-invalidate-401) | Unauthorized | Unauthorized |  | [schema](#post-session-invalidate-401-schema) |
-| [405](#post-session-invalidate-405) | Method Not Allowed | Method Not Allowed |  | [schema](#post-session-invalidate-405-schema) |
-| [500](#post-session-invalidate-500) | Internal Server Error | Internal Server Error |  | [schema](#post-session-invalidate-500-schema) |
-
-#### Responses
-
-
-##### <span id="post-session-invalidate-200"></span> 200 - OK
-Status: OK
-
-###### <span id="post-session-invalidate-200-schema"></span> Schema
-   
-  
-
-[APIResponseString](#api-response-string)
-
-##### <span id="post-session-invalidate-400"></span> 400 - Bad Request
-Status: Bad Request
-
-###### <span id="post-session-invalidate-400-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
-##### <span id="post-session-invalidate-401"></span> 401 - Unauthorized
-Status: Unauthorized
-
-###### <span id="post-session-invalidate-401-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
-##### <span id="post-session-invalidate-405"></span> 405 - Method Not Allowed
-Status: Method Not Allowed
-
-###### <span id="post-session-invalidate-405-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
-
-##### <span id="post-session-invalidate-500"></span> 500 - Internal Server Error
-Status: Internal Server Error
-
-###### <span id="post-session-invalidate-500-schema"></span> Schema
-   
-  
-
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-task"></span> Upload a task (*PostTask*)
 
@@ -2074,7 +2205,7 @@ Status: OK
    
   
 
-[APIResponseTaskCreateResponse](#api-response-task-create-response)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasTaskCreateResponse](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-task-create-response)
 
 ##### <span id="post-task-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -2083,7 +2214,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -2092,7 +2223,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -2101,7 +2232,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-task-id-assign-groups"></span> Assign a task to groups (*PostTaskIDAssignGroups*)
 
@@ -2140,7 +2271,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="post-task-id-assign-groups-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -2149,7 +2280,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-groups-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -2158,7 +2289,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-groups-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -2167,7 +2298,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-groups-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -2176,7 +2307,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="post-task-id-assign-users"></span> Assign a task to users (*PostTaskIDAssignUsers*)
 
@@ -2215,7 +2346,7 @@ Status: OK
    
   
 
-[APIResponseString](#api-response-string)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
 
 ##### <span id="post-task-id-assign-users-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -2224,7 +2355,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-users-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -2233,7 +2364,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-users-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -2242,7 +2373,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="post-task-id-assign-users-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -2251,7 +2382,7 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ### <span id="put-group-id"></span> Edit a group (*PutGroupID*)
 
@@ -2272,7 +2403,7 @@ Edit a group
 | Name | Source | Type | Go type | Separator | Required | Default | Description |
 |------|--------|------|---------|-----------| :------: |---------|-------------|
 | id | `path` | integer | `int64` |  | ✓ |  | Group ID |
-| body | `body` | [EditGroup](#edit-group) | `models.EditGroup` | | ✓ | | Edit Group |
+| body | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasEditGroup](#github-com-mini-maxit-backend-package-domain-schemas-edit-group) | `models.GithubComMiniMaxitBackendPackageDomainSchemasEditGroup` | | ✓ | | Edit Group |
 
 #### All responses
 | Code | Status | Description | Has headers | Schema |
@@ -2293,7 +2424,7 @@ Status: OK
    
   
 
-[APIResponseGroup](#api-response-group)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseGithubComMiniMaxitBackendPackageDomainSchemasGroup](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-group)
 
 ##### <span id="put-group-id-400"></span> 400 - Bad Request
 Status: Bad Request
@@ -2302,7 +2433,7 @@ Status: Bad Request
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="put-group-id-403"></span> 403 - Forbidden
 Status: Forbidden
@@ -2311,7 +2442,7 @@ Status: Forbidden
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="put-group-id-405"></span> 405 - Method Not Allowed
 Status: Method Not Allowed
@@ -2320,7 +2451,7 @@ Status: Method Not Allowed
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ##### <span id="put-group-id-500"></span> 500 - Internal Server Error
 Status: Internal Server Error
@@ -2329,11 +2460,76 @@ Status: Internal Server Error
    
   
 
-[APIError](#api-error)
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+### <span id="put-task-id-limits"></span> Updates task limits (*PutTaskIDLimits*)
+
+```
+PUT /api/v1./task/{id}/limits
+```
+
+Updates task limits by task ID
+
+#### Produces
+  * application/json
+
+#### Parameters
+
+| Name | Source | Type | Go type | Separator | Required | Default | Description |
+|------|--------|------|---------|-----------| :------: |---------|-------------|
+| id | `path` | integer | `int64` |  | ✓ |  | Task ID |
+| limits | `body` | [GithubComMiniMaxitBackendPackageDomainSchemasPutInputOutputRequest](#github-com-mini-maxit-backend-package-domain-schemas-put-input-output-request) | `models.GithubComMiniMaxitBackendPackageDomainSchemasPutInputOutputRequest` | | ✓ | | Task limits |
+
+#### All responses
+| Code | Status | Description | Has headers | Schema |
+|------|--------|-------------|:-----------:|--------|
+| [200](#put-task-id-limits-200) | OK | OK |  | [schema](#put-task-id-limits-200-schema) |
+| [400](#put-task-id-limits-400) | Bad Request | Bad Request |  | [schema](#put-task-id-limits-400-schema) |
+| [404](#put-task-id-limits-404) | Not Found | Not Found |  | [schema](#put-task-id-limits-404-schema) |
+| [500](#put-task-id-limits-500) | Internal Server Error | Internal Server Error |  | [schema](#put-task-id-limits-500-schema) |
+
+#### Responses
+
+
+##### <span id="put-task-id-limits-200"></span> 200 - OK
+Status: OK
+
+###### <span id="put-task-id-limits-200-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIResponseString](#github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string)
+
+##### <span id="put-task-id-limits-400"></span> 400 - Bad Request
+Status: Bad Request
+
+###### <span id="put-task-id-limits-400-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="put-task-id-limits-404"></span> 404 - Not Found
+Status: Not Found
+
+###### <span id="put-task-id-limits-404-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
+
+##### <span id="put-task-id-limits-500"></span> 500 - Internal Server Error
+Status: Internal Server Error
+
+###### <span id="put-task-id-limits-500-schema"></span> Schema
+   
+  
+
+[GithubComMiniMaxitBackendInternalAPIHTTPHttputilsAPIError](#github-com-mini-maxit-backend-internal-api-http-httputils-api-error)
 
 ## Models
 
-### <span id="api-error"></span> APIError
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-error"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIError
 
 
   
@@ -2344,12 +2540,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [ErrorStruct](#error-struct)| `ErrorStruct` |  | |  |  |
+| data | [GithubComMiniMaxitBackendInternalAPIHTTPHttputilsErrorStruct](#github-com-mini-maxit-backend-internal-api-http-httputils-error-struct)| `GithubComMiniMaxitBackendInternalAPIHTTPHttputilsErrorStruct` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-group"></span> APIResponse-Group
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-group"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Group
 
 
   
@@ -2360,12 +2556,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [Group](#group)| `Group` |  | |  |  |
+| data | [][GithubComMiniMaxitBackendPackageDomainSchemasGroup](#github-com-mini-maxit-backend-package-domain-schemas-group)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasGroup` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-session"></span> APIResponse-Session
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-language-config"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_LanguageConfig
 
 
   
@@ -2376,12 +2572,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [Session](#session)| `Session` |  | |  |  |
+| data | [][GithubComMiniMaxitBackendPackageDomainSchemasLanguageConfig](#github-com-mini-maxit-backend-package-domain-schemas-language-config)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasLanguageConfig` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-submission"></span> APIResponse-Submission
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-submission"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission
 
 
   
@@ -2392,12 +2588,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [Submission](#submission)| `Submission` |  | |  |  |
+| data | [][GithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-package-domain-schemas-submission)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasSubmission` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-submit-response"></span> APIResponse-SubmitResponse
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-array-github-com-mini-maxit-backend-package-domain-schemas-task"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task
 
 
   
@@ -2408,12 +2604,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [SubmitResponse](#submit-response)| `SubmitResponse` |  | |  |  |
+| data | [][GithubComMiniMaxitBackendPackageDomainSchemasTask](#github-com-mini-maxit-backend-package-domain-schemas-task)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasTask` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-task-create-response"></span> APIResponse-TaskCreateResponse
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-group"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group
 
 
   
@@ -2424,12 +2620,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [TaskCreateResponse](#task-create-response)| `TaskCreateResponse` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasGroup](#github-com-mini-maxit-backend-package-domain-schemas-group)| `GithubComMiniMaxitBackendPackageDomainSchemasGroup` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-task-detailed"></span> APIResponse-TaskDetailed
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_JWTTokens
 
 
   
@@ -2440,12 +2636,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [TaskDetailed](#task-detailed)| `TaskDetailed` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasJWTTokens](#github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens)| `GithubComMiniMaxitBackendPackageDomainSchemasJWTTokens` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-user"></span> APIResponse-User
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-submission"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Submission
 
 
   
@@ -2456,12 +2652,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [User](#user)| `User` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasSubmission](#github-com-mini-maxit-backend-package-domain-schemas-submission)| `GithubComMiniMaxitBackendPackageDomainSchemasSubmission` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-array-group"></span> APIResponse-array_Group
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-submit-response"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_SubmitResponse
 
 
   
@@ -2472,12 +2668,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [][Group](#group)| `[]*Group` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasSubmitResponse](#github-com-mini-maxit-backend-package-domain-schemas-submit-response)| `GithubComMiniMaxitBackendPackageDomainSchemasSubmitResponse` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-array-language-config"></span> APIResponse-array_LanguageConfig
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-task-create-response"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse
 
 
   
@@ -2488,12 +2684,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [][LanguageConfig](#language-config)| `[]*LanguageConfig` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasTaskCreateResponse](#github-com-mini-maxit-backend-package-domain-schemas-task-create-response)| `GithubComMiniMaxitBackendPackageDomainSchemasTaskCreateResponse` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-array-submission"></span> APIResponse-array_Submission
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-task-detailed"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed
 
 
   
@@ -2504,12 +2700,12 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [][Submission](#submission)| `[]*Submission` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasTaskDetailed](#github-com-mini-maxit-backend-package-domain-schemas-task-detailed)| `GithubComMiniMaxitBackendPackageDomainSchemasTaskDetailed` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-array-task"></span> APIResponse-array_Task
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-user"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User
 
 
   
@@ -2520,12 +2716,28 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| data | [][Task](#task)| `[]*Task` |  | |  |  |
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasUser](#github-com-mini-maxit-backend-package-domain-schemas-user)| `GithubComMiniMaxitBackendPackageDomainSchemasUser` |  | |  |  |
 | ok | boolean| `bool` |  | |  |  |
 
 
 
-### <span id="api-response-int64"></span> APIResponse-int64
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-github-com-mini-maxit-backend-package-domain-schemas-worker-status"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| data | [GithubComMiniMaxitBackendPackageDomainSchemasWorkerStatus](#github-com-mini-maxit-backend-package-domain-schemas-worker-status)| `GithubComMiniMaxitBackendPackageDomainSchemasWorkerStatus` |  | |  |  |
+| ok | boolean| `bool` |  | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-int64"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-int64
 
 
   
@@ -2541,7 +2753,7 @@ Status: Internal Server Error
 
 
 
-### <span id="api-response-string"></span> APIResponse-string
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-api-response-string"></span> github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string
 
 
   
@@ -2557,7 +2769,23 @@ Status: Internal Server Error
 
 
 
-### <span id="create-group"></span> CreateGroup
+### <span id="github-com-mini-maxit-backend-internal-api-http-httputils-error-struct"></span> github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| code | string| `string` |  | |  |  |
+| message | string| `string` |  | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-create-group"></span> github_com_mini-maxit_backend_package_domain_schemas.CreateGroup
 
 
   
@@ -2572,7 +2800,7 @@ Status: Internal Server Error
 
 
 
-### <span id="edit-group"></span> EditGroup
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-edit-group"></span> github_com_mini-maxit_backend_package_domain_schemas.EditGroup
 
 
   
@@ -2587,7 +2815,7 @@ Status: Internal Server Error
 
 
 
-### <span id="group"></span> Group
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-group"></span> github_com_mini-maxit_backend_package_domain_schemas.Group
 
 
   
@@ -2598,15 +2826,15 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| created_at | string| `string` |  | |  |  |
-| created_by | integer| `int64` |  | |  |  |
+| createdAt | string| `string` |  | |  |  |
+| createdBy | integer| `int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | name | string| `string` |  | |  |  |
-| updated_at | string| `string` |  | |  |  |
+| updatedAt | string| `string` |  | |  |  |
 
 
 
-### <span id="language-config"></span> LanguageConfig
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-j-w-t-tokens"></span> github_com_mini-maxit_backend_package_domain_schemas.JWTTokens
 
 
   
@@ -2617,14 +2845,32 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| file_extension | string| `string` |  | |  |  |
+| accessToken | string| `string` |  | |  |  |
+| expiresAt | string| `string` |  | |  |  |
+| refreshToken | string| `string` |  | |  |  |
+| tokenType | string| `string` |  | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-language-config"></span> github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| fileExtension | string| `string` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | language | string| `string` |  | |  |  |
 | version | string| `string` |  | |  |  |
 
 
 
-### <span id="session"></span> Session
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-put-input-output"></span> github_com_mini-maxit_backend_package_domain_schemas.PutInputOutput
 
 
   
@@ -2635,41 +2881,70 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| expires_at | string| `string` |  | |  |  |
-| session | string| `string` |  | |  |  |
-| user_id | integer| `int64` |  | |  |  |
-| user_role | string| `string` |  | |  |  |
-
-
-
-### <span id="submission"></span> Submission
-
-
-  
-
-
-
-**Properties**
-
-| Name | Type | Go type | Required | Default | Description | Example |
-|------|------|---------|:--------:| ------- |-------------|---------|
-| checked_at | string| `string` |  | |  |  |
-| id | integer| `int64` |  | |  |  |
-| language | [LanguageConfig](#language-config)| `LanguageConfig` |  | |  |  |
-| language_id | integer| `int64` |  | |  |  |
+| memoryLimit | integer| `int64` |  | |  |  |
 | order | integer| `int64` |  | |  |  |
-| result | [SubmissionResult](#submission-result)| `SubmissionResult` |  | |  |  |
+| timeLimit | integer| `int64` |  | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-put-input-output-request"></span> github_com_mini-maxit_backend_package_domain_schemas.PutInputOutputRequest
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| limits | [][GithubComMiniMaxitBackendPackageDomainSchemasPutInputOutput](#github-com-mini-maxit-backend-package-domain-schemas-put-input-output)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasPutInputOutput` |  | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-refresh-token-request"></span> github_com_mini-maxit_backend_package_domain_schemas.RefreshTokenRequest
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| refreshToken | string| `string` | ✓ | |  |  |
+
+
+
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-submission"></span> github_com_mini-maxit_backend_package_domain_schemas.Submission
+
+
+  
+
+
+
+**Properties**
+
+| Name | Type | Go type | Required | Default | Description | Example |
+|------|------|---------|:--------:| ------- |-------------|---------|
+| checkedAt | string| `string` |  | |  |  |
+| id | integer| `int64` |  | |  |  |
+| language | [GithubComMiniMaxitBackendPackageDomainSchemasLanguageConfig](#github-com-mini-maxit-backend-package-domain-schemas-language-config)| `GithubComMiniMaxitBackendPackageDomainSchemasLanguageConfig` |  | |  |  |
+| languageId | integer| `int64` |  | |  |  |
+| order | integer| `int64` |  | |  |  |
+| result | [GithubComMiniMaxitBackendPackageDomainSchemasSubmissionResult](#github-com-mini-maxit-backend-package-domain-schemas-submission-result)| `GithubComMiniMaxitBackendPackageDomainSchemasSubmissionResult` |  | |  |  |
 | status | string| `string` |  | |  |  |
-| status_message | string| `string` |  | |  |  |
-| submitted_at | string| `string` |  | |  |  |
-| task | [Task](#task)| `Task` |  | |  |  |
-| task_id | integer| `int64` |  | |  |  |
-| user | [User](#user)| `User` |  | |  |  |
-| user_id | integer| `int64` |  | |  |  |
+| statusMessage | string| `string` |  | |  |  |
+| submittedAt | string| `string` |  | |  |  |
+| task | [GithubComMiniMaxitBackendPackageDomainSchemasTask](#github-com-mini-maxit-backend-package-domain-schemas-task)| `GithubComMiniMaxitBackendPackageDomainSchemasTask` |  | |  |  |
+| taskId | integer| `int64` |  | |  |  |
+| user | [GithubComMiniMaxitBackendPackageDomainSchemasUser](#github-com-mini-maxit-backend-package-domain-schemas-user)| `GithubComMiniMaxitBackendPackageDomainSchemasUser` |  | |  |  |
+| userId | integer| `int64` |  | |  |  |
 
 
 
-### <span id="submission-result"></span> SubmissionResult
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-submission-result"></span> github_com_mini-maxit_backend_package_domain_schemas.SubmissionResult
 
 
   
@@ -2681,15 +2956,15 @@ Status: Internal Server Error
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
 | code | string| `string` |  | |  |  |
-| created_at | string| `string` |  | |  |  |
+| createdAt | string| `string` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | message | string| `string` |  | |  |  |
-| submission_id | integer| `int64` |  | |  |  |
-| test_results | [][TestResult](#test-result)| `[]*TestResult` |  | |  |  |
+| submissionId | integer| `int64` |  | |  |  |
+| testResults | [][GithubComMiniMaxitBackendPackageDomainSchemasTestResult](#github-com-mini-maxit-backend-package-domain-schemas-test-result)| `[]*GithubComMiniMaxitBackendPackageDomainSchemasTestResult` |  | |  |  |
 
 
 
-### <span id="submit-response"></span> SubmitResponse
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-submit-response"></span> github_com_mini-maxit_backend_package_domain_schemas.SubmitResponse
 
 
   
@@ -2705,7 +2980,7 @@ Status: Internal Server Error
 
 
 
-### <span id="task"></span> Task
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-task"></span> github_com_mini-maxit_backend_package_domain_schemas.Task
 
 
   
@@ -2716,15 +2991,15 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| created_at | string| `string` |  | |  |  |
-| created_by | integer| `int64` |  | |  |  |
+| createdAt | string| `string` |  | |  |  |
+| createdBy | integer| `int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | title | string| `string` |  | |  |  |
-| updated_at | string| `string` |  | |  |  |
+| updatedAt | string| `string` |  | |  |  |
 
 
 
-### <span id="task-create-response"></span> TaskCreateResponse
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-task-create-response"></span> github_com_mini-maxit_backend_package_domain_schemas.TaskCreateResponse
 
 
   
@@ -2739,7 +3014,7 @@ Status: Internal Server Error
 
 
 
-### <span id="task-detailed"></span> TaskDetailed
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-task-detailed"></span> github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed
 
 
   
@@ -2750,17 +3025,17 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| created_at | string| `string` |  | |  |  |
-| created_by | integer| `int64` |  | |  |  |
-| created_by_name | string| `string` |  | |  |  |
-| description_url | string| `string` |  | |  |  |
-| group_ids | []integer| `[]int64` |  | |  |  |
+| createdAt | string| `string` |  | |  |  |
+| createdBy | integer| `int64` |  | |  |  |
+| createdByName | string| `string` |  | |  |  |
+| descriptionUrl | string| `string` |  | |  |  |
+| groupIds | []integer| `[]int64` |  | |  |  |
 | id | integer| `int64` |  | |  |  |
 | title | string| `string` |  | |  |  |
 
 
 
-### <span id="test-result"></span> TestResult
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-test-result"></span> github_com_mini-maxit_backend_package_domain_schemas.TestResult
 
 
   
@@ -2772,13 +3047,13 @@ Status: Internal Server Error
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
 | id | integer| `int64` |  | |  |  |
-| input_output_id | integer| `int64` |  | |  |  |
+| inputOutputId | integer| `int64` |  | |  |  |
 | passed | boolean| `bool` |  | |  |  |
-| submission_result_id | integer| `int64` |  | |  |  |
+| submissionResultId | integer| `int64` |  | |  |  |
 
 
 
-### <span id="user"></span> User
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user"></span> github_com_mini-maxit_backend_package_domain_schemas.User
 
 
   
@@ -2798,7 +3073,7 @@ Status: Internal Server Error
 
 
 
-### <span id="user-change-password"></span> UserChangePassword
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user-change-password"></span> github_com_mini-maxit_backend_package_domain_schemas.UserChangePassword
 
 
   
@@ -2809,13 +3084,13 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| new_password | string| `string` | ✓ | |  |  |
-| new_password_confirm | string| `string` | ✓ | |  |  |
-| old_password | string| `string` |  | |  |  |
+| newPassword | string| `string` | ✓ | |  |  |
+| newPasswordConfirm | string| `string` | ✓ | |  |  |
+| oldPassword | string| `string` |  | |  |  |
 
 
 
-### <span id="user-edit"></span> UserEdit
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user-edit"></span> github_com_mini-maxit_backend_package_domain_schemas.UserEdit
 
 
   
@@ -2834,7 +3109,7 @@ Status: Internal Server Error
 
 
 
-### <span id="user-i-ds"></span> UserIDs
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user-i-ds"></span> github_com_mini-maxit_backend_package_domain_schemas.UserIDs
 
 
   
@@ -2849,7 +3124,7 @@ Status: Internal Server Error
 
 
 
-### <span id="user-login-request"></span> UserLoginRequest
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user-login-request"></span> github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest
 
 
   
@@ -2865,7 +3140,7 @@ Status: Internal Server Error
 
 
 
-### <span id="user-register-request"></span> UserRegisterRequest
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-user-register-request"></span> github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest
 
 
   
@@ -2876,7 +3151,7 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| confirm_password | string| `string` | ✓ | |  |  |
+| confirmPassword | string| `string` | ✓ | |  |  |
 | email | string| `string` | ✓ | |  |  |
 | name | string| `string` | ✓ | |  |  |
 | password | string| `string` | ✓ | |  |  |
@@ -2885,7 +3160,7 @@ Status: Internal Server Error
 
 
 
-### <span id="error-struct"></span> errorStruct
+### <span id="github-com-mini-maxit-backend-package-domain-schemas-worker-status"></span> github_com_mini-maxit_backend_package_domain_schemas.WorkerStatus
 
 
   
@@ -2896,8 +3171,10 @@ Status: Internal Server Error
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| code | string| `string` |  | |  |  |
-| message | string| `string` |  | |  |  |
+| busyWorkers | integer| `int64` |  | |  |  |
+| statusTime | string| `string` |  | |  |  |
+| totalWorkers | integer| `int64` |  | |  |  |
+| workerStatus | map of string| `map[string]string` |  | |  |  |
 
 
 
