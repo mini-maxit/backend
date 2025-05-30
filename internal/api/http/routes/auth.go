@@ -34,10 +34,10 @@ type AuthRouteImpl struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.UserLoginRequest	true	"User Login Request"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		401		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[schemas.JWTTokens]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.JWTTokens]
 //	@Router			/login [post]
 func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -84,11 +84,11 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.UserRegisterRequest	true	"User Register Request"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		409		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		201		{object}	httputils.ApiResponse[schemas.JWTTokens]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		409		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		201		{object}	httputils.APIResponse[schemas.JWTTokens]
 //	@Router			/register [post]
 func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -134,11 +134,11 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.RefreshTokenRequest	true	"Refresh Token Request"
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		401		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
-//	@Success		200		{object}	httputils.ApiResponse[schemas.JWTTokens]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.JWTTokens]
 //	@Router			/auth/refresh [post]
 func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
