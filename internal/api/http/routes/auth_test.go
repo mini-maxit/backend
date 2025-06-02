@@ -1,4 +1,4 @@
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -9,44 +9,51 @@ import (
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
-	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	myerrors "github.com/mini-maxit/backend/package/errors"
+	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
 )
 
 func TestLogin(t *testing.T) {
 	// Setup
-	us := testutils.NewMockUserService()
-	as := testutils.NewMockAuthService()
-	route := NewAuthRoute(us, as)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	us := mock_service.NewMockUserService(ctrl)
+	as := mock_service.NewMockAuthService(ctrl)
+	route := routes.NewAuthRoute(us, as)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	hashPass, err := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
-	if err != nil {
-		t.Fatalf("Failed to hash password: %v", err)
-	}
-	correctUser := &models.User{
-		Email:        "email@email.com",
-		PasswordHash: string(hashPass),
-	}
-	as.SetUser(correctUser)
-
 	t.Run("Accept only post", func(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
-			assert.HTTPStatusCode(t, route.Login, method, "", nil, http.StatusMethodNotAllowed)
+			req, err := http.NewRequest(method, server.URL, nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 		}
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
 		tt := []struct {
-			body interface{}
+			body any
 			msg  string
 		}{
 			{
@@ -139,6 +146,9 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
+
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserNotFound).Times(1)
+
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
@@ -169,14 +179,14 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidCredentials).Times(1)
+
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
 		defer resp.Body.Close()
-
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
@@ -186,7 +196,7 @@ func TestLogin(t *testing.T) {
 		assert.Contains(t, bodyString, "Invalid credentials")
 	})
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Internal server error", func(t *testing.T) {
 		body := struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`
@@ -198,6 +208,47 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
+
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+
+		assert.Contains(t, bodyString, "Internal Server Error")
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}{
+			Email:    "test@email.com",
+			Password: "password",
+		}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "access_token",
+			RefreshToken: "refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
+
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
@@ -210,81 +261,95 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.ApiResponse[schemas.Session]{}
-		json.Unmarshal(bodyBytes, response)
-		assert.IsType(t, schemas.Session{}, response.Data)
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
 	})
-
 }
 
 func TestRegister(t *testing.T) {
 	// Setup
-	us := testutils.NewMockUserService()
-	as := testutils.NewMockAuthService()
-	route := NewAuthRoute(us, as)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	us := mock_service.NewMockUserService(ctrl)
+	as := mock_service.NewMockAuthService(ctrl)
+	route := routes.NewAuthRoute(us, as)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
+
 	correctRequest := schemas.UserRegisterRequest{
-		Name:     "name",
-		Surname:  "surname",
-		Email:    "email@email.com",
-		Username: "username",
-		Password: "password",
+		Name:            "name",
+		Surname:         "surname",
+		Email:           "email@email.com",
+		Username:        "username",
+		Password:        "HardPassowrd123!",
+		ConfirmPassword: "HardPassowrd123!",
 	}
-
-	existingUser := &models.User{
-		Email: "existing@email.com",
-	}
-
-	as.SetUser(existingUser)
 
 	t.Run("Accept only post", func(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
-			assert.HTTPStatusCode(t, route.Register, method, "", nil, http.StatusMethodNotAllowed)
+			req, err := http.NewRequest(method, server.URL, nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 		}
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		tt := []interface{}{
+		invalidBodies := []any{
 			struct {
 				Email string `json:"email"`
 			}{
 				Email: "email",
 			},
 			struct {
-				Name     string `json:"name"`
-				Surname  string `json:"surname"`
-				Username string `json:"username"`
-				Email    string `json:"email"`
-				Password string `json:"password"`
-				Invalid  string `json:"invalid"`
+				Name            string `json:"name"`
+				Surname         string `json:"surname"`
+				Username        string `json:"username"`
+				Email           string `json:"email"`
+				Password        string `json:"password"`
+				ConfirmPassword string `json:"confirmPassword"`
+				Invalid         string `json:"invalid"`
 			}{
-				Name:     "name",
-				Surname:  "surname",
-				Username: "username",
-				Email:    "email",
-				Password: "password",
-				Invalid:  "invalid",
+				Name:            "name",
+				Surname:         "surname",
+				Username:        "username",
+				Email:           "email",
+				Password:        "HardPassowrd123!",
+				ConfirmPassword: "HardPassowrd123!",
+				Invalid:         "invalid",
 			},
 			struct {
-				Name     string `json:"name"`
-				Surname  string `json:"surname"`
-				Username string `json:"username"`
-				Email    string `json:"email"`
-				Password string `json:"password"`
+				Name            string `json:"name"`
+				Surname         string `json:"surname"`
+				Username        string `json:"username"`
+				Email           string `json:"email"`
+				Password        string `json:"password"`
+				ConfirmPassword string `json:"confirmPassword"`
 			}{
-				Name:     "name",
-				Surname:  "surname",
-				Username: "username",
-				Email:    "email",
-				Password: "password",
+				Name:            "name",
+				Surname:         "surname",
+				Username:        "username",
+				Email:           "email",
+				Password:        "HardPassowrd123!",
+				ConfirmPassword: "HardPassowrd123!",
 			},
 		}
-		for _, body := range tt {
+
+		for _, body := range invalidBodies {
 			jsonBody, err := json.Marshal(body)
 			if err != nil {
 				t.Fatalf("Failed to marshal request body: %v", err)
@@ -333,13 +398,12 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
-		email := correctRequest.Email
-		correctRequest.Email = existingUser.Email
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserAlreadyExists).Times(1)
+
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
-		correctRequest.Email = email
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
@@ -357,7 +421,39 @@ func TestRegister(t *testing.T) {
 		assert.Contains(t, bodyString, "user already exists")
 	})
 
+	t.Run("Internal server error", func(t *testing.T) {
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		jsonBody, err := json.Marshal(correctRequest)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+
+		assert.Contains(t, bodyString, "Internal Server Error")
+	})
+
 	t.Run("Success", func(t *testing.T) {
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "access_token",
+			RefreshToken: "refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
+
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
 			t.Fatalf("Failed to marshal request body: %v", err)
@@ -374,9 +470,101 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.ApiResponse[schemas.Session]{}
-		json.Unmarshal(bodyBytes, response)
-		assert.IsType(t, schemas.Session{}, response.Data)
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+	})
+}
+
+func TestRefreshToken(t *testing.T) {
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	us := mock_service.NewMockUserService(ctrl)
+	as := mock_service.NewMockAuthService(ctrl)
+	route := routes.NewAuthRoute(us, as)
+	db := &testutils.MockDatabase{}
+	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	t.Run("Accept only post", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL, nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
 	})
 
+	t.Run("Invalid request body", func(t *testing.T) {
+		body := struct {
+			InvalidField string `json:"invalid_field"`
+		}{
+			InvalidField: "invalid",
+		}
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		body := schemas.RefreshTokenRequest{
+			RefreshToken: "valid_refresh_token",
+		}
+
+		expectedTokens := &schemas.JWTTokens{
+			AccessToken:  "new_access_token",
+			RefreshToken: "new_refresh_token",
+			TokenType:    "Bearer",
+		}
+
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
+
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("Failed to marshal request body: %v", err)
+		}
+		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+
+		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.Equal(t, "new_access_token", response.Data.AccessToken)
+		assert.Equal(t, "new_refresh_token", response.Data.RefreshToken)
+		assert.Equal(t, "Bearer", response.Data.TokenType)
+	})
 }

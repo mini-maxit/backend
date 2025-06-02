@@ -1,11 +1,11 @@
 package models
 
-// InputOutput is a struct that contains the input and output of the task
+// InputOutput is a struct that contains the input and output of the task.
 type InputOutput struct {
-	Id          int64   `gorm:"primaryKey"`
-	TaskId      int64   `gorm:"not null"`
-	Order       int     `gorm:"not null"`
-	TimeLimit   float64 `gorm:"not null"`
-	MemoryLimit float64 `gorm:"not null"`
-	Task        Task    `gorm:"foreignKey:TaskId; references:Id"`
+	ID          int64 `gorm:"primaryKey"`
+	TaskID      int64 `gorm:"not null"`
+	Order       int   `gorm:"not null"`
+	TimeLimit   int64 `gorm:"not null"`
+	MemoryLimit int64 `gorm:"not null"`
+	Task        Task  `gorm:"foreignKey:TaskID; references:ID"`
 }

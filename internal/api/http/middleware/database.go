@@ -50,5 +50,4 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		}()
 		next.ServeHTTP(wrappedWriter, rWithDatabase)
 	})
-
 }

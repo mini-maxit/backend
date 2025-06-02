@@ -29,31 +29,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Group"
+                            "$ref": "#/definitions/APIResponse-array_Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -85,31 +85,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-int64"
+                            "$ref": "#/definitions/APIResponse-int64"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -138,31 +138,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-Group"
+                            "$ref": "#/definitions/APIResponse-Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -201,31 +201,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-Group"
+                            "$ref": "#/definitions/APIResponse-Group"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -254,31 +254,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -309,7 +309,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UserIds"
+                            "$ref": "#/definitions/UserIDs"
                         }
                     }
                 ],
@@ -317,31 +317,94 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete users from a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "group"
+                ],
+                "summary": "Delete users from a group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User IDs",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UserIDs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -375,25 +438,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-Session"
+                            "$ref": "#/definitions/APIResponse-Session"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -427,31 +490,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-Session"
+                            "$ref": "#/definitions/APIResponse-Session"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -480,31 +543,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -533,25 +596,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Task"
+                            "$ref": "#/definitions/APIResponse-array_Task"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -559,7 +622,7 @@ const docTemplate = `{
         },
         "/submission": {
             "get": {
-                "description": "Depending on the user role, this endpoint will return all submissions for the current user if user is student, all submissions to owned tasks if user is teacher, and all submissions in database if user is admin",
+                "description": "Depending on the user role, this endpoint will return all submissions for the current user.",
                 "produces": [
                     "application/json"
                 ],
@@ -592,19 +655,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                            "$ref": "#/definitions/APIResponse-array_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -612,7 +675,7 @@ const docTemplate = `{
         },
         "/submission/languages": {
             "get": {
-                "description": "Get all available languages for submitting solutions. Temporary solution, while all tasks have same languages",
+                "description": "Get all available languages for submitting solutions.",
                 "produces": [
                     "application/json"
                 ],
@@ -624,13 +687,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_LanguageConfig"
+                            "$ref": "#/definitions/APIResponse-array_LanguageConfig"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -638,7 +701,7 @@ const docTemplate = `{
         },
         "/submission/task/{id}": {
             "get": {
-                "description": "Gets all submissions for specific task. If the user is a student and has no access to this task, it fails with 403 Forbidden. For teacher it returns all submissions for this task if he created it. For admin it returns all submissions for specific task.",
+                "description": "If the user is a student and has no access to this task, it fails with 403 Forbidden.",
                 "produces": [
                     "application/json"
                 ],
@@ -678,25 +741,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                            "$ref": "#/definitions/APIResponse-array_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -704,7 +767,7 @@ const docTemplate = `{
         },
         "/submission/user/{id}": {
             "get": {
-                "description": "Gets all submissions for specific group. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this group for tasks he created. For admin it returns all submissions for specific group.",
+                "description": "If the user is a student, it fails with 403 Forbidden.",
                 "produces": [
                     "application/json"
                 ],
@@ -744,25 +807,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                            "$ref": "#/definitions/APIResponse-array_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -770,7 +833,7 @@ const docTemplate = `{
         },
         "/submission/user/{id}/short": {
             "get": {
-                "description": "Gets all submissions for specific user. If the user is a student, it fails with 403 Forbidden. For teacher it returns all submissions from this user for tasks owned by the teacher. For admin it returns all submissions for specific user.",
+                "description": "If the user is a student, it fails with 403 Forbidden.",
                 "produces": [
                     "application/json"
                 ],
@@ -810,25 +873,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Submission"
+                            "$ref": "#/definitions/APIResponse-array_Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -836,7 +899,7 @@ const docTemplate = `{
         },
         "/submission/{id}": {
             "get": {
-                "description": "Get a submission by its ID, if the user is a student, the submission must belong to the user, if the user is a teacher, the submission must belong to a task owned by the teacher, if the user is an admin, the submission can be any submission",
+                "description": "If the user is a student, the submission must belong to the user.",
                 "produces": [
                     "application/json"
                 ],
@@ -864,19 +927,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-Submission"
+                            "$ref": "#/definitions/APIResponse-Submission"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -896,13 +959,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Task"
+                            "$ref": "#/definitions/APIResponse-array_Task"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -939,25 +1002,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-TaskCreateResponse"
+                            "$ref": "#/definitions/APIResponse-TaskCreateResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -986,31 +1049,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-array_Task"
+                            "$ref": "#/definitions/APIResponse-array_Task"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1039,31 +1102,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-TaskDetailed"
+                            "$ref": "#/definitions/APIResponse-TaskDetailed"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1090,31 +1153,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1153,31 +1216,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1203,7 +1266,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "Group IDs",
-                        "name": "groupIds",
+                        "name": "groupIDs",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1218,31 +1281,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1268,7 +1331,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "User IDs",
-                        "name": "userIds",
+                        "name": "userIDs",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1283,31 +1346,132 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/task/{id}/limits": {
+            "get": {
+                "description": "Gets task limits by task ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Gets task limits",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates task limits by task ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "task"
+                ],
+                "summary": "Updates task limits",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Task limits",
+                        "name": "limits",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PutInputOutputRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1333,7 +1497,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "Group IDs",
-                        "name": "groupIds",
+                        "name": "groupIDs",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1348,31 +1512,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1398,7 +1562,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "User IDs",
-                        "name": "userIds",
+                        "name": "userIDs",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1413,31 +1577,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1477,19 +1641,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-User"
+                            "$ref": "#/definitions/APIResponse-User"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1518,31 +1682,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-User"
+                            "$ref": "#/definitions/APIResponse-User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1571,40 +1735,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-User"
+                            "$ref": "#/definitions/APIResponse-User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
             },
             "patch": {
                 "description": "Edit user",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1621,8 +1782,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "User edit object",
-                        "name": "body",
+                        "description": "User Edit Request",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1634,37 +1795,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "405": {
                         "description": "Method Not Allowed",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1673,9 +1834,6 @@ const docTemplate = `{
         "/user/{id}/password": {
             "patch": {
                 "description": "Change user password",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1692,8 +1850,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "User change password object",
-                        "name": "body",
+                        "description": "User Change Password Request",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -1705,37 +1863,69 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ApiResponse-string"
+                            "$ref": "#/definitions/APIResponse-string"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
-                        }
-                    },
-                    "405": {
-                        "description": "Method Not Allowed",
-                        "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ApiError"
+                            "$ref": "#/definitions/APIError"
+                        }
+                    }
+                }
+            }
+        },
+        "/worker/status": {
+            "get": {
+                "description": "Returns the current status of all worker nodes",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "worker"
+                ],
+                "summary": "Get worker status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/APIResponse-WorkerStatus"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authorized - requires teacher or admin role",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
+                        }
+                    },
+                    "504": {
+                        "description": "Gateway timeout - worker status request timed out",
+                        "schema": {
+                            "$ref": "#/definitions/APIError"
                         }
                     }
                 }
@@ -1743,7 +1933,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "ApiError": {
+        "APIError": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1754,7 +1944,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-Group": {
+        "APIResponse-Group": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1765,7 +1955,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-Session": {
+        "APIResponse-Session": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1776,7 +1966,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-Submission": {
+        "APIResponse-Submission": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1787,7 +1977,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-SubmitResponse": {
+        "APIResponse-SubmitResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1798,7 +1988,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-TaskCreateResponse": {
+        "APIResponse-TaskCreateResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1809,7 +1999,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-TaskDetailed": {
+        "APIResponse-TaskDetailed": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1820,7 +2010,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-User": {
+        "APIResponse-User": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1831,7 +2021,18 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-array_Group": {
+        "APIResponse-WorkerStatus": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/WorkerStatus"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "APIResponse-array_Group": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1845,7 +2046,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-array_LanguageConfig": {
+        "APIResponse-array_LanguageConfig": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1859,7 +2060,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-array_Submission": {
+        "APIResponse-array_Submission": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1873,7 +2074,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-array_Task": {
+        "APIResponse-array_Task": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1887,7 +2088,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-int64": {
+        "APIResponse-int64": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1898,7 +2099,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ApiResponse-string": {
+        "APIResponse-string": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1926,7 +2127,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
                 }
             }
         },
@@ -1945,20 +2148,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "tasks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Task"
-                    }
-                },
                 "updated_at": {
                     "type": "string"
-                },
-                "users": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/User"
-                    }
                 }
             }
         },
@@ -1972,10 +2163,35 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "language": {
-                    "$ref": "#/definitions/models.LanguageType"
+                    "type": "string"
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "PutInputOutput": {
+            "type": "object",
+            "properties": {
+                "memory_limit": {
+                    "type": "integer"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "time_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PutInputOutputRequest": {
+            "type": "object",
+            "properties": {
+                "limits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PutInputOutput"
+                    }
                 }
             }
         },
@@ -2091,6 +2307,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -2116,6 +2335,12 @@ const docTemplate = `{
                 },
                 "description_url": {
                     "type": "string"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "id": {
                     "type": "integer"
@@ -2207,10 +2432,10 @@ const docTemplate = `{
                 }
             }
         },
-        "UserIds": {
+        "UserIDs": {
             "type": "object",
             "properties": {
-                "user_ids": {
+                "userIDs": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -2236,7 +2461,7 @@ const docTemplate = `{
         "UserRegisterRequest": {
             "type": "object",
             "required": [
-                "confirmPassword",
+                "confirm_password",
                 "email",
                 "name",
                 "password",
@@ -2244,7 +2469,7 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
-                "confirmPassword": {
+                "confirm_password": {
                     "type": "string"
                 },
                 "email": {
@@ -2272,6 +2497,26 @@ const docTemplate = `{
                 }
             }
         },
+        "WorkerStatus": {
+            "type": "object",
+            "properties": {
+                "busy_workers": {
+                    "type": "integer"
+                },
+                "status_time": {
+                    "type": "string"
+                },
+                "total_workers": {
+                    "type": "integer"
+                },
+                "worker_status": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "errorStruct": {
             "type": "object",
             "properties": {
@@ -2282,17 +2527,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "models.LanguageType": {
-            "type": "string",
-            "enum": [
-                "c",
-                "cpp"
-            ],
-            "x-enum-varnames": [
-                "LangTypeC",
-                "LangTypeCPP"
-            ]
         },
         "types.UserRole": {
             "type": "string",
@@ -2312,12 +2546,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	Version:          "1.0.0",
+	Host:             "",
+	BasePath:         "/api/v1.",
 	Schemes:          []string{},
-	Title:            "Mini Maxit API Documentation testing the workflow",
-	Description:      "This is the API documentation for the Mini Maxit API.",
+	Title:            "Mini-Maxit API",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

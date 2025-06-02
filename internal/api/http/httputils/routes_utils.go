@@ -2,6 +2,7 @@ package httputils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -14,7 +15,7 @@ import (
 	"github.com/mini-maxit/backend/package/utils"
 )
 
-type ApiResponse[T any] struct {
+type APIResponse[T any] struct {
 	Ok   bool `json:"ok"`
 	Data T    `json:"data"`
 }
@@ -24,13 +25,13 @@ type errorStruct struct {
 	Message string `json:"message"`
 }
 
-type ApiError ApiResponse[errorStruct]
+type APIError APIResponse[errorStruct]
 
 func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	code := http.StatusText(statusCode)
-	response := ApiError{
+	response := APIError{
 		Ok:   false,
 		Data: errorStruct{Code: code, Message: message},
 	}
@@ -45,7 +46,7 @@ func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	response := ApiResponse[any]{
+	response := APIResponse[any]{
 		Ok:   true,
 		Data: data,
 	}
@@ -55,57 +56,53 @@ func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
 		return
 	}
 }
-func GetQueryParams(query *url.Values) (map[string]interface{}, error) {
-	queryParams := map[string]interface{}{}
+func GetQueryParams(query *url.Values) (map[string]any, error) {
+	queryParams := map[string]any{}
 	for key, value := range *query {
 		if len(value) > 1 {
-			err := QueryError{Filed: key, Detail: MultipleQueryValues}
-			return nil, err
+			return nil, QueryError{Filed: key, Detail: MultipleQueryValues}
 		}
 		queryParams[key] = value[0]
 	}
-	if queryParams["limit"] == nil {
-		queryParams["limit"] = DefaultPaginationLimitStr
+
+	setDefault := func(param string, defaultValue string) {
+		if queryParams[param] == nil {
+			queryParams[param] = defaultValue
+		}
 	}
-	limit, err := strconv.ParseUint(queryParams["limit"].(string), 10, 64)
+
+	setDefault("limit", DefaultPaginationLimitStr)
+	setDefault("offset", DefaultPaginationOffsetStr)
+
+	limit, err := strconv.ParseInt(queryParams["limit"].(string), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid limit value. expected unsigned integer got %s", queryParams["limit"])
 	}
-	queryParams["limit"] = limit
+	queryParams["limit"] = int(limit)
 
-	if queryParams["offset"] == nil {
-		queryParams["offset"] = DefaultPaginationOffsetStr
-	}
-	offset, err := strconv.ParseUint(queryParams["offset"].(string), 10, 64)
+	offset, err := strconv.ParseInt(queryParams["offset"].(string), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid offset value. expected unsigned integer got %s", queryParams["offset"])
 	}
-	queryParams["offset"] = offset
+	queryParams["offset"] = int(offset)
 
-	if queryParams["sort"] != nil {
-		sortFields := queryParams["sort"]
+	if sortFields, ok := queryParams["sort"]; ok {
 		sortFieldsParts := strings.Split(sortFields.(string), ",")
 		for _, sortField := range sortFieldsParts {
 			sortFieldParts := strings.Split(sortField, ":")
-			if len(sortFieldParts) == 2 {
-				if sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc" {
-					return nil, fmt.Errorf("invalid sort order. expected asc or desc, got %s", sortFieldParts[1])
-				}
-			} else {
+			if len(sortFieldParts) != 2 || (sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc") {
 				return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
 			}
 		}
-
-		queryParams["sort"] = sortFields
 	} else {
 		queryParams["sort"] = ""
 	}
+
 	return queryParams, nil
 }
 
 // SaveMultiPartFile saves an uploaded multipart file to a temporary directory and returns the file path.
 func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (string, error) {
-
 	tempDir := os.TempDir()
 
 	filePath := fmt.Sprintf("%s/%s", tempDir, handler.Filename)
@@ -125,7 +122,7 @@ func SaveMultiPartFile(file multipart.File, handler *multipart.FileHeader) (stri
 }
 
 // ShouldBindJSON binds the request body to a struct and validates it.
-func ShouldBindJSON(body io.ReadCloser, v interface{}) error {
+func ShouldBindJSON(body io.ReadCloser, v any) error {
 	dec := json.NewDecoder(body)
 	dec.DisallowUnknownFields()
 
@@ -135,7 +132,7 @@ func ShouldBindJSON(body io.ReadCloser, v interface{}) error {
 	}
 
 	if dec.More() {
-		return fmt.Errorf("unexpected extra data in JSON body")
+		return errors.New("unexpected extra data in JSON body")
 	}
 
 	validator, err := utils.NewValidator()

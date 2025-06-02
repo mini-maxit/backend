@@ -10,10 +10,10 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -22,19 +22,19 @@ const numTries = 10
 
 type Initialization struct {
 	Cfg *config.Config
-	Db  database.Database
+	DB  database.Database
 
-	TaskService    service.TaskService
-	SessionService service.SessionService
+	TaskService service.TaskService
+	JWTService  service.JWTService
 
 	AuthRoute       routes.AuthRoute
 	GroupRoute      routes.GroupRoute
-	SessionRoute    routes.SessionRoute
 	SubmissionRoute routes.SubmissionRoutes
 	TaskRoute       routes.TaskRoute
 	UserRoute       routes.UserRoute
+	WorkerRoute     routes.WorkerRoute
 
-	QueueListener queue.QueueListener
+	QueueListener queue.Listener
 
 	Dump func(w http.ResponseWriter, r *http.Request)
 }
@@ -44,8 +44,9 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 
 	var err error
 	var conn *amqp.Connection
+	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Broker.User, cfg.Broker.Password, cfg.Broker.Host, cfg.Broker.Port)
 	for v := range numTries {
-		conn, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
+		conn, err = amqp.Dial(brokerURL)
 		if err != nil {
 			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
 			time.Sleep(2 * time.Second * time.Duration(v))
@@ -114,10 +115,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create queue repository: %s", err.Error())
 	}
-	sessionRepository, err := repository.NewSessionRepository(tx)
-	if err != nil {
-		log.Panicf("Failed to create session repository: %s", err.Error())
-	}
 	submissionResultRepository, err := repository.NewSubmissionResultRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
@@ -129,122 +126,126 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Services
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg.FileStorageUrl, taskRepository, inputOutputRepository, userRepository, groupRepository)
-	queueService, err := service.NewQueueService(taskRepository, submissionRepository, queueRepository, conn, channel, cfg.BrokerConfig.QueueName, cfg.BrokerConfig.ResponseQueueName)
+	taskService := service.NewTaskService(cfg.FileStorageURL,
+		taskRepository,
+		inputOutputRepository,
+		userRepository,
+		groupRepository,
+	)
+	queueService, err := service.NewQueueService(taskRepository,
+		submissionRepository,
+		queueRepository,
+		conn,
+		channel,
+		cfg.Broker.QueueName,
+		cfg.Broker.ResponseQueueName,
+	)
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
-	sessionService := service.NewSessionService(sessionRepository, userRepository)
-	authService := service.NewAuthService(userRepository, sessionService)
+	err = queueService.PublishHandshake()
+	if err != nil {
+		log.Panicf("Failed to publish handshake: %s", err.Error())
+	}
+	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
+	authService := service.NewAuthService(userRepository, jwtService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
-	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, langService, taskService, userService)
-	tx, err = db.BeginTransaction()
-	if err != nil {
-		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
-	}
-	err = langService.InitLanguages(tx, cfg.EnabledLanguages)
-	if err != nil {
-		log.Panicf("Failed to init languages: %s", err.Error())
-		tx.Rollback()
-	}
-	err = db.Commit()
-	if err != nil {
-		log.Panicf("Failed to commit transaction after lang init: %s", err.Error())
-	}
+	submissionService := service.NewSubmissionService(
+		submissionRepository,
+		submissionResultRepository,
+		inputOutputRepository,
+		testResultRepository,
+		groupRepository,
+		taskRepository,
+		langService,
+		taskService,
+		userService,
+	)
+	workerService := service.NewWorkerService(queueService)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService)
 	groupRoute := routes.NewGroupRoute(groupService)
-	sessionRoute := routes.NewSessionRoute(sessionService)
-	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService, taskService)
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
+	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
+	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
 	userRoute := routes.NewUserRoute(userService)
+	workerRoute := routes.NewWorkerRoute(workerService)
 
 	// Queue listener
-	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, cfg.BrokerConfig.ResponseQueueName)
+	queueListener, err := queue.NewListener(
+		conn,
+		channel,
+		db,
+		taskService,
+		queueService,
+		submissionService,
+		langService,
+		cfg.Broker.ResponseQueueName,
+	)
 	if err != nil {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
-
 	if cfg.Dump {
-		tx, err := db.BeginTransaction()
-		if err != nil {
-			log.Warnf("Failed to connect to database to init dump: %s", err.Error())
-		}
-		fakeUser := schemas.User{
-			Name:     "FakeName",
-			Surname:  "FakeSurname",
-			Email:    "asd@asdf.com",
-			Username: "fake",
-			Role:     types.UserRoleAdmin,
-		}
-		session, err := authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "AdminName",
-			Surname:  "AdminSurname",
-			Email:    "admin@admin.com",
-			Username: "admin",
-			Password: "adminadmin",
-		})
-		if err != nil {
-			log.Warnf("Failed to create admin: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleAdmin)
-			if err != nil {
-				log.Warnf("Failed to change admin role: %s", err.Error())
-			}
-		}
-		session, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "TeacherName",
-			Surname:  "TeacherSurname",
-			Email:    "teacher@teacher.com",
-			Username: "teacher",
-			Password: "teacherteacher",
-		})
-		if err != nil {
-			log.Warnf("Failed to create teacher: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleTeacher)
-			if err != nil {
-				log.Warnf("Failed to change teacher role: %s", err.Error())
-			}
-		}
-		session, err = authService.Register(tx, schemas.UserRegisterRequest{
-			Name:     "StudentName",
-			Surname:  "StudentSurname",
-			Email:    "student@student.com",
-			Username: "student",
-			Password: "studentstudent",
-		})
-		if err != nil {
-			log.Warnf("Failed to create student: %s", err.Error())
-		} else {
-			err = userService.ChangeRole(tx, fakeUser, session.UserId, types.UserRoleStudent)
-			if err != nil {
-				log.Warnf("Failed to change student role: %s", err.Error())
-			}
-		}
-		err = db.Commit()
-		if err != nil {
-			log.Warnf("Failed to commit transaction after dump: %s", err.Error())
-		}
-
+		dump(db, log, authService)
 	}
-
 	return &Initialization{
 		Cfg: cfg,
-		Db:  db,
+		DB:  db,
 
-		TaskService:    taskService,
-		SessionService: sessionService,
+		TaskService: taskService,
+		JWTService:  jwtService,
 
 		AuthRoute:       authRoute,
 		GroupRoute:      groupRoute,
-		SessionRoute:    sessionRoute,
 		SubmissionRoute: submissionRoute,
 		TaskRoute:       taskRoute,
 		UserRoute:       userRoute,
+		WorkerRoute:     workerRoute,
 
 		QueueListener: queueListener,
+	}
+}
+
+func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.AuthService) {
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		log.Warnf("Failed to connect to database to init dump: %s", err.Error())
+	}
+
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "AdminName",
+		Surname:  "AdminSurname",
+		Email:    "admin@admin.com",
+		Username: "admin",
+		Password: "adminadmin",
+	})
+	if err != nil {
+		log.Warnf("Failed to create admin: %s", err.Error())
+	}
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "TeacherName",
+		Surname:  "TeacherSurname",
+		Email:    "teacher@teacher.com",
+		Username: "teacher",
+		Password: "teacherteacher",
+	})
+	if err != nil {
+		log.Warnf("Failed to create teacher: %s", err.Error())
+	}
+	_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		Name:     "StudentName",
+		Surname:  "StudentSurname",
+		Email:    "student@student.com",
+		Username: "student",
+		Password: "studentstudent",
+	})
+	if err != nil {
+		log.Warnf("Failed to create student: %s", err.Error())
+	}
+
+	err = db.Commit()
+	if err != nil {
+		log.Warnf("Failed to commit transaction after dump: %s", err.Error())
 	}
 }

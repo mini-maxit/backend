@@ -1,25 +1,23 @@
 package routes
 
 import (
-	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
-	"reflect"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
 type UserRoute interface {
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
-	GetUserById(w http.ResponseWriter, r *http.Request)
+	GetUserByID(w http.ResponseWriter, r *http.Request)
 	GetUserByEmail(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
 	CreateUsers(w http.ResponseWriter, r *http.Request)
@@ -39,9 +37,9 @@ type UserRouteImpl struct {
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/user/ [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -52,15 +50,15 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
-	users, err := u.userService.GetAllUsers(tx, queryParams)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	users, err := u.userService.GetAll(tx, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting users. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting users. "+err.Error())
 		return
 	}
 
@@ -71,53 +69,53 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, users)
 }
 
-// GetUserById godoc
+// GetUserByID godoc
 //
 //	@Tags			user
 //	@Summary		Get user by ID
 //	@Description	Get user by ID
 //	@Produce		json
 //	@Param			id	path		int	true	"User ID"
-//	@Success		200	{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		400	{object}	httputils.ApiError
-//	@Failure		404	{object}	httputils.ApiError
-//	@Failure		405	{object}	httputils.ApiError
-//	@Failure		500	{object}	httputils.ApiError
+//	@Success		200	{object}	httputils.APIResponse[schemas.User]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
 //	@Router			/user/{id} [get]
-func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
+func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	userIdStr := r.PathValue("id")
+	userIDStr := r.PathValue("id")
 
-	if userIdStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "UserId cannot be empty")
+	if userIDStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
 		return
 	}
 
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, fmt.Sprintf("Invalid userId: %s", err.Error()))
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID: "+err.Error())
 		return
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
-	user, err := u.userService.GetUserById(tx, userId)
+	user, err := u.userService.Get(tx, userID)
 	if err != nil {
 		db.Rollback()
-		if err == errors.ErrUserNotFound {
+		if errors.Is(err, myerrors.ErrUserNotFound) {
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error fetching user: %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error fetching user: "+err.Error())
 		return
 	}
 
@@ -131,11 +129,11 @@ func (u *UserRouteImpl) GetUserById(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get user by email
 //	@Produce		json
 //	@Param			email	query		string	true	"User email"
-//	@Success		200		{object}	httputils.ApiResponse[schemas.User]
-//	@Failure		400		{object}	httputils.ApiError
-//	@Failure		404		{object}	httputils.ApiError
-//	@Failure		405		{object}	httputils.ApiError
-//	@Failure		500		{object}	httputils.ApiError
+//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
 //	@Router			/user/email [get]
 func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -143,7 +141,7 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]interface{})
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	email := queryParams["email"].(string)
 	if email == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Email query cannot be empty")
@@ -153,40 +151,39 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
-	user, err := u.userService.GetUserByEmail(tx, email)
+	user, err := u.userService.GetByEmail(tx, email)
 	if err != nil {
 		db.Rollback()
-		if err == errors.ErrUserNotFound {
+		if errors.Is(err, myerrors.ErrUserNotFound) {
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting user. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting user. "+err.Error())
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, user)
 }
 
-// EditUser godoc
+//	EditUser godoc
 //
 // @Tags			user
 // @Summary		Edit user
 // @Description	Edit user
-// @Accept			json
 // @Produce		json
-// @Param			id		path		int					true	"User ID"
-// @Param			body	body		schemas.UserEdit	true	"User edit object"
-// @Success		200		{object}	httputils.ApiResponse[string]
-// @Failure		400		{object}	httputils.ApiError
-// @Failure		403		{object}	httputils.ApiError
-// @Failure		404		{object}	httputils.ApiError
-// @Failure		405		{object}	httputils.ApiError
-// @Failure		500		{object}	httputils.ApiError
-// @Router			/user/{id} [patch]
+// @Param			id	path		int	true	"User ID"
+// @Param			request	body		schemas.UserEdit	true	"User Edit Request"
+// @Success		200		{object}	httputils.APIResponse[string]
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		405		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
+// @Router			/user/{id} [patch].
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -195,15 +192,15 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 	var request schemas.UserEdit
 
-	userIdStr := r.PathValue("id")
+	userIDStr := r.PathValue("id")
 
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userId")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID")
 		return
 	}
 
-	err = json.NewDecoder(r.Body).Decode(&request)
+	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
@@ -212,24 +209,23 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = u.userService.EditUser(tx, currentUser, userId, &request)
+	err = u.userService.Edit(tx, currentUser, userID, &request)
 	if err != nil {
 		db.Rollback()
-		if err == errors.ErrNotAllowed {
+		switch {
+		case errors.Is(err, myerrors.ErrNotAllowed):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not allowed to change user role")
 			return
-		}
-		if err == errors.ErrUserNotFound {
+		case errors.Is(err, myerrors.ErrUserNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
-		}
-		if err == errors.ErrNotAuthorized {
+		case errors.Is(err, myerrors.ErrNotAuthorized):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
 			return
 		}
@@ -245,36 +241,34 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 // @Tags			user
 // @Summary		Change user password
 // @Description	Change user password
-// @Accept			json
 // @Produce		json
-// @Param			id		path		int							true	"User ID"
-// @Param			body	body		schemas.UserChangePassword	true	"User change password object"
-// @Success		200		{object}	httputils.ApiResponse[string]
-// @Failure		400		{object}	httputils.ApiError
-// @Failure		403		{object}	httputils.ApiError
-// @Failure		404		{object}	httputils.ApiError
-// @Failure		405		{object}	httputils.ApiError
-// @Failure		500		{object}	httputils.ApiError
-// @Router			/user/{id}/password [patch]
+// @Param			id	path		int	true	"User ID"
+// @Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
+// @Success		200		{object}	httputils.APIResponse[string]
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
+// @Router			/user/{id}/password [patch].
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	userIdStr := r.PathValue("id")
-	if userIdStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "UserId cannot be empty")
+	userIDStr := r.PathValue("id")
+	if userIDStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
 		return
 	}
-	userId, err := strconv.ParseInt(userIdStr, 10, 64)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userId")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID")
 		return
 	}
 
 	request := &schemas.UserChangePassword{}
-	err = json.NewDecoder(r.Body).Decode(request)
+	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
@@ -283,47 +277,50 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error connecting to database. %s", err.Error()))
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
 		return
 	}
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = u.userService.ChangePassword(tx, currentUser, userId, request)
+	err = u.userService.ChangePassword(tx, currentUser, userID, request)
 	if err != nil {
 		db.Rollback()
-		if reflect.TypeOf(err) == reflect.TypeOf(validator.ValidationErrors{}) {
+
+		// Define mapping of myerrors to HTTP status codes and messages
+		errorResponses := map[error]struct {
+			code    int
+			message string
+		}{
+			myerrors.ErrNotAllowed:         {http.StatusForbidden, "You are not allowed to change user role"},
+			myerrors.ErrUserNotFound:       {http.StatusNotFound, "User not found"},
+			myerrors.ErrNotAuthorized:      {http.StatusForbidden, "You are not authorized to edit this user"},
+			myerrors.ErrInvalidCredentials: {http.StatusBadRequest, "Invalid old password"},
+			myerrors.ErrInvalidData:        {http.StatusBadRequest, "New password and confirm password do not match"},
+		}
+
+		// Special handling for validation errors
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
 			httputils.ReturnError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == errors.ErrNotAllowed {
-			httputils.ReturnError(w, http.StatusForbidden, "You are not allowed to change user role")
+
+		// Check if err exists in the errorResponses map
+		if resp, exists := errorResponses[err]; exists {
+			httputils.ReturnError(w, resp.code, resp.message)
 			return
 		}
-		if err == errors.ErrUserNotFound {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		if err == errors.ErrNotAuthorized {
-			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
-			return
-		}
-		if err == errors.ErrInvalidCredentials {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid old password")
-			return
-		}
-		if err == errors.ErrInvalidData {
-			httputils.ReturnError(w, http.StatusBadRequest, "New password and confirm password do not match")
-			return
-		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error ocured during editing. "+err.Error())
+
+		// Default case
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error occurred during editing. "+err.Error())
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, "Password changed successfully")
 }
 
-func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, r *http.Request) {
+func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 	// this funcion allows admin to ctreate new users with their email and given role
 	// the users will be created with a default password and will be required to change it on first login
 
@@ -342,9 +339,10 @@ func NewUserRoute(userService service.UserService) UserRoute {
 func RegisterUserRoutes(mux *http.ServeMux, route UserRoute) {
 	mux.HandleFunc("/", route.GetAllUsers)
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			route.GetUserById(w, r)
-		} else if r.Method == http.MethodPatch {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetUserByID(w, r)
+		case http.MethodPatch:
 			route.EditUser(w, r)
 		}
 	})

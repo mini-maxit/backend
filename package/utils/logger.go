@@ -18,9 +18,10 @@ const (
 	msgKey    = "msg"
 )
 
-var sugar_logger *zap.SugaredLogger
-var http_sugar_logger *zap.SugaredLogger
+var sugarLogger *zap.SugaredLogger
+var httpSugarLogger *zap.SugaredLogger
 
+// InitializeLogger initializes the logger.
 func InitializeLogger() {
 	w := zapcore.AddSync(&lumberjack.Logger{
 		Filename: logPath,
@@ -28,9 +29,9 @@ func InitializeLogger() {
 		Compress: true,
 	})
 
-	std_w := zapcore.AddSync(os.Stdout)
+	stdWriter := zapcore.AddSync(os.Stdout)
 
-	http_w := zapcore.AddSync(&lumberjack.Logger{
+	httpWriter := zapcore.AddSync(&lumberjack.Logger{
 		Filename: httpLogPath,
 		MaxAge:   1,
 		Compress: true,
@@ -46,44 +47,45 @@ func InitializeLogger() {
 		EncodeDuration: zapcore.StringDurationEncoder,
 	}
 
-	file_core := zapcore.NewCore(
+	fileCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
 		w,
 		zap.InfoLevel,
 	)
 
-	std_core := zapcore.NewCore(
+	stdCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
-		std_w,
+		stdWriter,
 		zap.InfoLevel,
 	)
 
-	http_core := zapcore.NewCore(
+	httpCore := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(encoderConfig),
-		http_w,
+		httpWriter,
 		zap.InfoLevel,
 	)
 
-	core := zapcore.NewTee(file_core, std_core)
+	core := zapcore.NewTee(fileCore, stdCore)
 
 	log := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	sugar_logger = log.Sugar()
+	sugarLogger = log.Sugar()
 
-	httpLogger := zap.New(http_core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	http_sugar_logger = httpLogger.Sugar()
+	httpLogger := zap.New(httpCore, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	httpSugarLogger = httpLogger.Sugar()
 }
 
-func NewHttpLogger() *zap.SugaredLogger {
-	if http_sugar_logger == nil {
+// NewHTTPLogger a new SugaredLogger.
+func NewHTTPLogger() *zap.SugaredLogger {
+	if httpSugarLogger == nil {
 		InitializeLogger()
 	}
-	return http_sugar_logger.Named("http")
+	return httpSugarLogger.Named("http")
 }
 
-// NewNamedLogger creates a new named SugaredLogger for a given service
+// NewNamedLogger creates a new named SugaredLogger for a given service.
 func NewNamedLogger(serviceName string) *zap.SugaredLogger {
-	if sugar_logger == nil {
+	if sugarLogger == nil {
 		InitializeLogger()
 	}
-	return sugar_logger.Named(serviceName)
+	return sugarLogger.Named(serviceName)
 }

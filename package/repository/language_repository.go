@@ -6,16 +6,24 @@ import (
 )
 
 type LanguageRepository interface {
-	GetLanguages(tx *gorm.DB) ([]models.LanguageConfig, error)
-	GetLanguage(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error)
-	CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error
-	DeleteLanguage(tx *gorm.DB, languageId int64) error
+	// Create creates a new language
+	Create(tx *gorm.DB, language *models.LanguageConfig) error
+	// Delete deletes a language
+	Delete(tx *gorm.DB, languageID int64) error
+	// GetAll returns all languages
+	GetAll(tx *gorm.DB) ([]models.LanguageConfig, error)
+	// GetEnabled returns all enabled languages
+	GetEnabled(tx *gorm.DB) ([]models.LanguageConfig, error)
+	// MarkDisabled marks a language as disabled
+	MarkDisabled(tx *gorm.DB, languageID int64) error
+	// MarkEnabled marks a language as enabled
+	MarkEnabled(tx *gorm.DB, languageID int64) error
 }
 
 type languageRepository struct {
 }
 
-func (l *languageRepository) GetLanguages(tx *gorm.DB) ([]models.LanguageConfig, error) {
+func (l *languageRepository) GetAll(tx *gorm.DB) ([]models.LanguageConfig, error) {
 	tasks := []models.LanguageConfig{}
 	err := tx.Model(&models.LanguageConfig{}).Find(&tasks).Error
 	if err != nil {
@@ -24,18 +32,33 @@ func (l *languageRepository) GetLanguages(tx *gorm.DB) ([]models.LanguageConfig,
 	return tasks, nil
 }
 
-func (l *languageRepository) GetLanguage(tx *gorm.DB, languageId int64) (*models.LanguageConfig, error) {
-	panic("implement me")
-}
-
-func (l *languageRepository) CreateLanguage(tx *gorm.DB, language *models.LanguageConfig) error {
+func (l *languageRepository) Create(tx *gorm.DB, language *models.LanguageConfig) error {
 	err := tx.Model(models.LanguageConfig{}).Create(&language).Error
 	return err
 }
 
-func (l *languageRepository) DeleteLanguage(tx *gorm.DB, languageId int64) error {
-	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageId).Delete(&models.LanguageConfig{}).Error
+func (l *languageRepository) Delete(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Delete(&models.LanguageConfig{}).Error
 	return err
+}
+
+func (l *languageRepository) MarkDisabled(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Update("disabled", true).Error
+	return err
+}
+
+func (l *languageRepository) MarkEnabled(tx *gorm.DB, languageID int64) error {
+	err := tx.Model(&models.LanguageConfig{}).Where("id = ?", languageID).Update("disabled", false).Error
+	return err
+}
+
+func (l *languageRepository) GetEnabled(tx *gorm.DB) ([]models.LanguageConfig, error) {
+	tasks := []models.LanguageConfig{}
+	err := tx.Model(&models.LanguageConfig{}).Where("disabled = ?", false).Find(&tasks).Error
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func NewLanguageRepository(db *gorm.DB) (LanguageRepository, error) {

@@ -12,7 +12,6 @@ func RecoveryMiddleware(next http.Handler, log *zap.SugaredLogger) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-
 				log.Errorf("Panic recovered: %v", rec)
 				log.Error(string(debug.Stack()))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)

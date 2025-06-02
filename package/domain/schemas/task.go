@@ -7,21 +7,23 @@ type EditTask struct {
 }
 
 type Task struct {
-	Id        int64     `json:"id"`
+	ID        int64     `json:"id"`
 	Title     string    `json:"title"`
-	CreatedBy int64     `json:"created_by"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedBy int64     `json:"createdBy"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type TaskDetailed struct {
-	Id             int64     `json:"id"`
+	ID             int64     `json:"id"`
 	Title          string    `json:"title"`
-	DescriptionURL string    `json:"description_url"`
-	CreatedBy      int64     `json:"created_by"`
-	CreatedByName  string    `json:"created_by_name"`
-	CreatedAt      time.Time `json:"created_at"`
+	DescriptionURL string    `json:"descriptionUrl"`
+	CreatedBy      int64     `json:"createdBy"`
+	CreatedByName  string    `json:"createdByName"`
+	CreatedAt      time.Time `json:"createdAt"`
+	GroupIDs       []int64   `json:"groupIds"`
 }
 
 type TaskCreateResponse struct {
-	Id int64 `json:"id"`
+	ID int64 `json:"id"`
 }
