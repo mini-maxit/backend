@@ -36,3 +36,4 @@ jobs:
   build-and-push:
     needs: [build, test]
     uses: ./.github/workflows/docker-image.yaml
+    secrets: inherit
