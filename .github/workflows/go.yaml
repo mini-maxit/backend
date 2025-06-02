@@ -34,5 +34,5 @@ jobs:
         run: go test -v ./...
 
   build-and-push:
-    if: jobs.test.outcome == 'success' && jobs.build.outcome == 'success'
+    if: jobs.test.conclusion == 'success' && jobs.build.conclusion == 'success'
     uses: ./.github/workflows/docker-image.yaml
