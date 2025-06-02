@@ -6,7 +6,10 @@ on:
     types:
       - completed
     branches:
-      - '**'
+      - '*'
+  workflow_dispatch:
+  push:
+
 
 jobs:
   build-and-push:
