@@ -192,6 +192,9 @@ func (ts *taskService) Get(tx *gorm.DB, _ schemas.User, taskID int64) (*schemas.
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
 		return nil, err
 	}
 
