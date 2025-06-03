@@ -344,6 +344,8 @@ func RegisterUserRoutes(mux *http.ServeMux, route UserRoute) {
 			route.GetUserByID(w, r)
 		case http.MethodPatch:
 			route.EditUser(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 	mux.HandleFunc("/email", route.GetUserByEmail)
