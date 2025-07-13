@@ -310,6 +310,14 @@ func TestGetTask(t *testing.T) {
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
 	})
+
+	t.Run("Fail with non existent task", func(t *testing.T) {
+		taskID := int64(0)
+		tr.EXPECT().Get(tx, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		taskResp, err := ts.Get(tx, adminUser, taskID)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+		assert.Nil(t, taskResp)
+	})
 }
 
 func TestAssignTaskToUsers(t *testing.T) {
