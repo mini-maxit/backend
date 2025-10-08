@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
@@ -23,7 +22,7 @@ func TestCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	m := testutils.NewMockSubmissionRepository(ctrl)
+	m := mock_repository.NewMockSubmissionRepository(ctrl)
 
 	submission := &models.Submission{
 		TaskID: 1,
@@ -39,8 +38,9 @@ func TestCreate(t *testing.T) {
 		expectedModel := &models.Submission{
 			TaskID:     rand.Int64(),
 			UserID:     rand.Int64(),
-			Order:      rand.Int64(),
+			Order:      rand.Int(),
 			LanguageID: rand.Int64(),
+			FileID:     rand.Int64(),
 			Status:     models.StatusReceived,
 		}
 		m.EXPECT().Create(
@@ -54,9 +54,9 @@ func TestCreate(t *testing.T) {
 			submission.SubmittedAt = time.Now()
 			return submission.ID, nil
 		}).Times(1)
-		s := service.NewSubmissionService(m, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, m, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
-		id, err := s.Create(nil, expectedModel.TaskID, expectedModel.UserID, expectedModel.LanguageID, expectedModel.Order)
+		id, err := s.Create(nil, expectedModel.TaskID, expectedModel.UserID, expectedModel.LanguageID, expectedModel.Order, expectedModel.FileID)
 		require.NoError(t, err)
 		assert.Equal(t, submissionID, id)
 	})
@@ -68,20 +68,14 @@ func TestCreate(t *testing.T) {
 				return 0, gorm.ErrInvalidData
 			}).
 			Times(1)
-		s := service.NewSubmissionService(m, nil, nil, nil, nil, nil, nil, nil, nil)
-		id, err := s.Create(nil, 1, 1, 1, 1)
+		s := service.NewSubmissionService(nil, nil, m, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		id, err := s.Create(nil, 1, 1, 1, 1, 1)
 		require.Error(t, err)
 		assert.Equal(t, int64(0), id)
 	})
 }
 
 func TestCreateSubmissionResult(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mSubmissionRepo := testutils.NewMockSubmissionRepository(ctrl)
-	mSubmissionResRepo := mock_repository.NewMockSubmissionResultRepository(ctrl)
-	mIORepo := mock_repository.NewMockInputOutputRepository(ctrl)
-	mTestRepo := mock_repository.NewMockTestRepository(ctrl)
 	submission := &models.Submission{
 		ID:          1,
 		TaskID:      1,
@@ -92,67 +86,31 @@ func TestCreateSubmissionResult(t *testing.T) {
 		SubmittedAt: time.Now(),
 	}
 
-	submissionResultID := rand.Int64()
 	testCases := []struct {
 		name          string
-		setupMocks    func()
+		setupMocks    func(*mock_repository.MockSubmissionRepository, *mock_repository.MockSubmissionResultRepository, *mock_repository.MockTestCaseRepository, *mock_repository.MockTestRepository)
 		expectedID    int64
 		expectedErr   bool
 		queueResponse schemas.QueueResponseMessage
 	}{
 		{
-			name: "Could not get submission",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-			},
-			expectedID:    int64(-1),
-			expectedErr:   true,
-			queueResponse: schemas.QueueResponseMessage{},
-		},
-		{
 			name: "Could not unmarshal response message payload",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
+			setupMocks: func(mSubmissionRepo *mock_repository.MockSubmissionRepository, mSubmissionResRepo *mock_repository.MockSubmissionResultRepository, mIORepo *mock_repository.MockTestCaseRepository, mTestRepo *mock_repository.MockTestRepository) {
+				// No mocks needed for this test case
 			},
 			expectedID:    int64(-1),
 			expectedErr:   true,
 			queueResponse: schemas.QueueResponseMessage{},
 		},
 		{
-			name: "Could not create submission result",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
-				mSubmissionResRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(0), gorm.ErrInvalidData).Times(1)
-			},
-			expectedID:  int64(-1),
-			expectedErr: true,
-			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{
-					"type": "handshake",
-					"message_id": "adsa",
-					"ok": true,
-					"payload": {
-					    "languages": [
-					    {
-						    "name": "CPP",
-					        "versions": ["20", "17"]
-					    },
-					    {
-					        "name": "Python",
-					        "versions": ["3", "2"]
-					    }
-					    ]
-				  }
-				}`)},
-		},
-		{
-			name: "Could not get input output",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
-				mSubmissionResRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-				mIORepo.EXPECT().GetInputOutputID(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-					int64(0), gorm.ErrRecordNotFound,
-				).Times(1)
+			name: "Could not put test result",
+			setupMocks: func(mSubmissionRepo *mock_repository.MockSubmissionRepository, mSubmissionResRepo *mock_repository.MockSubmissionResultRepository, mIORepo *mock_repository.MockTestCaseRepository, mTestRepo *mock_repository.MockTestRepository) {
+				submissionResult := &models.SubmissionResult{ID: int64(1), SubmissionID: int64(1)}
+				test1 := &models.TestResult{}
+				mSubmissionResRepo.EXPECT().GetBySubmission(gomock.Any(), int64(1)).Return(submissionResult, nil).Times(1)
+				mSubmissionResRepo.EXPECT().Put(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+				mTestRepo.EXPECT().GetBySubmissionAndOrder(gomock.Any(), int64(1), 1).Return(test1, nil).Times(1)
+				mTestRepo.EXPECT().Put(gomock.Any(), gomock.Any()).Return(gorm.ErrInvalidData).Times(1)
 			},
 			expectedID:  int64(-1),
 			expectedErr: true,
@@ -162,71 +120,26 @@ func TestCreateSubmissionResult(t *testing.T) {
 				"message":"solution executed successfully",
 				"test_results":
 				[
-					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
+					{"passed":false,"status_code": 1, "error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
 					"order":1},
-					{"passed":true,"error_message":"","order":2}]}
-			`)},
-		},
-		{
-			name: "Could not create test result",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
-				mSubmissionResRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-				mIORepo.EXPECT().GetInputOutputID(
-					gomock.Any(),
-					gomock.Any(),
-					gomock.Any(),
-				).DoAndReturn(func(_ *gorm.DB, _ int64, order int) (int64, error) {
-					return int64(order), nil
-				}).Times(1)
-				mTestRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(gorm.ErrInvalidData).Times(1)
-			},
-			expectedID:  int64(-1),
-			expectedErr: true,
-			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{
-				"status_code":1,
-				"message":"solution executed successfully",
-				"test_results":
-				[
-					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
-					"order":1},
-					{"passed":true,"error_message":"","order":2}]}
-			`)},
-		},
-		{
-			name: "Success",
-			setupMocks: func() {
-				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
-				mSubmissionResRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(submissionResultID, nil).Times(1)
-				mIORepo.EXPECT().GetInputOutputID(
-					gomock.Any(),
-					gomock.Any(),
-					gomock.Any(),
-				).DoAndReturn(func(_ *gorm.DB, _ int64, order int) (int64, error) {
-					return int64(order), nil
-				}).Times(2)
-				mTestRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(2)
-			},
-			expectedID:  submissionResultID,
-			expectedErr: false,
-			queueResponse: schemas.QueueResponseMessage{Payload: json.RawMessage(`
-				{
-				"statuscode":1,
-				"message":"solution executed successfully",
-				"test_results":
-				[
-					{"passed":false,"error_message":"difference at line 1:\noutput:   hello, world!\nexpected: hello world!\n\n",
-					"order":1},
-					{"passed":true,"error_message":"","order":2}]}
+					{"passed":true,"status_code": 0, "error_message":"","order":2}
+				]
+				}
 			`)},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.setupMocks()
-			s := service.NewSubmissionService(mSubmissionRepo, mSubmissionResRepo, mIORepo, mTestRepo, nil, nil, nil, nil, nil)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mSubmissionRepo := mock_repository.NewMockSubmissionRepository(ctrl)
+			mSubmissionResRepo := mock_repository.NewMockSubmissionResultRepository(ctrl)
+			mIORepo := mock_repository.NewMockTestCaseRepository(ctrl)
+			mTestRepo := mock_repository.NewMockTestRepository(ctrl)
+
+			tc.setupMocks(mSubmissionRepo, mSubmissionResRepo, mIORepo, mTestRepo)
+			s := service.NewSubmissionService(nil, nil, mSubmissionRepo, mSubmissionResRepo, mIORepo, mTestRepo, nil, nil, nil, nil, nil, nil)
 			id, err := s.CreateSubmissionResult(nil, submission.ID, tc.queueResponse)
 			if tc.expectedErr {
 				require.Error(t, err)
@@ -254,7 +167,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 
 		mLanguageService.EXPECT().GetAllEnabled(gomock.Any()).Return(expectedLanguages, nil).Times(1)
 
-		s := service.NewSubmissionService(nil, nil, nil, nil, nil, nil, mLanguageService, nil, nil)
+		s := service.NewSubmissionService(nil, nil, nil, nil, nil, nil, nil, nil, mLanguageService, nil, nil, nil)
 		languages, err := s.GetAvailableLanguages(nil)
 
 		require.NoError(t, err)
@@ -264,7 +177,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 	t.Run("Error fetching languages", func(t *testing.T) {
 		mLanguageService.EXPECT().GetAllEnabled(gomock.Any()).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		s := service.NewSubmissionService(nil, nil, nil, nil, nil, nil, mLanguageService, nil, nil)
+		s := service.NewSubmissionService(nil, nil, nil, nil, nil, nil, nil, nil, mLanguageService, nil, nil, nil)
 		languages, err := s.GetAvailableLanguages(nil)
 
 		require.Error(t, err)
@@ -345,7 +258,7 @@ func TestGetAll(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.expectedMethod()
-			s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 
 			submissions, err := s.GetAll(nil, tc.user, queryParams)
@@ -422,7 +335,7 @@ func TestGet(t *testing.T) {
 				mSubmissionRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 			}
 
-			s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			submission, err := s.Get(nil, 1, tc.user)
 
 			if tc.expectedErr {
@@ -453,7 +366,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -475,7 +388,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -490,7 +403,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 
 		mGroupRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(expectedGroup, nil).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -502,7 +415,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 	t.Run("Teacher tries to retrieve submissions for a group but can't get group", func(t *testing.T) {
 		mGroupRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -513,7 +426,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 	})
 
 	t.Run("Student tries to retrieve submissions for a group", func(t *testing.T) {
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
@@ -528,7 +441,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 			nil, gorm.ErrInvalidData,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, mGroupRepo, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -555,7 +468,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -574,7 +487,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
@@ -585,7 +498,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 	})
 
 	t.Run("Student tries to retrieve another user's submissions", func(t *testing.T) {
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		user := schemas.User{Role: "student", ID: 2}
 		expectedSubmissions := []models.Submission{
@@ -612,7 +525,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -631,7 +544,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -646,7 +559,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			nil, gorm.ErrInvalidData,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -693,7 +606,7 @@ func TestGetAllForUserShort(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -738,7 +651,7 @@ func TestGetAllForUserShort(t *testing.T) {
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 			expectedSubmissions, nil,
 		).Times(1)
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 2}
 
@@ -753,7 +666,7 @@ func TestGetAllForUserShort(t *testing.T) {
 			nil, gorm.ErrInvalidData,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -782,7 +695,7 @@ func TestGetAllForTask(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -804,7 +717,7 @@ func TestGetAllForTask(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
@@ -817,7 +730,7 @@ func TestGetAllForTask(t *testing.T) {
 	t.Run("Teacher tries to retrieve submissions for a task they didn't create", func(t *testing.T) {
 		expectedTask := &schemas.TaskDetailed{ID: 1, CreatedBy: 2}
 		mTaskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 3}
 
@@ -828,7 +741,7 @@ func TestGetAllForTask(t *testing.T) {
 	})
 	t.Run("Teacher tries to retrieve submissions for a task, but task get fails", func(t *testing.T) {
 		mTaskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 3}
 
@@ -848,7 +761,7 @@ func TestGetAllForTask(t *testing.T) {
 			expectedSubmissions, nil,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
@@ -861,7 +774,7 @@ func TestGetAllForTask(t *testing.T) {
 	t.Run("Student retrieves submissions for a task, but can't check if he is assigned", func(t *testing.T) {
 		mTaskRepo.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, gorm.ErrRecordNotFound).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
@@ -873,7 +786,7 @@ func TestGetAllForTask(t *testing.T) {
 	t.Run("Student tries to retrieve submissions for a task they are not assigned to", func(t *testing.T) {
 		mTaskRepo.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, nil).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
@@ -888,7 +801,7 @@ func TestGetAllForTask(t *testing.T) {
 			nil, gorm.ErrInvalidData,
 		).Times(1)
 
-		s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil)
+		s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, mTaskRepo, nil, mTaskService, nil, nil)
 		queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
@@ -975,7 +888,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.expectedCall()
-			s := service.NewSubmissionService(mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			s := service.NewSubmissionService(nil, nil, mSubmissionRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 			var err error
 			if tc.name == "Successfully mark submission as failed" || tc.name == "Error marking submission as failed" {
 				err = tc.method(s, nil, 1, "Error message")

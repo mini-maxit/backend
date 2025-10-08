@@ -2,14 +2,17 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
+	"time"
 
 	"slices"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -18,7 +21,7 @@ import (
 
 type SubmissionService interface {
 	// Create creates a new submission for a given task, user, language, and order.
-	Create(tx *gorm.DB, taskID int64, userID int64, languageID int64, order int64) (int64, error)
+	Create(tx *gorm.DB, taskID int64, userID int64, languageID int64, order int, fileID int64) (int64, error)
 	// CreateSubmissionResult creates a new submission result based on the response message.
 	CreateSubmissionResult(tx *gorm.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
@@ -47,20 +50,25 @@ type SubmissionService interface {
 	MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
 	MarkProcessing(tx *gorm.DB, submissionID int64) error
+	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
+	Submit(tx *gorm.DB, user *schemas.User, taskID int64, languageID int64, submissionFilePath string) (int64, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
 
 type submissionService struct {
+	filestorage                filestorage.FileStorageService
+	fileRepository             repository.File
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
-	inputOutputRepository      repository.InputOutputRepository
+	inputOutputRepository      repository.TestCaseRepository
 	testResultRepository       repository.TestRepository
 	groupRepository            repository.GroupRepository
 	taskRepository             repository.TaskRepository
 	userService                UserService
 	taskService                TaskService
 	languageService            LanguageService
+	queueService               QueueService
 	logger                     *zap.SugaredLogger
 }
 
@@ -115,13 +123,13 @@ func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user schemas.U
 		// Student is only allowed to view their own submissions
 		if submissionModel.UserID != user.ID {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, errors.ErrPermissionDenied
+			return schemas.Submission{}, myerrors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
 		if submissionModel.Task.CreatedBy != user.ID {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, errors.ErrPermissionDenied
+			return schemas.Submission{}, myerrors.ErrPermissionDenied
 		}
 	}
 
@@ -154,7 +162,7 @@ func (ss *submissionService) GetAllForUser(
 		// Student is only allowed to view their own submissions
 		if userID != currentUser.ID {
 			ss.logger.Errorf("User %v is not allowed to view submissions", currentUser.ID)
-			return nil, errors.ErrPermissionDenied
+			return nil, myerrors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
@@ -227,7 +235,7 @@ func (ss *submissionService) GetAllForGroup(
 		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
 	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
-		return nil, errors.ErrPermissionDenied
+		return nil, myerrors.ErrPermissionDenied
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
 		group, er := ss.groupRepository.Get(tx, groupID)
@@ -236,7 +244,7 @@ func (ss *submissionService) GetAllForGroup(
 			return nil, er
 		}
 		if group.CreatedBy != user.ID {
-			return nil, errors.ErrPermissionDenied
+			return nil, myerrors.ErrPermissionDenied
 		}
 		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
 	}
@@ -279,7 +287,7 @@ func (ss *submissionService) GetAllForTask(
 			return nil, er
 		}
 		if task.CreatedBy != user.ID {
-			return nil, errors.ErrPermissionDenied
+			return nil, myerrors.ErrPermissionDenied
 		}
 		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, limit, offset, sort)
 	case types.UserRoleStudent:
@@ -288,7 +296,7 @@ func (ss *submissionService) GetAllForTask(
 			return nil, er
 		}
 		if !isAssigned {
-			return nil, errors.ErrPermissionDenied
+			return nil, myerrors.ErrPermissionDenied
 		}
 		submissionModel, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, limit, offset, sort)
 	}
@@ -340,7 +348,8 @@ func (ss *submissionService) Create(
 	taskID int64,
 	userID int64,
 	languageID int64,
-	order int64,
+	order int,
+	fileID int64,
 ) (int64, error) {
 	// Create a new submission
 	submission := &models.Submission{
@@ -348,6 +357,7 @@ func (ss *submissionService) Create(
 		UserID:     userID,
 		Order:      order,
 		LanguageID: languageID,
+		FileID:     fileID,
 		Status:     models.StatusReceived,
 	}
 	submissionID, err := ss.submissionRepository.Create(tx, submission)
@@ -365,45 +375,55 @@ func (ss *submissionService) CreateSubmissionResult(
 	submissionID int64,
 	responseMessage schemas.QueueResponseMessage,
 ) (int64, error) {
-	submission, err := ss.submissionRepository.Get(tx, submissionID)
-	if err != nil {
-		ss.logger.Errorf("Error getting submission: %v", err.Error())
-		return -1, err
-	}
-
 	taskResponse := schemas.TaskResponsePayload{}
 
-	err = json.Unmarshal(responseMessage.Payload, &taskResponse)
+	err := json.Unmarshal(responseMessage.Payload, &taskResponse)
 	if err != nil {
 		ss.logger.Errorf("Error unmarshalling task response: %v", err.Error())
 		return -1, err
 	}
 
-	submissionResult := models.SubmissionResult{
-		SubmissionID: submissionID,
-		Code:         strconv.FormatInt(taskResponse.StatusCode, 10),
-		Message:      taskResponse.Message,
+	submissionResult, err := ss.submissionResultRepository.GetBySubmission(tx, submissionID)
+	if err != nil {
+		ss.logger.Errorf("Error getting submission result: %v", err.Error())
+		return -1, err
 	}
-	id, err := ss.submissionResultRepository.Create(tx, submissionResult)
+	ss.logger.Info("Got submission result: ", submissionResult)
+	submissionResult.Code = strconv.FormatInt(taskResponse.StatusCode, 10)
+	submissionResult.Message = taskResponse.Message
+	submissionResult.Submission.CheckedAt = time.Now()
+	err = ss.submissionResultRepository.Put(tx, submissionResult)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission result: %v", err.Error())
 		return -1, err
 	}
 	// Save test results
-	for _, testResult := range taskResponse.TestResults {
-		inputOutputID, err := ss.inputOutputRepository.GetInputOutputID(tx, submission.TaskID, testResult.Order)
+	for i, responseTestResult := range taskResponse.TestResults {
+		ss.logger.Infof("Processing test result %d: %+v\n", i, responseTestResult)
+		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(tx, submissionID, responseTestResult.Order)
 		if err != nil {
-			ss.logger.Errorf("Error getting input output id: %v", err.Error())
+			ss.logger.Errorf("Error getting test result: %v", err.Error())
 			return -1, err
 		}
-		err = ss.createTestResult(tx, id, inputOutputID, testResult)
+
+		testResult.StatusCode = models.TestResultStatusCode(responseTestResult.StatusCode)
+		testResult.Passed = responseTestResult.Passed
+		testResult.ExecutionTime = responseTestResult.ExecutionTime
+		testResult.ErrorMessage = responseTestResult.ErrorMessage
+		err = ss.testResultRepository.Put(tx, testResult)
 		if err != nil {
-			ss.logger.Errorf("Error creating test result: %v", err.Error())
+			ss.logger.Errorf("Error storing test result: %v", err.Error())
 			return -1, err
 		}
 	}
 
-	return id, nil
+	err = ss.submissionRepository.MarkComplete(tx, submissionID)
+	if err != nil {
+		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
+		return -1, err
+	}
+
+	return submissionResult.ID, nil
 }
 
 func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
@@ -415,36 +435,156 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 
 	return languages, nil
 }
-func (ss *submissionService) createTestResult(
+
+func (ss *submissionService) Submit(
 	tx *gorm.DB,
-	submissionResultID int64,
-	inputOutputID int64,
-	testResult schemas.QueueTestResult,
-) error {
-	testResultModel := models.TestResult{
-		SubmissionResultID: submissionResultID,
-		InputOutputID:      inputOutputID,
-		Passed:             testResult.Passed,
-		StatusCode:         testResult.StatusCode,
-		ExecutionTime:      testResult.ExecutionTime,
-		ErrorMessage:       testResult.ErrorMessage,
+	user *schemas.User,
+	taskID int64,
+	languageID int64,
+	submissionFilePath string,
+) (int64, error) {
+	// Upload solution file to storage
+	latest, err := ss.submissionRepository.GetLatestForTaskByUser(tx, user.ID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			latest = nil
+		} else {
+			return -1, err
+		}
 	}
-	return ss.testResultRepository.Create(tx, testResultModel)
+	newOrder := 1
+	if latest != nil {
+		newOrder = latest.Order + 1
+	}
+
+	uploadedFile, err := ss.filestorage.UploadSolutionFile(taskID, user.ID, newOrder, submissionFilePath)
+	if err != nil {
+		ss.logger.Errorf("Error uploading solution file: %v", err.Error())
+		return -1, err
+	}
+	file := &models.File{
+		Filename:   uploadedFile.Filename,
+		Path:       uploadedFile.Path,
+		Bucket:     uploadedFile.Bucket,
+		ServerType: uploadedFile.ServerType,
+	}
+
+	err = ss.fileRepository.Create(tx, file)
+	if err != nil {
+		ss.logger.Errorf("Error creating file record: %v", err.Error())
+		return -1, err
+	}
+	submissionID, err := ss.Create(tx, taskID, user.ID, languageID, newOrder, file.ID)
+	if err != nil {
+		ss.logger.Errorf("Error creating submission: %v", err.Error())
+		return 0, err
+	}
+	// Create submissionResult if the submission is created successfully
+	submissionResultID, err := ss.createSubmissionResult(tx, submissionID)
+	if err != nil {
+		ss.logger.Errorf("Error creating submission result: %v", err.Error())
+		return -1, err
+	}
+
+	err = ss.queueService.PublishSubmission(tx, submissionID, submissionResultID)
+	if err != nil {
+		ss.logger.Errorf("Error publishing submission to queue: %v", err.Error())
+		return -1, err
+	}
+	return submissionID, nil
+}
+
+// creates blank submission result for the submission together with testResults
+func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID int64) (int64, error) {
+	submissionResult := models.SubmissionResult{
+		SubmissionID: submissionID,
+		Code:         "pending",
+		Message:      "Processing",
+	}
+
+	submission, err := ss.submissionRepository.Get(tx, submissionID)
+	if err != nil {
+		ss.logger.Errorf("Error getting submission: %v", err.Error())
+		return -1, err
+	}
+
+	submissionResultID, err := ss.submissionResultRepository.Create(tx, submissionResult)
+	if err != nil {
+		ss.logger.Errorf("Error creating submission result: %v", err.Error())
+		return -1, err
+	}
+
+	inputOutputs, err := ss.inputOutputRepository.GetByTask(tx, submission.TaskID)
+	if err != nil {
+		ss.logger.Errorf("Error getting input outputs: %v", err.Error())
+		return -1, err
+	}
+	ss.logger.Info("Got input outputs: ", inputOutputs)
+
+	for _, inputOutput := range inputOutputs {
+		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+		stdoutFileModel := &models.File{
+			Filename:   stdoutFile.Filename,
+			Path:       stdoutFile.Path,
+			Bucket:     stdoutFile.Bucket,
+			ServerType: stdoutFile.ServerType,
+		}
+		err = ss.fileRepository.Create(tx, stdoutFileModel)
+		if err != nil {
+			ss.logger.Errorf("Error creating stdout file record: %v", err.Error())
+			return -1, err
+		}
+		stderrFileMode := &models.File{
+			Filename:   stderrFile.Filename,
+			Path:       stderrFile.Path,
+			Bucket:     stderrFile.Bucket,
+			ServerType: stderrFile.ServerType,
+		}
+		err = ss.fileRepository.Create(tx, stderrFileMode)
+		if err != nil {
+			ss.logger.Errorf("Error creating stdout file record: %v", err.Error())
+			return -1, err
+		}
+
+		testResult := models.TestResult{
+			SubmissionResultID: submissionResultID,
+			InputOutputID:      inputOutput.ID,
+			Passed:             false,
+			ExecutionTime:      float64(-1),
+			StatusCode:         models.TestResultStatusCodeNotExecuted,
+			ErrorMessage:       "Not executed",
+			StderrFileID:       stderrFileMode.ID,
+			StdoutFileID:       stdoutFileModel.ID,
+		}
+		err = ss.testResultRepository.Create(tx, &testResult)
+		if err != nil {
+			ss.logger.Errorf("Error creating test result: %v", err.Error())
+			return -1, err
+		}
+		ss.logger.Info("Created testResult", testResult)
+	}
+	return submissionResultID, nil
 }
 
 func NewSubmissionService(
+	filestorage filestorage.FileStorageService,
+	fileRepository repository.File,
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
-	inputOutputRepository repository.InputOutputRepository,
+	inputOutputRepository repository.TestCaseRepository,
 	testResultRepository repository.TestRepository,
 	groupRepository repository.GroupRepository,
 	taskRepository repository.TaskRepository,
 	languageService LanguageService,
 	taskService TaskService,
 	userService UserService,
+	queueService QueueService,
 ) SubmissionService {
 	log := utils.NewNamedLogger("submission_service")
 	return &submissionService{
+		filestorage:                filestorage,
+		fileRepository:             fileRepository,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
 		inputOutputRepository:      inputOutputRepository,
@@ -454,6 +594,7 @@ func NewSubmissionService(
 		languageService:            languageService,
 		taskService:                taskService,
 		userService:                userService,
+		queueService:               queueService,
 		logger:                     log,
 	}
 }
@@ -488,18 +629,17 @@ func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult
 
 func (ss *submissionService) modelToSchema(submission *models.Submission) *schemas.Submission {
 	return &schemas.Submission{
-		ID:            submission.ID,
-		TaskID:        submission.TaskID,
-		UserID:        submission.UserID,
-		Order:         submission.Order,
-		LanguageID:    submission.LanguageID,
-		Status:        submission.Status,
-		StatusMessage: submission.StatusMessage,
-		SubmittedAt:   submission.SubmittedAt,
-		CheckedAt:     submission.CheckedAt,
-		Language:      *LanguageToSchema(&submission.Language),
-		Task:          *TaskToSchema(&submission.Task),
-		User:          *UserToSchema(&submission.User),
-		Result:        ss.resultModelToSchema(submission.Result),
+		ID:          submission.ID,
+		TaskID:      submission.TaskID,
+		UserID:      submission.UserID,
+		Order:       submission.Order,
+		LanguageID:  submission.LanguageID,
+		Status:      submission.Status,
+		SubmittedAt: submission.SubmittedAt,
+		CheckedAt:   submission.CheckedAt,
+		Language:    *LanguageToSchema(&submission.Language),
+		Task:        *TaskToSchema(&submission.Task),
+		User:        *UserToSchema(&submission.User),
+		Result:      ss.resultModelToSchema(submission.Result),
 	}
 }

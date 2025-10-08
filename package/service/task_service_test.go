@@ -11,6 +11,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/filestorage"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
@@ -111,13 +112,13 @@ func createTestArchive(t *testing.T, caseType string) string {
 
 func TestCreateTask(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -162,13 +163,13 @@ func TestCreateTask(t *testing.T) {
 
 func TestGetTaskByTitle(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -199,13 +200,13 @@ func TestGetTaskByTitle(t *testing.T) {
 
 func TestGetAllTasks(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
@@ -240,13 +241,16 @@ func TestGetAllTasks(t *testing.T) {
 
 func TestGetTask(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	config := testutils.NewTestConfig()
+	fs, err := filestorage.NewFileStorageService(config.FileStorageURL)
+	require.NoError(t, err)
+	ts := service.NewTaskService(fs, fr, tr, io, ur, gr)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
@@ -322,13 +326,13 @@ func TestGetTask(t *testing.T) {
 
 func TestAssignTaskToUsers(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
@@ -371,13 +375,13 @@ func TestAssignTaskToUsers(t *testing.T) {
 
 func TestAssignTaskToGroups(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
@@ -430,13 +434,13 @@ func TestAssignTaskToGroups(t *testing.T) {
 
 func TestGetAllAssignedTasks(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
@@ -479,14 +483,14 @@ func TestGetAllAssignedTasks(t *testing.T) {
 
 func TestDeleteTask(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
@@ -512,14 +516,14 @@ func TestDeleteTask(t *testing.T) {
 
 func TestEditTask(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
@@ -544,7 +548,7 @@ func TestEditTask(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
-		ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+		ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
@@ -552,14 +556,14 @@ func TestEditTask(t *testing.T) {
 
 func TestTaskGetAllForGroup(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
@@ -611,14 +615,14 @@ func TestTaskGetAllForGroup(t *testing.T) {
 
 func TestGetAllCreatedTasks(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
@@ -725,14 +729,14 @@ func TestGetAllCreatedTasks(t *testing.T) {
 
 func TestUnAssignTaskFromUsers(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 	studentUser := schemas.User{ID: 3, Role: types.UserRoleStudent}
@@ -767,14 +771,14 @@ func TestUnAssignTaskFromUsers(t *testing.T) {
 
 func TestUnAssignTaskFromGroups(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 	studentUser := schemas.User{ID: 3, Role: types.UserRoleStudent}
@@ -812,14 +816,14 @@ func TestUnAssignTaskFromGroups(t *testing.T) {
 
 func TestCreateInputOutput(t *testing.T) {
 	tx := &gorm.DB{}
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	teacherUser := schemas.User{ID: 2}
 	task := &models.Task{
 		ID:        int64(1),
@@ -852,14 +856,14 @@ func TestCreateInputOutput(t *testing.T) {
 }
 
 func TestParseInputOutput(t *testing.T) {
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	tests := []struct {
 		name          string
 		caseType      string
@@ -938,20 +942,20 @@ func TestParseInputOutput(t *testing.T) {
 }
 
 func TestGetLimits(t *testing.T) {
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	taskID := int64(1)
 
 	teacherUser := schemas.User{ID: 2}
 	t.Run("Success", func(t *testing.T) {
-		io.EXPECT().GetByTask(tx, taskID).Return([]models.InputOutput{{
+		io.EXPECT().GetByTask(tx, taskID).Return([]models.TestCase{{
 			ID:          1,
 			TaskID:      taskID,
 			Order:       1,
@@ -969,18 +973,18 @@ func TestGetLimits(t *testing.T) {
 }
 
 func TestPutLimit(t *testing.T) {
-	config := testutils.NewTestConfig()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockInputOutputRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(config.FileStorageURL, tr, io, ur, gr)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	taskID := int64(1)
 	ioID := int64(1)
-	inputOutput := &models.InputOutput{
+	inputOutput := &models.TestCase{
 		ID:          ioID,
 		TaskID:      taskID,
 		Order:       1,
@@ -1006,7 +1010,7 @@ func TestPutLimit(t *testing.T) {
 				},
 			},
 		}
-		expectedModel := &models.InputOutput{
+		expectedModel := &models.TestCase{
 			ID:          ioID,
 			TaskID:      taskID,
 			Order:       inputOutput.Order,

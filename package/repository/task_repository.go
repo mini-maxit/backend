@@ -31,10 +31,6 @@ type TaskRepository interface {
 	Get(tx *gorm.DB, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
 	GetByTitle(tx *gorm.DB, title string) (*models.Task, error)
-	// GetMemoryLimits returns the memory limits of a task.
-	GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, error)
-	// GetTimeLimits returns the time limits of a task.
-	GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, error)
 	// IsAssignedToGroup checks if a task is assigned to a group.
 	IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) (bool, error)
 	// IsAssignedToUser checks if a task is assigned to a user.
@@ -67,7 +63,7 @@ func (tr *taskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, e
 
 func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Preload("Author").Preload("Groups").Model(&models.Task{}).Where(
+	err := tx.Preload("Author").Preload("Groups").Preload("DescriptionFile").Model(&models.Task{}).Where(
 		"id = ? AND deleted_at IS NULL",
 		taskID,
 	).First(task).Error
@@ -240,8 +236,8 @@ func (tr *taskRepository) GetAllForGroup(
 }
 
 func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
-	inputOutput := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).
+	inputOutput := []models.TestCase{}
+	err := tx.Model(&models.TestCase{}).
 		Where("task_id = ?", taskID).
 		Find(&inputOutput).Error
 	if err != nil {
@@ -256,8 +252,8 @@ func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, err
 }
 
 func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
-	inputOutput := []models.InputOutput{}
-	err := tx.Model(&models.InputOutput{}).Where("task_id = ?", taskID).Find(&inputOutput).Error
+	inputOutput := []models.TestCase{}
+	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&inputOutput).Error
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +282,7 @@ func (tr *taskRepository) Delete(tx *gorm.DB, taskID int64) error {
 }
 
 func NewTaskRepository(db *gorm.DB) (TaskRepository, error) {
-	tables := []any{&models.Task{}, &models.InputOutput{}, &models.TaskUser{}}
+	tables := []any{&models.Task{}, &models.TestCase{}, &models.TaskUser{}}
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			err := db.Migrator().CreateTable(table)

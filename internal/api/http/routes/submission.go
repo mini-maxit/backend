@@ -1,13 +1,8 @@
 package routes
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 
@@ -464,11 +459,14 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	defer file.Close()
+	filePath, err := httputils.SaveMultiPartFile(file, handler)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
+		return
+	}
 
 	// Extract user ID
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-	userID := currentUser.ID
-	userIDStr := strconv.FormatInt(userID, 10)
 
 	// Extract language
 	languageStr := r.FormValue("languageID")
@@ -489,117 +487,8 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_, err = s.taskService.Get(tx, currentUser, taskID)
-	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w,
-				http.StatusForbidden,
-				"Permission denied. Current user is not allowed to submit solutions for this task.",
-			)
-		case errors.Is(err, myerrors.ErrTaskNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		default:
-			httputils.ReturnError(w,
-				http.StatusInternalServerError,
-				"Failed to get task. "+err.Error(),
-			)
-		}
-		return
-	}
-
-	// Create a multipart writer for the HTTP request to FileStorage service
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// Add form fields
-	err = writer.WriteField("taskID", taskIDStr)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error writing taskID to FileStorage request. "+err.Error(),
-		)
-		return
-	}
-	err = writer.WriteField("userID", userIDStr)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error writing userID to FileStorage request. "+err.Error(),
-		)
-		return
-	}
-
-	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("submissionFile", handler.Filename)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error creating form file for FileStorage. "+err.Error(),
-		)
-		return
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error copying file to FileStorage request. "+err.Error(),
-		)
-		return
-	}
-
-	writer.Close()
-
-	// Send the request to FileStorage service
-	client := &http.Client{}
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, s.fileStorageURL+"/submit", body)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error creating request to FileStorage service. "+err.Error(),
-		)
-		return
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	resp, err := client.Do(req)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error sending file to FileStorage service. "+err.Error(),
-		)
-		return
-	}
-	defer resp.Body.Close()
-
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil && len(resBody) == 0 {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error reading response from FileStorage. "+err.Error(),
-		)
-		return
-	}
-	// Handle response from FileStorage
-	if resp.StatusCode != http.StatusOK {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Failed to upload file to FileStorage. "+string(resBody),
-		)
-		return
-	}
-
-	respJSON := schemas.SubmitResponse{}
-	err = json.Unmarshal(resBody, &respJSON)
-	if err != nil {
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error parsing response from FileStorage. "+err.Error(),
-		)
-		return
-	}
-
 	// Create the submission with the correct order
-	submissionID, err := s.submissionService.Create(tx, taskID, userID, languageID, respJSON.SubmissionNumber)
+	submissionID, err := s.submissionService.Submit(tx, &currentUser, taskID, languageID, filePath)
 	if err != nil {
 		db.Rollback()
 		httputils.ReturnError(w,
@@ -608,18 +497,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		)
 		return
 	}
-
-	err = s.queueService.PublishSubmission(tx, submissionID)
-	if err != nil {
-		db.Rollback()
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error publishing submission to the queue. "+err.Error(),
-		)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, "Solution submitted successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, map[string]int64{"submissionId": submissionID})
 }
 
 // New Instance.

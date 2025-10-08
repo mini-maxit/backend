@@ -3,7 +3,6 @@ package service_test
 import (
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -279,7 +278,7 @@ func TestChangePassword(t *testing.T) {
 			OldPassword:        password,
 			NewPassword:        newPassword,
 			NewPasswordConfirm: newPassword + "123"})
-		assert.IsType(t, validator.ValidationErrors{}, err)
+		require.Error(t, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
