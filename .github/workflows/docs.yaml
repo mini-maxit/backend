@@ -1,106 +1,50 @@
-name: docs
+name: docs-pr
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
+  # Only create PRs when manually triggered or when docs need review
+  pull_request:
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
 
 
 jobs:
-  build:
+  check-docs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup go
         uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
       - name: Install Swagger tools
         run: |
           go install github.com/swaggo/swag/cmd/swag@latest
-          go get -u github.com/swaggo/http-swagger
           go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
-      - name: Init swag
-        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml; cd ../..
+      - name: Generate Swagger docs
+        run: |
+          cd cmd/app
+          swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
+          cd ../..
 
       - name: Convert swagger to markdown
         run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
 
-      - name: Check for existing documentation PR
-        id: check_pr
+      - name: Check for documentation changes
         run: |
-          # Search for open PRs with the title "docs: update swagger docs"
-          EXISTING_PR=$(gh pr list --state open --search "docs: update swagger docs in:title" --json number,headRefName,baseRefName --jq '.[0]')
-
-          if [ "$EXISTING_PR" != "null" ] && [ "$EXISTING_PR" != "" ]; then
-            PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.number')
-            PR_BRANCH=$(echo "$EXISTING_PR" | jq -r '.headRefName')
-            PR_BASE=$(echo "$EXISTING_PR" | jq -r '.baseRefName')
-
-            echo "existing_pr=true" >> $GITHUB_OUTPUT
-            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-            echo "pr_branch=$PR_BRANCH" >> $GITHUB_OUTPUT
-            echo "pr_base=$PR_BASE" >> $GITHUB_OUTPUT
-            echo "Found existing PR #$PR_NUMBER with branch $PR_BRANCH targeting $PR_BASE"
+          if git diff --quiet docs/; then
+            echo "✅ No documentation changes detected"
           else
-            echo "existing_pr=false" >> $GITHUB_OUTPUT
-            echo "No existing documentation PR found"
+            echo "📝 Documentation changes detected:"
+            git diff --name-only docs/
+            echo ""
+            echo "Note: Documentation will be automatically updated on the docs branch when this PR is merged."
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update existing PR base branch if needed
-        if: steps.check_pr.outputs.existing_pr == 'true'
-        run: |
-          CURRENT_BASE="${{ github.ref_name }}"
-          PR_BASE="${{ steps.check_pr.outputs.pr_base }}"
-          PR_NUMBER="${{ steps.check_pr.outputs.pr_number }}"
-
-          if [ "$PR_BASE" != "$CURRENT_BASE" ]; then
-            echo "Updating PR #$PR_NUMBER base branch from $PR_BASE to $CURRENT_BASE"
-            gh pr edit $PR_NUMBER --base $CURRENT_BASE
-          else
-            echo "PR #$PR_NUMBER base branch is already correct ($CURRENT_BASE)"
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set branch name for new or existing PR
-        run: |
-          if [ "${{ steps.check_pr.outputs.existing_pr }}" = "true" ]; then
-            BRANCH_NAME="${{ steps.check_pr.outputs.pr_branch }}"
-            echo "Using existing branch: $BRANCH_NAME"
-          else
-            BRANCH_NAME="update-swagger-docs-$(date +%Y%m%d%H%M%S)"
-            echo "Creating new branch: $BRANCH_NAME"
-          fi
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
-
-      - name: Create or Update Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.branch_name }}
-          title: "docs: update swagger docs"
-          commit-message: "docs: update swagger docs"
-          body: |
-            This PR updates the Swagger documentation.
-
-            **Auto-generated documentation update**
-            - Updated swagger.yaml
-            - Updated swagger.md
-
-            Last updated: ${{ github.sha }}
-          base: ${{ github.ref_name }}
-          delete-branch: true
-          add-paths: docs/*
-          labels: |
-            documentation
-            automated pr
