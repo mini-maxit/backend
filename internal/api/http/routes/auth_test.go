@@ -123,7 +123,7 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
@@ -398,7 +398,7 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)

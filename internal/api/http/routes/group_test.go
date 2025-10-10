@@ -136,7 +136,7 @@ func TestCreateGroup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
@@ -545,7 +545,7 @@ func TestEditGroup(t *testing.T) {
 
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
-		db.Vaildate()
+		db.Validate()
 		defer res.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
@@ -695,7 +695,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
-		db.Vaildate()
+		db.Validate()
 		defer res.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
@@ -889,7 +889,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
-		db.Vaildate()
+		db.Validate()
 		defer res.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
