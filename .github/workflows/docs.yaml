@@ -1,23 +1,24 @@
-name: docs-pr
+name: update-swagger-docs
 
 on:
+  push:
+    branches:
+      - master
+      - develop
   workflow_dispatch:
-  # Only create PRs when manually triggered or when docs need review
-  pull_request:
-    paths:
-      - 'cmd/**'
-      - 'internal/**'
-
 
 jobs:
-  check-docs:
+  generate-and-push:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup go
         uses: actions/setup-go@v5
@@ -35,16 +36,51 @@ jobs:
           swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
           cd ../..
 
-      - name: Convert swagger to markdown
-        run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
-
-      - name: Check for documentation changes
+      - name: Prepare docs working copy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git diff --quiet docs/; then
-            echo "✅ No documentation changes detected"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          repo="${{ github.repository }}"
+
+          # If remote docs branch exists, clone only that branch into a temp folder.
+          # This avoids ambiguity when there's a local path named `docs`.
+          if git ls-remote --exit-code --heads origin docs; then
+            echo "Remote docs branch exists — cloning into docs-temp"
+            git clone --depth 1 --branch docs "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" docs-temp
           else
-            echo "📝 Documentation changes detected:"
-            git diff --name-only docs/
-            echo ""
-            echo "Note: Documentation will be automatically updated on the docs branch when this PR is merged."
+            echo "Remote docs branch does not exist — creating orphan docs branch in docs-temp"
+            git clone --depth 1 "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" docs-temp
+            cd docs-temp
+            git checkout --orphan docs
+            git rm -rf .
+            cd ..
           fi
+
+      - name: Update swagger.yaml on docs branch and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ ! -f docs/swagger.yaml ]; then
+            echo "Generated docs/swagger.yaml not found" && exit 1
+          fi
+          repo="${{ github.repository }}"
+
+          # Copy generated swagger into the separate working copy and push from there.
+          mkdir -p docs-temp/docs
+          cp docs/swagger.yaml docs-temp/docs/swagger.yaml
+          cd docs-temp
+
+          git add docs/swagger.yaml
+
+          if git diff --cached --quiet; then
+            echo "✅ No changes to docs/swagger.yaml"
+            exit 0
+          fi
+
+          git commit -m "chore(docs): update swagger.yaml from $GITHUB_REF ($GITHUB_SHA)"
+          # Push to docs branch using token-authenticated remote URL to ensure credentialed push.
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" HEAD:docs
