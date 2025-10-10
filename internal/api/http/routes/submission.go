@@ -421,7 +421,7 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Param			Session		header		string	true	"Session Token"
-//	@Success		200			{object}	httputils.APIResponse[schemas.SubmitResponse]
+//	@Success		200			{object}	map[string]int64
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError

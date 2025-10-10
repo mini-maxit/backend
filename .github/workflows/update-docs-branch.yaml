@@ -1,5 +1,10 @@
 name: Update Documentation Branch
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 on:
   push:
     branches:
