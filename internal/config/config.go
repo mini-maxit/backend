@@ -26,7 +26,8 @@ type DBConfig struct {
 }
 
 type APIConfig struct {
-	Port uint16
+	Port             uint16
+	RefreshTokenPath string
 }
 
 type BrokerConfig struct {
@@ -45,9 +46,10 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultAPIPort           = "8080"
-	defaultQueueName         = "worker_queue"
-	defaultResponseQueueName = "worker_response_queue"
+	defaultAPIPort             = "8080"
+	defaultAPIRefreshTokenPath = "/api/v1/auth/refresh"
+	defaultQueueName           = "worker_queue"
+	defaultResponseQueueName   = "worker_response_queue"
 )
 
 // NewConfig creates new Config instance
@@ -116,6 +118,12 @@ func NewConfig() *Config {
 	}
 	appPort := validatePort(appPortStr, "application", log)
 
+	refreshTokenPath := os.Getenv("API_REFRESH_TOKEN_PATH")
+	if refreshTokenPath == "" {
+		log.Warnf("API_REFRESH_TOKEN_PATH is not set. Using default path %s", defaultAPIRefreshTokenPath)
+		refreshTokenPath = defaultAPIRefreshTokenPath
+	}
+
 	fileStorageHost := os.Getenv("FILE_STORAGE_HOST")
 	if fileStorageHost == "" {
 		log.Panic("FILE_STORAGE_HOST is not set")
@@ -174,7 +182,8 @@ func NewConfig() *Config {
 			Name:     dbName,
 		},
 		API: APIConfig{
-			Port: appPort,
+			Port:             appPort,
+			RefreshTokenPath: refreshTokenPath,
 		},
 		Broker: BrokerConfig{
 			QueueName:         queueName,

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/api/http/responses"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
@@ -22,8 +23,9 @@ type AuthRoute interface {
 }
 
 type AuthRouteImpl struct {
-	userService service.UserService
-	authService service.AuthService
+	refreshTokenPath string
+	userService      service.UserService
+	authService      service.AuthService
 }
 
 // Login godoc
@@ -37,7 +39,7 @@ type AuthRouteImpl struct {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.JWTTokens]
+//	@Success		200		{object}	httputils.APIResponse[responses.AuthResponse]
 //	@Router			/login [post]
 func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -73,7 +75,11 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, tokens)
+	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+
+	authResponse := responses.NewAuthResponse(tokens)
+
+	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
 
 // Register godoc
@@ -88,7 +94,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		409		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		201		{object}	httputils.APIResponse[schemas.JWTTokens]
+//	@Success		201		{object}	httputils.APIResponse[responses.AuthResponse]
 //	@Router			/register [post]
 func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -123,22 +129,24 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusCreated, tokens)
+	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+
+	authResponse := responses.NewAuthResponse(tokens)
+
+	httputils.ReturnSuccess(w, http.StatusCreated, authResponse)
 }
 
 // RefreshToken godoc
 //
 //	@Tags			auth
 //	@Summary		Refresh JWT tokens
-//	@Description	Refreshes JWT tokens using a valid refresh token
-//	@Accept			json
+//	@Description	Refreshes JWT tokens using a valid refresh token from cookie
 //	@Produce		json
-//	@Param			request	body		schemas.RefreshTokenRequest	true	"Refresh Token Request"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.JWTTokens]
+//	@Success		200		{object}	httputils.APIResponse[responses.AuthResponse]
 //	@Router			/auth/refresh [post]
 func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -146,11 +154,15 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request schemas.RefreshTokenRequest
-	err := httputils.ShouldBindJSON(r.Body, &request)
+	// Get refresh token from cookie
+	refreshTokenCookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Refresh token cookie not found")
 		return
+	}
+
+	request := schemas.RefreshTokenRequest{
+		RefreshToken: refreshTokenCookie.Value,
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
@@ -173,7 +185,11 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, tokens)
+	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+
+	authResponse := responses.NewAuthResponse(tokens)
+
+	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
 
 func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
@@ -227,10 +243,11 @@ func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
-func NewAuthRoute(userService service.UserService, authService service.AuthService) AuthRoute {
+func NewAuthRoute(userService service.UserService, authService service.AuthService, refreshTokenPath string) AuthRoute {
 	route := &AuthRouteImpl{
-		userService: userService,
-		authService: authService,
+		refreshTokenPath: refreshTokenPath,
+		userService:      userService,
+		authService:      authService,
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {
