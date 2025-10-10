@@ -10,6 +10,8 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -87,6 +89,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create user repository: %s", err.Error())
 	}
+	fileRepository, err := repository.NewFileRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create file repository: %s", err.Error())
+	}
 	taskRepository, err := repository.NewTaskRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create task repository: %s", err.Error())
@@ -125,8 +131,14 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 
 	// Services
+	filestorage, err := filestorage.NewFileStorageService(cfg.FileStorageURL)
+	if err != nil {
+		log.Panicf("Failed to create file storage service: %s", err.Error())
+	}
 	userService := service.NewUserService(userRepository)
-	taskService := service.NewTaskService(cfg.FileStorageURL,
+	taskService := service.NewTaskService(
+		filestorage,
+		fileRepository,
 		taskRepository,
 		inputOutputRepository,
 		userRepository,
@@ -134,6 +146,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	queueService, err := service.NewQueueService(taskRepository,
 		submissionRepository,
+		submissionResultRepository,
 		queueRepository,
 		conn,
 		channel,
@@ -152,6 +165,8 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
+		filestorage,
+		fileRepository,
 		submissionRepository,
 		submissionResultRepository,
 		inputOutputRepository,
@@ -161,6 +176,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		langService,
 		taskService,
 		userService,
+		queueService,
 	)
 	workerService := service.NewWorkerService(queueService)
 
@@ -187,7 +203,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		log.Panicf("Failed to create queue listener: %s", err.Error())
 	}
 	if cfg.Dump {
-		dump(db, log, authService)
+		dump(db, log, authService, userRepository)
 	}
 	return &Initialization{
 		Cfg: cfg,
@@ -207,41 +223,65 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 }
 
-func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.AuthService) {
+func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.AuthService, userRepository repository.UserRepository) {
 	tx, err := db.BeginTransaction()
 	if err != nil {
 		log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 	}
+	users := []struct {
+		Name     string
+		Surname  string
+		Email    string
+		Username string
+		Password string
+		Role     types.UserRole
+	}{
 
-	_, err = authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "AdminName",
-		Surname:  "AdminSurname",
-		Email:    "admin@admin.com",
-		Username: "admin",
-		Password: "adminadmin",
-	})
-	if err != nil {
-		log.Warnf("Failed to create admin: %s", err.Error())
+		{
+			Name:     "AdminName",
+			Surname:  "AdminSurname",
+			Email:    "admin@admin.com",
+			Username: "admin",
+			Password: "adminadmin",
+			Role:     types.UserRoleAdmin,
+		},
+		{
+			Name:     "TeacherName",
+			Surname:  "TeacherSurname",
+			Email:    "teacher@teacher.com",
+			Username: "teacher",
+			Password: "teacherteacher",
+			Role:     types.UserRoleTeacher,
+		},
+		{
+			Name:     "StudentName",
+			Surname:  "StudentSurname",
+			Email:    "student@student.com",
+			Username: "student",
+			Password: "studentstudent",
+			Role:     types.UserRoleStudent,
+		},
 	}
-	_, err = authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "TeacherName",
-		Surname:  "TeacherSurname",
-		Email:    "teacher@teacher.com",
-		Username: "teacher",
-		Password: "teacherteacher",
-	})
-	if err != nil {
-		log.Warnf("Failed to create teacher: %s", err.Error())
-	}
-	_, err = authService.Register(tx, schemas.UserRegisterRequest{
-		Name:     "StudentName",
-		Surname:  "StudentSurname",
-		Email:    "student@student.com",
-		Username: "student",
-		Password: "studentstudent",
-	})
-	if err != nil {
-		log.Warnf("Failed to create student: %s", err.Error())
+	for _, user := range users {
+		_, err = authService.Register(tx, schemas.UserRegisterRequest{
+			Name:     user.Name,
+			Surname:  user.Surname,
+			Email:    user.Email,
+			Username: user.Username,
+			Password: user.Password,
+		})
+		if err != nil {
+			log.Warnf("Failed to create %s: %s", user.Username, err.Error())
+		}
+		registeredUser, err := userRepository.GetByEmail(tx, user.Email)
+		if err != nil {
+			log.Warnf("Failed to get %s user: %s", user.Username, err.Error())
+		}
+		registeredUser.Role = user.Role
+		err = userRepository.Edit(tx, registeredUser)
+		if err != nil {
+			log.Warnf("Failed to set %s role: %s", user.Username, err.Error())
+		}
 	}
 
 	err = db.Commit()

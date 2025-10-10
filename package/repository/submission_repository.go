@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -22,6 +24,8 @@ type SubmissionRepository interface {
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
 	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
+	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error) // Get returns a submission by its ID.
 	// Get returns a submission by its ID.
 	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
 	// MarkComplete marks a submission as completed.
@@ -279,7 +283,10 @@ func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) 
 }
 
 func (us *submissionRepository) MarkComplete(tx *gorm.DB, submissionID int64) error {
-	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Update("status", "completed").Error
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(map[string]any{
+		"status":     "completed",
+		"checked_at": time.Now(),
+	}).Error
 	return err
 }
 
@@ -316,6 +323,21 @@ func (us *submissionRepository) GetAllForTaskByUser(
 		return nil, err
 	}
 	return submissions, nil
+}
+
+func (sr *submissionRepository) GetLatestForTaskByUser(
+	tx *gorm.DB,
+	taskID, userID int64,
+) (*models.Submission, error) {
+	submission := models.Submission{}
+	err := tx.Model(&models.Submission{}).
+		Where("task_id = ? AND user_id = ?", taskID, userID).
+		Order("submitted_at DESC").
+		First(&submission).Error
+	if err != nil {
+		return nil, err
+	}
+	return &submission, nil
 }
 
 func NewSubmissionRepository(db *gorm.DB) (SubmissionRepository, error) {

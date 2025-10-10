@@ -1,20 +1,16 @@
 package service
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -68,9 +64,10 @@ type TaskService interface {
 const defaultTaskSort = "created_at:desc"
 
 type taskService struct {
-	fileStorageURL        string
+	filestorage           filestorage.FileStorageService
+	fileRepository        repository.File
 	groupRepository       repository.GroupRepository
-	inputOutputRepository repository.InputOutputRepository
+	inputOutputRepository repository.TestCaseRepository
 	taskRepository        repository.TaskRepository
 	userRepository        repository.UserRepository
 
@@ -224,7 +221,7 @@ func (ts *taskService) Get(tx *gorm.DB, _ schemas.User, taskID int64) (*schemas.
 	result := &schemas.TaskDetailed{
 		ID:             task.ID,
 		Title:          task.Title,
-		DescriptionURL: fmt.Sprintf("%s/getTaskDescription?taskID=%d", ts.fileStorageURL, task.ID),
+		DescriptionURL: ts.filestorage.GetFileURL(task.DescriptionFile.Path),
 		CreatedBy:      task.CreatedBy,
 		CreatedByName:  task.Author.Name,
 		CreatedAt:      task.CreatedAt,
@@ -613,7 +610,7 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskID int64, archivePath 
 	}
 
 	for i := 1; i <= numFiles; i++ {
-		io := &models.InputOutput{
+		io := &models.TestCase{
 			TaskID:      taskID,
 			Order:       i,
 			TimeLimit:   1, // Hardcode for now
@@ -632,54 +629,75 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, t
 		return myerrors.ErrNotAllowed
 	}
 
-	err := ts.CreateInputOutput(tx, taskID, archivePath)
+	err := ts.filestorage.ValidateArchiveStructure(archivePath)
 	if err != nil {
-		return fmt.Errorf("failed to create input output: %w", err)
+		return fmt.Errorf("failed to validate archive structure: %w", err)
 	}
 
-	// Create a multipart writer for the HTTP request to FileStorage service
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	err = writer.WriteField("taskID", strconv.FormatInt(taskID, 10))
+	uploadedTaskFiles, err := ts.filestorage.UploadTask(taskID, archivePath)
 	if err != nil {
-		return myerrors.ErrWriteTaskID
-	}
-	err = writer.WriteField("overwrite", strconv.FormatBool(true))
-	if err != nil {
-		return myerrors.ErrWriteOverwrite
+		return fmt.Errorf("failed to upload task archive: %w", err)
 	}
 
-	// Create a form file field and copy the uploaded file to it
-	part, err := writer.CreateFormFile("archive", "Task.zip")
+	// Save to database records about uploaded files
+	descriptionFile := &models.File{
+		Filename:   uploadedTaskFiles.DescriptionFile.Filename,
+		Path:       uploadedTaskFiles.DescriptionFile.Path,
+		Bucket:     uploadedTaskFiles.DescriptionFile.Bucket,
+		ServerType: uploadedTaskFiles.DescriptionFile.ServerType,
+	}
+	err = ts.fileRepository.Create(tx, descriptionFile)
 	if err != nil {
-		return myerrors.ErrCreateFormFile
+		return fmt.Errorf("failed to save description file: %w", err)
 	}
-	file, err := os.Open(archivePath)
+	currentTask, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
-		return myerrors.ErrFileOpen
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return fmt.Errorf("failed to get task: %w", err)
 	}
-	defer file.Close()
-	if _, err := io.Copy(part, file); err != nil {
-		return myerrors.ErrCopyFile
+	currentTask.DescriptionFileID = descriptionFile.ID
+	err = ts.taskRepository.Edit(tx, taskID, currentTask)
+	if err != nil {
+		return fmt.Errorf("failed to update task with description file: %w", err)
 	}
-	writer.Close()
 
-	// Send the request to FileStorage service
-	client := &http.Client{}
-	resp, err := client.Post(ts.fileStorageURL+"/createTask", writer.FormDataContentType(), body)
-	if err != nil {
-		return myerrors.ErrSendRequest
-	}
-	defer resp.Body.Close()
+	for i := range uploadedTaskFiles.InputFiles {
+		input := uploadedTaskFiles.InputFiles[i]
+		output := uploadedTaskFiles.OutputFiles[i]
 
-	// Handle response from FileStorage
-	buffer := make([]byte, resp.ContentLength)
-	bytesRead, err := resp.Body.Read(buffer)
-	if err != nil && bytesRead == 0 {
-		return myerrors.ErrReadResponse
-	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%w: %s", myerrors.ErrResponseFromFileStorage, string(buffer))
+		inputFile := &models.File{
+			Filename:   input.Filename,
+			Path:       input.Path,
+			Bucket:     input.Bucket,
+			ServerType: input.ServerType,
+		}
+		outputFile := &models.File{
+			Filename:   output.Filename,
+			Path:       output.Path,
+			Bucket:     output.Bucket,
+			ServerType: output.ServerType,
+		}
+		err = ts.fileRepository.Create(tx, inputFile)
+		if err != nil {
+			return fmt.Errorf("failed to save input file: %w", err)
+		}
+		err = ts.fileRepository.Create(tx, outputFile)
+		if err != nil {
+			return fmt.Errorf("failed to save output file: %w", err)
+		}
+		err = ts.inputOutputRepository.Create(tx, &models.TestCase{
+			TaskID:       taskID,
+			InputFileID:  inputFile.ID,
+			OutputFileID: outputFile.ID,
+			Order:        i + 1,
+			TimeLimit:    1, // Hardcode for now
+			MemoryLimit:  1, // Hardcode for now
+		})
+		if err != nil {
+			return fmt.Errorf("failed to save input output: %w", err)
+		}
 	}
 
 	return nil
@@ -763,7 +781,7 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 	}
 }
 
-func InputOutputToSchema(model *models.InputOutput) *schemas.InputOutput {
+func InputOutputToSchema(model *models.TestCase) *schemas.InputOutput {
 	return &schemas.InputOutput{
 		ID:          model.ID,
 		TaskID:      model.TaskID,
@@ -774,15 +792,17 @@ func InputOutputToSchema(model *models.InputOutput) *schemas.InputOutput {
 }
 
 func NewTaskService(
-	fileStorageURL string,
+	filestorage filestorage.FileStorageService,
+	fileRepository repository.File,
 	taskRepository repository.TaskRepository,
-	inputOutputRepository repository.InputOutputRepository,
+	inputOutputRepository repository.TestCaseRepository,
 	userRepository repository.UserRepository,
 	groupRepository repository.GroupRepository,
 ) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		fileStorageURL:        fileStorageURL,
+		filestorage:           filestorage,
+		fileRepository:        fileRepository,
 		taskRepository:        taskRepository,
 		userRepository:        userRepository,
 		groupRepository:       groupRepository,

@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -24,7 +24,7 @@ type QueueService interface {
 	// PublishHandshake publishes a handshake message to the queue
 	PublishHandshake() error
 	// PublishSubmission publishes a submission message to the queue
-	PublishSubmission(tx *gorm.DB, submissionID int64) error
+	PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error
 	// PublishWorkerStatus publishes a worker status message to the queue
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
@@ -35,12 +35,14 @@ type QueueService interface {
 }
 
 type queueService struct {
-	taskRepository       repository.TaskRepository
-	submissionRepository repository.SubmissionRepository
-	queueRepository      repository.QueueMessageRepository
-	channel              *amqp.Channel
-	queue                amqp.Queue
-	responseQueueName    string
+	testCaseRepository         repository.TestCaseRepository
+	taskRepository             repository.TaskRepository
+	submissionRepository       repository.SubmissionRepository
+	submissionResultRepository repository.SubmissionResultRepository
+	queueRepository            repository.QueueMessageRepository
+	channel                    *amqp.Channel
+	queue                      amqp.Queue
+	responseQueueName          string
 
 	statusMux        *sync.Mutex
 	statusCond       *sync.Cond
@@ -73,34 +75,57 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64) error {
+func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error {
 	submission, err := qs.submissionRepository.Get(tx, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err.Error())
 		return err
 	}
 
-	timeLimits, err := qs.taskRepository.GetTimeLimits(tx, submission.TaskID)
+	submissionResult, err := qs.submissionResultRepository.Get(tx, submissionResultID)
 	if err != nil {
-		qs.logger.Errorf("Error getting task time limits: %v", err.Error())
+		qs.logger.Errorf("Error getting submission result: %v", err.Error())
 		return err
 	}
-	memoryLimits, err := qs.taskRepository.GetMemoryLimits(tx, submission.TaskID)
-	if err != nil {
-		qs.logger.Errorf("Error getting task memory limits: %v", err.Error())
-		return err
+	testCases := make([]schemas.TestCase, 0, len(submissionResult.TestResult))
+	for _, tr := range submissionResult.TestResult {
+		testCases = append(testCases, schemas.TestCase{
+			Order: tr.InputOutput.Order,
+			InputFile: schemas.FileLocation{
+				ServerType: tr.InputOutput.InputFile.ServerType,
+				Bucket:     tr.InputOutput.InputFile.Bucket,
+				Path:       tr.InputOutput.InputFile.Path,
+			},
+			ExpectedOutput: schemas.FileLocation{
+				ServerType: tr.InputOutput.OutputFile.ServerType,
+				Bucket:     tr.InputOutput.OutputFile.Bucket,
+				Path:       tr.InputOutput.OutputFile.Path,
+			},
+			StdoutResult: schemas.FileLocation{
+				ServerType: tr.StdoutFile.ServerType,
+				Bucket:     tr.StdoutFile.Bucket,
+				Path:       tr.StdoutFile.Path,
+			},
+			StderrResult: schemas.FileLocation{
+				ServerType: tr.StderrFile.ServerType,
+				Bucket:     tr.StderrFile.Bucket,
+				Path:       tr.StderrFile.Path,
+			},
+			TimeLimitMs:   tr.InputOutput.TimeLimit,
+			MemoryLimitKB: tr.InputOutput.MemoryLimit,
+		})
 	}
-
 	payload := schemas.TaskQueueMessage{
-		TaskID:           submission.TaskID,
-		UserID:           submission.UserID,
-		SubmissionNumber: submission.Order,
-		LanguageType:     submission.Language.Type,
-		LanguageVersion:  submission.Language.Version,
-		TimeLimits:       timeLimits,
-		MemoryLimits:     memoryLimits,
+		Order:           submission.Order,
+		LanguageType:    submission.Language.Type,
+		LanguageVersion: submission.Language.Version,
+		SubmissionFile: schemas.FileLocation{
+			ServerType: submission.File.ServerType,
+			Bucket:     submission.File.Bucket,
+			Path:       submission.File.Path,
+		},
+		TestCases: testCases,
 	}
-
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling payload: %v", err.Error())
@@ -108,18 +133,9 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64) error
 	}
 
 	msq := schemas.QueueMessage{
-		MessageID: uuid.New().String(),
+		MessageID: strconv.FormatInt(submissionID, 10),
 		Type:      schemas.MessageTypeTask,
 		Payload:   payloadJSON,
-	}
-	qm := &models.QueueMessage{
-		ID:           msq.MessageID,
-		SubmissionID: submissionID,
-	}
-	_, err = qs.queueRepository.Create(tx, qm)
-	if err != nil {
-		qs.logger.Errorf("Error creating queue message: %v", err.Error())
-		return err
 	}
 	err = qs.publishMessage(msq)
 	if err != nil {
@@ -214,6 +230,7 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 func NewQueueService(
 	taskRepository repository.TaskRepository,
 	submissionRepository repository.SubmissionRepository,
+	submissionResultRepository repository.SubmissionResultRepository,
 	queueMessageRepository repository.QueueMessageRepository,
 	_ *amqp.Connection, // TODO: review if this is needed
 	channel *amqp.Channel,
@@ -236,12 +253,13 @@ func NewQueueService(
 	}
 	log := utils.NewNamedLogger("queue_service")
 	s := &queueService{
-		taskRepository:       taskRepository,
-		submissionRepository: submissionRepository,
-		queueRepository:      queueMessageRepository,
-		queue:                q,
-		channel:              channel,
-		responseQueueName:    responseQueueName,
+		taskRepository:             taskRepository,
+		submissionRepository:       submissionRepository,
+		submissionResultRepository: submissionResultRepository,
+		queueRepository:            queueMessageRepository,
+		queue:                      q,
+		channel:                    channel,
+		responseQueueName:          responseQueueName,
 
 		statusMux:        &sync.Mutex{},
 		lastWorkerStatus: schemas.WorkerStatus{},

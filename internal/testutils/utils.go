@@ -31,6 +31,7 @@ func NewTestConfig() *config.Config {
 			User:              "guest",
 			Password:          "guest",
 		},
+		FileStorageURL: "filestorageurl",
 	}
 }
 

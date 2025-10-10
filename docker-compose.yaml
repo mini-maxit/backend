@@ -25,7 +25,7 @@ services:
   db:
     image: postgres:17
     ports:
-      - "5431:5432"
+      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: maxit
@@ -50,3 +50,19 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
+  frontend:
+    image: maxit/frontend
+    pull_policy: never
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/maxit
+      - BACKEND_URL=http://backend:8000
+      - ORIGIN=http://localhost:3000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

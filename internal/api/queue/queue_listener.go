@@ -3,6 +3,7 @@ package queue
 import (
 	"encoding/json"
 	"runtime/debug"
+	"strconv"
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -111,7 +112,7 @@ func (ql *listener) listen() error {
 	msgs, err := ql.channel.Consume(
 		ql.queueName, // queue name
 		"",           // consumer
-		true,         // auto-ack
+		false,        // auto-ack -> set to false to use manual ack/nack
 		false,        // exclusive
 		false,        // no-local
 		false,        // no-wait
@@ -144,9 +145,9 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	defer func() {
 		if r := recover(); r != nil {
 			ql.logger.Errorf("Recovered from panic: %s\n%s", r, string(debug.Stack()))
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			// Attempt to Nack (requeue) the message. If this fails, log the error.
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message after panic: %s", err.Error())
 			}
 		}
 	}()
@@ -156,9 +157,8 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
 		ql.logger.Error("Failed to unmarshal the message:", err.Error())
-		err := msg.Reject(true)
-		if err != nil {
-			ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+		if err := msg.Nack(false, true); err != nil {
+			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
 	}
@@ -168,76 +168,42 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	tx, err := session.BeginTransaction()
 	if err != nil {
 		ql.logger.Errorf("Failed to connect to database: %s", err)
-		err := msg.Reject(true)
-		if err != nil {
-			ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+		if err := msg.Nack(false, true); err != nil {
+			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
 	}
 
 	switch queueMessage.Type {
 	case MessageTypeTask:
-		submissionID, err := ql.queueService.GetSubmissionID(tx, queueMessage.MessageID)
+		submissionID, err := strconv.ParseInt(queueMessage.MessageID, 10, 63)
 		if err != nil {
 			ql.logger.Errorf("Failed to get submission id: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
 		ql.logger.Infof("Received task message for submission %d", submissionID)
-		taskResponse := schemas.TaskResponsePayload{}
-		err = json.Unmarshal(queueMessage.Payload, &taskResponse)
-		if err != nil {
-			ql.logger.Errorf("Failed to unmarshal task response: %s", err.Error())
-			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
-			}
-			return
-		}
-		ql.logger.Infof("Received task response for submission %d with status code %d", submissionID, taskResponse.StatusCode)
-		if taskResponse.StatusCode == InternalError {
-			err = ql.submissionService.MarkFailed(tx, submissionID, taskResponse.Message)
-			if err != nil {
-				tx.Rollback()
-				err := msg.Reject(true)
-				if err != nil {
-					ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
-				}
-			}
-			tx.Commit()
-			ql.logger.Infof("Submission %d marked as failed because %s", submissionID, taskResponse.Message)
-			return
-		}
 
-		err = ql.submissionService.MarkComplete(tx, submissionID)
-		if err != nil {
-			ql.logger.Errorf("Failed to mark submission as complete: %s", err.Error())
-			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
-			}
-			return
-		}
-		ql.logger.Infof("Submission %d marked as complete", submissionID)
 		_, err = ql.submissionService.CreateSubmissionResult(tx, submissionID, queueMessage)
 		if err != nil {
 			ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
 		ql.logger.Infof("Submission %d result created", submissionID)
 		tx.Commit()
+		// Ack the message to remove it from the queue
+		if err := msg.Ack(false); err != nil {
+			ql.logger.Errorf("Failed to ack message %s: %s", queueMessage.MessageID, err.Error())
+		}
 		ql.logger.Infof("Succesfuly processed message: %s", queueMessage.MessageID)
+
 	case MessageTypeHandshake:
 		ql.logger.Info("Handshake message received")
 
@@ -246,9 +212,8 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to unmarshal handshake response: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
@@ -257,15 +222,18 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to initialize languages: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
 		tx.Commit()
+		if err := msg.Ack(false); err != nil {
+			ql.logger.Errorf("Failed to ack handshake message: %s", err.Error())
+		}
 		ql.logger.Info("Languages initialized")
 		return
+
 	case MessageTypeStatus:
 		ql.logger.Info("Status message received")
 
@@ -274,9 +242,8 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to unmarshal status response: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
@@ -285,21 +252,22 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to update worker status: %s", err.Error())
 			tx.Rollback()
-			err := msg.Reject(true)
-			if err != nil {
-				ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+			if err := msg.Nack(false, true); err != nil {
+				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
 		}
 		tx.Commit()
+		if err := msg.Ack(false); err != nil {
+			ql.logger.Errorf("Failed to ack status message: %s", err.Error())
+		}
 		ql.logger.Info("Worker status updated")
 		return
 	default:
 		ql.logger.Errorf("Unknown message type: %s", queueMessage.Type)
 		tx.Rollback()
-		err := msg.Reject(true)
-		if err != nil {
-			ql.logger.Errorf("Failed to reject and requeue message: %s", err.Error())
+		if err := msg.Nack(false, true); err != nil {
+			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
 	}
