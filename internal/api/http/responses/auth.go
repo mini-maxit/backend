@@ -11,7 +11,6 @@ import (
 type AuthResponse struct {
 	AccessToken string    `json:"accessToken"`
 	ExpiresAt   time.Time `json:"expiresAt"`
-	TokenType   string    `json:"tokenType"`
 }
 
 // NewAuthResponse creates an AuthResponse from JWTTokens, excluding the refresh token
@@ -19,7 +18,6 @@ func NewAuthResponse(tokens *schemas.JWTTokens) AuthResponse {
 	return AuthResponse{
 		AccessToken: tokens.AccessToken,
 		ExpiresAt:   tokens.ExpiresAt,
-		TokenType:   tokens.TokenType,
 	}
 }
 

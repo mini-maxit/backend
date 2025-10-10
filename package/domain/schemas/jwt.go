@@ -7,7 +7,6 @@ type JWTTokens struct {
 	AccessToken  string    `json:"accessToken"`
 	RefreshToken string    `json:"refreshToken"`
 	ExpiresAt    time.Time `json:"expiresAt"`
-	TokenType    string    `json:"tokenType"`
 }
 
 // JWTClaims represents the claims stored in JWT tokens

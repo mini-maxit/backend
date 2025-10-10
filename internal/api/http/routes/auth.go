@@ -154,7 +154,6 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get refresh token from cookie
 	refreshTokenCookie, err := r.Cookie("refresh_token")
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Refresh token cookie not found")

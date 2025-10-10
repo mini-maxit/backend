@@ -53,7 +53,6 @@ func TestRegister(t *testing.T) {
 		js.EXPECT().GenerateTokens(tx, int64(1)).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
-			TokenType:    "Bearer",
 		}, nil).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{
@@ -69,7 +68,6 @@ func TestRegister(t *testing.T) {
 		assert.IsType(t, &schemas.JWTTokens{}, response)
 		assert.NotEmpty(t, response.AccessToken)
 		assert.NotEmpty(t, response.RefreshToken)
-		assert.Equal(t, "Bearer", response.TokenType)
 	})
 
 	t.Run("unexpected repository error", func(t *testing.T) {
@@ -156,7 +154,6 @@ func TestLogin(t *testing.T) {
 		js.EXPECT().GenerateTokens(tx, user.ID).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
-			TokenType:    "Bearer",
 		}, nil).Times(1)
 
 		userLogin := schemas.UserLoginRequest{
@@ -170,7 +167,6 @@ func TestLogin(t *testing.T) {
 		assert.IsType(t, &schemas.JWTTokens{}, response)
 		assert.NotEmpty(t, response.AccessToken)
 		assert.NotEmpty(t, response.RefreshToken)
-		assert.Equal(t, "Bearer", response.TokenType)
 	})
 }
 

@@ -247,7 +247,6 @@ func TestLogin(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
 			RefreshToken: "refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -464,7 +463,6 @@ func TestRegister(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
 			RefreshToken: "refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -655,7 +653,6 @@ func TestRefreshToken(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "new_access_token",
 			RefreshToken: "new_refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -689,7 +686,6 @@ func TestRefreshToken(t *testing.T) {
 
 		assert.IsType(t, responses.AuthResponse{}, response.Data)
 		assert.Equal(t, "new_access_token", response.Data.AccessToken)
-		assert.Equal(t, "Bearer", response.Data.TokenType)
 
 		// Check that new refresh token cookie is set
 		cookies := resp.Cookies()
