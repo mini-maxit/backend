@@ -495,7 +495,7 @@ func TestRegister(t *testing.T) {
 		cookies := resp.Cookies()
 		var refreshTokenCookie *http.Cookie
 		for _, cookie := range cookies {
-			if cookie.Name == "refresh_token" {
+			if cookie.Name == refreshTokenCookieName {
 				refreshTokenCookie = cookie
 				break
 			}
@@ -566,7 +566,7 @@ func TestRefreshToken(t *testing.T) {
 
 		// Add refresh token cookie
 		req.AddCookie(&http.Cookie{
-			Name:  "refresh_token",
+			Name:  refreshTokenCookieName,
 			Value: "valid_refresh_token",
 		})
 
@@ -575,7 +575,7 @@ func TestRefreshToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
