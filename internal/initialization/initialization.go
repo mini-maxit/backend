@@ -181,7 +181,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	workerService := service.NewWorkerService(queueService)
 
 	// Routes
-	authRoute := routes.NewAuthRoute(userService, authService)
+	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
 	groupRoute := routes.NewGroupRoute(groupService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)

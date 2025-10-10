@@ -153,7 +153,6 @@ func (j *jwtService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTToke
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresAt:    now.Add(AccessTokenDuration),
-		TokenType:    TokenTypeBearer,
 	}, nil
 }
 

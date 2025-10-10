@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/api/http/responses"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -20,6 +21,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const refreshTokenCookieName = "refresh_token"
+
 func TestLogin(t *testing.T) {
 	// Setup
 	ctrl := gomock.NewController(t)
@@ -27,7 +30,7 @@ func TestLogin(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as)
+	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
@@ -120,7 +123,7 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
@@ -244,7 +247,6 @@ func TestLogin(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
 			RefreshToken: "refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -261,10 +263,22 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		response := &httputils.APIResponse[responses.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.IsType(t, responses.AuthResponse{}, response.Data)
+
+		// Check that refresh token cookie is set
+		cookies := resp.Cookies()
+		var refreshTokenCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == refreshTokenCookieName {
+				refreshTokenCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshTokenCookie)
+		assert.Equal(t, expectedTokens.RefreshToken, refreshTokenCookie.Value)
 	})
 }
 
@@ -275,7 +289,7 @@ func TestRegister(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as)
+	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
@@ -383,7 +397,7 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
-		db.Vaildate()
+		db.Validate()
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
@@ -449,7 +463,6 @@ func TestRegister(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
 			RefreshToken: "refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -470,11 +483,23 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		response := &httputils.APIResponse[responses.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 
-		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.IsType(t, responses.AuthResponse{}, response.Data)
+
+		// Check that refresh token cookie is set
+		cookies := resp.Cookies()
+		var refreshTokenCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == refreshTokenCookieName {
+				refreshTokenCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshTokenCookie)
+		assert.Equal(t, "refresh_token", refreshTokenCookie.Value)
 	})
 }
 
@@ -485,7 +510,7 @@ func TestRefreshToken(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as)
+	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
 	server := httptest.NewServer(handler)
@@ -509,44 +534,141 @@ func TestRefreshToken(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid request body", func(t *testing.T) {
-		body := struct {
-			InvalidField string `json:"invalid_field"`
-		}{
-			InvalidField: "invalid",
-		}
-		jsonBody, err := json.Marshal(body)
+	t.Run("Missing refresh token cookie", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
 		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
+			t.Fatalf("Failed to create request: %v", err)
 		}
 
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+		assert.Contains(t, bodyString, "Refresh token cookie not found")
+	})
+
+	t.Run("Transaction was not started by middleware", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+
+		// Add refresh token cookie
+		req.AddCookie(&http.Cookie{
+			Name:  refreshTokenCookieName,
+			Value: "valid_refresh_token",
+		})
+
+		db.Invalidate()
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		db.Validate()
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+
+		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+	})
+
+	t.Run("Invalid or expired refresh token", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+
+		// Add refresh token cookie
+		req.AddCookie(&http.Cookie{
+			Name:  "refresh_token",
+			Value: "invalid_refresh_token",
+		})
+
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidToken).Times(1)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+
+		assert.Contains(t, bodyString, "Invalid or expired refresh token")
+	})
+
+	t.Run("Internal server error", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+
+		// Add refresh token cookie
+		req.AddCookie(&http.Cookie{
+			Name:  "refresh_token",
+			Value: "valid_refresh_token",
+		})
+
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response body: %v", err)
+		}
+		bodyString := string(bodyBytes)
+
+		assert.Contains(t, bodyString, "Internal Server Error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		body := schemas.RefreshTokenRequest{
-			RefreshToken: "valid_refresh_token",
-		}
-
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "new_access_token",
 			RefreshToken: "new_refresh_token",
-			TokenType:    "Bearer",
 		}
 
 		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
 
-		jsonBody, err := json.Marshal(body)
+		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
 		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
+			t.Fatalf("Failed to create request: %v", err)
 		}
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+
+		// Add refresh token cookie
+		req.AddCookie(&http.Cookie{
+			Name:  "refresh_token",
+			Value: "valid_refresh_token",
+		})
+
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to make request: %v", err)
 		}
@@ -558,13 +680,23 @@ func TestRefreshToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[schemas.JWTTokens]{}
+		response := &httputils.APIResponse[responses.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 
-		assert.IsType(t, schemas.JWTTokens{}, response.Data)
+		assert.IsType(t, responses.AuthResponse{}, response.Data)
 		assert.Equal(t, "new_access_token", response.Data.AccessToken)
-		assert.Equal(t, "new_refresh_token", response.Data.RefreshToken)
-		assert.Equal(t, "Bearer", response.Data.TokenType)
+
+		// Check that new refresh token cookie is set
+		cookies := resp.Cookies()
+		var refreshTokenCookie *http.Cookie
+		for _, cookie := range cookies {
+			if cookie.Name == "refresh_token" {
+				refreshTokenCookie = cookie
+				break
+			}
+		}
+		assert.NotNil(t, refreshTokenCookie)
+		assert.Equal(t, "new_refresh_token", refreshTokenCookie.Value)
 	})
 }

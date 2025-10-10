@@ -39,7 +39,7 @@ func (db *MockDatabase) Invalidate() {
 	db.invalid = true
 }
 
-func (db *MockDatabase) Vaildate() {
+func (db *MockDatabase) Validate() {
 	db.invalid = false
 }
 
