@@ -576,21 +576,6 @@ func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder {
 	return m.recorder
 }
 
-// AuthenticateToken mocks base method.
-func (m *MockAuthService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AuthenticateToken", tx, tokenString)
-	ret0, _ := ret[0].(*schemas.ValidateTokenResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AuthenticateToken indicates an expected call of AuthenticateToken.
-func (mr *MockAuthServiceMockRecorder) AuthenticateToken(tx, tokenString any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticateToken", reflect.TypeOf((*MockAuthService)(nil).AuthenticateToken), tx, tokenString)
-}
-
 // Login mocks base method.
 func (m *MockAuthService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()

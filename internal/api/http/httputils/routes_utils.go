@@ -144,3 +144,7 @@ func ShouldBindJSON(body io.ReadCloser, v any) error {
 	}
 	return nil
 }
+
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	ReturnError(w, http.StatusNotFound, "Requested route not found. Verify the URL is correct.")
+}
