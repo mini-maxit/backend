@@ -33,7 +33,6 @@ type AuthService interface {
 
 	// RefreshTokens refreshes JWT tokens using a valid refresh token
 	RefreshTokens(tx *gorm.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error)
-	AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error)
 }
 
 // authService implements AuthService interface.
@@ -124,19 +123,6 @@ func (as *authService) RefreshTokens(
 
 	as.logger.Infof("Tokens refreshed successfully")
 	return tokens, nil
-}
-
-func (as *authService) AuthenticateToken(
-	tx *gorm.DB,
-	tokenString string,
-) (*schemas.ValidateTokenResponse, error) {
-	validateResponse, err := as.jwtService.AuthenticateToken(tx, tokenString)
-	if err != nil {
-		as.logger.Errorf("Error validating token: %v", err.Error())
-		return nil, err
-	}
-
-	return validateResponse, nil
 }
 
 // NewAuthService creates new instance of [authService]

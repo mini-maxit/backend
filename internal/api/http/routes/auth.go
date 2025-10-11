@@ -4,7 +4,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/responses"
@@ -19,7 +18,7 @@ type AuthRoute interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	Register(w http.ResponseWriter, r *http.Request)
 	RefreshToken(w http.ResponseWriter, r *http.Request)
-	Validate(w http.ResponseWriter, r *http.Request)
+	Logout(w http.ResponseWriter, r *http.Request)
 }
 
 type AuthRouteImpl struct {
@@ -191,68 +190,29 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
 
-// Validate godoc
-//
-//	@Tags			auth
-//	@Summary		Validate access token
-//	@Description	Validates an access token from the Authorization header
-//	@Produce		json
-//	@Param			Authorization	header		string	true	"Bearer <access_token>"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		401		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.ValidateTokenResponse]
-//	@Router			/auth/validate [get]
-func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+// Logout godoc
+// @Tags			auth
+// @Summary		Logout a user
+// @Description	Logs out a user by clearing the refresh token cookie
+// @Produce		json
+// @Failure		405		{object}	httputils.APIError
+// @Success		200		{object}	httputils.APIResponse[map[string]string]
+// @Router			/auth/logout [post]
+func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	tokenHeader := r.Header.Get("Authorization")
-	if tokenHeader == "" {
-		httputils.ReturnError(w, http.StatusUnauthorized, "Authorization header is required")
-		return
-	}
-	if !strings.HasPrefix(tokenHeader, "Bearer ") {
-		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid authorization header format. Expected 'Bearer <token>'")
-		return
-	}
+	// Clear the refresh token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:   "refresh_token",
+		Path:   ar.refreshTokenPath,
+		Value:  "",
+		MaxAge: -1,
+	})
 
-	token := strings.TrimPrefix(tokenHeader, "Bearer ")
-	if token == "" {
-		httputils.ReturnError(w, http.StatusUnauthorized, "Token is empty")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
-		return
-	}
-
-	response, err := ar.authService.AuthenticateToken(tx, token)
-	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrInvalidToken) ||
-			errors.Is(err, myerrors.ErrTokenExpired) ||
-			errors.Is(err, myerrors.ErrInvalidTokenType) {
-			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired access token")
-			return
-		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate token. "+err.Error())
-		return
-	}
-
-	if !response.Valid {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusUnauthorized, "Invalid access token")
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, response)
+	httputils.ReturnSuccess(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService, refreshTokenPath string) AuthRoute {
@@ -266,4 +226,11 @@ func NewAuthRoute(userService service.UserService, authService service.AuthServi
 		log.Panicf("AuthRoute struct is not valid: %s", err.Error())
 	}
 	return route
+}
+
+func RegisterAuthRoute(mux *http.ServeMux, route AuthRoute) {
+	mux.HandleFunc("/login", route.Login)
+	mux.HandleFunc("/register", route.Register)
+	mux.HandleFunc("/refresh", route.RefreshToken)
+	mux.HandleFunc("/logout", route.Logout)
 }
