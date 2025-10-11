@@ -105,9 +105,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	// Add the API prefix to all routes
 	httpLoger.Infof("Query params middleware")
 	mux.Handle(apiPrefix+"/", http.StripPrefix(
-		apiPrefix, middleware.RecoveryMiddleware(
-			middleware.QueryParamsMiddleware(
-				middleware.DatabaseMiddleware(loggingMux, init.DB)), log,
+		apiPrefix, middleware.QueryParamsMiddleware(
+			middleware.DatabaseMiddleware(
+				middleware.RecoveryMiddleware(loggingMux, log), init.DB,
+			),
 		),
 	))
 	return &Server{mux: mux, port: init.Cfg.API.Port, logger: log}

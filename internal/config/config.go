@@ -91,7 +91,7 @@ func NewConfig() *Config {
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
-		log.Panic("DB_HOST is not set")
+		log.Warnf("DB_HOST is not set. Using default value %s", "localhost")
 	}
 	dbPortStr := os.Getenv("DB_PORT")
 	if dbPortStr == "" {

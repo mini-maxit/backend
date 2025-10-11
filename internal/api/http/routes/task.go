@@ -416,11 +416,14 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
 	if err != nil {
 		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
+		switch {
+		case errors.Is(err, myerrors.ErrNotAuthorized):
+			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this task.")
+		case errors.Is(err, myerrors.ErrNotFound):
+			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Error getting tasks. "+err.Error())
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
 		return
 	}
 
@@ -796,8 +799,12 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 
 	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
 	if err != nil {
-		// TODO: more verbose error handling
-		httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		switch {
+		case errors.Is(err, myerrors.ErrNotFound):
+			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
@@ -852,8 +859,15 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 
 	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
 	if err != nil {
-		// TODO: more verbose error handling
-		httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		db.Rollback()
+		switch {
+		case errors.Is(err, myerrors.ErrNotFound):
+			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
+		case errors.Is(err, myerrors.ErrNotAuthorized):
+			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to update limits for this task.")
+		default:
+			httputils.ReturnError(w, http.StatusInternalServerError, "Error puting limits. "+err.Error())
+		}
 		return
 	}
 

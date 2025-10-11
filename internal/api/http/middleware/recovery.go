@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
+	"github.com/mini-maxit/backend/internal/database"
 	"go.uber.org/zap"
 )
 
@@ -12,6 +14,11 @@ func RecoveryMiddleware(next http.Handler, log *zap.SugaredLogger) http.Handler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
+				db, ok := r.Context().Value(httputils.DatabaseKey).(database.Database)
+				if ok {
+					db.Rollback()
+				}
+
 				log.Errorf("Panic recovered: %v", rec)
 				log.Error(string(debug.Stack()))
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
