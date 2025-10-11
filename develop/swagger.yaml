@@ -78,6 +78,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  ? github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_ValidateTokenResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.ValidateTokenResponse'
+      ok:
+        type: boolean
+    type: object
   ? github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus
   : properties:
       data:
@@ -352,6 +359,13 @@ definitions:
     - surname
     - username
     type: object
+  github_com_mini-maxit_backend_package_domain_schemas.ValidateTokenResponse:
+    properties:
+      user:
+        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User'
+      valid:
+        type: boolean
+    type: object
   github_com_mini-maxit_backend_package_domain_schemas.WorkerStatus:
     properties:
       busyWorkers:
@@ -387,6 +401,40 @@ info:
   title: Mini-Maxit API
   version: 1.0.0
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password, returns JWT tokens
+      parameters:
+      - description: User Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+      summary: Login a user
+      tags:
+      - auth
   /auth/refresh:
     post:
       description: Refreshes JWT tokens using a valid refresh token from cookie
@@ -414,6 +462,80 @@ paths:
           schema:
             $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
       summary: Refresh JWT tokens
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with name, surname, email, username and password,
+        returns JWT tokens
+      parameters:
+      - description: User Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+      summary: Register a user
+      tags:
+      - auth
+  /auth/validate:
+    get:
+      description: Validates an access token from the Authorization header
+      parameters:
+      - description: Bearer <access_token>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_ValidateTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+      summary: Validate access token
       tags:
       - auth
   /group/:
@@ -678,79 +800,6 @@ paths:
       summary: Add users to a group
       tags:
       - group
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Logs in a user with email and password, returns JWT tokens
-      parameters:
-      - description: User Login Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-      summary: Login a user
-      tags:
-      - auth
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Registers a user with name, surname, email, username and password,
-        returns JWT tokens
-      parameters:
-      - description: User Register Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
-      summary: Register a user
-      tags:
-      - auth
   /submission:
     get:
       description: Depending on the user role, this endpoint will return all submissions
