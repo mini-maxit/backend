@@ -49,6 +49,7 @@ type FileStorageService interface {
 
 	GetTestResultStdoutPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
 	GetTestResultStderrPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
+	GetTestResultDiffPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
 	ServerType() string
 }
 
@@ -566,8 +567,10 @@ func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int,
 	remotePrefix := fmt.Sprintf("solution/%d/%d/%d", taskID, userID, order)
 	remoteFilename := fmt.Sprintf("solution%s", fileExtension)
 	uploadedFile := &UploadedFile{
-		Path:     filepath.Join(remotePrefix, remoteFilename),
-		Filename: remoteFilename,
+		Path:       filepath.Join(remotePrefix, remoteFilename),
+		Filename:   remoteFilename,
+		Bucket:     f.bucketName,
+		ServerType: f.ServerType(),
 	}
 
 	if err := f.ensureBucketExists(); err != nil {
@@ -596,6 +599,16 @@ func (f *fileStorageService) GetTestResultStderrPath(taskID, userID int64, submi
 	return &UploadedFile{
 		Filename:   path.Base(stderrPath),
 		Path:       stderrPath,
+		Bucket:     f.bucketName,
+		ServerType: f.ServerType(),
+	}
+}
+
+func (f *fileStorageService) GetTestResultDiffPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile {
+	diffPath := fmt.Sprintf("solution/%d/%d/%d/diff/%d.diff", taskID, userID, submissionOrder, testCaseOrder)
+	return &UploadedFile{
+		Filename:   path.Base(diffPath),
+		Path:       diffPath,
 		Bucket:     f.bucketName,
 		ServerType: f.ServerType(),
 	}
