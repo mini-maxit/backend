@@ -66,7 +66,11 @@ func (tr *TaskRouteImpl) GetAllAssingedTasks(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, fmt.Sprintf("Error getting tasks. %s", err.Error()))
+		status := http.StatusInternalServerError
+		if err == errors.ErrNotAuthorized {
+			status = http.StatusForbidden
+		}
+		httputils.ReturnError(w, status, fmt.Sprintf("Error getting tasks. %s", err.Error()))
 		return
 	}
 

@@ -340,6 +340,19 @@ func TestGetAllAssignedTasks(t *testing.T) {
 		assert.NotEmpty(t, tasks)
 		assert.Equal(t, 2, len(tasks))
 	})
+
+	t.Run("Not authorized - teacher", func(t *testing.T) {
+		teacher_user := tst.createUser(t, types.UserRoleTeacher)
+		tasks, err := tst.taskService.GetAllAssignedTasks(tst.tx, teacher_user, query_params)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Nil(t, tasks)
+	})
+
+	t.Run("Not authorized - admin", func(t *testing.T) {
+		tasks, err := tst.taskService.GetAllAssignedTasks(tst.tx, admin_user, query_params)
+		assert.ErrorIs(t, err, errors.ErrNotAuthorized)
+		assert.Nil(t, tasks)
+	})
 }
 
 func TestDeleteTask(t *testing.T) {
