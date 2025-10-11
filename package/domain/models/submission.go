@@ -61,6 +61,7 @@ type TestResult struct {
 	ErrorMessage       string               `gorm:"type:varchar"`
 	StdoutFileID       int64                `gorm:"not null"`
 	StderrFileID       int64                `gorm:"not null"`
+	DiffFileID         int64                `gorm:"not null"`
 	InputOutput        TestCase             `gorm:"foreignKey:InputOutputID;references:ID"`
 	SubmissionResult   SubmissionResult     `gorm:"foreignKey:SubmissionResultID;references:ID"`
 	StdoutFile         File                 `gorm:"foreignKey:StdoutFileID;references:ID"`

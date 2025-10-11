@@ -529,6 +529,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 	for _, inputOutput := range inputOutputs {
 		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
 		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+		diffFile := ss.filestorage.GetTestResultDiffPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
 		stdoutFileModel := &models.File{
 			Filename:   stdoutFile.Filename,
 			Path:       stdoutFile.Path,
@@ -551,6 +552,17 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			ss.logger.Errorf("Error creating stdout file record: %v", err.Error())
 			return -1, err
 		}
+		diffFileModel := &models.File{
+			Filename:   diffFile.Filename,
+			Path:       diffFile.Path,
+			Bucket:     diffFile.Bucket,
+			ServerType: diffFile.ServerType,
+		}
+		err = ss.fileRepository.Create(tx, diffFileModel)
+		if err != nil {
+			ss.logger.Errorf("Error creating diff file record: %v", err.Error())
+			return -1, err
+		}
 
 		testResult := models.TestResult{
 			SubmissionResultID: submissionResultID,
@@ -561,6 +573,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			ErrorMessage:       "Not executed",
 			StderrFileID:       stderrFileMode.ID,
 			StdoutFileID:       stdoutFileModel.ID,
+			DiffFileID:         diffFileModel.ID,
 		}
 		err = ss.testResultRepository.Create(tx, &testResult)
 		if err != nil {
