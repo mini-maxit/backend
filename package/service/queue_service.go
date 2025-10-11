@@ -111,6 +111,11 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 				Bucket:     tr.StderrFile.Bucket,
 				Path:       tr.StderrFile.Path,
 			},
+			DiffResult: schemas.FileLocation{
+				ServerType: tr.DiffFile.ServerType,
+				Bucket:     tr.DiffFile.Bucket,
+				Path:       tr.DiffFile.Path,
+			},
 			TimeLimitMs:   tr.InputOutput.TimeLimit,
 			MemoryLimitKB: tr.InputOutput.MemoryLimit,
 		})
