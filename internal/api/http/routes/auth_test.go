@@ -227,11 +227,12 @@ func TestRegister(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	correctRequest := schemas.UserRegisterRequest{
-		Name:     "name",
-		Surname:  "surname",
-		Email:    "email@email.com",
-		Username: "username",
-		Password: "password",
+		Name:            "name",
+		Surname:         "surname",
+		Email:           "email@email.com",
+		Username:        "username",
+		Password:        "SuperStrongPassword1!",
+		ConfirmPassword: "SuperStrongPassword1!",
 	}
 
 	existingUser := &models.User{

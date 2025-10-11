@@ -34,7 +34,7 @@ type GroupRouteImpl struct {
 //	@Description	Create a group
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		CreateGroup	true	"Create Group"
+//	@Param			body	body		schemas.CreateGroup	true	"Create Group"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		403		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
@@ -188,7 +188,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int			true	"Group ID"
-//	@Param			body	body		EditGroup	true	"Edit Group"
+//	@Param			body	body		schemas.EditGroup	true	"Edit Group"
 //	@Failure		400		{object}	httputils.ApiError
 //	@Failure		403		{object}	httputils.ApiError
 //	@Failure		405		{object}	httputils.ApiError
