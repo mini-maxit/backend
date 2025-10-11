@@ -236,11 +236,6 @@ func (ts *taskService) GetAllAssigned(
 	currentUser schemas.User,
 	queryParams map[string]any,
 ) ([]schemas.Task, error) {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleStudent})
-	if err != nil {
-		ts.logger.Errorf("Error validating user role: %v", err.Error())
-		return nil, err
-	}
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
