@@ -36,51 +36,36 @@ jobs:
           swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
           cd ../..
 
-      - name: Prepare docs working copy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract owner and repo name
+        id: repo
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          repo="${{ github.repository }}"
+          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_OUTPUT
 
-          # If remote docs branch exists, clone only that branch into a temp folder.
-          # This avoids ambiguity when there's a local path named `docs`.
-          if git ls-remote --exit-code --heads origin docs; then
-            echo "Remote docs branch exists — cloning into docs-temp"
-            git clone --depth 1 --branch docs "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" docs-temp
+      - name: Clone docs branch
+        run: |
+          git clone --branch docs https://${{secrets.DOCS_PAT}}@github.com/${GITHUB_REPOSITORY}.git temp_docs
+
+      - name: Push Swagger YAML to docs branch
+        run: |
+          # Determine target folder based on source branch
+          if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+            TARGET_DIR="master"
           else
-            echo "Remote docs branch does not exist — creating orphan docs branch in docs-temp"
-            git clone --depth 1 "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" docs-temp
-            cd docs-temp
-            git checkout --orphan docs
-            git rm -rf .
-            cd ..
+            TARGET_DIR="develop"
           fi
 
-      - name: Update swagger.yaml on docs branch and push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+          GENERATED_FILE="docs/swagger.yaml"
+          cd temp_docs
+
+          mkdir -p "${TARGET_DIR}"
+
+          cp "../${GENERATED_FILE}" "${TARGET_DIR}/swagger.yaml"
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ ! -f docs/swagger.yaml ]; then
-            echo "Generated docs/swagger.yaml not found" && exit 1
-          fi
-          repo="${{ github.repository }}"
 
-          # Copy generated swagger into the separate working copy and push from there.
-          mkdir -p docs-temp/docs
-          cp docs/swagger.yaml docs-temp/docs/swagger.yaml
-          cd docs-temp
+          git add "${TARGET_DIR}/swagger.yaml"
+          git commit -m "Update Swagger docs for ${TARGET_DIR} from ${GITHUB_SHA}" || echo "No changes to commit"
 
-          git add docs/swagger.yaml
-
-          if git diff --cached --quiet; then
-            echo "✅ No changes to docs/swagger.yaml"
-            exit 0
-          fi
-
-          git commit -m "chore(docs): update swagger.yaml from $GITHUB_REF ($GITHUB_SHA)"
-          # Push to docs branch using token-authenticated remote URL to ensure credentialed push.
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git" HEAD:docs
+          git pull --rebase origin docs || true
+          git push origin docs
