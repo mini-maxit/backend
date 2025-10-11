@@ -482,7 +482,7 @@ func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64,
 	currentTask, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrTaskNotFound
+			return myerrors.ErrNotFound
 		}
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err

@@ -443,6 +443,11 @@ func (ss *submissionService) Submit(
 	languageID int64,
 	submissionFilePath string,
 ) (int64, error) {
+	_, err := ss.taskService.Get(tx, *user, taskID)
+	if err != nil {
+		ss.logger.Errorf("Error getting task: %v", err.Error())
+		return -1, err
+	}
 	// Upload solution file to storage
 	latest, err := ss.submissionRepository.GetLatestForTaskByUser(tx, user.ID, taskID)
 	if err != nil {

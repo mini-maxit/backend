@@ -43,7 +43,6 @@ services:
     image: maxit/worker
     pull_policy: never
     depends_on:
-      - backend
       - file-storage
     environment:
       - RABBITMQ_HOST=rabbitmq

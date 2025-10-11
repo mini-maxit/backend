@@ -356,6 +356,7 @@ func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
 		validator:    validator,
 		storage:      storage,
 		bucketName:   "maxit",
+		logger:       utils.NewNamedLogger("file-storage"),
 	}, nil
 }
 
@@ -559,6 +560,7 @@ func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int,
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %w", filePath, err)
 	}
+	defer closeIO(file)
 	fileExtension := filepath.Ext(filePath)
 
 	remotePrefix := fmt.Sprintf("solution/%d/%d/%d", taskID, userID, order)
@@ -566,6 +568,10 @@ func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int,
 	uploadedFile := &UploadedFile{
 		Path:     filepath.Join(remotePrefix, remoteFilename),
 		Filename: remoteFilename,
+	}
+
+	if err := f.ensureBucketExists(); err != nil {
+		return nil, fmt.Errorf("failed to ensure bucket exists: %w", err)
 	}
 
 	if err := f.storage.UploadFile(f.bucketName, uploadedFile.Path, file); err != nil {

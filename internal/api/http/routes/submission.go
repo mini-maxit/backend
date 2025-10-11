@@ -491,10 +491,15 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	submissionID, err := s.submissionService.Submit(tx, &currentUser, taskID, languageID, filePath)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w,
-			http.StatusInternalServerError,
-			"Error creating submission. "+err.Error(),
-		)
+		switch {
+		case errors.Is(err, myerrors.ErrNotFound):
+			httputils.ReturnError(w, http.StatusNotFound, "Task not found")
+		default:
+			httputils.ReturnError(w,
+				http.StatusInternalServerError,
+				"Error creating submission. "+err.Error(),
+			)
+		}
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, map[string]int64{"submissionId": submissionID})

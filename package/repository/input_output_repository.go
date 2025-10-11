@@ -29,7 +29,7 @@ func (i *testCaseRepository) Create(tx *gorm.DB, inputOutput *models.TestCase) e
 
 func (i *testCaseRepository) GetInputOutputID(tx *gorm.DB, taskID int64, order int) (int64, error) {
 	var inputOutputID int64
-	err := tx.Table("input_outputs").Select("id").Where(
+	err := tx.Model(&models.TestCase{}).Select("id").Where(
 		`task_id = ? AND "order" = ?`,
 		taskID,
 		order,

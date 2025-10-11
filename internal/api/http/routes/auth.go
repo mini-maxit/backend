@@ -40,7 +40,7 @@ type AuthRouteImpl struct {
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[responses.AuthResponse]
-//	@Router			/login [post]
+//	@Router			/auth/login [post]
 func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -95,7 +95,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Failure		409		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		201		{object}	httputils.APIResponse[responses.AuthResponse]
-//	@Router			/register [post]
+//	@Router			/auth/register [post]
 func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -191,6 +191,19 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
 
+// Validate godoc
+//
+//	@Tags			auth
+//	@Summary		Validate access token
+//	@Description	Validates an access token from the Authorization header
+//	@Produce		json
+//	@Param			Authorization	header		string	true	"Bearer <access_token>"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.ValidateTokenResponse]
+//	@Router			/auth/validate [get]
 func (ar *AuthRouteImpl) Validate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
