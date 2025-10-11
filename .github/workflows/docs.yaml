@@ -1,54 +1,71 @@
-name: docs
+name: update-swagger-docs
 
 on:
   push:
     branches:
       - master
+      - develop
   workflow_dispatch:
 
-
 jobs:
-  build:
+  generate-and-push:
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup go
         uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
       - name: Install Swagger tools
         run: |
-          go install github.com/mini-maxit/swag/cmd/swag@latest
-          go get -u github.com/swaggo/http-swagger
+          go install github.com/swaggo/swag/cmd/swag@latest
           go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
-      - name: Init swag
-        run: cd cmd/app; swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml; cd ../..
-
-      - name: Convert swagger to markdown
-        run: swagger generate markdown -f docs/swagger.yaml --output docs/swagger.md
-
-      - name: Create new branch for docs update
+      - name: Generate Swagger docs
         run: |
-          BRANCH_NAME="update-swagger-docs-$(date +%Y%m%d%H%M%S)"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+          cd cmd/app
+          swag init --dir ./,../../internal/api/http/httputils,../../package/domain/schemas,../.. -o ../../docs --ot go,yaml
+          cd ../..
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.branch_name }}
-          title: "docs: update swagger docs"
-          commit-message: "docs: update swagger docs"
-          body: "This PR updates the Swagger documentation."
-          base: ${{ github.ref_name }}
-          delete-branch: true
-          add-paths: docs/*
-          labels: |
-            documentation
-            automated pr
+      - name: Extract owner and repo name
+        id: repo
+        run: |
+          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -d'/' -f2)" >> $GITHUB_OUTPUT
+
+      - name: Clone docs branch
+        run: |
+          git clone --branch docs https://${{secrets.DOCS_PAT}}@github.com/${GITHUB_REPOSITORY}.git temp_docs
+
+      - name: Push Swagger YAML to docs branch
+        run: |
+          # Determine target folder based on source branch
+          if [[ "${GITHUB_REF##*/}" == "master" ]]; then
+            TARGET_DIR="master"
+          else
+            TARGET_DIR="develop"
+          fi
+
+          GENERATED_FILE="docs/swagger.yaml"
+          cd temp_docs
+
+          mkdir -p "${TARGET_DIR}"
+
+          cp "../${GENERATED_FILE}" "${TARGET_DIR}/swagger.yaml"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "${TARGET_DIR}/swagger.yaml"
+          git commit -m "Update Swagger docs for ${TARGET_DIR} from ${GITHUB_SHA}" || echo "No changes to commit"
+
+          git pull --rebase origin docs || true
+          git push origin docs
