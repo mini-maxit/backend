@@ -66,4 +66,5 @@ type TestResult struct {
 	SubmissionResult   SubmissionResult     `gorm:"foreignKey:SubmissionResultID;references:ID"`
 	StdoutFile         File                 `gorm:"foreignKey:StdoutFileID;references:ID"`
 	StderrFile         File                 `gorm:"foreignKey:StderrFileID;references:ID"`
+	DiffFile           File                 `gorm:"foreignKey:DiffFileID;references:ID"`
 }

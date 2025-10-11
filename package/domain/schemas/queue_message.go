@@ -27,6 +27,7 @@ type TestCase struct {
 	ExpectedOutput FileLocation `json:"expected_output"`
 	StdoutResult   FileLocation `json:"stdout_result"`
 	StderrResult   FileLocation `json:"stderr_result"`
+	DiffResult     FileLocation `json:"diff_result"`
 	TimeLimitMs    int64        `json:"time_limit_ms"`
 	MemoryLimitKB  int64        `json:"memory_limit_kb"`
 }
