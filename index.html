@@ -1,45 +1,60 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>API Documentation</title>
         <style>
             body {
                 font-family:
                     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                     sans-serif;
-                max-width: 800px;
-                margin: 2rem auto;
-                padding: 0 1rem;
                 background: #f8f9fa;
+                margin: 0;
+                padding: 2rem 1rem;
+                display: flex;
+                justify-content: center;
             }
             .container {
                 background: white;
                 padding: 2rem;
                 border-radius: 0.5rem;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                max-width: 800px;
+                width: 100%;
             }
             .header {
                 text-align: center;
                 margin-bottom: 3rem;
             }
+            .header h1 {
+                margin-bottom: 0.5rem;
+                font-size: 2rem;
+            }
+            .header p {
+                margin: 0;
+                color: #6c757d;
+            }
             .version-card {
                 border: 1px solid #dee2e6;
                 border-radius: 0.5rem;
                 padding: 1.5rem;
-                margin-bottom: 1rem;
-                transition: all 0.2s ease;
+                margin-bottom: 1.5rem;
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease;
                 background: white;
             }
             .version-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                transform: translateY(-3px);
+                box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
             }
             .version-title {
                 margin: 0 0 0.5rem 0;
                 color: #0d6efd;
                 display: flex;
                 align-items: center;
+                font-size: 1.25rem;
             }
             .badge {
                 padding: 0.25rem 0.75rem;
@@ -57,13 +72,13 @@
                 color: white;
             }
             .version-desc {
-                margin: 0 0 1rem 0;
-                color: #6c757d;
+                margin: 0 0 1.5rem 0;
+                color: #495057;
+                line-height: 1.5;
             }
             .btn {
                 display: inline-block;
                 padding: 0.5rem 1rem;
-                margin-right: 0.5rem;
                 text-decoration: none;
                 border-radius: 0.25rem;
                 transition: all 0.15s ease;
@@ -76,14 +91,6 @@
             .btn-primary:hover {
                 background: #0b5ed7;
             }
-            .btn-outline {
-                border: 1px solid #0d6efd;
-                color: #0d6efd;
-            }
-            .btn-outline:hover {
-                background: #0d6efd;
-                color: white;
-            }
             .footer {
                 text-align: center;
                 margin-top: 2rem;
@@ -95,8 +102,8 @@
     <body>
         <div class="container">
             <div class="header">
-                <h1>🚀 API Documentation</h1>
-                <p>Choose a version to explore the API documentation</p>
+                <h1>API Documentation</h1>
+                <p>Select a version to explore the API.</p>
             </div>
 
             <div class="version-card">
@@ -105,14 +112,11 @@
                     <span class="badge badge-master">master</span>
                 </h2>
                 <p class="version-desc">
-                    Stable production API documentation. This represents the
-                    current live API.
+                    Stable, live API documentation. This version represents the
+                    current production API.
                 </p>
                 <a href="./master/" class="btn btn-primary"
-                    >📖 View Documentation</a
-                >
-                <a href="./master/swagger.yaml" class="btn btn-outline"
-                    >⬇️ Download Spec</a
+                    >View Documentation</a
                 >
             </div>
 
@@ -122,19 +126,16 @@
                     <span class="badge badge-develop">develop</span>
                 </h2>
                 <p class="version-desc">
-                    Latest development API documentation with upcoming features
-                    and changes.
+                    Latest development API documentation. Explore upcoming
+                    features and changes.
                 </p>
-                <a href="./develop/" class="btn btn-primary"
-                    >📖 View Documentation</a
-                >
-                <a href="./develop/swagger.yaml" class="btn btn-outline"
-                    >⬇️ Download Spec</a
+                <a href="./develop/index.html" class="btn btn-primary"
+                    >View Documentation</a
                 >
             </div>
 
             <div class="footer">
-                <p>📝 Documentation automatically updated from source code</p>
+                <p>Documentation is automatically updated from source code.</p>
             </div>
         </div>
     </body>
