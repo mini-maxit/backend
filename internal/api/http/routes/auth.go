@@ -206,10 +206,12 @@ func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
 
 	// Clear the refresh token cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:   "refresh_token",
-		Path:   ar.refreshTokenPath,
-		Value:  "",
-		MaxAge: -1,
+		Name:     "refresh_token",
+		Path:     ar.refreshTokenPath,
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
 	})
 
 	httputils.ReturnSuccess(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
