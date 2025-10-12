@@ -85,25 +85,25 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
-	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
-	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
-	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
-	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
-	secureMux.Handle("/worker/", http.StripPrefix("/worker", workerMux))
+	secureMux.PathPrefix("/task/").Handler(http.StripPrefix("/task", taskMux))
+	secureMux.PathPrefix("/submission/").Handler(http.StripPrefix("/submission", subbmissionMux))
+	secureMux.PathPrefix("/user/").Handler(http.StripPrefix("/user", userMux))
+	secureMux.PathPrefix("/group/").Handler(http.StripPrefix("/group", groupMux))
+	secureMux.PathPrefix("/worker/").Handler(http.StripPrefix("/worker", workerMux))
 
 	// API routes
 	apiMux := mux.NewRouter()
-	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.JWTValidationMiddleware(secureMux, init.DB, init.JWTService))
-	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
+	apiMux.PathPrefix("/auth/").Handler(http.StripPrefix("/auth", authMux))
+	apiMux.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
+	apiMux.PathPrefix("/").Handler(middleware.JWTValidationMiddleware(secureMux, init.DB, init.JWTService))
 
 	// Logging middleware
 	httpLoger := utils.NewHTTPLogger()
 	loggingMux := mux.NewRouter()
-	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
+	loggingMux.PathPrefix("/").Handler(middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	httpLoger.Infof("Query params middleware")
-	baseMux.Handle(apiPrefix+"/", http.StripPrefix(
+	baseMux.PathPrefix(apiPrefix + "/").Handler(http.StripPrefix(
 		apiPrefix, middleware.QueryParamsMiddleware(
 			middleware.DatabaseMiddleware(
 				middleware.RecoveryMiddleware(loggingMux, log), init.DB,
