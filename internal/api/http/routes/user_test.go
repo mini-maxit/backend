@@ -17,6 +17,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
@@ -138,7 +139,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		response := &httputils.APIResponse[[]schemas.User]{}
 		err = json.Unmarshal(bodyBytes, response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, expectedUsers, response.Data)
 	})
 
@@ -167,7 +168,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		response := &httputils.APIResponse[[]schemas.User]{}
 		err = json.Unmarshal(bodyBytes, response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []schemas.User{}, response.Data)
 	})
 }
@@ -290,7 +291,7 @@ func TestGetUserByID(t *testing.T) {
 
 		response := &httputils.APIResponse[schemas.User]{}
 		err := json.Unmarshal(w.Body.Bytes(), response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, expectedUser, &response.Data)
 	})
 }
@@ -421,7 +422,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 		response := &httputils.APIResponse[schemas.User]{}
 		err := json.Unmarshal(w.Body.Bytes(), response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, expectedUser, &response.Data)
 	})
 }
@@ -493,7 +494,7 @@ func TestEditUser(t *testing.T) {
 			ctx = context.WithValue(ctx, httputils.UserKey, currentUser)
 			route.EditUser(w, r.WithContext(ctx))
 		})
-		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBuffer([]byte("invalid json")))
+		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBufferString("invalid json"))
 		req.SetPathValue("id", "1")
 		w := httptest.NewRecorder()
 
@@ -717,7 +718,7 @@ func TestChangePassword(t *testing.T) {
 			ctx = context.WithValue(ctx, httputils.UserKey, currentUser)
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
-		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer([]byte("invalid json")))
+		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBufferString("invalid json"))
 		req.SetPathValue("id", "1")
 		w := httptest.NewRecorder()
 
