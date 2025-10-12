@@ -40,6 +40,4 @@ You can access it at `/api/v1/docs` when the application is running.
 
 # Endpoints
 
-You can check automaticaly generated markdown documentation [here](./docs/swagger.md). Documentation is generated from swagger specification, which in turn is generated from code comments.
-
-If you prefer swagger specification you can access it [here](https://mini-maxit.github.io/backend/)
+You can check automaticaly generated swagger documentation [here](https://mini-maxit.github.io/backend/). Documentation is generated from code comments, so please excuse if there are mistakes.
