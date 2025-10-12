@@ -1662,6 +1662,23 @@ paths:
       summary: Get user by email
       tags:
       - user
+  /user/me:
+    get:
+      description: Get current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_User'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIError'
+      summary: Get current user
+      tags:
+      - user
   /worker/status:
     get:
       description: Returns the current status of all worker nodes
