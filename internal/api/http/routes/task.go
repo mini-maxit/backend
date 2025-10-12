@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -889,7 +890,7 @@ func isValidFileFormat(filename string) bool {
 	return strings.HasSuffix(filename, ".zip") || strings.HasSuffix(filename, ".tar.gz")
 }
 
-func RegisterTaskRoutes(mux *http.ServeMux, route TaskRoute) {
+func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

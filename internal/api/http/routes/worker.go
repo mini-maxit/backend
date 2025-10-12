@@ -5,6 +5,7 @@ import (
 
 	"errors"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
@@ -54,7 +55,7 @@ func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, status)
 }
 
-func RegisterWorkerRoutes(mux *http.ServeMux, wr WorkerRoute) {
+func RegisterWorkerRoutes(mux *mux.Router, wr WorkerRoute) {
 	mux.HandleFunc("/status", wr.GetStatus)
 }
 

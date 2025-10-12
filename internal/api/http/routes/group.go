@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -488,7 +489,7 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
-func RegisterGroupRoutes(mux *http.ServeMux, groupRoute GroupRoute) {
+func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:

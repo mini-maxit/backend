@@ -144,3 +144,7 @@ func ShouldBindJSON(body io.ReadCloser, v any) error {
 	}
 	return nil
 }
+
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	ReturnError(w, http.StatusNotFound, "Endpoint not found")
+}
