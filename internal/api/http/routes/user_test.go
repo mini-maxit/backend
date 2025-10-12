@@ -622,7 +622,10 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "Update successfull")
+		resp := &httputils.APIResponse[httputils.MessageResponse]{}
+		err := json.Unmarshal(w.Body.Bytes(), resp)
+		require.NoError(t, err)
+		assert.Equal(t, *httputils.NewMessageResponse("Update successful"), resp.Data)
 	})
 }
 

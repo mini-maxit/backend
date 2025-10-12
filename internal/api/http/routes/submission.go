@@ -50,7 +50,6 @@ type SumbissionImpl struct {
 //	@Produce		json
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
-//	@Param			Session	header		string	true	"Session Token"
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -97,7 +96,6 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 //
 //	@Produce		json
 //	@Param			id		path		int		true	"Submission ID"
-//	@Param			Session	header		string	true	"Session Token"
 //	@Success		200		{object}	httputils.APIResponse[schemas.Submission]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -148,7 +146,6 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Param			id		path		int		true	"User ID"
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
-//	@Param			Session	header		string	true	"Session Token"
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError

@@ -22,6 +22,22 @@ If you set `DUMP=true` in the .env file, and start application using provided de
 - Teacher user. Email=`teacher@teacher.com` Password=`teacherteacher`
 - Student user. Email=`student@student.com` Password=`studentstudent`
 
+### Swagger docs
+In order to generate swagger documentation you need to have installed `swag` tool. You can install it using:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+Next you can generate swagger documentation using:
+
+```bash
+./scripts/update-docs.sh
+```
+
+You can access it at `/api/v1/docs` when the application is running.
+
+
 # Endpoints
 
 You can check automaticaly generated markdown documentation [here](./docs/swagger.md). Documentation is generated from swagger specification, which in turn is generated from code comments.

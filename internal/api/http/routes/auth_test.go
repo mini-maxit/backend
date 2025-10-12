@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/responses"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -263,10 +262,10 @@ func TestLogin(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[responses.AuthResponse]{}
+		response := &httputils.APIResponse[routes.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.IsType(t, responses.AuthResponse{}, response.Data)
+		assert.IsType(t, routes.AuthResponse{}, response.Data)
 
 		// Check that refresh token cookie is set
 		cookies := resp.Cookies()
@@ -483,11 +482,11 @@ func TestRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[responses.AuthResponse]{}
+		response := &httputils.APIResponse[routes.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 
-		assert.IsType(t, responses.AuthResponse{}, response.Data)
+		assert.IsType(t, routes.AuthResponse{}, response.Data)
 
 		// Check that refresh token cookie is set
 		cookies := resp.Cookies()
@@ -680,11 +679,11 @@ func TestRefreshToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[responses.AuthResponse]{}
+		response := &httputils.APIResponse[routes.AuthResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 
-		assert.IsType(t, responses.AuthResponse{}, response.Data)
+		assert.IsType(t, routes.AuthResponse{}, response.Data)
 		assert.Equal(t, "new_access_token", response.Data.AccessToken)
 
 		// Check that new refresh token cookie is set
