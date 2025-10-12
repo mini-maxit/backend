@@ -43,6 +43,29 @@ definitions:
       ok:
         type: boolean
     type: object
+  ? github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_User
+  : properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_IDResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.IDResponse'
+      ok:
+        type: boolean
+    type: object
+  ? github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse
+  : properties:
+      data:
+        $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.MessageResponse'
+      ok:
+        type: boolean
+    type: object
   github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group:
     properties:
       data:
@@ -85,33 +108,22 @@ definitions:
       ok:
         type: boolean
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-int64:
+  github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-routes_AuthResponse:
     properties:
       data:
+        $ref: '#/definitions/routes.AuthResponse'
+      ok:
+        type: boolean
+    type: object
+  github_com_mini-maxit_backend_internal_api_http_httputils.IDResponse:
+    properties:
+      id:
         type: integer
-      ok:
-        type: boolean
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-map_string_string:
+  github_com_mini-maxit_backend_internal_api_http_httputils.MessageResponse:
     properties:
-      data:
-        $ref: '#/definitions/map_string_string'
-      ok:
-        type: boolean
-    type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse:
-    properties:
-      data:
-        $ref: '#/definitions/responses.AuthResponse'
-      ok:
-        type: boolean
-    type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string:
-    properties:
-      data:
+      message:
         type: string
-      ok:
-        type: boolean
     type: object
   github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct:
     properties:
@@ -372,11 +384,7 @@ definitions:
           type: string
         type: object
     type: object
-  map_string_string:
-    additionalProperties:
-      type: string
-    type: object
-  responses.AuthResponse:
+  routes.AuthResponse:
     properties:
       accessToken:
         type: string
@@ -416,7 +424,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -441,7 +449,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-map_string_string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "405":
           description: Method Not Allowed
           schema:
@@ -458,7 +466,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -497,7 +505,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-responses_AuthResponse'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -563,7 +571,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-int64'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_IDResponse'
         "400":
           description: Bad Request
           schema:
@@ -683,7 +691,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -717,7 +725,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_User'
         "400":
           description: Bad Request
           schema:
@@ -759,7 +767,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -792,11 +800,6 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -824,11 +827,6 @@ paths:
         name: id
         required: true
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -970,11 +968,6 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1110,7 +1103,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1186,7 +1179,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1229,7 +1222,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1272,7 +1265,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1307,7 +1300,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1343,7 +1336,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1382,7 +1375,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1425,7 +1418,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1569,7 +1562,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1614,7 +1607,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-string'
+            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
