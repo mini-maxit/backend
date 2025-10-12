@@ -18,6 +18,7 @@ import (
 
 type UserRoute interface {
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
+	GetMe(w http.ResponseWriter, r *http.Request)
 	GetUserByID(w http.ResponseWriter, r *http.Request)
 	GetUserByEmail(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
@@ -328,6 +329,24 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Not implemented")
 }
 
+// GetMe godoc
+// @Tags			user
+// @Summary		Get current user
+// @Description	Get current user
+// @Produce		json
+// @Success		200	{object}	httputils.APIResponse[schemas.User]
+// @Failure		405	{object}	httputils.APIError
+// @Router			/user/me [get]
+func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	httputils.ReturnSuccess(w, http.StatusOK, currentUser)
+}
+
 func NewUserRoute(userService service.UserService) UserRoute {
 	route := &UserRouteImpl{userService: userService}
 	err := utils.ValidateStruct(*route)
@@ -339,6 +358,7 @@ func NewUserRoute(userService service.UserService) UserRoute {
 
 func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
 	mux.HandleFunc("/", route.GetAllUsers)
+	mux.HandleFunc("/me", route.GetMe)
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

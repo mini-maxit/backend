@@ -50,7 +50,6 @@ func (j *jwtService) generateToken(claims *schemas.JWTClaims, duration time.Dura
 	now := time.Now()
 	jwtClaims := jwt.MapClaims{
 		"user_id":  claims.UserID,
-		"email":    claims.Email,
 		"username": claims.Username,
 		"role":     claims.Role,
 		"token_id": claims.TokenID,
