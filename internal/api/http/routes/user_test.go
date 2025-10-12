@@ -925,6 +925,136 @@ func TestChangePassword(t *testing.T) {
 }
 
 // Helper function
+func TestGetMe(t *testing.T) {
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	us := mock_service.NewMockUserService(ctrl)
+	route := routes.NewUserRoute(us)
+
+	currentUser := schemas.User{
+		ID:       1,
+		Name:     "John",
+		Surname:  "Doe",
+		Email:    "john.doe@example.com",
+		Username: "johndoe",
+		Role:     types.UserRoleStudent,
+	}
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ctx := context.WithValue(r.Context(), httputils.UserKey, currentUser)
+				route.GetMe(w, r.WithContext(ctx))
+			})
+
+			req := httptest.NewRequest(method, "/user/me", nil)
+			w := httptest.NewRecorder()
+
+			handler.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
+
+			var response httputils.APIError
+			err := json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, err)
+			assert.Equal(t, "Method not allowed", response.Data.Message)
+		}
+	})
+
+	t.Run("Success - Return current user", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), httputils.UserKey, currentUser)
+			route.GetMe(w, r.WithContext(ctx))
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response httputils.APIResponse[schemas.User]
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.True(t, response.Ok)
+		assert.Equal(t, currentUser, response.Data)
+	})
+
+	t.Run("Success - Different user role", func(t *testing.T) {
+		adminUser := schemas.User{
+			ID:       2,
+			Name:     "Admin",
+			Surname:  "User",
+			Email:    "admin@example.com",
+			Username: "admin",
+			Role:     types.UserRoleAdmin,
+		}
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), httputils.UserKey, adminUser)
+			route.GetMe(w, r.WithContext(ctx))
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response httputils.APIResponse[schemas.User]
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.True(t, response.Ok)
+		assert.Equal(t, adminUser, response.Data)
+		assert.Equal(t, types.UserRoleAdmin, response.Data.Role)
+	})
+
+	t.Run("Error - User context missing", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Don't set user context at all
+			route.GetMe(w, r)
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response httputils.APIError
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
+	})
+
+	t.Run("Error - User context wrong type", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Set user context with wrong type (string instead of schemas.User)
+			ctx := context.WithValue(r.Context(), httputils.UserKey, "invalid_user_data")
+			route.GetMe(w, r.WithContext(ctx))
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response httputils.APIError
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
+	})
+}
+
 func stringPtr(s string) *string {
 	return &s
 }

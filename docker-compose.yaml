@@ -57,8 +57,7 @@ services:
     depends_on:
       - backend
     environment:
-      - DATABASE_URL=postgres://postgres:password@db:5432/maxit
-      - BACKEND_URL=http://backend:8000
+      - BACKEND_API_URL=http://backend:8000/api/v1
       - ORIGIN=http://localhost:3000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
