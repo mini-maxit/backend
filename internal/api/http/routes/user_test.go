@@ -1014,6 +1014,45 @@ func TestGetMe(t *testing.T) {
 		assert.Equal(t, adminUser, response.Data)
 		assert.Equal(t, types.UserRoleAdmin, response.Data.Role)
 	})
+
+	t.Run("Error - User context missing", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Don't set user context at all
+			route.GetMe(w, r)
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response httputils.APIError
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
+	})
+
+	t.Run("Error - User context wrong type", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Set user context with wrong type (string instead of schemas.User)
+			ctx := context.WithValue(r.Context(), httputils.UserKey, "invalid_user_data")
+			route.GetMe(w, r.WithContext(ctx))
+		})
+
+		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
+		w := httptest.NewRecorder()
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		var response httputils.APIError
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
+	})
 }
 
 func stringPtr(s string) *string {

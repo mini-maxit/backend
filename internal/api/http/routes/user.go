@@ -343,7 +343,12 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	userVal := r.Context().Value(httputils.UserKey)
+	currentUser, ok := userVal.(schemas.User)
+	if !ok {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Could not retrieve user. Verify that you are logged in.")
+		return
+	}
 	httputils.ReturnSuccess(w, http.StatusOK, currentUser)
 }
 
