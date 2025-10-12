@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	_ "github.com/mini-maxit/backend/docs"
 	"github.com/mini-maxit/backend/internal/api/http/server"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/initialization"

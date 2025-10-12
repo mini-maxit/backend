@@ -5,3 +5,6 @@ coverage*
 .env
 
 .DS_Store
+
+docs/*
+!docs/index.html

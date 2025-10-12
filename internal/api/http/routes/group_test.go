@@ -244,10 +244,10 @@ func TestCreateGroup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[int64]{}
+		response := &httputils.APIResponse[httputils.IDResponse]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.Equal(t, int64(1), response.Data)
+		assert.Equal(t, *httputils.NewIDResponse(int64(1)), response.Data)
 	})
 }
 

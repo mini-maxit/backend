@@ -4,16 +4,43 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/api/http/responses"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 )
+
+// AuthResponse represents the response for auth endpoints (excludes refresh token for security)
+type AuthResponse struct {
+	AccessToken string    `json:"accessToken"`
+	ExpiresAt   time.Time `json:"expiresAt"`
+}
+
+// newAuthResponse creates an AuthResponse from JWTTokens, excluding the refresh token
+func newAuthResponse(tokens *schemas.JWTTokens) AuthResponse {
+	return AuthResponse{
+		AccessToken: tokens.AccessToken,
+		ExpiresAt:   tokens.ExpiresAt,
+	}
+}
+
+// setRefreshTokenCookie sets the refresh token as an httpOnly cookie
+func setRefreshTokenCookie(w http.ResponseWriter, path, refreshToken string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     path,
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   7 * 24 * 60 * 60, // 7 days
+	})
+}
 
 type AuthRoute interface {
 	Login(w http.ResponseWriter, r *http.Request)
@@ -39,7 +66,7 @@ type AuthRouteImpl struct {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[responses.AuthResponse]
+//	@Success		200		{object}	httputils.APIResponse[AuthResponse]
 //	@Router			/auth/login [post]
 func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -75,9 +102,9 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
 
-	authResponse := responses.NewAuthResponse(tokens)
+	authResponse := newAuthResponse(tokens)
 
 	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
@@ -94,7 +121,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		409		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		201		{object}	httputils.APIResponse[responses.AuthResponse]
+//	@Success		201		{object}	httputils.APIResponse[AuthResponse]
 //	@Router			/auth/register [post]
 func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -129,9 +156,9 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
 
-	authResponse := responses.NewAuthResponse(tokens)
+	authResponse := newAuthResponse(tokens)
 
 	httputils.ReturnSuccess(w, http.StatusCreated, authResponse)
 }
@@ -146,7 +173,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[responses.AuthResponse]
+//	@Success		200		{object}	httputils.APIResponse[AuthResponse]
 //	@Router			/auth/refresh [post]
 func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -184,9 +211,9 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responses.SetRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
 
-	authResponse := responses.NewAuthResponse(tokens)
+	authResponse := newAuthResponse(tokens)
 
 	httputils.ReturnSuccess(w, http.StatusOK, authResponse)
 }
@@ -197,7 +224,7 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 // @Description	Logs out a user by clearing the refresh token cookie
 // @Produce		json
 // @Failure		405		{object}	httputils.APIError
-// @Success		200		{object}	httputils.APIResponse[map[string]string]
+// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Router			/auth/logout [post]
 func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -215,7 +242,7 @@ func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
 		Secure:   false, // Set to true in production with HTTPS
 	})
 
-	httputils.ReturnSuccess(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Logged out successfully"))
 }
 
 func NewAuthRoute(userService service.UserService, authService service.AuthService, refreshTokenPath string) AuthRoute {

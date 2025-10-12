@@ -43,7 +43,7 @@ type GroupRouteImpl struct {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[int64]
+//	@Success		200		{object}	httputils.APIResponse[httputils.IDResponse]
 //	@Router			/group/ [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -89,7 +89,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, groupID)
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewIDResponse(groupID))
 }
 
 // GetGroup godoc
@@ -268,7 +268,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[string]
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/group/{id}/users [post]
 func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -316,7 +316,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, "Users added to group successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.MessageResponse{Message: "Users added to group successfully"})
 }
 
 // DeleteUsersFromGroup godoc
@@ -332,7 +332,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[string]
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/group/{id}/users [delete]
 func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -387,7 +387,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 		httputils.ReturnError(w, status, "Failed to delete users from group. "+err.Error())
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, "Users deleted from group successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users deleted from group successfully"))
 }
 
 // GetGroupUsers godoc
@@ -401,7 +401,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[string]
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.User]
 //	@Router			/group/{id}/users [get]
 func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

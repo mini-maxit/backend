@@ -178,7 +178,7 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 // @Produce		json
 // @Param			id	path		int	true	"User ID"
 // @Param			request	body		schemas.UserEdit	true	"User Edit Request"
-// @Success		200		{object}	httputils.APIResponse[string]
+// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Failure		400		{object}	httputils.APIError
 // @Failure		403		{object}	httputils.APIError
 // @Failure		404		{object}	httputils.APIError
@@ -234,7 +234,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Update successfull")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Update successfull"))
 }
 
 // ChangePassword godoc
@@ -245,7 +245,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 // @Produce		json
 // @Param			id	path		int	true	"User ID"
 // @Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
-// @Success		200		{object}	httputils.APIResponse[string]
+// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Failure		400		{object}	httputils.APIError
 // @Failure		403		{object}	httputils.APIError
 // @Failure		404		{object}	httputils.APIError
@@ -318,7 +318,7 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Password changed successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Password changed successfully"))
 }
 
 func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {

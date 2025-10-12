@@ -379,7 +379,7 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[string]
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id} [patch]
 func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -431,7 +431,7 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("archive")
 	if err != nil {
 		if errors.Is(err, http.ErrMissingFile) {
-			httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
+			httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task updated successfully"))
 			return
 		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found.")
@@ -460,7 +460,7 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Error processing and uploading task. "+err.Error())
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, "Task updated successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task updated successfully"))
 }
 
 // DeleteTask godoc
@@ -474,7 +474,7 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[string]
+//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id} [delete]
 func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -513,7 +513,7 @@ func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Task deleted successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task deleted successfully"))
 }
 
 // AssignTaskToUsers godoc
@@ -528,7 +528,7 @@ func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[string]
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id}/assign/users [post]
 func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -574,7 +574,7 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task assigned successfully"))
 }
 
 // AssignTaskToGroups godoc
@@ -589,7 +589,7 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		405			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[string]
+//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id}/assign/groups [post]
 func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -635,7 +635,7 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Task assigned successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task assigned successfully"))
 }
 
 // UnAssignTaskFromUsers godoc
@@ -650,7 +650,7 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[string]
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id}/unassign/users [delete]
 func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -696,7 +696,7 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task unassigned successfully"))
 }
 
 // UnAssignTaskFromGroups godoc
@@ -711,7 +711,7 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		405			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[string]
+//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/task/{id}/unassign/groups [delete]
 func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
@@ -757,7 +757,7 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, "Task unassigned successfully")
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task unassigned successfully"))
 }
 
 // GetLimits godoc
@@ -770,7 +770,7 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 // @Failure		400			{object}	httputils.APIError
 // @Failure		404			{object}	httputils.APIError
 // @Failure		500			{object}	httputils.APIError
-// @Success		200			{object}	httputils.APIResponse[string]
+// @Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Router			/task/{id}/limits [get]
 func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -823,7 +823,7 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 // @Failure		400			{object}	httputils.APIError
 // @Failure		404			{object}	httputils.APIError
 // @Failure		500			{object}	httputils.APIError
-// @Success		200			{object}	httputils.APIResponse[string]
+// @Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Router			/task/{id}/limits [put]
 func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
@@ -872,7 +872,7 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, nil)
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task limits updated successfully"))
 }
 
 func NewTaskRoute(fileStorageURL string, taskService service.TaskService) TaskRoute {
