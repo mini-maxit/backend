@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/responses"
 	"github.com/mini-maxit/backend/internal/database"
@@ -229,8 +230,7 @@ func NewAuthRoute(userService service.UserService, authService service.AuthServi
 	}
 	return route
 }
-
-func RegisterAuthRoute(mux *http.ServeMux, route AuthRoute) {
+func RegisterAuthRoute(mux *mux.Router, route AuthRoute) {
 	mux.HandleFunc("/login", route.Login)
 	mux.HandleFunc("/register", route.Register)
 	mux.HandleFunc("/refresh", route.RefreshToken)

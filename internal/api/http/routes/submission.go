@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -526,7 +527,7 @@ func NewSubmissionRoutes(
 }
 
 // RegisterSubmissionRoutes registers handlers for the submission routes.
-func RegisterSubmissionRoutes(mux *http.ServeMux, route SubmissionRoutes) {
+func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/", route.GetAll)
 	mux.HandleFunc("/{id}", route.GetByID)
 	mux.HandleFunc("/user/{id}", route.GetAllForUser)
