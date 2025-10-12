@@ -316,7 +316,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.MessageResponse{Message: "Users added to group successfully"})
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users added to group successfully"))
 }
 
 // DeleteUsersFromGroup godoc

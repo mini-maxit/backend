@@ -234,7 +234,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Update successfull"))
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Update successful"))
 }
 
 // ChangePassword godoc
