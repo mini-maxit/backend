@@ -110,9 +110,6 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 			),
 		),
 	))
-	baseMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		httputils.NotFoundHandler(w, r)
-	})
 
 	baseMux.NotFoundHandler = http.HandlerFunc(httputils.NotFoundHandler)
 	return &Server{mux: baseMux, port: init.Cfg.API.Port, logger: log}
