@@ -13,9 +13,7 @@ type Contest struct {
 	IsSubmissionOpen   bool      `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
 	IsVisible          bool      `gorm:"default:false;not null"` // if true, contest is visible to all users
 
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-	DeletedAt time.Time `gorm:"index;default:null"`
+	baseModel
 
 	Creator           User    `gorm:"foreignKey:CreatedBy; references:ID"`
 	Tasks             []Task  `gorm:"many2many:contest_tasks;"`
