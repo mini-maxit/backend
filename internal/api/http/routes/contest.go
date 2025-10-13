@@ -214,7 +214,7 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	contestStr := mux.Vars(r)["id"]
+	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
 		return
