@@ -75,6 +75,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	groupMux := http.NewServeMux()
 	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
+	// Contest routes
+	contestMux := http.NewServeMux()
+	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
+
 	// Session routes
 	sessionMux := http.NewServeMux()
 	sessionMux.HandleFunc("/", init.SessionRoute.CreateSession)
@@ -88,6 +92,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
 	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
 	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
+	secureMux.Handle("/contest/", http.StripPrefix("/contest", contestMux))
 
 	// API routes
 	apiMux := http.NewServeMux()

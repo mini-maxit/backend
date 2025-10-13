@@ -28,6 +28,7 @@ type Initialization struct {
 	SessionService service.SessionService
 
 	AuthRoute       routes.AuthRoute
+	ContestRoute    routes.ContestRoute
 	GroupRoute      routes.GroupRoute
 	SessionRoute    routes.SessionRoute
 	SubmissionRoute routes.SubmissionRoutes
@@ -122,6 +123,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
+	contestRepository, err := repository.NewContestRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create contest repository: %s", err.Error())
+	}
 
 	if err := db.Commit(); err != nil {
 		log.Panicf("Failed to commit transaction: %s", err.Error())
@@ -139,6 +144,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(submissionRepository, submissionResultRepository, inputOutputRepository, testResultRepository, langService, taskService, userService)
+	contestService := service.NewContestService(contestRepository, taskRepository, userRepository)
 	tx, err = db.BeginTransaction()
 	if err != nil {
 		log.Panicf("Failed to connect to database to init languages: %s", err.Error())
@@ -160,6 +166,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageUrl, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageUrl, taskService)
 	userRoute := routes.NewUserRoute(userService)
+	contestRoute := routes.NewContestRoute(contestService)
 
 	// Queue listener
 	queueListener, err := queue.NewQueueListener(conn, channel, db, taskService, queueService, submissionService, cfg.BrokerConfig.ResponseQueueName)
@@ -239,6 +246,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SessionService: sessionService,
 
 		AuthRoute:       authRoute,
+		ContestRoute:    contestRoute,
 		GroupRoute:      groupRoute,
 		SessionRoute:    sessionRoute,
 		SubmissionRoute: submissionRoute,
