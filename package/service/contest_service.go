@@ -9,6 +9,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -30,6 +31,8 @@ const defaultContestSort = "created_at:desc"
 type contestService struct {
 	contestRepository repository.ContestRepository
 	userRepository    repository.UserRepository
+
+	logger *zap.SugaredLogger
 }
 
 func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
@@ -56,10 +59,10 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 	}
 
 	if contest.StartAt != nil {
-		model.StartAt = *contest.StartAt
+		model.StartAt = contest.StartAt
 	}
 	if contest.EndAt != nil {
-		model.EndAt = *contest.EndAt
+		model.EndAt = contest.EndAt
 	}
 
 	contestID, err := cs.contestRepository.Create(tx, model)
@@ -80,7 +83,7 @@ func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID i
 	}
 
 	// Check visibility and permissions
-	if !contest.IsVisible {
+	if !*contest.IsVisible {
 		if currentUser.Role == types.UserRoleStudent {
 			return nil, myerrors.ErrNotAuthorized
 		}
@@ -123,7 +126,7 @@ func (cs *contestService) GetAll(tx *gorm.DB, currentUser schemas.User, queryPar
 		// Filter visible contests
 		visibleContests := []models.Contest{}
 		for _, contest := range contests {
-			if contest.IsVisible {
+			if *contest.IsVisible {
 				visibleContests = append(visibleContests, contest)
 			}
 		}
@@ -205,20 +208,25 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	if editInfo.Description != nil {
 		model.Description = *editInfo.Description
 	}
+	// TODO: handle when setting to nil is intended
 	if editInfo.StartAt != nil {
-		model.StartAt = *editInfo.StartAt
+		model.StartAt = editInfo.StartAt
 	}
+	// TODO: handle when setting to nil is intended
 	if editInfo.EndAt != nil {
-		model.EndAt = *editInfo.EndAt
+		model.EndAt = editInfo.EndAt
 	}
 	if editInfo.IsRegistrationOpen != nil {
-		model.IsRegistrationOpen = *editInfo.IsRegistrationOpen
+		cs.logger.Infof("Setting IsRegistrationOpen to %v", *editInfo.IsRegistrationOpen)
+		model.IsRegistrationOpen = editInfo.IsRegistrationOpen
 	}
 	if editInfo.IsSubmissionOpen != nil {
-		model.IsSubmissionOpen = *editInfo.IsSubmissionOpen
+		cs.logger.Infof("Setting IsSubmissionOpen to %v", *editInfo.IsSubmissionOpen)
+		model.IsSubmissionOpen = editInfo.IsSubmissionOpen
 	}
 	if editInfo.IsVisible != nil {
-		model.IsVisible = *editInfo.IsVisible
+		cs.logger.Infof("Setting IsVisible to %v", *editInfo.IsVisible)
+		model.IsVisible = editInfo.IsVisible
 	}
 }
 
@@ -230,9 +238,9 @@ func ContestToSchema(model *models.Contest) *schemas.Contest {
 		CreatedBy:          model.CreatedBy,
 		StartAt:            model.StartAt,
 		EndAt:              model.EndAt,
-		IsRegistrationOpen: model.IsRegistrationOpen,
-		IsSubmissionOpen:   model.IsSubmissionOpen,
-		IsVisible:          model.IsVisible,
+		IsRegistrationOpen: *model.IsRegistrationOpen,
+		IsSubmissionOpen:   *model.IsSubmissionOpen,
+		IsVisible:          *model.IsVisible,
 		CreatedAt:          model.CreatedAt,
 		UpdatedAt:          model.UpdatedAt,
 	}
@@ -242,5 +250,6 @@ func NewContestService(contestRepository repository.ContestRepository, userRepos
 	return &contestService{
 		contestRepository: contestRepository,
 		userRepository:    userRepository,
+		logger:            utils.NewNamedLogger("contest_service"),
 	}
 }

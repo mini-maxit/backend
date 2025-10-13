@@ -55,7 +55,7 @@ type TestResult struct {
 	ID                 int64                `gorm:"primaryKey;autoIncrement"`
 	SubmissionResultID int64                `gorm:"not null"`
 	InputOutputID      int64                `gorm:"not null"`
-	Passed             bool                 `gorm:"not null"`
+	Passed             *bool                `gorm:"not null"`
 	ExecutionTime      float64              `gorm:"not null"`
 	StatusCode         TestResultStatusCode `gorm:"not null"`
 	ErrorMessage       string               `gorm:"type:varchar"`

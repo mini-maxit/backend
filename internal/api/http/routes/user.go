@@ -90,7 +90,7 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDStr := r.PathValue("id")
+	userIDStr := httputils.GetPathValue(r, "id")
 
 	if userIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
@@ -194,7 +194,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 	var request schemas.UserEdit
 
-	userIDStr := r.PathValue("id")
+	userIDStr := httputils.GetPathValue(r, "id")
 
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
@@ -258,7 +258,7 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDStr := r.PathValue("id")
+	userIDStr := httputils.GetPathValue(r, "id")
 	if userIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
 		return

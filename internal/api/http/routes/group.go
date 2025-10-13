@@ -118,7 +118,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupStr := r.PathValue("id")
+	groupStr := httputils.GetPathValue(r, "id")
 	if groupStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return
@@ -228,7 +228,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupStr := r.PathValue("id")
+	groupStr := httputils.GetPathValue(r, "id")
 	if groupStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return
@@ -276,7 +276,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return
@@ -340,7 +340,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return
@@ -409,7 +409,7 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return
@@ -452,7 +452,7 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
 		return

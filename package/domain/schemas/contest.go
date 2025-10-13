@@ -3,17 +3,17 @@ package schemas
 import "time"
 
 type Contest struct {
-	ID                 int64     `json:"id"`
-	Name               string    `json:"name"`
-	Description        string    `json:"description"`
-	CreatedBy          int64     `json:"createdBy"`
-	StartAt            time.Time `json:"startAt"`
-	EndAt              time.Time `json:"endAt"`
-	IsRegistrationOpen bool      `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool      `json:"isSubmissionOpen"`
-	IsVisible          bool      `json:"isVisible"`
-	CreatedAt          time.Time `json:"createdAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
+	ID                 int64      `json:"id"`
+	Name               string     `json:"name"`
+	Description        string     `json:"description"`
+	CreatedBy          int64      `json:"createdBy"`
+	StartAt            *time.Time `json:"startAt"`
+	EndAt              *time.Time `json:"endAt"`
+	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
+	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
+	IsVisible          bool       `json:"isVisible"`
+	CreatedAt          time.Time  `json:"createdAt"`
+	UpdatedAt          time.Time  `json:"updatedAt"`
 }
 
 type CreateContest struct {
@@ -21,9 +21,9 @@ type CreateContest struct {
 	Description        string     `json:"description,omitempty"`
 	StartAt            *time.Time `json:"startAt,omitempty"`
 	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
-	IsVisible          bool       `json:"isVisible"`
+	IsRegistrationOpen *bool      `json:"isRegistrationOpen"`
+	IsSubmissionOpen   *bool      `json:"isSubmissionOpen"`
+	IsVisible          *bool      `json:"isVisible"`
 }
 
 type EditContest struct {

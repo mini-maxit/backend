@@ -407,7 +407,7 @@ func (ss *submissionService) CreateSubmissionResult(
 		}
 
 		testResult.StatusCode = models.TestResultStatusCode(responseTestResult.StatusCode)
-		testResult.Passed = responseTestResult.Passed
+		testResult.Passed = &responseTestResult.Passed
 		testResult.ExecutionTime = responseTestResult.ExecutionTime
 		testResult.ErrorMessage = responseTestResult.ErrorMessage
 		err = ss.testResultRepository.Put(tx, testResult)
@@ -564,10 +564,11 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			return -1, err
 		}
 
+		falseVal := false
 		testResult := models.TestResult{
 			SubmissionResultID: submissionResultID,
 			InputOutputID:      inputOutput.ID,
-			Passed:             false,
+			Passed:             &falseVal,
 			ExecutionTime:      float64(-1),
 			StatusCode:         models.TestResultStatusCodeNotExecuted,
 			ErrorMessage:       "Not executed",
@@ -624,7 +625,7 @@ func (ss *submissionService) testResultsModelToSchema(testResults []models.TestR
 			ID:                 testResult.ID,
 			SubmissionResultID: testResult.SubmissionResultID,
 			InputOutputID:      testResult.InputOutputID,
-			Passed:             testResult.Passed,
+			Passed:             *testResult.Passed,
 			ErrorMessage:       testResult.ErrorMessage,
 		})
 	}

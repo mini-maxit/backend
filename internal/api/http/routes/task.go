@@ -176,7 +176,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -232,7 +232,7 @@ func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 
 	if groupIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
@@ -387,7 +387,7 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -482,7 +482,7 @@ func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -536,7 +536,7 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -597,7 +597,7 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -658,7 +658,7 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -719,7 +719,7 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -778,7 +778,7 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return
@@ -831,7 +831,7 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID is required.")
 		return

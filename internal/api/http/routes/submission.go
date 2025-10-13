@@ -113,7 +113,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	submissionIDStr := r.PathValue("id")
+	submissionIDStr := httputils.GetPathValue(r, "id")
 	submissionID, err := strconv.ParseInt(submissionIDStr, 10, 64)
 	if err != nil {
 		db.Rollback()
@@ -157,7 +157,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDStr := r.PathValue("id")
+	userIDStr := httputils.GetPathValue(r, "id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
@@ -221,7 +221,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userIDStr := r.PathValue("id")
+	userIDStr := httputils.GetPathValue(r, "id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
@@ -288,7 +288,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	groupIDStr := r.PathValue("id")
+	groupIDStr := httputils.GetPathValue(r, "id")
 	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id. "+err.Error())
@@ -345,7 +345,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskIDStr := r.PathValue("id")
+	taskIDStr := httputils.GetPathValue(r, "id")
 	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
 
 	if err != nil {
@@ -526,11 +526,11 @@ func NewSubmissionRoutes(
 // RegisterSubmissionRoutes registers handlers for the submission routes.
 func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/", route.GetAll)
+	mux.HandleFunc("/submit", route.SubmitSolution)
+	mux.HandleFunc("/languages", route.GetAvailableLanguages)
 	mux.HandleFunc("/{id}", route.GetByID)
 	mux.HandleFunc("/user/{id}", route.GetAllForUser)
 	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
 	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
 	mux.HandleFunc("/task/{id}", route.GetAllForTask)
-	mux.HandleFunc("/submit", route.SubmitSolution)
-	mux.HandleFunc("/languages", route.GetAvailableLanguages)
 }

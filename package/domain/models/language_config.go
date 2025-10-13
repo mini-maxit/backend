@@ -7,5 +7,5 @@ type LanguageConfig struct {
 	Type          string `gorm:"not null;"`
 	Version       string `gorm:"not null;"`
 	FileExtension string `gorm:"not null;"`
-	Disabled      bool   `gorm:"not null;"`
+	IsDisabled    *bool  `gorm:"not null;default:false"`
 }

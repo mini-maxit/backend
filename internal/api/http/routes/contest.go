@@ -96,7 +96,6 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -104,7 +103,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contestStr := r.PathValue("id")
+	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
 		return
@@ -215,7 +214,7 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	contestStr := r.PathValue("id")
+	contestStr := mux.Vars(r)["id"]
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
 		return
@@ -271,7 +270,7 @@ func (cr *ContestRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	contestStr := r.PathValue("id")
+	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
 		return

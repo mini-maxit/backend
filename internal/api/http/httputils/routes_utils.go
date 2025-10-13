@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -147,4 +148,12 @@ func ShouldBindJSON(body io.ReadCloser, v any) error {
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	ReturnError(w, http.StatusNotFound, "Endpoint not found")
+}
+
+// GetPathValue retrieves a path variable from the gorilla/mux request
+func GetPathValue(r *http.Request, name string) string {
+	if vars := mux.Vars(r); vars != nil {
+		return vars[name]
+	}
+	return ""
 }

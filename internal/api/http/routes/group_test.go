@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -257,7 +258,7 @@ func TestGetGroup(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.GetGroup(w, r)
@@ -365,7 +366,7 @@ func TestGetAllGroup(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		route.GetAllGroup(w, r)
@@ -488,7 +489,7 @@ func TestEditGroup(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.EditGroup(w, r)
 	})
@@ -637,7 +638,7 @@ func TestAddUsersToGroup(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
 		route.AddUsersToGroup(w, r)
 	})
@@ -831,7 +832,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
 		route.DeleteUsersFromGroup(w, r)
 	})
@@ -1026,7 +1027,7 @@ func TestGetGroupUsers(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
 		route.GetGroupUsers(w, r)
 	})
@@ -1144,7 +1145,7 @@ func TestGetGroupTasks(t *testing.T) {
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		route.GetGroupTasks(w, r)
 	})

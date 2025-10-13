@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -199,7 +200,7 @@ func TestGetContest(t *testing.T) {
 	route := routes.NewContestRoute(cs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.GetContest(w, r)
@@ -286,7 +287,7 @@ func TestEditContest(t *testing.T) {
 	route := routes.NewContestRoute(cs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.EditContest(w, r)
@@ -304,6 +305,7 @@ func TestEditContest(t *testing.T) {
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	}))
 	defer server.Close()
+	newName := "Updated Contest"
 
 	t.Run("Accept only PUT", func(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPatch}
@@ -345,9 +347,8 @@ func TestEditContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		name := "Updated Contest"
 		body := schemas.EditContest{
-			Name: &name,
+			Name: &newName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -371,9 +372,8 @@ func TestEditContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		name := "Updated Contest"
 		body := schemas.EditContest{
-			Name: &name,
+			Name: &newName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -397,9 +397,8 @@ func TestEditContest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		name := "Updated Contest"
 		body := schemas.EditContest{
-			Name: &name,
+			Name: &newName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -526,7 +525,7 @@ func TestDeleteContest(t *testing.T) {
 	route := routes.NewContestRoute(cs)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 
 	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.DeleteContest(w, r)
