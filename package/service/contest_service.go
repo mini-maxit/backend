@@ -217,15 +217,12 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 		model.EndAt = editInfo.EndAt
 	}
 	if editInfo.IsRegistrationOpen != nil {
-		cs.logger.Infof("Setting IsRegistrationOpen to %v", *editInfo.IsRegistrationOpen)
 		model.IsRegistrationOpen = editInfo.IsRegistrationOpen
 	}
 	if editInfo.IsSubmissionOpen != nil {
-		cs.logger.Infof("Setting IsSubmissionOpen to %v", *editInfo.IsSubmissionOpen)
 		model.IsSubmissionOpen = editInfo.IsSubmissionOpen
 	}
 	if editInfo.IsVisible != nil {
-		cs.logger.Infof("Setting IsVisible to %v", *editInfo.IsVisible)
 		model.IsVisible = editInfo.IsVisible
 	}
 }
