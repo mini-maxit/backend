@@ -13,6 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var trueValue = true
+
+var falseValue = false
+
 func TestLanguageServiceInit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -68,8 +72,8 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Success with existing enabled languages", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", Disabled: false},
-			{ID: 2, Type: "python", Version: "3.10", Disabled: true},
+			{ID: 1, Type: "python", Version: "3.9", IsDisabled: &falseValue},
+			{ID: 2, Type: "python", Version: "3.10", IsDisabled: &trueValue},
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
@@ -95,8 +99,8 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Success with languages to disable", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", Disabled: false},
-			{ID: 2, Type: "go", Version: "1.19", Disabled: false}, // This should be disabled
+			{ID: 1, Type: "python", Version: "3.9", IsDisabled: &falseValue},
+			{ID: 2, Type: "go", Version: "1.19", IsDisabled: &falseValue}, // This should be disabled
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
@@ -149,7 +153,7 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Error marking language disabled", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "go", Version: "1.19", Disabled: false}, // This should be disabled
+			{ID: 1, Type: "go", Version: "1.19", IsDisabled: &falseValue}, // This should be disabled
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
@@ -194,8 +198,8 @@ func TestLanguageServiceGetAll(t *testing.T) {
 
 	t.Run("Success with languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", Disabled: false},
-			{ID: 2, Type: "javascript", Version: "18", FileExtension: ".js", Disabled: false},
+			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", IsDisabled: &falseValue},
+			{ID: 2, Type: "javascript", Version: "18", FileExtension: ".js", IsDisabled: &falseValue},
 		}
 
 		lr.EXPECT().GetAll(tx).Return(languages, nil).Times(1)
@@ -241,8 +245,8 @@ func TestLanguageServiceGetAllEnabled(t *testing.T) {
 
 	t.Run("Success with enabled languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", Disabled: false},
-			{ID: 3, Type: "java", Version: "17", FileExtension: ".java", Disabled: false},
+			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", IsDisabled: &falseValue},
+			{ID: 3, Type: "java", Version: "17", FileExtension: ".java", IsDisabled: &falseValue},
 		}
 
 		lr.EXPECT().GetEnabled(tx).Return(languages, nil).Times(1)
@@ -285,7 +289,7 @@ func TestLanguageToSchema(t *testing.T) {
 			Type:          "python",
 			Version:       "3.9",
 			FileExtension: ".py",
-			Disabled:      false,
+			IsDisabled:    &falseValue,
 		}
 
 		result := service.LanguageToSchema(language)

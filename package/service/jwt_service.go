@@ -94,7 +94,6 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 
 	return &schemas.JWTClaims{
 		UserID:   int64(claims["user_id"].(float64)),
-		Email:    claims["email"].(string),
 		Username: claims["username"].(string),
 		Role:     claims["role"].(string),
 		TokenID:  claims["token_id"].(string),

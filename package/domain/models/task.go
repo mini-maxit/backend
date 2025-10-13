@@ -6,7 +6,7 @@ type Task struct {
 	DescriptionFileID int64  `gorm:"null;default:null"`
 	CreatedBy         int64  `gorm:"foreignKey:UserID"`
 
-	baseModel
+	BaseModel
 
 	Author          User    `gorm:"foreignKey:CreatedBy; references:ID"`
 	Groups          []Group `gorm:"many2many:task_groups;"`

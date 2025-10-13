@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -218,7 +219,7 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("Invalid user ID", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/abc", nil)
-		req.SetPathValue("id", "abc")
+		req = SetPathValue(req, "id", "abc")
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -230,7 +231,7 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("Transaction was not started by middleware", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/1", nil)
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		db.Invalidate()
@@ -244,7 +245,7 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("User not found", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/999", nil)
-		req.SetPathValue("id", "999")
+		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Get(gomock.Any(), int64(999)).Return(nil, myerrors.ErrUserNotFound).Times(1)
@@ -258,7 +259,7 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("Internal server error", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/1", nil)
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrInvalidDB).Times(1)
@@ -272,7 +273,7 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/1", nil)
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		expectedUser := &schemas.User{
@@ -479,7 +480,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/abc", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "abc")
+		req = SetPathValue(req, "id", "abc")
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -495,7 +496,7 @@ func TestEditUser(t *testing.T) {
 			route.EditUser(w, r.WithContext(ctx))
 		})
 		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBufferString("invalid json"))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -513,7 +514,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		db.Invalidate()
@@ -533,7 +534,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/999", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "999")
+		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Edit(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(myerrors.ErrUserNotFound).Times(1)
@@ -553,7 +554,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "2")
+		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAuthorized).Times(1)
@@ -574,7 +575,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Role: &role}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "2")
+		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAllowed).Times(1)
@@ -594,7 +595,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Edit(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
@@ -614,7 +615,7 @@ func TestEditUser(t *testing.T) {
 		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().Edit(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(nil).Times(1)
@@ -706,7 +707,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/abc/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "abc")
+		req = SetPathValue(req, "id", "abc")
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -722,7 +723,7 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBufferString("invalid json"))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -744,7 +745,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		db.Invalidate()
@@ -768,7 +769,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/999/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "999")
+		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(myerrors.ErrUserNotFound).Times(1)
@@ -792,7 +793,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "2")
+		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAuthorized).Times(1)
@@ -816,7 +817,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "2")
+		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAllowed).Times(1)
@@ -840,7 +841,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(myerrors.ErrInvalidCredentials).Times(1)
@@ -864,7 +865,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(myerrors.ErrInvalidData).Times(1)
@@ -888,7 +889,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
@@ -912,7 +913,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req.SetPathValue("id", "1")
+		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
 		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(nil).Times(1)
@@ -1057,4 +1058,9 @@ func TestGetMe(t *testing.T) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func SetPathValue(r *http.Request, name, value string) *http.Request {
+	r = mux.SetURLVars(r, map[string]string{name: value})
+	return r
 }

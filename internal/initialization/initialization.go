@@ -30,6 +30,7 @@ type Initialization struct {
 	JWTService  service.JWTService
 
 	AuthRoute       routes.AuthRoute
+	ContestRoute    routes.ContestRoute
 	GroupRoute      routes.GroupRoute
 	SubmissionRoute routes.SubmissionRoutes
 	TaskRoute       routes.TaskRoute
@@ -125,7 +126,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
-	_, err = repository.NewContestRepository(tx)
+	contestRepository, err := repository.NewContestRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create contest repository: %s", err.Error())
 	}
@@ -166,6 +167,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
+	contestService := service.NewContestService(contestRepository, userRepository)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
@@ -186,6 +188,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
+	contestRoute := routes.NewContestRoute(contestService)
 	groupRoute := routes.NewGroupRoute(groupService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
@@ -217,6 +220,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		JWTService:  jwtService,
 
 		AuthRoute:       authRoute,
+		ContestRoute:    contestRoute,
 		GroupRoute:      groupRoute,
 		SubmissionRoute: submissionRoute,
 		TaskRoute:       taskRoute,

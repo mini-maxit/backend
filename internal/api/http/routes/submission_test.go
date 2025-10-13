@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -141,7 +142,7 @@ func TestGetByID(t *testing.T) {
 	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}", route.GetByID)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
@@ -236,7 +237,7 @@ func TestGetAllForUser(t *testing.T) {
 	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/user/{id}", route.GetAllForUser)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
@@ -331,7 +332,7 @@ func TestGetAllForUserShort(t *testing.T) {
 	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
@@ -414,7 +415,7 @@ func TestGetAllForGroup(t *testing.T) {
 	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
@@ -497,7 +498,7 @@ func TestGetAllForTask(t *testing.T) {
 	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
 	db := &testutils.MockDatabase{}
 
-	mux := http.NewServeMux()
+	mux := mux.NewRouter()
 	mux.HandleFunc("/task/{id}", route.GetAllForTask)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
