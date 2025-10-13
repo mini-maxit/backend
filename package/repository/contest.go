@@ -19,6 +19,12 @@ type ContestRepository interface {
 	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
 	// Delete removes a contest
 	Delete(tx *gorm.DB, contestID int64) error
+	// CreatePendingRegistration creates a pending registration request
+	CreatePendingRegistration(tx *gorm.DB, registration *models.ContestPendingRegistration) (int64, error)
+	// IsPendingRegistrationExists checks if pending registration already exists
+	IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error)
+	// IsUserParticipant checks if user is already a participant
+	IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error)
 }
 
 type contestRepository struct{}
@@ -82,8 +88,38 @@ func (cr *contestRepository) Delete(tx *gorm.DB, contestID int64) error {
 	return nil
 }
 
+func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration *models.ContestPendingRegistration) (int64, error) {
+	err := tx.Create(registration).Error
+	if err != nil {
+		return 0, err
+	}
+	return registration.ID, nil
+}
+
+func (cr *contestRepository) IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error) {
+	var count int64
+	err := tx.Model(&models.ContestPendingRegistration{}).
+		Where("contest_id = ? AND user_id = ?", contestID, userID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (cr *contestRepository) IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error) {
+	var count int64
+	err := tx.Model(&models.ContestParticipant{}).
+		Where("contest_id = ? AND user_id = ?", contestID, userID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func NewContestRepository(db *gorm.DB) (ContestRepository, error) {
-	tables := []any{&models.Contest{}, &models.ContestTask{}, &models.ContestParticipant{}, &models.ContestParticipantGroup{}}
+	tables := []any{&models.Contest{}, &models.ContestTask{}, &models.ContestParticipant{}, &models.ContestParticipantGroup{}, &models.ContestPendingRegistration{}}
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			err := db.Migrator().CreateTable(table)

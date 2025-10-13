@@ -1227,3 +1227,17 @@ func (mr *MockContestServiceMockRecorder) GetAll(tx, currentUser, queryParams an
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockContestService)(nil).GetAll), tx, currentUser, queryParams)
 }
+
+// RegisterForContest mocks base method.
+func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterForContest", tx, currentUser, contestID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterForContest indicates an expected call of RegisterForContest.
+func (mr *MockContestServiceMockRecorder) RegisterForContest(tx, currentUser, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterForContest", reflect.TypeOf((*MockContestService)(nil).RegisterForContest), tx, currentUser, contestID)
+}

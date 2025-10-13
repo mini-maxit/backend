@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -24,6 +25,8 @@ type ContestService interface {
 	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
 	// Delete removes a contest
 	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
+	// RegisterForContest creates a pending registration for a contest
+	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -199,6 +202,68 @@ func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestI
 	}
 
 	return cs.contestRepository.Delete(tx, contestID)
+}
+
+func (cs *contestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+	// Get the contest
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Check if contest is visible to user
+	if !*contest.IsVisible {
+		if currentUser.Role == types.UserRoleStudent {
+			return myerrors.ErrNotAuthorized
+		}
+		if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+			return myerrors.ErrNotAuthorized
+		}
+	}
+
+	// Check if registration is open
+	if contest.IsRegistrationOpen == nil || !*contest.IsRegistrationOpen {
+		return myerrors.ErrContestRegistrationClosed
+	}
+
+	// Check if contest has ended
+	if contest.EndAt != nil && contest.EndAt.Before(time.Now()) {
+		return myerrors.ErrContestEnded
+	}
+
+	// Check if user is already a participant
+	isParticipant, err := cs.contestRepository.IsUserParticipant(tx, contestID, currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if isParticipant {
+		return myerrors.ErrAlreadyRegistered
+	}
+
+	// Check if user already has a pending registration
+	hasPending, err := cs.contestRepository.IsPendingRegistrationExists(tx, contestID, currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if hasPending {
+		return myerrors.ErrAlreadyRegistered
+	}
+
+	// Create pending registration
+	registration := &models.ContestPendingRegistration{
+		ContestID: contestID,
+		UserID:    currentUser.ID,
+	}
+
+	_, err = cs.contestRepository.CreatePendingRegistration(tx, registration)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.EditContest) {
