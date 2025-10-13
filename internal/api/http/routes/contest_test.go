@@ -610,3 +610,143 @@ func TestDeleteContest(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 }
+
+func TestRegisterForContest(t *testing.T) {
+ctrl := gomock.NewController(t)
+cs := mock_service.NewMockContestService(ctrl)
+route := routes.NewContestRoute(cs)
+db := &testutils.MockDatabase{}
+
+mux := mux.NewRouter()
+
+mux.HandleFunc("/{id}/register", func(w http.ResponseWriter, r *http.Request) {
+route.RegisterForContest(w, r)
+})
+
+handler := testutils.MockDatabaseMiddleware(mux, db)
+
+server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+mockUser := schemas.User{
+ID:    1,
+Role:  "student",
+Email: "test@example.com",
+}
+ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+handler.ServeHTTP(w, r.WithContext(ctx))
+}))
+defer server.Close()
+
+t.Run("Accept only POST", func(t *testing.T) {
+methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+for _, method := range methods {
+req, err := http.NewRequest(method, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+}
+})
+
+t.Run("Contest not found", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotFound)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+})
+
+t.Run("Not authorized - contest not visible", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotAuthorized)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+})
+
+t.Run("Registration closed", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrContestRegistrationClosed)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+})
+
+t.Run("Contest ended", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrContestEnded)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+})
+
+t.Run("Already registered", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrAlreadyRegistered)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusConflict, resp.StatusCode)
+})
+
+t.Run("Success", func(t *testing.T) {
+cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
+if err != nil {
+t.Fatalf("Failed to create request: %v", err)
+}
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+t.Fatalf("Failed to make request: %v", err)
+}
+defer resp.Body.Close()
+
+assert.Equal(t, http.StatusOK, resp.StatusCode)
+})
+}
