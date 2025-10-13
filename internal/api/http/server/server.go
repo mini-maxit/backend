@@ -79,6 +79,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	groupMux := mux.NewRouter()
 	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
+	// Contest routes
+	contestMux := mux.NewRouter()
+	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
+
 	// Worker routes
 	workerMux := mux.NewRouter()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
@@ -89,6 +93,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.PathPrefix("/submission/").Handler(http.StripPrefix("/submission", subbmissionMux))
 	secureMux.PathPrefix("/user/").Handler(http.StripPrefix("/user", userMux))
 	secureMux.PathPrefix("/group/").Handler(http.StripPrefix("/group", groupMux))
+	secureMux.PathPrefix("/contest/").Handler(http.StripPrefix("/contest", contestMux))
 	secureMux.PathPrefix("/worker/").Handler(http.StripPrefix("/worker", workerMux))
 
 	// API routes
