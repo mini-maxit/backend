@@ -11,7 +11,7 @@ type Contest interface {
 type contest struct{}
 
 func NewContestRepository(db *gorm.DB) (Contest, error) {
-	tables := []any{&models.Contest{}, &models.ContestTask{}, &models.ContestParticipant{}}
+	tables := []any{&models.Contest{}, &models.ContestTask{}, &models.ContestParticipant{}, &models.ContestParticipantGroup{}}
 	for _, table := range tables {
 		if !db.Migrator().HasTable(table) {
 			err := db.Migrator().CreateTable(table)
