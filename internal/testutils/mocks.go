@@ -666,3 +666,153 @@ func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handle
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+type MockContestRepository struct {
+	contests      map[int64]*models.Contest
+	contestTasks  map[int64][]int64
+	counter       int64
+	taskRepository *MockTaskRepository
+}
+
+func (cr *MockContestRepository) Create(tx *gorm.DB, contest *models.Contest) (int64, error) {
+	if tx == nil {
+		return 0, gorm.ErrInvalidDB
+	}
+	cr.counter++
+	contest.Id = cr.counter
+	contest.CreatedAt = time.Now()
+	contest.UpdatedAt = time.Now()
+	cr.contests[contest.Id] = contest
+	cr.contestTasks[contest.Id] = []int64{}
+	return contest.Id, nil
+}
+
+func (cr *MockContestRepository) GetContest(tx *gorm.DB, contestId int64) (*models.Contest, error) {
+	if tx == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	if contest, ok := cr.contests[contestId]; ok {
+		// Load tasks
+		taskIds := cr.contestTasks[contestId]
+		tasks := make([]models.Task, 0, len(taskIds))
+		for _, taskId := range taskIds {
+			task, err := cr.taskRepository.GetTask(tx, taskId)
+			if err == nil {
+				tasks = append(tasks, *task)
+			}
+		}
+		contest.Tasks = tasks
+		return contest, nil
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (cr *MockContestRepository) GetAllContests(tx *gorm.DB, limit, offset int, sort string) ([]models.Contest, error) {
+	if tx == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	contests := make([]models.Contest, 0, len(cr.contests))
+	for _, contest := range cr.contests {
+		contests = append(contests, *contest)
+	}
+	return contests, nil
+}
+
+func (cr *MockContestRepository) GetContestByTitle(tx *gorm.DB, title string) (*models.Contest, error) {
+	if tx == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	for _, contest := range cr.contests {
+		if contest.Title == title {
+			return contest, nil
+		}
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (cr *MockContestRepository) EditContest(tx *gorm.DB, contestId int64, contest *models.Contest) error {
+	if tx == nil {
+		return gorm.ErrInvalidDB
+	}
+	if existing, ok := cr.contests[contestId]; ok {
+		if contest.Title != "" {
+			existing.Title = contest.Title
+		}
+		if contest.Description != "" {
+			existing.Description = contest.Description
+		}
+		if !contest.StartTime.IsZero() {
+			existing.StartTime = contest.StartTime
+		}
+		if !contest.EndTime.IsZero() {
+			existing.EndTime = contest.EndTime
+		}
+		existing.UpdatedAt = time.Now()
+		return nil
+	}
+	return gorm.ErrRecordNotFound
+}
+
+func (cr *MockContestRepository) DeleteContest(tx *gorm.DB, contestId int64) error {
+	if tx == nil {
+		return gorm.ErrInvalidDB
+	}
+	if _, ok := cr.contests[contestId]; ok {
+		delete(cr.contests, contestId)
+		delete(cr.contestTasks, contestId)
+		return nil
+	}
+	return gorm.ErrRecordNotFound
+}
+
+func (cr *MockContestRepository) AssignTaskToContest(tx *gorm.DB, contestId, taskId int64) error {
+	if tx == nil {
+		return gorm.ErrInvalidDB
+	}
+	if _, ok := cr.contests[contestId]; !ok {
+		return gorm.ErrRecordNotFound
+	}
+	cr.contestTasks[contestId] = append(cr.contestTasks[contestId], taskId)
+	return nil
+}
+
+func (cr *MockContestRepository) UnAssignTaskFromContest(tx *gorm.DB, contestId, taskId int64) error {
+	if tx == nil {
+		return gorm.ErrInvalidDB
+	}
+	if _, ok := cr.contests[contestId]; !ok {
+		return gorm.ErrRecordNotFound
+	}
+	tasks := cr.contestTasks[contestId]
+	for i, id := range tasks {
+		if id == taskId {
+			cr.contestTasks[contestId] = append(tasks[:i], tasks[i+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (cr *MockContestRepository) IsTaskAssignedToContest(tx *gorm.DB, contestId, taskId int64) (bool, error) {
+	if tx == nil {
+		return false, gorm.ErrInvalidDB
+	}
+	if _, ok := cr.contests[contestId]; !ok {
+		return false, gorm.ErrRecordNotFound
+	}
+	for _, id := range cr.contestTasks[contestId] {
+		if id == taskId {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func NewMockContestRepository(taskRepository *MockTaskRepository) *MockContestRepository {
+	return &MockContestRepository{
+		contests:       make(map[int64]*models.Contest),
+		contestTasks:   make(map[int64][]int64),
+		counter:        0,
+		taskRepository: taskRepository,
+	}
+}
