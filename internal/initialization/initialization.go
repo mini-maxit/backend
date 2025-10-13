@@ -125,6 +125,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
+	_, err = repository.NewContestRepository(tx)
+	if err != nil {
+		log.Panicf("Failed to create contest repository: %s", err.Error())
+	}
 
 	if err := db.Commit(); err != nil {
 		log.Panicf("Failed to commit transaction: %s", err.Error())
