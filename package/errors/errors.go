@@ -156,3 +156,5 @@ var ErrContestEnded = errors.New("contest has ended")
 
 // ErrAlreadyRegistered is returned when user has already registered for the contest.
 var ErrAlreadyRegistered = errors.New("already registered for this contest")
+
+var ErrAlreadyParticipant = errors.New("user is already a participant of this contest")

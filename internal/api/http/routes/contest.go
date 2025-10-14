@@ -345,15 +345,16 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		switch {
+		case errors.Is(err, myerrors.ErrNotAuthorized):
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
+		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrContestRegistrationClosed) {
+		case errors.Is(err, myerrors.ErrContestRegistrationClosed):
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrContestEnded) {
+		case errors.Is(err, myerrors.ErrContestEnded):
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrAlreadyRegistered) {
+		case errors.Is(err, myerrors.ErrAlreadyRegistered) || errors.Is(err, myerrors.ErrAlreadyParticipant):
 			status = http.StatusConflict
 		}
 		httputils.ReturnError(w, status, "Failed to register for contest. "+err.Error())

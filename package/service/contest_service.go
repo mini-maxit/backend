@@ -109,41 +109,43 @@ func (cs *contestService) GetAll(tx *gorm.DB, currentUser schemas.User, queryPar
 	var contests []models.Contest
 	var err error
 
-	switch currentUser.Role {
-	case types.UserRoleAdmin:
-		contests, err = cs.contestRepository.GetAll(tx, offset, limit, sort)
-		if err != nil {
-			return nil, err
-		}
-	case types.UserRoleTeacher:
-		contests, err = cs.contestRepository.GetAllForCreator(tx, currentUser.ID, offset, limit, sort)
-		if err != nil {
-			return nil, err
-		}
-	case types.UserRoleStudent:
-		// Students can only see visible contests
-		contests, err = cs.contestRepository.GetAll(tx, offset, limit, sort)
-		if err != nil {
-			return nil, err
-		}
-		// Filter visible contests
-		visibleContests := []models.Contest{}
-		for _, contest := range contests {
-			if *contest.IsVisible {
-				visibleContests = append(visibleContests, contest)
-			}
-		}
-		contests = visibleContests
-	default:
-		return nil, myerrors.ErrNotAuthorized
+	contests, err = cs.contestRepository.GetAll(tx, offset, limit, sort)
+	if err != nil {
+		return nil, err
 	}
 
-	result := make([]schemas.Contest, len(contests))
+	visibleContests := []models.Contest{}
+	for _, contest := range contests {
+		if cs.isContestVisibleToUser(tx, &contest, &currentUser) {
+			visibleContests = append(visibleContests, contest)
+		}
+	}
+
+	result := make([]schemas.Contest, len(visibleContests))
 	for i, contest := range contests {
 		result[i] = *ContestToSchema(&contest)
 	}
 
 	return result, nil
+}
+
+func (cs *contestService) isContestVisibleToUser(tx *gorm.DB, contest *models.Contest, user *schemas.User) bool {
+	if *contest.IsVisible {
+		return true
+	}
+
+	if user.Role == types.UserRoleAdmin {
+		return true
+	}
+	if user.Role == types.UserRoleTeacher && contest.CreatedBy == user.ID {
+		return true
+	}
+	isParticipant, err := cs.contestRepository.IsUserParticipant(tx, contest.ID, user.ID)
+	if err != nil {
+		cs.logger.Errorf("Error checking if user is participant: %v", err)
+		return false
+	}
+	return isParticipant
 }
 
 func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
@@ -240,7 +242,7 @@ func (cs *contestService) RegisterForContest(tx *gorm.DB, currentUser schemas.Us
 		return err
 	}
 	if isParticipant {
-		return myerrors.ErrAlreadyRegistered
+		return myerrors.ErrAlreadyParticipant
 	}
 
 	// Check if user already has a pending registration
