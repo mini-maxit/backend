@@ -38,3 +38,12 @@ type ContestParticipantGroup struct {
 	ContestID int64 `gorm:"primaryKey"`
 	GroupID   int64 `gorm:"primaryKey"`
 }
+
+type ContestPendingRegistration struct {
+	ID        int64     `gorm:"primaryKey;autoIncrement"`
+	ContestID int64     `gorm:"not null"`
+	UserID    int64     `gorm:"not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	Contest   Contest   `gorm:"foreignKey:ContestID;references:ID"`
+	User      User      `gorm:"foreignKey:UserID;references:ID"`
+}

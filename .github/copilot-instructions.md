@@ -4,8 +4,8 @@
 
 Backend REST API for Mini Maxit - a programming contest platform with automated code evaluation.
 
-**Tech Stack**: Go 1.23+, Gorilla Mux, GORM, PostgreSQL 17, RabbitMQ 3.13  
-**Size**: 90 Go files in clean architecture (routes → services → repositories)  
+**Tech Stack**: Go 1.23+, Gorilla Mux, GORM, PostgreSQL 17, RabbitMQ 3.13
+**Size**: 90 Go files in clean architecture (routes → services → repositories)
 **Main Entry**: `cmd/app/main.go`
 
 ## Structure
@@ -87,10 +87,10 @@ All must pass for PR merge.
 ## Configuration
 
 ### Required Environment Variables (see `.env.example`)
-**Database**: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`  
-**API**: `APP_PORT` (default: 8080), `JWT_SECRET_KEY` (required)  
-**File Storage**: `FILE_STORAGE_HOST`, `FILE_STORAGE_PORT`  
-**RabbitMQ**: `QUEUE_NAME`, `RESPONSE_QUEUE_NAME`, `QUEUE_HOST`, `QUEUE_PORT`, `QUEUE_USER`, `QUEUE_PASSWORD`  
+**Database**: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+**API**: `APP_PORT` (default: 8080), `JWT_SECRET_KEY` (required)
+**File Storage**: `FILE_STORAGE_HOST`, `FILE_STORAGE_PORT`
+**RabbitMQ**: `QUEUE_NAME`, `RESPONSE_QUEUE_NAME`, `QUEUE_HOST`, `QUEUE_PORT`, `QUEUE_USER`, `QUEUE_PASSWORD`
 **Other**: `LANGUAGES` (defaults to C/C++), `DUMP` (loads test data), `DEBUG` (loads .env file)
 
 ### Key Config Files
@@ -120,9 +120,9 @@ All must pass for PR merge.
 
 ## Architecture
 
-**Clean Architecture**: Routes → Services → Repositories  
-**Testing**: Use `go.uber.org/mock`, test files alongside source  
-**DB Migrations**: Auto via GORM AutoMigrate in `internal/database/database.go`  
+**Clean Architecture**: Routes → Services → Repositories
+**Testing**: Use `go.uber.org/mock`, test files alongside source
+**DB Migrations**: Auto via GORM AutoMigrate in `internal/database/database.go`
 **Logging**: `go.uber.org/zap` - init with `utils.InitializeLogger()`, get logger with `utils.NewNamedLogger("name")`
 
 ## Key Files

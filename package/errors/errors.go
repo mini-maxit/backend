@@ -147,3 +147,14 @@ var ErrTokenUserNotFound = errors.New("token user not found")
 
 // ErrInvalidTokenType is returned when the token type is invalid.
 var ErrInvalidTokenType = errors.New("invalid token type")
+
+// ErrContestRegistrationClosed is returned when contest registration is closed.
+var ErrContestRegistrationClosed = errors.New("contest registration is closed")
+
+// ErrContestEnded is returned when contest has ended.
+var ErrContestEnded = errors.New("contest has ended")
+
+// ErrAlreadyRegistered is returned when user has already registered for the contest.
+var ErrAlreadyRegistered = errors.New("already registered for this contest")
+
+var ErrAlreadyParticipant = errors.New("user is already a participant of this contest")
