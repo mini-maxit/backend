@@ -795,6 +795,50 @@ paths:
       summary: Edit a contest
       tags:
       - contest
+  /contest/{id}/register:
+    post:
+      description: Create a pending registration for a contest (requires contest creator
+        approval)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Register for a contest
+      tags:
+      - contest
   /group/:
     get:
       description: Get all groups
