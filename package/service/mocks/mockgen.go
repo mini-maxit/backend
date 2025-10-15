@@ -177,6 +177,21 @@ func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, q
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContests", reflect.TypeOf((*MockContestService)(nil).GetUpcomingContests), tx, currentUser, queryParams)
 }
 
+// GetUserContests mocks base method.
+func (m *MockContestService) GetUserContests(tx *gorm.DB, userID int64) ([]schemas.ParticipantContestWithStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserContests", tx, userID)
+	ret0, _ := ret[0].([]schemas.ParticipantContestWithStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserContests indicates an expected call of GetUserContests.
+func (mr *MockContestServiceMockRecorder) GetUserContests(tx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserContests", reflect.TypeOf((*MockContestService)(nil).GetUserContests), tx, userID)
+}
+
 // RegisterForContest mocks base method.
 func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()

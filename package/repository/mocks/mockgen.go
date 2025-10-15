@@ -1395,6 +1395,21 @@ func (mr *MockContestRepositoryMockRecorder) GetAllWithStats(tx, userID, offset,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetAllWithStats), tx, userID, offset, limit, sort)
 }
 
+// GetContestsForUserWithStats mocks base method.
+func (m *MockContestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestsForUserWithStats", tx, userID)
+	ret0, _ := ret[0].([]models.ParticipantContestStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestsForUserWithStats indicates an expected call of GetContestsForUserWithStats.
+func (mr *MockContestRepositoryMockRecorder) GetContestsForUserWithStats(tx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsForUserWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetContestsForUserWithStats), tx, userID)
+}
+
 // GetOngoingContestsWithStats mocks base method.
 func (m *MockContestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, error) {
 	m.ctrl.T.Helper()

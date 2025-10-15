@@ -36,10 +36,12 @@ type ContestRepository interface {
 	IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
 	IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error)
-	// GetTasks retrieves all tasks assigned to a contest
+	// GetTasksForContest retrieves all tasks assigned to a contest
 	GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
+	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
+	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 }
 
 type contestRepository struct{}
@@ -371,6 +373,64 @@ func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID,
 		return nil, err
 	}
 	return tasks, nil
+}
+
+func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
+	var contests []models.ParticipantContestStats
+
+	// Build query to get contests where user is a participant with statistics
+	// including how many tasks the user has solved (achieved 100% score)
+	query := tx.Model(&models.Contest{}).
+		Select(`contests.*,
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+			COALESCE(contest_task_count.count, 0) as task_count,
+			COALESCE(user_solved_tasks.count, 0) as solved_count`).
+		Joins(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM contest_participants
+			GROUP BY contest_id
+		) as direct_participants ON contests.id = direct_participants.contest_id`).
+		Joins(`LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			FROM contest_participant_groups cpg
+			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) as group_participants ON contests.id = group_participants.contest_id`).
+		Joins(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM contest_tasks
+			GROUP BY contest_id
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
+		Joins(`LEFT JOIN (
+			SELECT ct.contest_id, COUNT(*) as count
+			FROM contest_tasks ct
+			INNER JOIN submissions s ON s.task_id = ct.task_id AND s.user_id = ?
+			INNER JOIN submission_results sr ON sr.submission_id = s.id
+			INNER JOIN (
+				SELECT submission_result_id,
+					   COUNT(*) as total_tests,
+					   COUNT(CASE WHEN passed = true THEN 1 END) as passed_tests
+				FROM test_results
+				GROUP BY submission_result_id
+				HAVING COUNT(*) = COUNT(CASE WHEN passed = true THEN 1 END)
+			) perfect_results ON perfect_results.submission_result_id = sr.id
+			GROUP BY ct.contest_id
+		) as user_solved_tasks ON contests.id = user_solved_tasks.contest_id`, userID).
+		Where(`EXISTS (
+			SELECT 1 FROM contest_participants cp
+			WHERE cp.contest_id = contests.id AND cp.user_id = ?
+		) OR EXISTS (
+			SELECT 1 FROM contest_participant_groups cpg
+			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			WHERE cpg.contest_id = contests.id AND ug.user_id = ?
+		)`, userID, userID)
+
+	err := query.Find(&contests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return contests, nil
 }
 
 func NewContestRepository(db *gorm.DB) (ContestRepository, error) {

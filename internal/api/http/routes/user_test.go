@@ -29,7 +29,8 @@ func TestGetAllUsers(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewUserRoute(us, cs)
 	db := &testutils.MockDatabase{}
 
 	t.Run("Accept only GET", func(t *testing.T) {
@@ -180,7 +181,8 @@ func TestGetUserByID(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewUserRoute(us, cs)
 	db := &testutils.MockDatabase{}
 
 	t.Run("Accept only GET", func(t *testing.T) {
@@ -297,144 +299,14 @@ func TestGetUserByID(t *testing.T) {
 	})
 }
 
-func TestGetUserByEmail(t *testing.T) {
-	// Setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
-	db := &testutils.MockDatabase{}
-
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-
-		for _, method := range methods {
-			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-				ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"email": "test@email.com"})
-				route.GetUserByEmail(w, r.WithContext(ctx))
-			})
-			server := httptest.NewServer(handler)
-			defer server.Close()
-
-			req, err := http.NewRequest(method, server.URL, nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
-
-	t.Run("Empty email", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{})
-			route.GetUserByEmail(w, r.WithContext(ctx))
-		})
-		req := httptest.NewRequest(http.MethodGet, "/email", nil)
-		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Email query cannot be empty")
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"email": "test@email.com"})
-			route.GetUserByEmail(w, r.WithContext(ctx))
-		})
-		req := httptest.NewRequest(http.MethodGet, "/email?email=test@email.com", nil)
-		w := httptest.NewRecorder()
-
-		db.Invalidate()
-		handler.ServeHTTP(w, req)
-		db.Validate()
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error connecting to database")
-	})
-
-	t.Run("User not found", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"email": "notfound@email.com"})
-			route.GetUserByEmail(w, r.WithContext(ctx))
-		})
-		req := httptest.NewRequest(http.MethodGet, "/email?email=notfound@email.com", nil)
-		w := httptest.NewRecorder()
-
-		us.EXPECT().GetByEmail(gomock.Any(), "notfound@email.com").Return(nil, myerrors.ErrUserNotFound).Times(1)
-
-		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Contains(t, w.Body.String(), "User not found")
-	})
-
-	t.Run("Internal server error", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"email": "test@email.com"})
-			route.GetUserByEmail(w, r.WithContext(ctx))
-		})
-		req := httptest.NewRequest(http.MethodGet, "/email?email=test@email.com", nil)
-		w := httptest.NewRecorder()
-
-		us.EXPECT().GetByEmail(gomock.Any(), "test@email.com").Return(nil, gorm.ErrInvalidDB).Times(1)
-
-		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error getting user")
-	})
-
-	t.Run("Success", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"email": "test@email.com"})
-			route.GetUserByEmail(w, r.WithContext(ctx))
-		})
-		req := httptest.NewRequest(http.MethodGet, "/email?email=test@email.com", nil)
-		w := httptest.NewRecorder()
-
-		expectedUser := &schemas.User{
-			ID:      1,
-			Name:    "Test",
-			Surname: "User",
-			Email:   "test@email.com",
-			Role:    types.UserRoleStudent,
-		}
-
-		us.EXPECT().GetByEmail(gomock.Any(), "test@email.com").Return(expectedUser, nil).Times(1)
-
-		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-
-		response := &httputils.APIResponse[schemas.User]{}
-		err := json.Unmarshal(w.Body.Bytes(), response)
-		require.NoError(t, err)
-		assert.Equal(t, expectedUser, &response.Data)
-	})
-}
-
 func TestEditUser(t *testing.T) {
 	// Setup
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewUserRoute(us, cs)
 	db := &testutils.MockDatabase{}
 
 	currentUser := schemas.User{
@@ -636,7 +508,8 @@ func TestChangePassword(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewUserRoute(us, cs)
 	db := &testutils.MockDatabase{}
 
 	currentUser := schemas.User{
@@ -932,7 +805,8 @@ func TestGetMe(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	route := routes.NewUserRoute(us)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewUserRoute(us, cs)
 
 	currentUser := schemas.User{
 		ID:       1,

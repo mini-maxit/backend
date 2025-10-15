@@ -56,3 +56,10 @@ type ContestWithStats struct {
 	IsParticipant    bool  `gorm:"column:is_participant"`
 	HasPendingReg    bool  `gorm:"column:has_pending_reg"`
 }
+
+type ParticipantContestStats struct {
+	Contest
+	ParticipantCount int64 `gorm:"column:participant_count"`
+	TaskCount        int64 `gorm:"column:task_count"`
+	SolvedCount      int64 `gorm:"column:solved_count"`
+}

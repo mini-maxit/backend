@@ -35,6 +35,8 @@ type ContestService interface {
 	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all tasks associated with a contest with submission stats (for authorized users)
 	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
+	// GetUserContests retrieves all contests a user is participating in
+	GetUserContests(tx *gorm.DB, userID int64) ([]schemas.ParticipantContestWithStats, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -428,6 +430,28 @@ func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.Us
 	return result, nil
 }
 
+func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) ([]schemas.ParticipantContestWithStats, error) {
+	user, err := cs.userRepository.Get(tx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	contestsWithStats, err := cs.contestRepository.GetContestsForUserWithStats(tx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.ParticipantContestWithStats, len(contestsWithStats))
+	for i, contest := range contestsWithStats {
+		result[i] = *ParticipantContestStatsToSchema(&contest)
+	}
+
+	return result, nil
+}
+
 func ContestToSchema(model *models.Contest) *schemas.Contest {
 	return &schemas.Contest{
 		ID:                 model.ID,
@@ -474,6 +498,25 @@ func ContestWithStatsToSchema(model *models.ContestWithStats) *schemas.Contest {
 		ParticipantCount:   model.ParticipantCount,
 		TaskCount:          model.TaskCount,
 		RegistrationStatus: registrationStatus,
+	}
+}
+
+func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *schemas.ParticipantContestWithStats {
+	return &schemas.ParticipantContestWithStats{
+		Contest: schemas.Contest{
+			ID:                 model.ID,
+			Name:               model.Name,
+			Description:        model.Description,
+			CreatedBy:          model.CreatedBy,
+			StartAt:            model.StartAt,
+			EndAt:              model.EndAt,
+			CreatedAt:          model.CreatedAt,
+			UpdatedAt:          model.UpdatedAt,
+			ParticipantCount:   model.ParticipantCount,
+			TaskCount:          model.TaskCount,
+			RegistrationStatus: "registered", // User is already participating in these contests
+		},
+		SolvedTaskCount: model.SolvedCount,
 	}
 }
 

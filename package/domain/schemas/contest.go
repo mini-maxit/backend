@@ -35,3 +35,8 @@ type EditContest struct {
 	IsSubmissionOpen   *bool      `json:"isSubmissionOpen,omitempty"`
 	IsVisible          *bool      `json:"isVisible,omitempty"`
 }
+
+type ParticipantContestWithStats struct {
+	Contest
+	SolvedTaskCount int64 `json:"solvedTaskCount"`
+}

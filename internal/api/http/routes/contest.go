@@ -21,7 +21,6 @@ type ContestRoute interface {
 	GetOngoingContests(w http.ResponseWriter, r *http.Request)
 	GetPastContests(w http.ResponseWriter, r *http.Request)
 	GetUpcomingContests(w http.ResponseWriter, r *http.Request)
-	GetMyContests(w http.ResponseWriter, r *http.Request)
 	GetAllContests(w http.ResponseWriter, r *http.Request)
 	EditContest(w http.ResponseWriter, r *http.Request)
 	DeleteContest(w http.ResponseWriter, r *http.Request)
@@ -312,53 +311,6 @@ func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.R
 			status = http.StatusForbidden
 		}
 		httputils.ReturnError(w, status, "Failed to list upcoming contests. "+err.Error())
-		return
-	}
-
-	if contests == nil {
-		contests = []schemas.Contest{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
-}
-
-// GetMyContests godoc
-//
-//	@Tags			contest
-//	@Summary		Get my contests
-//	@Description	Get contests created by the current user with pagination
-//	@Produce		json
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Contest]
-//	@Router			/contest/my [get]
-func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
-		return
-	}
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	// TODO: Implement GetMyContests service method
-	contests, err := cr.contestService.GetAll(tx, currentUser, queryParams)
-	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		}
-		httputils.ReturnError(w, status, "Failed to list my contests. "+err.Error())
 		return
 	}
 

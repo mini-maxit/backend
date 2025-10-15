@@ -192,7 +192,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupRoute := routes.NewGroupRoute(groupService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
-	userRoute := routes.NewUserRoute(userService)
+	userRoute := routes.NewUserRoute(userService, contestService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
 	// Queue listener
