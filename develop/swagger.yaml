@@ -57,11 +57,29 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_ParticipantContestWithStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ParticipantContestWithStats'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission:
     properties:
       data:
         items:
           $ref: '#/definitions/Submission'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_TaskWithContestStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/TaskWithContestStats'
         type: array
       ok:
         type: boolean
@@ -150,16 +168,17 @@ definitions:
         type: string
       id:
         type: integer
-      isRegistrationOpen:
-        type: boolean
-      isSubmissionOpen:
-        type: boolean
-      isVisible:
-        type: boolean
       name:
+        type: string
+      participantCount:
+        type: integer
+      registrationStatus:
+        description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
         type: string
       startAt:
         type: string
+      taskCount:
+        type: integer
       updatedAt:
         type: string
     type: object
@@ -251,6 +270,34 @@ definitions:
   MessageResponse:
     properties:
       message:
+        type: string
+    type: object
+  ParticipantContestWithStats:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      registrationStatus:
+        description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
+        type: string
+      solvedTaskCount:
+        type: integer
+      startAt:
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
         type: string
     type: object
   PutInputOutput:
@@ -348,6 +395,25 @@ definitions:
       id:
         type: integer
       title:
+        type: string
+    type: object
+  TaskWithContestStats:
+    properties:
+      attemptCount:
+        description: Number of submission attempts by the user
+        type: integer
+      bestScore:
+        description: Best score achieved by the user (percentage of passed tests)
+        type: number
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      id:
+        type: integer
+      title:
+        type: string
+      updatedAt:
         type: string
     type: object
   TestResult:
@@ -839,6 +905,133 @@ paths:
       summary: Register for a contest
       tags:
       - contest
+  /contest/{id}/tasks:
+    get:
+      description: Get tasks associated with a specific contest including best score
+        and attempt count for the current user
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_TaskWithContestStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get tasks for a contest with submission statistics
+      tags:
+      - contest
+  /contest/ongoing:
+    get:
+      description: Get contests that are currently running with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get ongoing contests
+      tags:
+      - contest
+  /contest/past:
+    get:
+      description: Get contests that have ended with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get past contests
+      tags:
+      - contest
+  /contest/upcoming:
+    get:
+      description: Get contests that haven't started yet with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get upcoming contests
+      tags:
+      - contest
   /group/:
     get:
       description: Get all groups
@@ -1176,11 +1369,6 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1220,6 +1408,53 @@ paths:
       summary: Get all available languages
       tags:
       - submission
+  /submission/submit:
+    post:
+      consumes:
+      - multipart/form-data
+      description: The solution is uploaded to the FileStorage service and a submission
+        is created in the database.
+      parameters:
+      - description: Task ID
+        in: formData
+        name: taskID
+        required: true
+        type: integer
+      - description: Solution file
+        in: formData
+        name: solution
+        required: true
+        type: file
+      - description: Language ID
+        in: formData
+        name: languageID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Submit a solution
+      tags:
+      - submission
   /submission/task/{id}:
     get:
       description: If the user is a student and has no access to this task, it fails
@@ -1238,11 +1473,6 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1321,11 +1551,6 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -1900,6 +2125,41 @@ paths:
       summary: Edit user
       tags:
       - user
+  /user/{id}/contests:
+    get:
+      description: Get contests for a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_ParticipantContestWithStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contests for a user
+      tags:
+      - user
   /user/{id}/password:
     patch:
       description: Change user password
@@ -1939,41 +2199,6 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Change user password
-      tags:
-      - user
-  /user/email:
-    get:
-      description: Get user by email
-      parameters:
-      - description: User email
-        in: query
-        name: email
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get user by email
       tags:
       - user
   /user/me:
