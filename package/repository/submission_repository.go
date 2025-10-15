@@ -28,6 +28,10 @@ type SubmissionRepository interface {
 	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error) // Get returns a submission by its ID.
 	// Get returns a submission by its ID.
 	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
+	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
+	GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error)
+	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
+	GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error)
 	// MarkComplete marks a submission as completed.
 	MarkComplete(tx *gorm.DB, submissionID int64) error
 	// MarkFailed marks a submission as failed.
@@ -338,6 +342,48 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 		return nil, err
 	}
 	return &submission, nil
+}
+
+func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error) {
+	var bestScore *float64
+
+	// Query to get the best score (highest percentage of passed tests)
+	err := tx.Model(&models.Submission{}).
+		Select("MAX(CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END) as best_score").
+		Joins("LEFT JOIN submission_results ON submissions.id = submission_results.submission_id").
+		Joins(`LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM test_results
+			GROUP BY submission_result_id
+		) as total_tests ON submission_results.id = total_tests.submission_result_id`).
+		Joins(`LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM test_results
+			WHERE passed = true
+			GROUP BY submission_result_id
+		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`).
+		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, models.StatusEvaluated).
+		Scan(&bestScore).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bestScore, nil
+}
+
+func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error) {
+	var count int64
+
+	err := tx.Model(&models.Submission{}).
+		Where("task_id = ? AND user_id = ?", taskID, userID).
+		Count(&count).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
 
 func NewSubmissionRepository(db *gorm.DB) (SubmissionRepository, error) {

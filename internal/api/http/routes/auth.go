@@ -169,11 +169,11 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Refresh JWT tokens
 //	@Description	Refreshes JWT tokens using a valid refresh token from cookie
 //	@Produce		json
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		401		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[AuthResponse]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		401	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[AuthResponse]
 //	@Router			/auth/refresh [post]
 func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -219,13 +219,14 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logout godoc
-// @Tags			auth
-// @Summary		Logout a user
-// @Description	Logs out a user by clearing the refresh token cookie
-// @Produce		json
-// @Failure		405		{object}	httputils.APIError
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Router			/auth/logout [post]
+//
+//	@Tags			auth
+//	@Summary		Logout a user
+//	@Description	Logs out a user by clearing the refresh token cookie
+//	@Produce		json
+//	@Failure		405	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/auth/logout [post]
 func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

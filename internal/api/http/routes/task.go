@@ -281,12 +281,12 @@ func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 //	@Description	Uploads a task to the FileStorage service
 //	@Accept			multipart/form-data
 //	@Produce		json
-//	@Param			title formData	string	true	"Name of the task"
-//	@Param			archive		formData	file	true	"Task archive"
-//	@Failure		405			{object}	httputils.APIError
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[schemas.TaskCreateResponse]
+//	@Param			title	formData	string	true	"Name of the task"
+//	@Param			archive	formData	file	true	"Task archive"
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.TaskCreateResponse]
 //	@Router			/task/ [post]
 func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -366,14 +366,14 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 
 // EditTask godoc
 //
-//		@Tags			task
-//		@Summary		Update a task
-//		@Description	Updates a task by ID
-//		@Produce		json
-//		@Param			id		path		int					true	"Task ID"
-//	 @Param 			title	formData	string				false	"New title for the task"
+//	@Tags			task
+//	@Summary		Update a task
+//	@Description	Updates a task by ID
+//	@Produce		json
+//	@Param			id		path		int		true	"Task ID"
+//	@Param			title	formData	string	false	"New title for the task"
 //
-// @Param 			archive	formData	file				false	"New archive for the task"
+//	@Param			archive	formData	file	false	"New archive for the task"
 //
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
@@ -762,16 +762,16 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 
 // GetLimits godoc
 //
-// @Tags task
-// @Summary		Gets task limits
-// @Description	Gets task limits by task ID
-// @Produce		json
-// @Param			id			path		int		true	"Task ID"
-// @Failure		400			{object}	httputils.APIError
-// @Failure		404			{object}	httputils.APIError
-// @Failure		500			{object}	httputils.APIError
-// @Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Router			/task/{id}/limits [get]
+//	@Tags			task
+//	@Summary		Gets task limits
+//	@Description	Gets task limits by task ID
+//	@Produce		json
+//	@Param			id	path		int	true	"Task ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/task/{id}/limits [get]
 func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -814,17 +814,17 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 
 // PutLimits godoc
 //
-// @Tags task
-// @Summary		Updates task limits
-// @Description	Updates task limits by task ID
-// @Produce		json
-// @Param			id			path		int		true	"Task ID"
-// @Param			limits		body		schemas.PutInputOutputRequest	true	"Task limits"
-// @Failure		400			{object}	httputils.APIError
-// @Failure		404			{object}	httputils.APIError
-// @Failure		500			{object}	httputils.APIError
-// @Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Router			/task/{id}/limits [put]
+//	@Tags			task
+//	@Summary		Updates task limits
+//	@Description	Updates task limits by task ID
+//	@Produce		json
+//	@Param			id		path		int								true	"Task ID"
+//	@Param			limits	body		schemas.PutInputOutputRequest	true	"Task limits"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/task/{id}/limits [put]
 func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

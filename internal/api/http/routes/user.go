@@ -20,14 +20,15 @@ type UserRoute interface {
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 	GetMe(w http.ResponseWriter, r *http.Request)
 	GetUserByID(w http.ResponseWriter, r *http.Request)
-	GetUserByEmail(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
 	CreateUsers(w http.ResponseWriter, r *http.Request)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+	GetUserContests(w http.ResponseWriter, r *http.Request)
 }
 
 type UserRouteImpl struct {
-	userService service.UserService
+	userService    service.UserService
+	contestService service.ContestService
 }
 
 // GetAllUsers godoc
@@ -124,68 +125,21 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, user)
 }
 
-// GetUserByEmail godoc
+// EditUser godoc
 //
 //	@Tags			user
-//	@Summary		Get user by email
-//	@Description	Get user by email
+//	@Summary		Edit user
+//	@Description	Edit user
 //	@Produce		json
-//	@Param			email	query		string	true	"User email"
-//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Param			id		path		int					true	"User ID"
+//	@Param			request	body		schemas.UserEdit	true	"User Edit Request"
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/user/email [get]
-func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	email, ok := queryParams["email"].(string)
-	if !ok || email == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Email query cannot be empty")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
-		return
-	}
-
-	user, err := u.userService.GetByEmail(tx, email)
-	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting user. "+err.Error())
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, user)
-}
-
-//	EditUser godoc
-//
-// @Tags			user
-// @Summary		Edit user
-// @Description	Edit user
-// @Produce		json
-// @Param			id	path		int	true	"User ID"
-// @Param			request	body		schemas.UserEdit	true	"User Edit Request"
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Failure		400		{object}	httputils.APIError
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		405		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Router			/user/{id} [patch].
+//	@Router			/user/{id} [patch].
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -240,18 +194,18 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 // ChangePassword godoc
 //
-// @Tags			user
-// @Summary		Change user password
-// @Description	Change user password
-// @Produce		json
-// @Param			id	path		int	true	"User ID"
-// @Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Failure		400		{object}	httputils.APIError
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Router			/user/{id}/password [patch].
+//	@Tags			user
+//	@Summary		Change user password
+//	@Description	Change user password
+//	@Produce		json
+//	@Param			id		path		int							true	"User ID"
+//	@Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/user/{id}/password [patch].
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -330,13 +284,14 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 }
 
 // GetMe godoc
-// @Tags			user
-// @Summary		Get current user
-// @Description	Get current user
-// @Produce		json
-// @Success		200	{object}	httputils.APIResponse[schemas.User]
-// @Failure		405	{object}	httputils.APIError
-// @Router			/user/me [get]
+//
+//	@Tags			user
+//	@Summary		Get current user
+//	@Description	Get current user
+//	@Produce		json
+//	@Success		200	{object}	httputils.APIResponse[schemas.User]
+//	@Failure		405	{object}	httputils.APIError
+//	@Router			/user/me [get]
 func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -352,8 +307,60 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, currentUser)
 }
 
-func NewUserRoute(userService service.UserService) UserRoute {
-	route := &UserRouteImpl{userService: userService}
+// GetUserContests godoc
+//
+//	@Tags			user
+//	@Summary		Get contests for a user
+//	@Description	Get contests for a user
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.ParticipantContestWithStats]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/user/{id}/contests [get]
+func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userIDStr := httputils.GetPathValue(r, "id")
+	if userIDStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		return
+	}
+
+	contests, err := u.contestService.GetUserContests(tx, userID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrUserNotFound) {
+			httputils.ReturnError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		httputils.ReturnError(w, http.StatusInternalServerError, "Error fetching contests: "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, contests)
+}
+
+func NewUserRoute(userService service.UserService, contestService service.ContestService) UserRoute {
+	route := &UserRouteImpl{userService: userService, contestService: contestService}
 	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("UserRoute struct is not valid: %s", err.Error())
@@ -374,6 +381,6 @@ func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/email", route.GetUserByEmail)
 	mux.HandleFunc("/{id}/password", route.ChangePassword)
+	mux.HandleFunc("/{id}/contests", route.GetUserContests)
 }

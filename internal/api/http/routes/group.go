@@ -200,7 +200,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 //	@Description	Edit a group
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int			true	"Group ID"
+//	@Param			id		path		int					true	"Group ID"
 //	@Param			body	body		schemas.EditGroup	true	"Edit Group"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError

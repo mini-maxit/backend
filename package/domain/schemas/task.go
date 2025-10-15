@@ -27,3 +27,13 @@ type TaskDetailed struct {
 type TaskCreateResponse struct {
 	ID int64 `json:"id"`
 }
+
+type TaskWithContestStats struct {
+	ID           int64     `json:"id"`
+	Title        string    `json:"title"`
+	CreatedBy    int64     `json:"createdBy"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+	BestScore    *float64  `json:"bestScore"`    // Best score achieved by the user (percentage of passed tests)
+	AttemptCount int       `json:"attemptCount"` // Number of submission attempts by the user
+}

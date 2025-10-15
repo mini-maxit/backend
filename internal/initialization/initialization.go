@@ -167,7 +167,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository)
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
@@ -192,7 +192,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupRoute := routes.NewGroupRoute(groupService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
-	userRoute := routes.NewUserRoute(userService)
+	userRoute := routes.NewUserRoute(userService, contestService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
 	// Queue listener
