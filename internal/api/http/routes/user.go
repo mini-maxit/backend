@@ -171,13 +171,13 @@ func (u *UserRouteImpl) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, user)
 }
 
-//	EditUser godoc
+// EditUser godoc
 //
 // @Tags			user
 // @Summary		Edit user
 // @Description	Edit user
 // @Produce		json
-// @Param			id	path		int	true	"User ID"
+// @Param			id		path		int					true	"User ID"
 // @Param			request	body		schemas.UserEdit	true	"User Edit Request"
 // @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 // @Failure		400		{object}	httputils.APIError
@@ -240,18 +240,18 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 // ChangePassword godoc
 //
-// @Tags			user
-// @Summary		Change user password
-// @Description	Change user password
-// @Produce		json
-// @Param			id	path		int	true	"User ID"
-// @Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Failure		400		{object}	httputils.APIError
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Router			/user/{id}/password [patch].
+//	@Tags			user
+//	@Summary		Change user password
+//	@Description	Change user password
+//	@Produce		json
+//	@Param			id		path		int							true	"User ID"
+//	@Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/user/{id}/password [patch].
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -330,13 +330,14 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 }
 
 // GetMe godoc
-// @Tags			user
-// @Summary		Get current user
-// @Description	Get current user
-// @Produce		json
-// @Success		200	{object}	httputils.APIResponse[schemas.User]
-// @Failure		405	{object}	httputils.APIError
-// @Router			/user/me [get]
+//
+//	@Tags			user
+//	@Summary		Get current user
+//	@Description	Get current user
+//	@Produce		json
+//	@Success		200	{object}	httputils.APIResponse[schemas.User]
+//	@Failure		405	{object}	httputils.APIError
+//	@Router			/user/me [get]
 func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

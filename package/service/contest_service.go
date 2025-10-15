@@ -21,19 +21,28 @@ type ContestService interface {
 	Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error)
 	// GetAll retrieves all contests with pagination
 	GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error)
+	// GetOngoingContests retrieves contests that are currently running
+	GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error)
+	// GetPastContests retrieves contests that have ended
+	GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error)
+	// GetUpcomingContests retrieves contests that haven't started yet
+	GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
 	// Delete removes a contest
 	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 	// RegisterForContest creates a pending registration for a contest
 	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
+	// GetTasksForContest retrieves all tasks associated with a contest with submission stats (for authorized users)
+	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 }
 
 const defaultContestSort = "created_at:desc"
 
 type contestService struct {
-	contestRepository repository.ContestRepository
-	userRepository    repository.UserRepository
+	contestRepository    repository.ContestRepository
+	userRepository       repository.UserRepository
+	submissionRepository repository.SubmissionRepository
 
 	logger *zap.SugaredLogger
 }
@@ -106,24 +115,105 @@ func (cs *contestService) GetAll(tx *gorm.DB, currentUser schemas.User, queryPar
 		sort = defaultContestSort
 	}
 
-	var contests []models.Contest
-	var err error
-
-	contests, err = cs.contestRepository.GetAll(tx, offset, limit, sort)
+	contestsWithStats, err := cs.contestRepository.GetAllWithStats(tx, currentUser.ID, offset, limit, sort)
 	if err != nil {
 		return nil, err
 	}
 
-	visibleContests := []models.Contest{}
-	for _, contest := range contests {
-		if cs.isContestVisibleToUser(tx, &contest, &currentUser) {
+	visibleContests := []models.ContestWithStats{}
+	for _, contest := range contestsWithStats {
+		if cs.isContestVisibleToUser(tx, &contest.Contest, &currentUser) {
 			visibleContests = append(visibleContests, contest)
 		}
 	}
 
 	result := make([]schemas.Contest, len(visibleContests))
-	for i, contest := range contests {
-		result[i] = *ContestToSchema(&contest)
+	for i, contest := range visibleContests {
+		result[i] = *ContestWithStatsToSchema(&contest)
+	}
+
+	return result, nil
+}
+
+func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = defaultContestSort
+	}
+
+	contestsWithStats, err := cs.contestRepository.GetOngoingContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	visibleContests := []models.ContestWithStats{}
+	for _, contest := range contestsWithStats {
+		if cs.isContestVisibleToUser(tx, &contest.Contest, &currentUser) {
+			visibleContests = append(visibleContests, contest)
+		}
+	}
+
+	result := make([]schemas.Contest, len(visibleContests))
+	for i, contest := range visibleContests {
+		result[i] = *ContestWithStatsToSchema(&contest)
+	}
+
+	return result, nil
+}
+
+func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = defaultContestSort
+	}
+
+	contestsWithStats, err := cs.contestRepository.GetPastContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	visibleContests := []models.ContestWithStats{}
+	for _, contest := range contestsWithStats {
+		if cs.isContestVisibleToUser(tx, &contest.Contest, &currentUser) {
+			visibleContests = append(visibleContests, contest)
+		}
+	}
+
+	result := make([]schemas.Contest, len(visibleContests))
+	for i, contest := range visibleContests {
+		result[i] = *ContestWithStatsToSchema(&contest)
+	}
+
+	return result, nil
+}
+
+func (cs *contestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = defaultContestSort
+	}
+
+	contestsWithStats, err := cs.contestRepository.GetUpcomingContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	visibleContests := []models.ContestWithStats{}
+	for _, contest := range contestsWithStats {
+		if cs.isContestVisibleToUser(tx, &contest.Contest, &currentUser) {
+			visibleContests = append(visibleContests, contest)
+		}
+	}
+
+	result := make([]schemas.Contest, len(visibleContests))
+	for i, contest := range visibleContests {
+		result[i] = *ContestWithStatsToSchema(&contest)
 	}
 
 	return result, nil
@@ -294,6 +384,50 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 }
 
+func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	if !cs.isContestVisibleToUser(tx, contest, &currentUser) {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	tasks, err := cs.contestRepository.GetTasksForContest(tx, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.TaskWithContestStats, len(tasks))
+	for i, task := range tasks {
+		// Get submission statistics for this user and task
+		bestScore, err := cs.submissionRepository.GetBestScoreForTaskByUser(tx, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting best score for task %d, user %d: %v", task.ID, currentUser.ID, err)
+		}
+
+		attemptCount, err := cs.submissionRepository.GetAttemptCountForTaskByUser(tx, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting attempt count for task %d, user %d: %v", task.ID, currentUser.ID, err)
+		}
+
+		result[i] = schemas.TaskWithContestStats{
+			ID:           task.ID,
+			Title:        task.Title,
+			CreatedBy:    task.CreatedBy,
+			CreatedAt:    task.CreatedAt,
+			UpdatedAt:    task.UpdatedAt,
+			BestScore:    bestScore,
+			AttemptCount: attemptCount,
+		}
+	}
+	return result, nil
+}
+
 func ContestToSchema(model *models.Contest) *schemas.Contest {
 	return &schemas.Contest{
 		ID:                 model.ID,
@@ -302,18 +436,52 @@ func ContestToSchema(model *models.Contest) *schemas.Contest {
 		CreatedBy:          model.CreatedBy,
 		StartAt:            model.StartAt,
 		EndAt:              model.EndAt,
-		IsRegistrationOpen: *model.IsRegistrationOpen,
-		IsSubmissionOpen:   *model.IsSubmissionOpen,
-		IsVisible:          *model.IsVisible,
 		CreatedAt:          model.CreatedAt,
 		UpdatedAt:          model.UpdatedAt,
+		ParticipantCount:   0,
+		TaskCount:          0,
+		RegistrationStatus: "registrationClosed",
 	}
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository) ContestService {
+func ContestWithStatsToSchema(model *models.ContestWithStats) *schemas.Contest {
+	registrationStatus := "registrationClosed"
+
+	// Check if contest has ended
+	contestEnded := model.EndAt != nil && model.EndAt.Before(time.Now())
+
+	// If user is already a participant
+	if model.IsParticipant {
+		registrationStatus = "registered"
+	} else if model.HasPendingReg {
+		// If user has pending registration
+		registrationStatus = "awaitingApproval"
+	} else if !contestEnded && model.IsRegistrationOpen != nil && *model.IsRegistrationOpen {
+		// If registration is open, contest hasn't ended, and user can register
+		registrationStatus = "canRegister"
+	}
+	// Default is "registrationClosed" for all other cases (registration closed or contest ended)
+
+	return &schemas.Contest{
+		ID:                 model.ID,
+		Name:               model.Name,
+		Description:        model.Description,
+		CreatedBy:          model.CreatedBy,
+		StartAt:            model.StartAt,
+		EndAt:              model.EndAt,
+		CreatedAt:          model.CreatedAt,
+		UpdatedAt:          model.UpdatedAt,
+		ParticipantCount:   model.ParticipantCount,
+		TaskCount:          model.TaskCount,
+		RegistrationStatus: registrationStatus,
+	}
+}
+
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository) ContestService {
 	return &contestService{
-		contestRepository: contestRepository,
-		userRepository:    userRepository,
-		logger:            utils.NewNamedLogger("contest_service"),
+		contestRepository:    contestRepository,
+		userRepository:       userRepository,
+		submissionRepository: submissionRepository,
+		logger:               utils.NewNamedLogger("contest_service"),
 	}
 }

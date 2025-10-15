@@ -9,11 +9,11 @@ type Contest struct {
 	CreatedBy          int64      `json:"createdBy"`
 	StartAt            *time.Time `json:"startAt"`
 	EndAt              *time.Time `json:"endAt"`
-	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
-	IsVisible          bool       `json:"isVisible"`
 	CreatedAt          time.Time  `json:"createdAt"`
 	UpdatedAt          time.Time  `json:"updatedAt"`
+	ParticipantCount   int64      `json:"participantCount"`
+	TaskCount          int64      `json:"taskCount"`
+	RegistrationStatus string     `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
 }
 
 type CreateContest struct {

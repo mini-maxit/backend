@@ -23,15 +23,15 @@ type workerRoute struct {
 
 // GetStatus godoc
 //
-// @Tags         worker
-// @Summary      Get worker status
-// @Description  Returns the current status of all worker nodes
-// @Produce      json
-// @Failure      401 {object} httputils.APIError "Not authorized - requires teacher or admin role"
-// @Failure      504 {object} httputils.APIError "Gateway timeout - worker status request timed out"
-// @Failure      500 {object} httputils.APIError "Internal server error"
-// @Success      200 {object} httputils.APIResponse[schemas.WorkerStatus]
-// @Router       /worker/status [get]
+//	@Tags			worker
+//	@Summary		Get worker status
+//	@Description	Returns the current status of all worker nodes
+//	@Produce		json
+//	@Failure		401	{object}	httputils.APIError	"Not authorized - requires teacher or admin role"
+//	@Failure		504	{object}	httputils.APIError	"Gateway timeout - worker status request timed out"
+//	@Failure		500	{object}	httputils.APIError	"Internal server error"
+//	@Success		200	{object}	httputils.APIResponse[schemas.WorkerStatus]
+//	@Router			/worker/status [get]
 func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

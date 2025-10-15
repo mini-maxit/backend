@@ -47,3 +47,12 @@ type ContestPendingRegistration struct {
 	Contest   Contest   `gorm:"foreignKey:ContestID;references:ID"`
 	User      User      `gorm:"foreignKey:UserID;references:ID"`
 }
+
+// ContestWithStats extends Contest with computed fields for efficient querying
+type ContestWithStats struct {
+	Contest
+	ParticipantCount int64 `gorm:"column:participant_count"`
+	TaskCount        int64 `gorm:"column:task_count"`
+	IsParticipant    bool  `gorm:"column:is_participant"`
+	HasPendingReg    bool  `gorm:"column:has_pending_reg"`
+}
