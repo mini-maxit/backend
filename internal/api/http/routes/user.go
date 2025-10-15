@@ -127,19 +127,19 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 // EditUser godoc
 //
-// @Tags			user
-// @Summary		Edit user
-// @Description	Edit user
-// @Produce		json
-// @Param			id		path		int					true	"User ID"
-// @Param			request	body		schemas.UserEdit	true	"User Edit Request"
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Failure		400		{object}	httputils.APIError
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		405		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Router			/user/{id} [patch].
+//	@Tags			user
+//	@Summary		Edit user
+//	@Description	Edit user
+//	@Produce		json
+//	@Param			id		path		int					true	"User ID"
+//	@Param			request	body		schemas.UserEdit	true	"User Edit Request"
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/user/{id} [patch].
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -308,17 +308,18 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserContests godoc
-// @Tags			user
-// @Summary		Get contests for a user
-// @Description	Get contests for a user
-// @Produce		json
-// @Param			id	path		int	true	"User ID"
-// @Success		200	{object}	httputils.APIResponse[[]schemas.ParticipantContestWithStats]
-// @Failure		400	{object}	httputils.APIError
-// @Failure		404	{object}	httputils.APIError
-// @Failure		405	{object}	httputils.APIError
-// @Failure		500	{object}	httputils.APIError
-// @Router			/user/{id}/contests [get]
+//
+//	@Tags			user
+//	@Summary		Get contests for a user
+//	@Description	Get contests for a user
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.ParticipantContestWithStats]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/user/{id}/contests [get]
 func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
