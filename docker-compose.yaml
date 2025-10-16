@@ -44,11 +44,14 @@ services:
     pull_policy: never
     depends_on:
       - file-storage
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
+      - DOCKER_HOST=unix:///var/run/docker.sock
   frontend:
     image: maxit/frontend
     pull_policy: never

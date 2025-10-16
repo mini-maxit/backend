@@ -486,6 +486,19 @@ func ContestWithStatsToSchema(model *models.ContestWithStats) *schemas.Contest {
 	}
 	// Default is "registrationClosed" for all other cases (registration closed or contest ended)
 
+	status := "upcoming"
+	now := time.Now()
+
+	if model.StartAt != nil && !model.StartAt.After(now) {
+		// Started
+		if model.EndAt == nil || model.EndAt.After(now) {
+			status = "ongoing"
+		} else {
+			status = "past"
+		}
+	} else if model.EndAt != nil && !model.EndAt.After(now) {
+		status = "past"
+	}
 	return &schemas.Contest{
 		ID:                 model.ID,
 		Name:               model.Name,
@@ -497,6 +510,7 @@ func ContestWithStatsToSchema(model *models.ContestWithStats) *schemas.Contest {
 		UpdatedAt:          model.UpdatedAt,
 		ParticipantCount:   model.ParticipantCount,
 		TaskCount:          model.TaskCount,
+		Status:             status,
 		RegistrationStatus: registrationStatus,
 	}
 }

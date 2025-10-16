@@ -13,6 +13,7 @@ type Contest struct {
 	UpdatedAt          time.Time  `json:"updatedAt"`
 	ParticipantCount   int64      `json:"participantCount"`
 	TaskCount          int64      `json:"taskCount"`
+	Status             string     `json:"status"`             // "upcoming", "ongoing", "past"
 	RegistrationStatus string     `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
 }
 
