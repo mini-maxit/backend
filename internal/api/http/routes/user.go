@@ -314,11 +314,11 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 //	@Description	Get contests for a user
 //	@Produce		json
 //	@Param			id	path		int	true	"User ID"
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.ParticipantContestWithStats]
 //	@Failure		400	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.UserContestsWithStats]
 //	@Router			/user/{id}/contests [get]
 func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

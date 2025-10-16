@@ -431,94 +431,6 @@ func TestEditContest(t *testing.T) {
 	})
 }
 
-func TestGetAllContests(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
-	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAllContests), db)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rec := recover(); rec != nil {
-				t.Logf("Recovered from panic: %v", rec)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			}
-		}()
-		// Mock user and add to context
-		mockUser := schemas.User{
-			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
-		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
-		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "created_at:desc",
-		})
-		handler.ServeHTTP(w, r.WithContext(ctx))
-	}))
-	defer server.Close()
-
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL, nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
-
-	t.Run("Success with empty list", func(t *testing.T) {
-		cs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return([]schemas.Contest{}, nil)
-
-		resp, err := http.Get(server.URL)
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-	})
-
-	t.Run("Success with contests", func(t *testing.T) {
-		contests := []schemas.Contest{
-			{
-				ID:          1,
-				Name:        "Contest 1",
-				Description: "Description 1",
-				CreatedBy:   1,
-			},
-			{
-				ID:          2,
-				Name:        "Contest 2",
-				Description: "Description 2",
-				CreatedBy:   1,
-			},
-		}
-
-		cs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(contests, nil)
-
-		resp, err := http.Get(server.URL)
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-	})
-}
-
 func TestDeleteContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -790,18 +702,20 @@ func TestGetOngoingContests(t *testing.T) {
 
 	t.Run("Success with ongoing contests", func(t *testing.T) {
 		now := time.Now()
-		contests := []schemas.Contest{
+		contests := []schemas.AvailableContest{
 			{
-				ID:                 1,
-				Name:               "Ongoing Contest",
-				Description:        "Test Description",
-				CreatedBy:          1,
-				StartAt:            &now,
-				EndAt:              nil,
-				CreatedAt:          now,
-				UpdatedAt:          now,
-				ParticipantCount:   5,
-				TaskCount:          3,
+				Contest: schemas.Contest{
+					ID:               1,
+					Name:             "Ongoing Contest",
+					Description:      "Test Description",
+					CreatedBy:        1,
+					StartAt:          &now,
+					EndAt:            nil,
+					CreatedAt:        now,
+					UpdatedAt:        now,
+					ParticipantCount: 5,
+					TaskCount:        3,
+				},
 				RegistrationStatus: "registered",
 			},
 		}

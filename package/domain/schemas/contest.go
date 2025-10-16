@@ -3,18 +3,22 @@ package schemas
 import "time"
 
 type Contest struct {
-	ID                 int64      `json:"id"`
-	Name               string     `json:"name"`
-	Description        string     `json:"description"`
-	CreatedBy          int64      `json:"createdBy"`
-	StartAt            *time.Time `json:"startAt"`
-	EndAt              *time.Time `json:"endAt"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	UpdatedAt          time.Time  `json:"updatedAt"`
-	ParticipantCount   int64      `json:"participantCount"`
-	TaskCount          int64      `json:"taskCount"`
-	Status             string     `json:"status"`             // "upcoming", "ongoing", "past"
-	RegistrationStatus string     `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
+	ID               int64      `json:"id"`
+	Name             string     `json:"name"`
+	Description      string     `json:"description"`
+	CreatedBy        int64      `json:"createdBy"`
+	StartAt          *time.Time `json:"startAt"`
+	EndAt            *time.Time `json:"endAt"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+	ParticipantCount int64      `json:"participantCount"`
+	TaskCount        int64      `json:"taskCount"`
+	Status           string     `json:"status"` // "upcoming", "ongoing", "past"
+}
+
+type AvailableContest struct {
+	Contest
+	RegistrationStatus string `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
 }
 
 type CreateContest struct {
@@ -37,7 +41,17 @@ type EditContest struct {
 	IsVisible          *bool      `json:"isVisible,omitempty"`
 }
 
-type ParticipantContestWithStats struct {
+type ContestWithStats struct {
 	Contest
 	SolvedTaskCount int64 `json:"solvedTaskCount"`
+}
+
+type UpcomingContest struct {
+	Contest
+}
+
+type UserContestsWithStats struct {
+	Ongoing  []ContestWithStats `json:"ongoing"`
+	Past     []ContestWithStats `json:"past"`
+	Upcoming []ContestWithStats `json:"upcoming"`
 }

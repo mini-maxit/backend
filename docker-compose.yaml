@@ -39,6 +39,8 @@ services:
       - "8888:8888"
     image: maxit/file-storage
     pull_policy: never
+    volumes:
+      - file-storage-media:/app/file-storage-media
   worker:
     image: maxit/worker
     pull_policy: never
@@ -46,12 +48,14 @@ services:
       - file-storage
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - jobs-data:/tmp
     environment:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - JOBS_DATA_VOLUME=worker_jobs-data
   frontend:
     image: maxit/frontend
     pull_policy: never
@@ -67,3 +71,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+volumes:
+  file-storage-media:
+  jobs-data:
