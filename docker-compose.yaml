@@ -55,7 +55,7 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
       - DOCKER_HOST=unix:///var/run/docker.sock
-      - JOBS_DATA_VOLUME=worker_jobs-data
+      - JOBS_DATA_VOLUME=jobs-data
   frontend:
     image: maxit/frontend
     pull_policy: never
@@ -75,3 +75,4 @@ services:
 volumes:
   file-storage-media:
   jobs-data:
+    name: jobs-data
