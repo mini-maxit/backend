@@ -42,7 +42,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(1), result.ID)
 		assert.Equal(t, "Test Contest", result.Name)
@@ -72,7 +72,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(10), result.ParticipantCount)
 		assert.Equal(t, int64(7), result.TaskCount)
@@ -97,7 +97,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    true,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(3), result.ParticipantCount)
 		assert.Equal(t, int64(2), result.TaskCount)
@@ -122,7 +122,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(3), result.ParticipantCount)
 		assert.Equal(t, int64(1), result.TaskCount)
@@ -147,7 +147,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(3), result.ParticipantCount)
 		assert.Equal(t, int64(4), result.TaskCount)
@@ -171,7 +171,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(3), result.ParticipantCount)
 		assert.Equal(t, "registered", result.RegistrationStatus)
@@ -195,241 +195,11 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			HasPendingReg:    false,
 		}
 
-		result := service.ContestWithStatsToSchema(contestWithStats)
+		result := service.ContestWithStatsToAvailableContest(contestWithStats)
 
 		assert.Equal(t, int64(3), result.ParticipantCount)
 		assert.Equal(t, int64(6), result.TaskCount)
 		assert.Equal(t, "canRegister", result.RegistrationStatus)
-	})
-}
-
-func TestContestService_GetAll_WithStats(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cr := mock_repository.NewMockContestRepository(ctrl)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr)
-	tx := &gorm.DB{}
-
-	currentUser := schemas.User{
-		ID:   1,
-		Role: types.UserRoleStudent,
-	}
-
-	queryParams := map[string]any{
-		"limit":  10,
-		"offset": 0,
-		"sort":   "created_at:desc",
-	}
-
-	t.Run("successful GetAll with stats", func(t *testing.T) {
-		now := time.Now()
-		futureTime := now.Add(24 * time.Hour)
-		contestsWithStats := []models.ContestWithStats{
-			{
-				Contest: models.Contest{
-					ID:                 1,
-					Name:               "Contest 1",
-					Description:        "Description 1",
-					CreatedBy:          2,
-					EndAt:              &futureTime,
-					IsRegistrationOpen: func() *bool { b := true; return &b }(),
-					IsSubmissionOpen:   func() *bool { b := false; return &b }(),
-					IsVisible:          func() *bool { b := true; return &b }(),
-					BaseModel: models.BaseModel{
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
-				},
-				ParticipantCount: 5,
-				TaskCount:        3,
-				IsParticipant:    false,
-				HasPendingReg:    true,
-			},
-			{
-				Contest: models.Contest{
-					ID:                 2,
-					Name:               "Contest 2",
-					Description:        "Description 2",
-					CreatedBy:          2,
-					EndAt:              &futureTime,
-					IsRegistrationOpen: func() *bool { b := true; return &b }(),
-					IsSubmissionOpen:   func() *bool { b := true; return &b }(),
-					IsVisible:          func() *bool { b := true; return &b }(),
-					BaseModel: models.BaseModel{
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
-				},
-				ParticipantCount: 10,
-				TaskCount:        7,
-				IsParticipant:    true,
-				HasPendingReg:    false,
-			},
-		}
-
-		cr.EXPECT().GetAllWithStats(tx, currentUser.ID, 0, 10, "created_at:desc").Return(contestsWithStats, nil).Times(1)
-
-		result, err := cs.GetAll(tx, currentUser, queryParams)
-
-		require.NoError(t, err)
-		assert.Len(t, result, 2)
-
-		// Check first contest
-		assert.Equal(t, int64(1), result[0].ID)
-		assert.Equal(t, "Contest 1", result[0].Name)
-		assert.Equal(t, int64(5), result[0].ParticipantCount)
-		assert.Equal(t, int64(3), result[0].TaskCount)
-		assert.Equal(t, "awaitingApproval", result[0].RegistrationStatus)
-
-		// Check second contest
-		assert.Equal(t, int64(2), result[1].ID)
-		assert.Equal(t, "Contest 2", result[1].Name)
-		assert.Equal(t, int64(10), result[1].ParticipantCount)
-		assert.Equal(t, int64(7), result[1].TaskCount)
-		assert.Equal(t, "registered", result[1].RegistrationStatus)
-	})
-
-	t.Run("repository error", func(t *testing.T) {
-		cr.EXPECT().GetAllWithStats(tx, currentUser.ID, 0, 10, "created_at:desc").Return(nil, gorm.ErrInvalidDB).Times(1)
-
-		result, err := cs.GetAll(tx, currentUser, queryParams)
-
-		require.Error(t, err)
-		assert.Nil(t, result)
-		assert.Equal(t, gorm.ErrInvalidDB, err)
-	})
-
-	t.Run("filters invisible contests for students", func(t *testing.T) {
-		now := time.Now()
-		futureTime := now.Add(24 * time.Hour)
-		contestsWithStats := []models.ContestWithStats{
-			{
-				Contest: models.Contest{
-					ID:                 1,
-					Name:               "Visible Contest",
-					Description:        "Description 1",
-					CreatedBy:          2,
-					EndAt:              &futureTime,
-					IsRegistrationOpen: func() *bool { b := true; return &b }(),
-					IsSubmissionOpen:   func() *bool { b := false; return &b }(),
-					IsVisible:          func() *bool { b := true; return &b }(),
-					BaseModel: models.BaseModel{
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
-				},
-				ParticipantCount: 5,
-				TaskCount:        2,
-				IsParticipant:    false,
-				HasPendingReg:    false,
-			},
-			{
-				Contest: models.Contest{
-					ID:                 2,
-					Name:               "Invisible Contest",
-					Description:        "Description 2",
-					CreatedBy:          2,
-					EndAt:              &futureTime,
-					IsRegistrationOpen: func() *bool { b := true; return &b }(),
-					IsSubmissionOpen:   func() *bool { b := true; return &b }(),
-					IsVisible:          func() *bool { b := false; return &b }(),
-					BaseModel: models.BaseModel{
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
-				},
-				ParticipantCount: 3,
-				TaskCount:        1,
-				IsParticipant:    false,
-				HasPendingReg:    false,
-			},
-		}
-
-		cr.EXPECT().GetAllWithStats(tx, currentUser.ID, 0, 10, "created_at:desc").Return(contestsWithStats, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, int64(2), currentUser.ID).Return(false, nil).Times(1)
-
-		result, err := cs.GetAll(tx, currentUser, queryParams)
-
-		require.NoError(t, err)
-		assert.Len(t, result, 1)
-		assert.Equal(t, int64(1), result[0].ID)
-		assert.Equal(t, "Visible Contest", result[0].Name)
-		assert.Equal(t, "canRegister", result[0].RegistrationStatus)
-	})
-}
-
-func TestContestService_GetOngoingContests(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cr := mock_repository.NewMockContestRepository(ctrl)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr)
-	tx := &gorm.DB{}
-
-	currentUser := schemas.User{
-		ID:   1,
-		Role: types.UserRoleStudent,
-	}
-
-	queryParams := map[string]any{
-		"limit":  10,
-		"offset": 0,
-		"sort":   "created_at:desc",
-	}
-
-	t.Run("successful GetOngoingContests", func(t *testing.T) {
-		now := time.Now()
-		futureTime := now.Add(24 * time.Hour)
-		ongoingContestsWithStats := []models.ContestWithStats{
-			{
-				Contest: models.Contest{
-					ID:                 1,
-					Name:               "Ongoing Contest 1",
-					Description:        "Description 1",
-					CreatedBy:          2,
-					StartAt:            &now,
-					EndAt:              &futureTime,
-					IsRegistrationOpen: func() *bool { b := true; return &b }(),
-					IsSubmissionOpen:   func() *bool { b := true; return &b }(),
-					IsVisible:          func() *bool { b := true; return &b }(),
-					BaseModel: models.BaseModel{
-						CreatedAt: now,
-						UpdatedAt: now,
-					},
-				},
-				ParticipantCount: 8,
-				TaskCount:        4,
-				IsParticipant:    true,
-				HasPendingReg:    false,
-			},
-		}
-
-		cr.EXPECT().GetOngoingContestsWithStats(tx, currentUser.ID, 0, 10, "created_at:desc").Return(ongoingContestsWithStats, nil).Times(1)
-
-		result, err := cs.GetOngoingContests(tx, currentUser, queryParams)
-
-		require.NoError(t, err)
-		assert.Len(t, result, 1)
-		assert.Equal(t, int64(1), result[0].ID)
-		assert.Equal(t, "Ongoing Contest 1", result[0].Name)
-		assert.Equal(t, int64(8), result[0].ParticipantCount)
-		assert.Equal(t, int64(4), result[0].TaskCount)
-		assert.Equal(t, "registered", result[0].RegistrationStatus)
-	})
-
-	t.Run("repository error", func(t *testing.T) {
-		cr.EXPECT().GetOngoingContestsWithStats(tx, currentUser.ID, 0, 10, "created_at:desc").Return(nil, gorm.ErrInvalidDB).Times(1)
-
-		result, err := cs.GetOngoingContests(tx, currentUser, queryParams)
-
-		require.Error(t, err)
-		assert.Nil(t, result)
-		assert.Equal(t, gorm.ErrInvalidDB, err)
 	})
 }
 

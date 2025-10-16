@@ -97,6 +97,7 @@ func (us *submissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Su
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
+		Preload("File").
 		First(&submission).Error
 	if err != nil {
 		return nil, err

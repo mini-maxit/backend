@@ -27,7 +27,15 @@ func (usr *submissionResultRepository) Create(tx *gorm.DB, submissionResult mode
 
 func (usr *submissionResultRepository) Get(tx *gorm.DB, submissionResultID int64) (*models.SubmissionResult, error) {
 	submissionResult := &models.SubmissionResult{}
-	if err := tx.Preload("TestResult").Preload("TestResult.InputOutput").Where("id = ?", submissionResultID).First(submissionResult).Error; err != nil {
+	if err := tx.
+		Preload("TestResult").
+		Preload("TestResult.InputOutput").
+		Preload("TestResult.InputOutput.InputFile").
+		Preload("TestResult.InputOutput.OutputFile").
+		Preload("TestResult.StdoutFile").
+		Preload("TestResult.StderrFile").
+		Preload("TestResult.DiffFile").
+		Where("id = ?", submissionResultID).First(submissionResult).Error; err != nil {
 		return nil, err
 	}
 	return submissionResult, nil
@@ -35,7 +43,13 @@ func (usr *submissionResultRepository) Get(tx *gorm.DB, submissionResultID int64
 
 func (usr *submissionResultRepository) GetBySubmission(tx *gorm.DB, submissionID int64) (*models.SubmissionResult, error) {
 	submissionResult := &models.SubmissionResult{}
-	if err := tx.Model(submissionResult).Preload("TestResult").Preload("TestResult.InputOutput").Where("submission_id = ?", submissionID).First(submissionResult).Error; err != nil {
+	if err := tx.Model(submissionResult).
+		Preload("TestResult").
+		Preload("TestResult.InputOutput").
+		Preload("TestResult.StdoutFile").
+		Preload("TestResult.StderrFile").
+		Preload("TestResult.DiffFile").
+		Where("submission_id = ?", submissionID).First(submissionResult).Error; err != nil {
 		return nil, err
 	}
 	return submissionResult, nil

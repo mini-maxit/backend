@@ -102,26 +102,11 @@ func (mr *MockContestServiceMockRecorder) Get(tx, currentUser, contestID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContestService)(nil).Get), tx, currentUser, contestID)
 }
 
-// GetAll mocks base method.
-func (m *MockContestService) GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, queryParams)
-	ret0, _ := ret[0].([]schemas.Contest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockContestServiceMockRecorder) GetAll(tx, currentUser, queryParams any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockContestService)(nil).GetAll), tx, currentUser, queryParams)
-}
-
 // GetOngoingContests mocks base method.
-func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, queryParams)
-	ret0, _ := ret[0].([]schemas.Contest)
+	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -133,10 +118,10 @@ func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, qu
 }
 
 // GetPastContests mocks base method.
-func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, queryParams)
-	ret0, _ := ret[0].([]schemas.Contest)
+	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,10 +148,10 @@ func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, co
 }
 
 // GetUpcomingContests mocks base method.
-func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Contest, error) {
+func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, queryParams)
-	ret0, _ := ret[0].([]schemas.Contest)
+	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -178,10 +163,10 @@ func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, q
 }
 
 // GetUserContests mocks base method.
-func (m *MockContestService) GetUserContests(tx *gorm.DB, userID int64) ([]schemas.ParticipantContestWithStats, error) {
+func (m *MockContestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserContests", tx, userID)
-	ret0, _ := ret[0].([]schemas.ParticipantContestWithStats)
+	ret0, _ := ret[0].(schemas.UserContestsWithStats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
