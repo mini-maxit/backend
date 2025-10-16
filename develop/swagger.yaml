@@ -21,15 +21,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-array_Contest:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Contest'
-        type: array
-      ok:
-        type: boolean
-    type: object
   APIResponse-array_Group:
     properties:
       data:
@@ -57,11 +48,11 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_ParticipantContestWithStats:
+  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest:
     properties:
       data:
         items:
-          $ref: '#/definitions/ParticipantContestWithStats'
+          $ref: '#/definitions/AvailableContest'
         type: array
       ok:
         type: boolean
@@ -89,6 +80,15 @@ definitions:
       data:
         items:
           $ref: '#/definitions/User'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_UserContestsWithStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/UserContestsWithStats'
         type: array
       ok:
         type: boolean
@@ -156,7 +156,7 @@ definitions:
       expiresAt:
         type: string
     type: object
-  Contest:
+  AvailableContest:
     properties:
       createdAt:
         type: string
@@ -176,6 +176,63 @@ definitions:
         description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
         type: string
       startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  Contest:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  ContestWithStats:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      solvedTaskCount:
+        type: integer
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
         type: string
       taskCount:
         type: integer
@@ -270,34 +327,6 @@ definitions:
   MessageResponse:
     properties:
       message:
-        type: string
-    type: object
-  ParticipantContestWithStats:
-    properties:
-      createdAt:
-        type: string
-      createdBy:
-        type: integer
-      description:
-        type: string
-      endAt:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      participantCount:
-        type: integer
-      registrationStatus:
-        description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
-        type: string
-      solvedTaskCount:
-        type: integer
-      startAt:
-        type: string
-      taskCount:
-        type: integer
-      updatedAt:
         type: string
     type: object
   PutInputOutput:
@@ -457,6 +486,21 @@ definitions:
     required:
     - newPassword
     - newPasswordConfirm
+    type: object
+  UserContestsWithStats:
+    properties:
+      ongoing:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
+      past:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
+      upcoming:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
     type: object
   UserEdit:
     properties:
@@ -673,34 +717,6 @@ paths:
       tags:
       - auth
   /contest/:
-    get:
-      description: Get all contests with pagination
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-array_Contest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get all contests
-      tags:
-      - contest
     post:
       consumes:
       - application/json
@@ -954,7 +970,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Contest'
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -983,7 +999,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Contest'
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -1012,7 +1028,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Contest'
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -2140,7 +2156,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_ParticipantContestWithStats'
+            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_UserContestsWithStats'
         "400":
           description: Bad Request
           schema:
