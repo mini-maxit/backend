@@ -414,7 +414,9 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 		return schemas.UserContestsWithStats{}, err
 	}
 
-	var ongoing, past, upcoming []schemas.ContestWithStats
+	ongoing := make([]schemas.ContestWithStats, 0)
+	past := make([]schemas.ContestWithStats, 0)
+	upcoming := make([]schemas.ContestWithStats, 0)
 	now := time.Now()
 
 	for _, contest := range contestsWithStats {
