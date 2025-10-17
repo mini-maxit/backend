@@ -44,6 +44,7 @@ func (l *languageService) Init(tx *gorm.DB, workerLanguages schemas.HandShakeRes
 			language := models.LanguageConfig{
 				Type:    lang.Name,
 				Version: version,
+				FileExtension: lang.Extension,
 			}
 			var found bool
 			for i, existingLanguage := range existingLanguages {

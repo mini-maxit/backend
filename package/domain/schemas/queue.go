@@ -17,8 +17,9 @@ type TaskResponsePayload struct {
 
 type HandShakeResponsePayload struct {
 	Languages []struct {
-		Name     string   `json:"name"`
-		Versions []string `json:"versions"`
+		Name      string   `json:"name"`
+		Versions  []string `json:"versions"`
+		Extension string   `json:"extension"`
 	} `json:"languages"`
 }
 
