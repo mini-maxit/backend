@@ -56,6 +56,8 @@ services:
       - RABBITMQ_PASSWORD=guest
       - DOCKER_HOST=unix:///var/run/docker.sock
       - JOBS_DATA_VOLUME=jobs-data
+      - RESPONSE_QUEUE_NAME=worker_response_queue
+      - WORKER_QUEUE_NAME=worker_queue
   frontend:
     image: maxit/frontend
     pull_policy: never
