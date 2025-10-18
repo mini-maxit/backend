@@ -225,7 +225,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router			/tasks/group/{id} [get]
+//	@Router			/tasks/groups/{id} [get]
 func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

@@ -150,7 +150,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/user/{id} [get]
+//	@Router			/submissions/users/{id} [get]
 func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -213,7 +213,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/user/{id}/short [get]
+//	@Router			/submissions/users/{id}/short [get]
 func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -279,7 +279,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/group/{id} [get]
+//	@Router			/submissions/groups/{id} [get]
 func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -335,7 +335,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/task/{id} [get]
+//	@Router			/submissions/tasks/{id} [get]
 func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -526,8 +526,8 @@ func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/submit", route.SubmitSolution)
 	mux.HandleFunc("/languages", route.GetAvailableLanguages)
 	mux.HandleFunc("/{id}", route.GetByID)
-	mux.HandleFunc("/user/{id}", route.GetAllForUser)
-	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
-	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/task/{id}", route.GetAllForTask)
+	mux.HandleFunc("/users/{id}", route.GetAllForUser)
+	mux.HandleFunc("/users/{id}/short", route.GetAllForUserShort)
+	mux.HandleFunc("/groups/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/tasks/{id}", route.GetAllForTask)
 }
