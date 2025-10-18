@@ -69,7 +69,7 @@ func NewListener(
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
-		nil,       // arguments
+		args,      // arguments
 	)
 	if err != nil {
 		return nil, err
