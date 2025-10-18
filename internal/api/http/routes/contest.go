@@ -44,7 +44,7 @@ type ContestRouteImpl struct {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.IDResponse]
-//	@Router			/contest/ [post]
+//	@Router			/contests/ [post]
 func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -94,7 +94,7 @@ func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[schemas.Contest]
-//	@Router			/contest/{id} [get]
+//	@Router			/contests/{id} [get]
 func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -147,7 +147,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contest/ongoing [get]
+//	@Router			/contests/ongoing [get]
 func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -193,7 +193,7 @@ func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Re
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contest/past [get]
+//	@Router			/contests/past [get]
 func (cr *ContestRouteImpl) GetPastContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -239,7 +239,7 @@ func (cr *ContestRouteImpl) GetPastContests(w http.ResponseWriter, r *http.Reque
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contest/upcoming [get]
+//	@Router			/contests/upcoming [get]
 func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -289,7 +289,7 @@ func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.R
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[schemas.Contest]
-//	@Router			/contest/{id} [put]
+//	@Router			/contests/{id} [put]
 func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -352,7 +352,7 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contest/{id} [delete]
+//	@Router			/contests/{id} [delete]
 func (cr *ContestRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -409,7 +409,7 @@ func (cr *ContestRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request
 //	@Failure		409	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contest/{id}/register [post]
+//	@Router			/contests/{id}/register [post]
 func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -473,7 +473,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.TaskWithContestStats]
-//	@Router			/contest/{id}/tasks [get]
+//	@Router			/contests/{id}/tasks [get]
 func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

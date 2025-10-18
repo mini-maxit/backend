@@ -31,7 +31,7 @@ type workerRoute struct {
 //	@Failure		504	{object}	httputils.APIError	"Gateway timeout - worker status request timed out"
 //	@Failure		500	{object}	httputils.APIError	"Internal server error"
 //	@Success		200	{object}	httputils.APIResponse[schemas.WorkerStatus]
-//	@Router			/worker/status [get]
+//	@Router			/workers/status [get]
 func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

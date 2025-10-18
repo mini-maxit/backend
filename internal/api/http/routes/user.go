@@ -43,7 +43,7 @@ type UserRouteImpl struct {
 //	@Success		200		{object}	httputils.APIResponse[schemas.User]
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/user/ [get]
+//	@Router			/users/ [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -84,7 +84,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/user/{id} [get]
+//	@Router			/users/{id} [get]
 func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -139,7 +139,7 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/user/{id} [patch].
+//	@Router			/users/{id} [patch].
 func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -205,7 +205,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/user/{id}/password [patch].
+//	@Router			/users/{id}/password [patch].
 func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -291,7 +291,7 @@ func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 //	@Produce		json
 //	@Success		200	{object}	httputils.APIResponse[schemas.User]
 //	@Failure		405	{object}	httputils.APIError
-//	@Router			/user/me [get]
+//	@Router			/users/me [get]
 func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -319,7 +319,7 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.UserContestsWithStats]
-//	@Router			/user/{id}/contests [get]
+//	@Router			/users/{id}/contests [get]
 func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
