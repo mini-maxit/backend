@@ -27,16 +27,19 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	workerLanguages := schemas.HandShakeResponsePayload{
 		Languages: []struct {
-			Name     string   `json:"name"`
-			Versions []string `json:"versions"`
+			Name      string   `json:"name"`
+			Versions  []string `json:"versions"`
+			Extension string   `json:"extension"`
 		}{
 			{
-				Name:     "python",
-				Versions: []string{"3.9", "3.10"},
+				Name:      "python",
+				Versions:  []string{"3.9", "3.10"},
+				Extension: ".py",
 			},
 			{
-				Name:     "javascript",
-				Versions: []string{"18", "20"},
+				Name:      "javascript",
+				Versions:  []string{"18", "20"},
+				Extension: ".js",
 			},
 		},
 	}
@@ -47,23 +50,27 @@ func TestLanguageServiceInit(t *testing.T) {
 
 		// Expect creates for each language-version combination
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.9",
+			Type:          "python",
+			Version:       "3.9",
+			FileExtension: ".py",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.10",
+			Type:          "python",
+			Version:       "3.10",
+			FileExtension: ".py",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "18",
+			Type:          "javascript",
+			Version:       "18",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "20",
+			Type:          "javascript",
+			Version:       "20",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		err := ls.Init(tx, workerLanguages)
@@ -72,8 +79,8 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Success with existing enabled languages", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", IsDisabled: &falseValue},
-			{ID: 2, Type: "python", Version: "3.10", IsDisabled: &trueValue},
+			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", IsDisabled: &falseValue},
+			{ID: 2, Type: "python", Version: "3.10", FileExtension: ".py", IsDisabled: &trueValue},
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
@@ -84,13 +91,15 @@ func TestLanguageServiceInit(t *testing.T) {
 
 		// Expect creates for new language-version combinations
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "18",
+			Type:          "javascript",
+			Version:       "18",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "20",
+			Type:          "javascript",
+			Version:       "20",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		err := ls.Init(tx, workerLanguages)
@@ -99,8 +108,8 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Success with languages to disable", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "python", Version: "3.9", IsDisabled: &falseValue},
-			{ID: 2, Type: "go", Version: "1.19", IsDisabled: &falseValue}, // This should be disabled
+			{ID: 1, Type: "python", Version: "3.9", FileExtension: ".py", IsDisabled: &falseValue},
+			{ID: 2, Type: "go", Version: "1.19", FileExtension: ".go", IsDisabled: &falseValue}, // This should be disabled
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
@@ -109,18 +118,21 @@ func TestLanguageServiceInit(t *testing.T) {
 
 		// Expect creates for new language-version combinations
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.10",
+			Type:          "python",
+			Version:       "3.10",
+			FileExtension: ".py",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "18",
+			Type:          "javascript",
+			Version:       "18",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "20",
+			Type:          "javascript",
+			Version:       "20",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		// Expect disabling of language not in worker languages
@@ -142,8 +154,9 @@ func TestLanguageServiceInit(t *testing.T) {
 		lr.EXPECT().GetAll(tx).Return([]models.LanguageConfig{}, nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.9",
+			Type:          "python",
+			Version:       "3.9",
+			FileExtension: ".py",
 		}).Return(assert.AnError).Times(1)
 
 		err := ls.Init(tx, workerLanguages)
@@ -153,30 +166,34 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	t.Run("Error marking language disabled", func(t *testing.T) {
 		existingLanguages := []models.LanguageConfig{
-			{ID: 1, Type: "go", Version: "1.19", IsDisabled: &falseValue}, // This should be disabled
+			{ID: 1, Type: "go", Version: "1.19", FileExtension: ".go", IsDisabled: &falseValue}, // This should be disabled
 		}
 
 		lr.EXPECT().GetAll(tx).Return(existingLanguages, nil).Times(1)
 
 		// Expect creates for new language-version combinations
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.9",
+			Type:          "python",
+			Version:       "3.9",
+			FileExtension: ".py",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "python",
-			Version: "3.10",
+			Type:          "python",
+			Version:       "3.10",
+			FileExtension: ".py",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "18",
+			Type:          "javascript",
+			Version:       "18",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		lr.EXPECT().Create(tx, &models.LanguageConfig{
-			Type:    "javascript",
-			Version: "20",
+			Type:          "javascript",
+			Version:       "20",
+			FileExtension: ".js",
 		}).Return(nil).Times(1)
 
 		// Error when marking language as disabled
