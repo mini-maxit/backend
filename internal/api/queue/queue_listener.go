@@ -31,6 +31,8 @@ const MessageTypeTask = "task"
 const MessageTypeHandshake = "handshake"
 const MessageTypeStatus = "status"
 
+const MaxQueuePriority = 3
+
 type listener struct {
 	// Service that handles task-related operations
 	database          database.Database
@@ -59,13 +61,15 @@ func NewListener(
 	queueName string,
 ) (Listener, error) {
 	// Declare the queue
+	args := make(amqp.Table)
+	args["x-max-priority"] = MaxQueuePriority
 	_, err := channel.QueueDeclare(
 		queueName, // name of the queue
 		true,      // durable
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
-		nil,       // arguments
+		args,      // arguments
 	)
 	if err != nil {
 		return nil, err
