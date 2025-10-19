@@ -706,7 +706,7 @@ paths:
       summary: Register a user
       tags:
       - auth
-  /contest/:
+  /contests/:
     post:
       consumes:
       - application/json
@@ -744,7 +744,7 @@ paths:
       summary: Create a contest
       tags:
       - contest
-  /contest/{id}:
+  /contests/{id}:
     delete:
       description: Delete a contest by ID
       parameters:
@@ -867,7 +867,7 @@ paths:
       summary: Edit a contest
       tags:
       - contest
-  /contest/{id}/register:
+  /contests/{id}/register:
     post:
       description: Create a pending registration for a contest (requires contest creator
         approval)
@@ -911,7 +911,7 @@ paths:
       summary: Register for a contest
       tags:
       - contest
-  /contest/{id}/tasks:
+  /contests/{id}/tasks:
     get:
       description: Get tasks associated with a specific contest including best score
         and attempt count for the current user
@@ -951,7 +951,7 @@ paths:
       summary: Get tasks for a contest with submission statistics
       tags:
       - contest
-  /contest/ongoing:
+  /contests/ongoing:
     get:
       description: Get contests that are currently running with pagination
       produces:
@@ -980,7 +980,7 @@ paths:
       summary: Get ongoing contests
       tags:
       - contest
-  /contest/past:
+  /contests/past:
     get:
       description: Get contests that have ended with pagination
       produces:
@@ -1009,7 +1009,7 @@ paths:
       summary: Get past contests
       tags:
       - contest
-  /contest/upcoming:
+  /contests/upcoming:
     get:
       description: Get contests that haven't started yet with pagination
       produces:
@@ -1038,7 +1038,7 @@ paths:
       summary: Get upcoming contests
       tags:
       - contest
-  /group/:
+  /groups/:
     get:
       description: Get all groups
       produces:
@@ -1104,7 +1104,7 @@ paths:
       summary: Create a group
       tags:
       - group
-  /group/{id}:
+  /groups/{id}:
     get:
       description: Get a group
       parameters:
@@ -1181,7 +1181,7 @@ paths:
       summary: Edit a group
       tags:
       - group
-  /group/{id}/users:
+  /groups/{id}/users:
     delete:
       consumes:
       - application/json
@@ -1300,7 +1300,7 @@ paths:
       summary: Add users to a group
       tags:
       - group
-  /submission:
+  /submissions:
     get:
       description: Depending on the user role, this endpoint will return all submissions
         for the current user.
@@ -1331,7 +1331,7 @@ paths:
       summary: Get all submissions for the current user
       tags:
       - submission
-  /submission/{id}:
+  /submissions/{id}:
     get:
       description: If the user is a student, the submission must belong to the user.
       parameters:
@@ -1358,7 +1358,7 @@ paths:
       summary: Get a submission by ID
       tags:
       - submission
-  /submission/group/{id}:
+  /submissions/groups/{id}:
     get:
       description: If the user is a student, it fails with 403 Forbidden.
       parameters:
@@ -1397,7 +1397,7 @@ paths:
       summary: Get all submissions for a group
       tags:
       - submission
-  /submission/languages:
+  /submissions/languages:
     get:
       description: Get all available languages for submitting solutions.
       produces:
@@ -1414,7 +1414,7 @@ paths:
       summary: Get all available languages
       tags:
       - submission
-  /submission/submit:
+  /submissions/submit:
     post:
       consumes:
       - multipart/form-data
@@ -1461,7 +1461,7 @@ paths:
       summary: Submit a solution
       tags:
       - submission
-  /submission/task/{id}:
+  /submissions/tasks/{id}:
     get:
       description: If the user is a student and has no access to this task, it fails
         with 403 Forbidden.
@@ -1501,7 +1501,7 @@ paths:
       summary: Get all submissions for a task
       tags:
       - submission
-  /submission/user/{id}:
+  /submissions/users/{id}:
     get:
       description: If the user is a student, it fails with 403 Forbidden.
       parameters:
@@ -1540,7 +1540,7 @@ paths:
       summary: Get all submissions for a user
       tags:
       - submission
-  /submission/user/{id}/short:
+  /submissions/users/{id}/short:
     get:
       description: If the user is a student, it fails with 403 Forbidden.
       parameters:
@@ -1579,7 +1579,7 @@ paths:
       summary: Get all submissions for a user
       tags:
       - submission
-  /task/:
+  /tasks/:
     get:
       description: Returns all tasks
       produces:
@@ -1633,7 +1633,7 @@ paths:
       summary: Upload a task
       tags:
       - task
-  /task/{id}:
+  /tasks/{id}:
     delete:
       description: Deletes a task by ID
       parameters:
@@ -1744,7 +1744,7 @@ paths:
       summary: Update a task
       tags:
       - task
-  /task/{id}/assign/groups:
+  /tasks/{id}/assign/groups:
     post:
       description: Assigns a task to groups by task ID and group IDs
       parameters:
@@ -1787,7 +1787,7 @@ paths:
       summary: Assign a task to groups
       tags:
       - task
-  /task/{id}/assign/users:
+  /tasks/{id}/assign/users:
     post:
       description: Assigns a task to users by task ID and user IDs
       parameters:
@@ -1830,7 +1830,7 @@ paths:
       summary: Assign a task to users
       tags:
       - task
-  /task/{id}/limits:
+  /tasks/{id}/limits:
     get:
       description: Gets task limits by task ID
       parameters:
@@ -1897,7 +1897,7 @@ paths:
       summary: Updates task limits
       tags:
       - task
-  /task/{id}/unassign/groups:
+  /tasks/{id}/unassign/groups:
     delete:
       description: Unassigns a task from groups by task ID and group IDs
       parameters:
@@ -1940,7 +1940,7 @@ paths:
       summary: Unassign a task from groups
       tags:
       - task
-  /task/{id}/unassign/users:
+  /tasks/{id}/unassign/users:
     delete:
       description: Unassigns a task from users by task ID and user IDs
       parameters:
@@ -1983,7 +1983,7 @@ paths:
       summary: Unassign a task from users
       tags:
       - task
-  /task/group/{id}:
+  /tasks/groups/{id}:
     get:
       description: Returns all tasks for a group by ID
       parameters:
@@ -2018,7 +2018,7 @@ paths:
       summary: Get all tasks for a group
       tags:
       - task
-  /user/:
+  /users/:
     get:
       description: Get all users
       parameters:
@@ -2052,7 +2052,7 @@ paths:
       summary: Get all users
       tags:
       - user
-  /user/{id}:
+  /users/{id}:
     get:
       description: Get user by ID
       parameters:
@@ -2131,7 +2131,7 @@ paths:
       summary: Edit user
       tags:
       - user
-  /user/{id}/contests:
+  /users/{id}/contests:
     get:
       description: Get contests for a user
       parameters:
@@ -2166,7 +2166,7 @@ paths:
       summary: Get contests for a user
       tags:
       - user
-  /user/{id}/password:
+  /users/{id}/password:
     patch:
       description: Change user password
       parameters:
@@ -2207,7 +2207,7 @@ paths:
       summary: Change user password
       tags:
       - user
-  /user/me:
+  /users/me:
     get:
       description: Get current user
       produces:
@@ -2224,7 +2224,7 @@ paths:
       summary: Get current user
       tags:
       - user
-  /worker/status:
+  /workers/status:
     get:
       description: Returns the current status of all worker nodes
       produces:
