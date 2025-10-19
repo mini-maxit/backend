@@ -37,7 +37,7 @@ type SubmissionResult struct {
 	Message      string       `gorm:"type:varchar(255);not null"`
 	CreatedAt    time.Time    `gorm:"autoCreateTime"`
 	Submission   Submission   `gorm:"foreignKey:SubmissionID;references:ID"`
-	TestResult   []TestResult `gorm:"foreignKey:SubmissionResultID;references:ID"`
+	TestResults  []TestResult `gorm:"foreignKey:SubmissionResultID;references:ID"`
 }
 
 type TestResultStatusCode int
@@ -54,7 +54,7 @@ const (
 type TestResult struct {
 	ID                 int64                `gorm:"primaryKey;autoIncrement"`
 	SubmissionResultID int64                `gorm:"not null"`
-	InputOutputID      int64                `gorm:"not null"`
+	TestCaseID         int64                `gorm:"not null"`
 	Passed             *bool                `gorm:"not null"`
 	ExecutionTime      float64              `gorm:"not null"`
 	StatusCode         TestResultStatusCode `gorm:"not null"`
@@ -62,7 +62,7 @@ type TestResult struct {
 	StdoutFileID       int64                `gorm:"not null"`
 	StderrFileID       int64                `gorm:"not null"`
 	DiffFileID         int64                `gorm:"not null"`
-	InputOutput        TestCase             `gorm:"foreignKey:InputOutputID;references:ID"`
+	TestCase           TestCase             `gorm:"foreignKey:TestCaseID;references:ID"`
 	SubmissionResult   SubmissionResult     `gorm:"foreignKey:SubmissionResultID;references:ID"`
 	StdoutFile         File                 `gorm:"foreignKey:StdoutFileID;references:ID"`
 	StderrFile         File                 `gorm:"foreignKey:StderrFileID;references:ID"`

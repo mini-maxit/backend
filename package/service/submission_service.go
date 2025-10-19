@@ -61,7 +61,7 @@ type submissionService struct {
 	fileRepository             repository.File
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
-	inputOutputRepository      repository.TestCaseRepository
+	testCaseRepository         repository.TestCaseRepository
 	testResultRepository       repository.TestRepository
 	groupRepository            repository.GroupRepository
 	taskRepository             repository.TaskRepository
@@ -388,7 +388,6 @@ func (ss *submissionService) CreateSubmissionResult(
 		ss.logger.Errorf("Error getting submission result: %v", err.Error())
 		return -1, err
 	}
-	ss.logger.Info("Got submission result: ", submissionResult)
 	submissionResult.Code = strconv.FormatInt(taskResponse.StatusCode, 10)
 	submissionResult.Message = taskResponse.Message
 	submissionResult.Submission.CheckedAt = time.Now()
@@ -519,17 +518,17 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 		return -1, err
 	}
 
-	inputOutputs, err := ss.inputOutputRepository.GetByTask(tx, submission.TaskID)
+	testCases, err := ss.testCaseRepository.GetByTask(tx, submission.TaskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting input outputs: %v", err.Error())
 		return -1, err
 	}
-	ss.logger.Info("Got input outputs: ", inputOutputs)
+	ss.logger.Info("Got input outputs: ", testCases)
 
-	for _, inputOutput := range inputOutputs {
-		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
-		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
-		diffFile := ss.filestorage.GetTestResultDiffPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+	for _, testCase := range testCases {
+		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
+		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
+		diffFile := ss.filestorage.GetTestResultDiffPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
 		stdoutFileModel := &models.File{
 			Filename:   stdoutFile.Filename,
 			Path:       stdoutFile.Path,
@@ -567,7 +566,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 		falseVal := false
 		testResult := models.TestResult{
 			SubmissionResultID: submissionResultID,
-			InputOutputID:      inputOutput.ID,
+			TestCaseID:         testCase.ID,
 			Passed:             &falseVal,
 			ExecutionTime:      float64(-1),
 			StatusCode:         models.TestResultStatusCodeNotExecuted,
@@ -591,7 +590,7 @@ func NewSubmissionService(
 	fileRepository repository.File,
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
-	inputOutputRepository repository.TestCaseRepository,
+	testCaseRepository repository.TestCaseRepository,
 	testResultRepository repository.TestRepository,
 	groupRepository repository.GroupRepository,
 	taskRepository repository.TaskRepository,
@@ -606,7 +605,7 @@ func NewSubmissionService(
 		fileRepository:             fileRepository,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
-		inputOutputRepository:      inputOutputRepository,
+		testCaseRepository:         testCaseRepository,
 		testResultRepository:       testResultRepository,
 		groupRepository:            groupRepository,
 		taskRepository:             taskRepository,
@@ -620,11 +619,12 @@ func NewSubmissionService(
 
 func (ss *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
 	var result []schemas.TestResult
+	ss.logger.Info("Converting test results: ", testResults)
 	for _, testResult := range testResults {
 		result = append(result, schemas.TestResult{
 			ID:                 testResult.ID,
 			SubmissionResultID: testResult.SubmissionResultID,
-			InputOutputID:      testResult.InputOutputID,
+			TestCaseID:         testResult.TestCaseID,
 			Passed:             *testResult.Passed,
 			ErrorMessage:       testResult.ErrorMessage,
 		})
@@ -642,7 +642,7 @@ func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult
 		Code:         result.Code,
 		Message:      result.Message,
 		CreatedAt:    result.CreatedAt,
-		TestResults:  ss.testResultsModelToSchema(result.TestResult),
+		TestResults:  ss.testResultsModelToSchema(result.TestResults),
 	}
 }
 

@@ -29,9 +29,9 @@ func (usr *submissionResultRepository) Get(tx *gorm.DB, submissionResultID int64
 	submissionResult := &models.SubmissionResult{}
 	if err := tx.
 		Preload("TestResult").
-		Preload("TestResult.InputOutput").
-		Preload("TestResult.InputOutput.InputFile").
-		Preload("TestResult.InputOutput.OutputFile").
+		Preload("TestResult.TestCase").
+		Preload("TestResult.TestCase.InputFile").
+		Preload("TestResult.TestCase.OutputFile").
 		Preload("TestResult.StdoutFile").
 		Preload("TestResult.StderrFile").
 		Preload("TestResult.DiffFile").
@@ -45,7 +45,7 @@ func (usr *submissionResultRepository) GetBySubmission(tx *gorm.DB, submissionID
 	submissionResult := &models.SubmissionResult{}
 	if err := tx.Model(submissionResult).
 		Preload("TestResult").
-		Preload("TestResult.InputOutput").
+		Preload("TestResult.TestCase").
 		Preload("TestResult.StdoutFile").
 		Preload("TestResult.StderrFile").
 		Preload("TestResult.DiffFile").

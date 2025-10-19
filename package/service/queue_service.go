@@ -87,19 +87,19 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 		qs.logger.Errorf("Error getting submission result: %v", err.Error())
 		return err
 	}
-	testCases := make([]schemas.TestCase, 0, len(submissionResult.TestResult))
-	for _, tr := range submissionResult.TestResult {
-		testCases = append(testCases, schemas.TestCase{
-			Order: tr.InputOutput.Order,
+	testCases := make([]schemas.QTestCase, 0, len(submissionResult.TestResults))
+	for _, tr := range submissionResult.TestResults {
+		testCases = append(testCases, schemas.QTestCase{
+			Order: tr.TestCase.Order,
 			InputFile: schemas.FileLocation{
-				ServerType: tr.InputOutput.InputFile.ServerType,
-				Bucket:     tr.InputOutput.InputFile.Bucket,
-				Path:       tr.InputOutput.InputFile.Path,
+				ServerType: tr.TestCase.InputFile.ServerType,
+				Bucket:     tr.TestCase.InputFile.Bucket,
+				Path:       tr.TestCase.InputFile.Path,
 			},
 			ExpectedOutput: schemas.FileLocation{
-				ServerType: tr.InputOutput.OutputFile.ServerType,
-				Bucket:     tr.InputOutput.OutputFile.Bucket,
-				Path:       tr.InputOutput.OutputFile.Path,
+				ServerType: tr.TestCase.OutputFile.ServerType,
+				Bucket:     tr.TestCase.OutputFile.Bucket,
+				Path:       tr.TestCase.OutputFile.Path,
 			},
 			StdoutResult: schemas.FileLocation{
 				ServerType: tr.StdoutFile.ServerType,
@@ -116,8 +116,8 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 				Bucket:     tr.DiffFile.Bucket,
 				Path:       tr.DiffFile.Path,
 			},
-			TimeLimitMs:   tr.InputOutput.TimeLimit,
-			MemoryLimitKB: tr.InputOutput.MemoryLimit,
+			TimeLimitMs:   tr.TestCase.TimeLimit,
+			MemoryLimitKB: tr.TestCase.MemoryLimit,
 		})
 	}
 	payload := schemas.TaskQueueMessage{

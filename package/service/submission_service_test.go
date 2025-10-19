@@ -583,7 +583,7 @@ func TestGetAllForUserShort(t *testing.T) {
 				TaskID: 1,
 				UserID: 1,
 				Result: &models.SubmissionResult{
-					TestResult: []models.TestResult{
+					TestResults: []models.TestResult{
 						{Passed: &trueValue},
 						{Passed: &falseValue},
 					},
@@ -594,7 +594,7 @@ func TestGetAllForUserShort(t *testing.T) {
 				TaskID: 2,
 				UserID: 1,
 				Result: &models.SubmissionResult{
-					TestResult: []models.TestResult{
+					TestResults: []models.TestResult{
 						{Passed: &trueValue},
 						{Passed: &trueValue},
 					},
@@ -629,7 +629,7 @@ func TestGetAllForUserShort(t *testing.T) {
 				TaskID: 1,
 				UserID: 1,
 				Result: &models.SubmissionResult{
-					TestResult: []models.TestResult{
+					TestResults: []models.TestResult{
 						{Passed: &trueValue},
 						{Passed: &falseValue},
 					},
@@ -640,7 +640,7 @@ func TestGetAllForUserShort(t *testing.T) {
 				TaskID: 2,
 				UserID: 1,
 				Result: &models.SubmissionResult{
-					TestResult: []models.TestResult{
+					TestResults: []models.TestResult{
 						{Passed: &trueValue},
 						{Passed: &trueValue},
 					},

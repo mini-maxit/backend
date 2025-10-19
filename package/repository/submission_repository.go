@@ -55,7 +55,7 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Preload("Result.TestResult").
+		Preload("Result.TestResults").
 		Find(&submissions).Error
 	if err != nil {
 		return nil, err
@@ -98,6 +98,7 @@ func (us *submissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Su
 		Preload("User").
 		Preload("Result").
 		Preload("File").
+		Preload("Result.TestResults").
 		First(&submission).Error
 	if err != nil {
 		return nil, err
@@ -123,11 +124,12 @@ func (us *submissionRepository) GetAllByUser(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Preload("Result.TestResult").
+		Preload("Result.TestResults").
 		Where("user_id = ?", userID).Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
+
 	return submissions, nil
 }
 

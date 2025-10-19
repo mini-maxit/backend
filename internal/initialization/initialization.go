@@ -110,7 +110,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create submission result repository: %s", err.Error())
 	}
-	inputOutputRepository, err := repository.NewInputOutputRepository(tx)
+	testCaseRepository, err := repository.NewTestCaseRepository(tx)
 	if err != nil {
 		log.Panicf("Failed to create input output repository: %s", err.Error())
 	}
@@ -145,7 +145,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		filestorage,
 		fileRepository,
 		taskRepository,
-		inputOutputRepository,
+		testCaseRepository,
 		userRepository,
 		groupRepository,
 	)
@@ -175,7 +175,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		fileRepository,
 		submissionRepository,
 		submissionResultRepository,
-		inputOutputRepository,
+		testCaseRepository,
 		testResultRepository,
 		groupRepository,
 		taskRepository,

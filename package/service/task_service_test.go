@@ -814,7 +814,7 @@ func TestUnAssignTaskFromGroups(t *testing.T) {
 	})
 }
 
-func TestCreateInputOutput(t *testing.T) {
+func TestCreateTestCase(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -835,7 +835,7 @@ func TestCreateInputOutput(t *testing.T) {
 		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
 		io.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(4)
 		pathToArchive := createTestArchive(t, "valid")
-		err := ts.CreateInputOutput(tx, task.ID, pathToArchive)
+		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
 		require.NoError(t, err)
 	})
 
@@ -843,19 +843,19 @@ func TestCreateInputOutput(t *testing.T) {
 		pathToArchive := createTestArchive(t, "valid")
 		defer os.Remove(pathToArchive)
 		tr.EXPECT().Get(tx, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := ts.CreateInputOutput(tx, task.ID, pathToArchive)
+		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
 		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
 
-		err := ts.CreateInputOutput(tx, task.ID, "INVALIDPATH")
+		err := ts.CreateTestCase(tx, task.ID, "INVALIDPATH")
 		require.Error(t, err)
 	})
 }
 
-func TestParseInputOutput(t *testing.T) {
+func TestParseTestCase(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -925,7 +925,7 @@ func TestParseInputOutput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pathToArchive := createTestArchive(t, tt.caseType)
 
-			numFiles, err := ts.ParseInputOutput(pathToArchive)
+			numFiles, err := ts.ParseTestCase(pathToArchive)
 			if tt.isError {
 				if tt.expectedError != nil {
 					require.ErrorIs(t, err, tt.expectedError)
@@ -984,7 +984,7 @@ func TestPutLimit(t *testing.T) {
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	taskID := int64(1)
 	ioID := int64(1)
-	inputOutput := &models.TestCase{
+	testCase := &models.TestCase{
 		ID:          ioID,
 		TaskID:      taskID,
 		Order:       1,
@@ -994,15 +994,15 @@ func TestPutLimit(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		teacherUser := schemas.User{ID: 2}
-		io.EXPECT().GetInputOutputID(tx, taskID, inputOutput.Order).Return(inputOutput.ID, nil).Times(1)
-		io.EXPECT().Get(tx, ioID).Return(inputOutput, nil).Times(1)
+		io.EXPECT().GetTestCaseID(tx, taskID, testCase.Order).Return(testCase.ID, nil).Times(1)
+		io.EXPECT().Get(tx, ioID).Return(testCase, nil).Times(1)
 		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
 			ID:        taskID,
 			CreatedBy: teacherUser.ID,
 		}, nil).Times(1)
 
-		newLimits := schemas.PutInputOutputRequest{
-			Limits: []schemas.PutInputOutput{
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
 				{
 					Order:       1,
 					TimeLimit:   20,
@@ -1013,7 +1013,7 @@ func TestPutLimit(t *testing.T) {
 		expectedModel := &models.TestCase{
 			ID:          ioID,
 			TaskID:      taskID,
-			Order:       inputOutput.Order,
+			Order:       testCase.Order,
 			TimeLimit:   newLimits.Limits[0].TimeLimit,
 			MemoryLimit: newLimits.Limits[0].MemoryLimit,
 		}

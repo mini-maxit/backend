@@ -369,18 +369,18 @@ func (mr *MockTaskServiceMockRecorder) Create(tx, currentUser, task any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTaskService)(nil).Create), tx, currentUser, task)
 }
 
-// CreateInputOutput mocks base method.
-func (m *MockTaskService) CreateInputOutput(tx *gorm.DB, taskID int64, archivePath string) error {
+// CreateTestCase mocks base method.
+func (m *MockTaskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateInputOutput", tx, taskID, archivePath)
+	ret := m.ctrl.Call(m, "CreateTestCase", tx, taskID, archivePath)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateInputOutput indicates an expected call of CreateInputOutput.
-func (mr *MockTaskServiceMockRecorder) CreateInputOutput(tx, taskID, archivePath any) *gomock.Call {
+// CreateTestCase indicates an expected call of CreateTestCase.
+func (mr *MockTaskServiceMockRecorder) CreateTestCase(tx, taskID, archivePath any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInputOutput", reflect.TypeOf((*MockTaskService)(nil).CreateInputOutput), tx, taskID, archivePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTestCase", reflect.TypeOf((*MockTaskService)(nil).CreateTestCase), tx, taskID, archivePath)
 }
 
 // Delete mocks base method.
@@ -502,10 +502,10 @@ func (mr *MockTaskServiceMockRecorder) GetByTitle(tx, title any) *gomock.Call {
 }
 
 // GetLimits mocks base method.
-func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error) {
+func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLimits", tx, currentUser, taskID)
-	ret0, _ := ret[0].([]schemas.InputOutput)
+	ret0, _ := ret[0].([]schemas.TestCase)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -516,19 +516,19 @@ func (mr *MockTaskServiceMockRecorder) GetLimits(tx, currentUser, taskID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), tx, currentUser, taskID)
 }
 
-// ParseInputOutput mocks base method.
-func (m *MockTaskService) ParseInputOutput(archivePath string) (int, error) {
+// ParseTestCase mocks base method.
+func (m *MockTaskService) ParseTestCase(archivePath string) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ParseInputOutput", archivePath)
+	ret := m.ctrl.Call(m, "ParseTestCase", archivePath)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ParseInputOutput indicates an expected call of ParseInputOutput.
-func (mr *MockTaskServiceMockRecorder) ParseInputOutput(archivePath any) *gomock.Call {
+// ParseTestCase indicates an expected call of ParseTestCase.
+func (mr *MockTaskServiceMockRecorder) ParseTestCase(archivePath any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParseInputOutput", reflect.TypeOf((*MockTaskService)(nil).ParseInputOutput), archivePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ParseTestCase", reflect.TypeOf((*MockTaskService)(nil).ParseTestCase), archivePath)
 }
 
 // ProcessAndUpload mocks base method.
@@ -546,7 +546,7 @@ func (mr *MockTaskServiceMockRecorder) ProcessAndUpload(tx, currentUser, taskID,
 }
 
 // PutLimits mocks base method.
-func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutInputOutputRequest) error {
+func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PutLimits", tx, currentUser, taskID, limits)
 	ret0, _ := ret[0].(error)

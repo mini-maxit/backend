@@ -819,7 +819,7 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 //	@Description	Updates task limits by task ID
 //	@Produce		json
 //	@Param			id		path		int								true	"Task ID"
-//	@Param			limits	body		schemas.PutInputOutputRequest	true	"Task limits"
+//	@Param			limits	body		schemas.PutTestCaseLimitsRequest	true	"Task limits"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -851,7 +851,7 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	request := schemas.PutInputOutputRequest{}
+	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())

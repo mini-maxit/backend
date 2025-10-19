@@ -459,17 +459,17 @@ func (m *MockTestCaseRepository) EXPECT() *MockTestCaseRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockTestCaseRepository) Create(tx *gorm.DB, inputOutput *models.TestCase) error {
+func (m *MockTestCaseRepository) Create(tx *gorm.DB, testCase *models.TestCase) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", tx, inputOutput)
+	ret := m.ctrl.Call(m, "Create", tx, testCase)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockTestCaseRepositoryMockRecorder) Create(tx, inputOutput any) *gomock.Call {
+func (mr *MockTestCaseRepositoryMockRecorder) Create(tx, testCase any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTestCaseRepository)(nil).Create), tx, inputOutput)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTestCaseRepository)(nil).Create), tx, testCase)
 }
 
 // DeleteAll mocks base method.
@@ -516,33 +516,33 @@ func (mr *MockTestCaseRepositoryMockRecorder) GetByTask(db, taskID any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTask", reflect.TypeOf((*MockTestCaseRepository)(nil).GetByTask), db, taskID)
 }
 
-// GetInputOutputID mocks base method.
-func (m *MockTestCaseRepository) GetInputOutputID(db *gorm.DB, taskID int64, order int) (int64, error) {
+// GetTestCaseID mocks base method.
+func (m *MockTestCaseRepository) GetTestCaseID(db *gorm.DB, taskID int64, order int) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetInputOutputID", db, taskID, order)
+	ret := m.ctrl.Call(m, "GetTestCaseID", db, taskID, order)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetInputOutputID indicates an expected call of GetInputOutputID.
-func (mr *MockTestCaseRepositoryMockRecorder) GetInputOutputID(db, taskID, order any) *gomock.Call {
+// GetTestCaseID indicates an expected call of GetTestCaseID.
+func (mr *MockTestCaseRepositoryMockRecorder) GetTestCaseID(db, taskID, order any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInputOutputID", reflect.TypeOf((*MockTestCaseRepository)(nil).GetInputOutputID), db, taskID, order)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTestCaseID", reflect.TypeOf((*MockTestCaseRepository)(nil).GetTestCaseID), db, taskID, order)
 }
 
 // Put mocks base method.
-func (m *MockTestCaseRepository) Put(tx *gorm.DB, inputOutput *models.TestCase) error {
+func (m *MockTestCaseRepository) Put(tx *gorm.DB, testCase *models.TestCase) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", tx, inputOutput)
+	ret := m.ctrl.Call(m, "Put", tx, testCase)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Put indicates an expected call of Put.
-func (mr *MockTestCaseRepositoryMockRecorder) Put(tx, inputOutput any) *gomock.Call {
+func (mr *MockTestCaseRepositoryMockRecorder) Put(tx, testCase any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockTestCaseRepository)(nil).Put), tx, inputOutput)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockTestCaseRepository)(nil).Put), tx, testCase)
 }
 
 // MockLanguageRepository is a mock of LanguageRepository interface.

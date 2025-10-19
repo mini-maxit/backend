@@ -24,8 +24,8 @@ type TaskService interface {
 	AssignToUsers(tx *gorm.DB, currentUser schemas.User, taskID int64, userIDs []int64) error
 	// Create creates a new task.
 	Create(tx *gorm.DB, currentUser schemas.User, task *schemas.Task) (int64, error)
-	// CreateInputOutput creates input and output files for a task.
-	CreateInputOutput(tx *gorm.DB, taskID int64, archivePath string) error
+	// CreateTestCase creates input and output files for a task.
+	CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error
 	// Delete deletes a task.
 	Delete(tx *gorm.DB, currentUser schemas.User, taskID int64) error
 	// Edit edits an existing task.
@@ -48,9 +48,9 @@ type TaskService interface {
 	// GetByTitle retrieves a task by its title.
 	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	// GetLimits retrieves limits associated with each input/output
-	GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error)
-	// ParseInputOutput parses the input and output files from an archive.
-	ParseInputOutput(archivePath string) (int, error)
+	GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error)
+	// ParseTestCase parses the input and output files from an archive.
+	ParseTestCase(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
 	ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error
 	// UnassignFromGroups unassigns a task from multiple groups.
@@ -58,18 +58,18 @@ type TaskService interface {
 	// UnassignFromUsers unassigns a task from multiple users.
 	UnassignFromUsers(tx *gorm.DB, currentUser schemas.User, taskID int64, userID []int64) error
 	// PutLimits updates limits associated with each input/output.
-	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutInputOutputRequest) error
+	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
 }
 
 const defaultTaskSort = "created_at:desc"
 
 type taskService struct {
-	filestorage           filestorage.FileStorageService
-	fileRepository        repository.File
-	groupRepository       repository.GroupRepository
-	inputOutputRepository repository.TestCaseRepository
-	taskRepository        repository.TaskRepository
-	userRepository        repository.UserRepository
+	filestorage        filestorage.FileStorageService
+	fileRepository     repository.File
+	groupRepository    repository.GroupRepository
+	testCaseRepository repository.TestCaseRepository
+	taskRepository     repository.TaskRepository
+	userRepository     repository.UserRepository
 
 	logger *zap.SugaredLogger
 }
@@ -498,7 +498,7 @@ func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64,
 	return nil
 }
 
-func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
+func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 	// Unzip the archive
 	// Extract the input and output files
 	// Validate correct number of input and output files and naming
@@ -586,7 +586,7 @@ func (ts *taskService) ParseInputOutput(archivePath string) (int, error) {
 	return len(inputFiles), nil
 }
 
-func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskID int64, archivePath string) error {
+func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error {
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -594,12 +594,12 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskID int64, archivePath 
 		}
 		return err
 	}
-	numFiles, err := ts.ParseInputOutput(archivePath)
+	numFiles, err := ts.ParseTestCase(archivePath)
 	if err != nil {
 		return fmt.Errorf("failed to parse input and output files: %w", err)
 	}
 	// Remove existing input output files
-	err = ts.inputOutputRepository.DeleteAll(tx, taskID)
+	err = ts.testCaseRepository.DeleteAll(tx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to delete existing input output files: %w", err)
 	}
@@ -611,7 +611,7 @@ func (ts *taskService) CreateInputOutput(tx *gorm.DB, taskID int64, archivePath 
 			TimeLimit:   1, // Hardcode for now
 			MemoryLimit: 1, // Hardcode for now
 		}
-		err = ts.inputOutputRepository.Create(tx, io)
+		err = ts.testCaseRepository.Create(tx, io)
 		if err != nil {
 			return fmt.Errorf("failed to create input output: %w", err)
 		}
@@ -682,7 +682,7 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, t
 		if err != nil {
 			return fmt.Errorf("failed to save output file: %w", err)
 		}
-		err = ts.inputOutputRepository.Create(tx, &models.TestCase{
+		err = ts.testCaseRepository.Create(tx, &models.TestCase{
 			TaskID:       taskID,
 			InputFileID:  inputFile.ID,
 			OutputFileID: outputFile.ID,
@@ -698,7 +698,7 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, t
 	return nil
 }
 
-func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.InputOutput, error) {
+func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -707,14 +707,14 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID i
 		return nil, err
 	}
 
-	inputOutput, err := ts.inputOutputRepository.GetByTask(tx, taskID)
+	testCase, err := ts.testCaseRepository.GetByTask(tx, taskID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]schemas.InputOutput, len(inputOutput))
-	for i, io := range inputOutput {
-		result[i] = *InputOutputToSchema(&io)
+	result := make([]schemas.TestCase, len(testCase))
+	for i, io := range testCase {
+		result[i] = *TestCaseToSchema(&io)
 	}
 	return result, nil
 }
@@ -723,7 +723,7 @@ func (ts *taskService) PutLimits(
 	tx *gorm.DB,
 	currentUser schemas.User,
 	taskID int64,
-	newLimits schemas.PutInputOutputRequest,
+	newLimits schemas.PutTestCaseLimitsRequest,
 ) error {
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
@@ -738,12 +738,12 @@ func (ts *taskService) PutLimits(
 	}
 
 	for _, io := range newLimits.Limits {
-		ioID, err := ts.inputOutputRepository.GetInputOutputID(tx, taskID, io.Order)
+		ioID, err := ts.testCaseRepository.GetTestCaseID(tx, taskID, io.Order)
 		if err != nil {
 			return err
 		}
 
-		current, err := ts.inputOutputRepository.Get(tx, ioID)
+		current, err := ts.testCaseRepository.Get(tx, ioID)
 		if err != nil {
 			return err
 		}
@@ -751,7 +751,7 @@ func (ts *taskService) PutLimits(
 		current.MemoryLimit = io.MemoryLimit
 		current.TimeLimit = io.TimeLimit
 
-		err = ts.inputOutputRepository.Put(tx, current)
+		err = ts.testCaseRepository.Put(tx, current)
 		if err != nil {
 			return err
 		}
@@ -776,8 +776,8 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 	}
 }
 
-func InputOutputToSchema(model *models.TestCase) *schemas.InputOutput {
-	return &schemas.InputOutput{
+func TestCaseToSchema(model *models.TestCase) *schemas.TestCase {
+	return &schemas.TestCase{
 		ID:          model.ID,
 		TaskID:      model.TaskID,
 		Order:       model.Order,
@@ -790,18 +790,18 @@ func NewTaskService(
 	filestorage filestorage.FileStorageService,
 	fileRepository repository.File,
 	taskRepository repository.TaskRepository,
-	inputOutputRepository repository.TestCaseRepository,
+	testCaseRepository repository.TestCaseRepository,
 	userRepository repository.UserRepository,
 	groupRepository repository.GroupRepository,
 ) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		filestorage:           filestorage,
-		fileRepository:        fileRepository,
-		taskRepository:        taskRepository,
-		userRepository:        userRepository,
-		groupRepository:       groupRepository,
-		inputOutputRepository: inputOutputRepository,
-		logger:                log,
+		filestorage:        filestorage,
+		fileRepository:     fileRepository,
+		taskRepository:     taskRepository,
+		userRepository:     userRepository,
+		groupRepository:    groupRepository,
+		testCaseRepository: testCaseRepository,
+		logger:             log,
 	}
 }

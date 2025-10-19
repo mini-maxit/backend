@@ -21,7 +21,7 @@ type FileLocation struct {
 	Path       string `json:"path"`        // e.g., "42/main.cpp"
 }
 
-type TestCase struct {
+type QTestCase struct {
 	Order          int          `json:"order"`
 	InputFile      FileLocation `json:"input_file"`
 	ExpectedOutput FileLocation `json:"expected_output"`
@@ -37,5 +37,5 @@ type TaskQueueMessage struct {
 	LanguageType    string       `json:"language_type"`
 	LanguageVersion string       `json:"language_version"`
 	SubmissionFile  FileLocation `json:"submission_file"`
-	TestCases       []TestCase   `json:"test_cases"`
+	TestCases       []QTestCase  `json:"test_cases"`
 }

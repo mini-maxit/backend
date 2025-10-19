@@ -22,7 +22,9 @@ func (tr *testResultRepository) Create(tx *gorm.DB, testResult *models.TestResul
 func (tr *testResultRepository) GetBySubmissionAndOrder(tx *gorm.DB, submissionID int64, order int) (*models.TestResult, error) {
 	testResult := &models.TestResult{}
 	err := tx.Model(&models.TestResult{}).
-		Where("submission_id = ? AND order = ?", submissionID, order).
+		Joins("LEFT JOIN submission_results ON test_results.submission_result_id = submission_results.id").
+		Joins("LEFT JOIN test_cases ON test_results.test_case_id = test_cases.id").
+		Where("submission_results.submission_id = ? AND test_cases.order = ?", submissionID, order).
 		First(testResult).Error
 	if err != nil {
 		return nil, err

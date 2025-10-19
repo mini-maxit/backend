@@ -236,31 +236,31 @@ func (tr *taskRepository) GetAllForGroup(
 }
 
 func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
-	inputOutput := []models.TestCase{}
+	testCases := []models.TestCase{}
 	err := tx.Model(&models.TestCase{}).
 		Where("task_id = ?", taskID).
-		Find(&inputOutput).Error
+		Find(&testCases).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
-	timeLimits := make([]int64, len(inputOutput))
-	for _, inputOutput := range inputOutput {
-		timeLimits[inputOutput.Order-1] = inputOutput.TimeLimit
+	timeLimits := make([]int64, len(testCases))
+	for _, testCase := range testCases {
+		timeLimits[testCase.Order-1] = testCase.TimeLimit
 	}
 	return timeLimits, nil
 }
 
 func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
-	inputOutput := []models.TestCase{}
-	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&inputOutput).Error
+	testCases := []models.TestCase{}
+	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCases).Error
 	if err != nil {
 		return nil, err
 	}
 	// Sort by order
-	memoryLimits := make([]int64, len(inputOutput))
-	for _, inputOutput := range inputOutput {
-		memoryLimits[inputOutput.Order-1] = inputOutput.MemoryLimit
+	memoryLimits := make([]int64, len(testCases))
+	for _, testCase := range testCases {
+		memoryLimits[testCase.Order-1] = testCase.MemoryLimit
 	}
 	return memoryLimits, nil
 }

@@ -37,7 +37,7 @@ type SubmissionResult struct {
 type TestResult struct {
 	ID                 int64  `json:"id"`
 	SubmissionResultID int64  `json:"submissionResultId"`
-	InputOutputID      int64  `json:"inputOutputId"`
+	TestCaseID         int64  `json:"testCaseId"`
 	Passed             bool   `json:"passed"`
 	ErrorMessage       string `json:"-"`
 }
