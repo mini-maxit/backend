@@ -17,6 +17,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
@@ -108,13 +109,13 @@ func TestGetAll(t *testing.T) {
 				ID:     1,
 				TaskID: 1,
 				UserID: 1,
-				Status: "completed",
+				Status: types.SubmissionStatusEvaluated,
 			},
 			{
 				ID:     2,
 				TaskID: 2,
 				UserID: 1,
-				Status: "pending",
+				Status: types.SubmissionStatusReceived,
 			},
 		}
 		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
@@ -210,7 +211,7 @@ func TestGetByID(t *testing.T) {
 			ID:     1,
 			TaskID: 1,
 			UserID: 1,
-			Status: "completed",
+			Status: types.SubmissionStatusEvaluated,
 		}
 		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(submission, nil).Times(1)
 
@@ -304,8 +305,8 @@ func TestGetAllForUser(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		submissions := []schemas.Submission{
-			{ID: 1, UserID: 1, Status: "completed"},
-			{ID: 2, UserID: 1, Status: "pending"},
+			{ID: 1, UserID: 1, Status: types.SubmissionStatusEvaluated},
+			{ID: 2, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 		ss.EXPECT().GetAllForUser(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
 
@@ -470,8 +471,8 @@ func TestGetAllForGroup(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		submissions := []schemas.Submission{
-			{ID: 1, TaskID: 1, Status: "completed"},
-			{ID: 2, TaskID: 1, Status: "pending"},
+			{ID: 1, TaskID: 1, Status: types.SubmissionStatusEvaluated},
+			{ID: 2, TaskID: 1, Status: types.SubmissionStatusReceived},
 		}
 		ss.EXPECT().GetAllForGroup(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
 
@@ -553,8 +554,8 @@ func TestGetAllForTask(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		submissions := []schemas.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: "completed"},
-			{ID: 2, TaskID: 1, UserID: 2, Status: "pending"},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusEvaluated},
+			{ID: 2, TaskID: 1, UserID: 2, Status: types.SubmissionStatusReceived},
 		}
 		ss.EXPECT().GetAllForTask(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
 

@@ -33,8 +33,8 @@ type SubmissionRepository interface {
 	GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
 	GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error)
-	// MarkComplete marks a submission as completed.
-	MarkComplete(tx *gorm.DB, submissionID int64) error
+	// MarkEvaluated marks a submission as evaluated.
+	MarkEvaluated(tx *gorm.DB, submissionID int64) error
 	// MarkFailed marks a submission as failed.
 	MarkFailed(db *gorm.DB, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
@@ -290,9 +290,9 @@ func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) 
 	return err
 }
 
-func (us *submissionRepository) MarkComplete(tx *gorm.DB, submissionID int64) error {
+func (us *submissionRepository) MarkEvaluated(tx *gorm.DB, submissionID int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(map[string]any{
-		"status":     "completed",
+		"status":     types.SubmissionStatusEvaluated,
 		"checked_at": time.Now(),
 	}).Error
 	return err

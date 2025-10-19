@@ -323,7 +323,7 @@ func (ss *submissionService) MarkFailed(tx *gorm.DB, submissionID int64, errorMs
 }
 
 func (ss *submissionService) MarkComplete(tx *gorm.DB, submissionID int64) error {
-	err := ss.submissionRepository.MarkComplete(tx, submissionID)
+	err := ss.submissionRepository.MarkEvaluated(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
 		return err
@@ -423,7 +423,7 @@ func (ss *submissionService) CreateSubmissionResult(
 		}
 	}
 
-	err = ss.submissionRepository.MarkComplete(tx, submissionID)
+	err = ss.submissionRepository.MarkEvaluated(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
 		return -1, err

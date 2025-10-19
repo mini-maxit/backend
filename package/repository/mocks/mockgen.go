@@ -206,18 +206,18 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetLatestForTaskByUser(tx, taskI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetLatestForTaskByUser), tx, taskID, userID)
 }
 
-// MarkComplete mocks base method.
-func (m *MockSubmissionRepository) MarkComplete(tx *gorm.DB, submissionID int64) error {
+// MarkEvaluated mocks base method.
+func (m *MockSubmissionRepository) MarkEvaluated(tx *gorm.DB, submissionID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkComplete", tx, submissionID)
+	ret := m.ctrl.Call(m, "MarkEvaluated", tx, submissionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// MarkComplete indicates an expected call of MarkComplete.
-func (mr *MockSubmissionRepositoryMockRecorder) MarkComplete(tx, submissionID any) *gomock.Call {
+// MarkEvaluated indicates an expected call of MarkEvaluated.
+func (mr *MockSubmissionRepositoryMockRecorder) MarkEvaluated(tx, submissionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkComplete", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkComplete), tx, submissionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkEvaluated", reflect.TypeOf((*MockSubmissionRepository)(nil).MarkEvaluated), tx, submissionID)
 }
 
 // MarkFailed mocks base method.

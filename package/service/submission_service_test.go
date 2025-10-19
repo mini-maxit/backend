@@ -850,7 +850,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 				return s.MarkComplete(tx, id)
 			},
 			expectedCall: func() {
-				mSubmissionRepo.EXPECT().MarkComplete(gomock.Any(), int64(1)).Return(nil).Times(1)
+				mSubmissionRepo.EXPECT().MarkEvaluated(gomock.Any(), int64(1)).Return(nil).Times(1)
 			},
 			expectedError: false,
 		},
@@ -860,7 +860,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 				return s.MarkComplete(tx, id)
 			},
 			expectedCall: func() {
-				mSubmissionRepo.EXPECT().MarkComplete(gomock.Any(), int64(1)).Return(gorm.ErrInvalidData).Times(1)
+				mSubmissionRepo.EXPECT().MarkEvaluated(gomock.Any(), int64(1)).Return(gorm.ErrInvalidData).Times(1)
 			},
 			expectedError: true,
 		},
