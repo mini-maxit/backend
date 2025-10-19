@@ -150,7 +150,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if r := recover(); r != nil {
 			ql.logger.Errorf("Recovered from panic: %s\n%s", r, string(debug.Stack()))
 			// Attempt to Nack (requeue) the message. If this fails, log the error.
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message after panic: %s", err.Error())
 			}
 		}
@@ -161,7 +161,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	err := json.Unmarshal(msg.Body, &queueMessage)
 	if err != nil {
 		ql.logger.Error("Failed to unmarshal the message:", err.Error())
-		if err := msg.Nack(false, true); err != nil {
+		if err := msg.Nack(false, false); err != nil {
 			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
@@ -172,7 +172,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	tx, err := session.BeginTransaction()
 	if err != nil {
 		ql.logger.Errorf("Failed to connect to database: %s", err)
-		if err := msg.Nack(false, true); err != nil {
+		if err := msg.Nack(false, false); err != nil {
 			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
@@ -184,7 +184,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to get submission id: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -195,7 +195,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to create user solution result: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -216,7 +216,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to unmarshal handshake response: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -226,7 +226,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to initialize languages: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -246,7 +246,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to unmarshal status response: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -256,7 +256,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 		if err != nil {
 			ql.logger.Errorf("Failed to update worker status: %s", err.Error())
 			tx.Rollback()
-			if err := msg.Nack(false, true); err != nil {
+			if err := msg.Nack(false, false); err != nil {
 				ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 			}
 			return
@@ -270,7 +270,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	default:
 		ql.logger.Errorf("Unknown message type: %s", queueMessage.Type)
 		tx.Rollback()
-		if err := msg.Nack(false, true); err != nil {
+		if err := msg.Nack(false, false); err != nil {
 			ql.logger.Errorf("Failed to nack and requeue message: %s", err.Error())
 		}
 		return
