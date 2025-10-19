@@ -342,7 +342,7 @@ definitions:
       result:
         $ref: '#/definitions/SubmissionResult'
       status:
-        type: string
+        $ref: '#/definitions/SubmissionStatus'
       submittedAt:
         type: string
       task:
@@ -371,6 +371,18 @@ definitions:
           $ref: '#/definitions/TestResult'
         type: array
     type: object
+  SubmissionStatus:
+    enum:
+    - received
+    - sent for evaluation
+    - evaluated
+    - lost
+    type: string
+    x-enum-varnames:
+    - SubmissionStatusReceived
+    - SubmissionStatusSentForEvaluation
+    - SubmissionStatusEvaluated
+    - SubmissionStatusLost
   Task:
     properties:
       createdAt:
