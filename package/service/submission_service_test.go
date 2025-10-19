@@ -9,6 +9,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
@@ -30,7 +31,7 @@ func TestCreate(t *testing.T) {
 
 		Order:      1,
 		LanguageID: 1,
-		Status:     models.StatusReceived,
+		Status:     types.SubmissionStatusReceived,
 	}
 
 	t.Run("Succesful", func(t *testing.T) {
@@ -41,7 +42,7 @@ func TestCreate(t *testing.T) {
 			Order:      rand.Int(),
 			LanguageID: rand.Int64(),
 			FileID:     rand.Int64(),
-			Status:     models.StatusReceived,
+			Status:     types.SubmissionStatusReceived,
 		}
 		m.EXPECT().Create(
 			gomock.Any(),
@@ -82,7 +83,7 @@ func TestCreateSubmissionResult(t *testing.T) {
 		UserID:      1,
 		Order:       1,
 		LanguageID:  1,
-		Status:      models.StatusReceived,
+		Status:      types.SubmissionStatusReceived,
 		SubmittedAt: time.Now(),
 	}
 
@@ -202,13 +203,13 @@ func TestGetAll(t *testing.T) {
 			user: schemas.User{Role: "admin"},
 			expectedMethod: func() *gomock.Call {
 				return mSubmissionRepo.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
-					{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-					{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 				}, nil).Times(1)
 			},
 			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-				{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+				{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 			},
 			expectedErr: false,
 		},
@@ -218,13 +219,13 @@ func TestGetAll(t *testing.T) {
 			expectedMethod: func() *gomock.Call {
 				return mSubmissionRepo.EXPECT().GetAllForTeacher(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 					[]models.Submission{
-						{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-						{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+						{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 					}, nil).Times(1)
 			},
 			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-				{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+				{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 			},
 			expectedErr: false,
 		},
@@ -234,11 +235,11 @@ func TestGetAll(t *testing.T) {
 			expectedMethod: func() *gomock.Call {
 				return mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 					[]models.Submission{
-						{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 					}, nil).Times(1)
 			},
 			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 			},
 			expectedErr: false,
 		},
@@ -288,13 +289,13 @@ func TestGet(t *testing.T) {
 		{
 			name:               "Admin retrieves a submission",
 			user:               schemas.User{Role: "admin"},
-			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 			expectedErr:        false,
 		},
 		{
 			name:               "Student tries to access another user's submission",
 			user:               schemas.User{Role: "student", ID: 1},
-			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 2, Status: models.StatusReceived},
+			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 2, Status: types.SubmissionStatusReceived},
 			expectedErr:        true,
 		},
 		{
@@ -358,8 +359,8 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 
 	t.Run("Admin retrieves all submissions for a group", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-			{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllForGroup(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -379,8 +380,8 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 	t.Run("Teacher retrieves submissions for their group", func(t *testing.T) {
 		expectedGroup := &models.Group{ID: 1, CreatedBy: 2}
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-			{ID: 2, TaskID: 2, UserID: 2, Status: models.StatusEvaluated},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 		}
 
 		mGroupRepo.EXPECT().Get(gomock.Any(), int64(1)).Return(expectedGroup, nil).Times(1)
@@ -460,8 +461,8 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 	t.Run("Admin retrieves all submissions for a user", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-			{ID: 2, TaskID: 2, UserID: 1, Status: models.StatusEvaluated},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 2, UserID: 1, Status: types.SubmissionStatusEvaluated},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -480,7 +481,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 	t.Run("Student retrieves their own submissions", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -502,7 +503,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 		user := schemas.User{Role: "student", ID: 2}
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 			expectedSubmissions, nil,
@@ -517,8 +518,8 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 	t.Run("Teacher retrieves submissions for their tasks", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived, Task: models.Task{CreatedBy: 2}},
-			{ID: 2, TaskID: 2, UserID: 1, Status: models.StatusEvaluated, Task: models.Task{CreatedBy: 2}},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, Task: models.Task{CreatedBy: 2}},
+			{ID: 2, TaskID: 2, UserID: 1, Status: types.SubmissionStatusEvaluated, Task: models.Task{CreatedBy: 2}},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -537,7 +538,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 	t.Run("Teacher tries to retrieve submissions for tasks they didn't create", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived, Task: models.Task{CreatedBy: 3}},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, Task: models.Task{CreatedBy: 3}},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -687,8 +688,8 @@ func TestGetAllForTask(t *testing.T) {
 
 	t.Run("Admin retrieves all submissions for a task", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-			{ID: 2, TaskID: 1, UserID: 2, Status: models.StatusEvaluated},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 1, UserID: 2, Status: types.SubmissionStatusEvaluated},
 		}
 
 		mSubmissionRepo.EXPECT().GetAllForTask(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -708,8 +709,8 @@ func TestGetAllForTask(t *testing.T) {
 	t.Run("Teacher retrieves submissions for their task", func(t *testing.T) {
 		expectedTask := &schemas.TaskDetailed{ID: 1, CreatedBy: 2}
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
-			{ID: 2, TaskID: 1, UserID: 2, Status: models.StatusEvaluated},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 1, UserID: 2, Status: types.SubmissionStatusEvaluated},
 		}
 
 		mTaskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
@@ -753,7 +754,7 @@ func TestGetAllForTask(t *testing.T) {
 
 	t.Run("Student retrieves submissions for a task they are assigned to", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: models.StatusReceived},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 
 		mTaskRepo.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(true, nil).Times(1)

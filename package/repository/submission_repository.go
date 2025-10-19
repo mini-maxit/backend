@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
@@ -299,7 +300,7 @@ func (us *submissionRepository) MarkComplete(tx *gorm.DB, submissionID int64) er
 
 func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(map[string]any{
-		"status":         "failed",
+		"status":         types.SubmissionStatusEvaluated,
 		"status_message": errorMsg,
 	}).Error
 	return err
@@ -365,7 +366,7 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 			WHERE passed = true
 			GROUP BY submission_result_id
 		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`).
-		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, models.StatusEvaluated).
+		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, types.SubmissionStatusEvaluated).
 		Scan(&bestScore).Error
 
 	if err != nil {

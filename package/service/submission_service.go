@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 	"time"
 
 	"slices"
@@ -61,7 +60,7 @@ type submissionService struct {
 	fileRepository             repository.File
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
-	testCaseRepository         repository.TestCaseRepository
+	inputOutputRepository      repository.TestCaseRepository
 	testResultRepository       repository.TestRepository
 	groupRepository            repository.GroupRepository
 	taskRepository             repository.TaskRepository
@@ -358,7 +357,7 @@ func (ss *submissionService) Create(
 		Order:      order,
 		LanguageID: languageID,
 		FileID:     fileID,
-		Status:     models.StatusReceived,
+		Status:     types.SubmissionStatusReceived,
 	}
 	submissionID, err := ss.submissionRepository.Create(tx, submission)
 
@@ -375,9 +374,9 @@ func (ss *submissionService) CreateSubmissionResult(
 	submissionID int64,
 	responseMessage schemas.QueueResponseMessage,
 ) (int64, error) {
-	taskResponse := schemas.TaskResponsePayload{}
+	submissionResultResponse := schemas.SubmissionResultWorkerResponse{}
 
-	err := json.Unmarshal(responseMessage.Payload, &taskResponse)
+	err := json.Unmarshal(responseMessage.Payload, &submissionResultResponse)
 	if err != nil {
 		ss.logger.Errorf("Error unmarshalling task response: %v", err.Error())
 		return -1, err
@@ -388,8 +387,13 @@ func (ss *submissionService) CreateSubmissionResult(
 		ss.logger.Errorf("Error getting submission result: %v", err.Error())
 		return -1, err
 	}
-	submissionResult.Code = strconv.FormatInt(taskResponse.StatusCode, 10)
-	submissionResult.Message = taskResponse.Message
+	ss.logger.Info("Got submission result: ", submissionResult)
+	submissionResult.Code = submissionResultResponse.Code
+	if !submissionResult.Code.IsValid() {
+		ss.logger.Errorf("Invalid submission result code received from wokrer: %d", submissionResult.Code)
+		submissionResult.Code = types.SubmissionResultCodeInvalid
+	}
+	submissionResult.Message = submissionResultResponse.Message
 	submissionResult.Submission.CheckedAt = time.Now()
 	err = ss.submissionResultRepository.Put(tx, submissionResult)
 	if err != nil {
@@ -397,7 +401,7 @@ func (ss *submissionService) CreateSubmissionResult(
 		return -1, err
 	}
 	// Save test results
-	for i, responseTestResult := range taskResponse.TestResults {
+	for i, responseTestResult := range submissionResultResponse.TestResults {
 		ss.logger.Infof("Processing test result %d: %+v\n", i, responseTestResult)
 		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(tx, submissionID, responseTestResult.Order)
 		if err != nil {
@@ -405,7 +409,10 @@ func (ss *submissionService) CreateSubmissionResult(
 			return -1, err
 		}
 
-		testResult.StatusCode = models.TestResultStatusCode(responseTestResult.StatusCode)
+		testResult.StatusCode = responseTestResult.StatusCode
+		if !testResult.StatusCode.IsValid() {
+			testResult.StatusCode = types.TestResultStatusCodeInvalid
+		}
 		testResult.Passed = &responseTestResult.Passed
 		testResult.ExecutionTime = responseTestResult.ExecutionTime
 		testResult.ErrorMessage = responseTestResult.ErrorMessage
@@ -502,8 +509,8 @@ func (ss *submissionService) Submit(
 func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID int64) (int64, error) {
 	submissionResult := models.SubmissionResult{
 		SubmissionID: submissionID,
-		Code:         "pending",
-		Message:      "Processing",
+		Code:         types.SubmissionResultCodeUnknown,
+		Message:      "Awaiting processing",
 	}
 
 	submission, err := ss.submissionRepository.Get(tx, submissionID)
@@ -518,17 +525,17 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 		return -1, err
 	}
 
-	testCases, err := ss.testCaseRepository.GetByTask(tx, submission.TaskID)
+	inputOutputs, err := ss.inputOutputRepository.GetByTask(tx, submission.TaskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting input outputs: %v", err.Error())
 		return -1, err
 	}
-	ss.logger.Info("Got input outputs: ", testCases)
+	ss.logger.Info("Got input outputs: ", inputOutputs)
 
-	for _, testCase := range testCases {
-		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
-		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
-		diffFile := ss.filestorage.GetTestResultDiffPath(submission.TaskID, submission.UserID, submission.Order, testCase.Order)
+	for _, inputOutput := range inputOutputs {
+		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+		stderrFile := ss.filestorage.GetTestResultStderrPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
+		diffFile := ss.filestorage.GetTestResultDiffPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
 		stdoutFileModel := &models.File{
 			Filename:   stdoutFile.Filename,
 			Path:       stdoutFile.Path,
@@ -566,10 +573,10 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 		falseVal := false
 		testResult := models.TestResult{
 			SubmissionResultID: submissionResultID,
-			TestCaseID:         testCase.ID,
+			TestCaseID:         inputOutput.ID,
 			Passed:             &falseVal,
 			ExecutionTime:      float64(-1),
-			StatusCode:         models.TestResultStatusCodeNotExecuted,
+			StatusCode:         types.TestResultStatusCodeNotExecuted,
 			ErrorMessage:       "Not executed",
 			StderrFileID:       stderrFileMode.ID,
 			StdoutFileID:       stdoutFileModel.ID,
@@ -590,7 +597,7 @@ func NewSubmissionService(
 	fileRepository repository.File,
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
-	testCaseRepository repository.TestCaseRepository,
+	inputOutputRepository repository.TestCaseRepository,
 	testResultRepository repository.TestRepository,
 	groupRepository repository.GroupRepository,
 	taskRepository repository.TaskRepository,
@@ -605,7 +612,7 @@ func NewSubmissionService(
 		fileRepository:             fileRepository,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
-		testCaseRepository:         testCaseRepository,
+		inputOutputRepository:      inputOutputRepository,
 		testResultRepository:       testResultRepository,
 		groupRepository:            groupRepository,
 		taskRepository:             taskRepository,
@@ -619,7 +626,6 @@ func NewSubmissionService(
 
 func (ss *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
 	var result []schemas.TestResult
-	ss.logger.Info("Converting test results: ", testResults)
 	for _, testResult := range testResults {
 		result = append(result, schemas.TestResult{
 			ID:                 testResult.ID,
@@ -639,7 +645,7 @@ func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult
 	return &schemas.SubmissionResult{
 		ID:           result.ID,
 		SubmissionID: result.SubmissionID,
-		Code:         result.Code,
+		Code:         result.Code.String(),
 		Message:      result.Message,
 		CreatedAt:    result.CreatedAt,
 		TestResults:  ss.testResultsModelToSchema(result.TestResults),

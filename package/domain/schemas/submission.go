@@ -1,20 +1,24 @@
 package schemas
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type Submission struct {
-	ID          int64             `json:"id"`
-	TaskID      int64             `json:"taskId"`
-	UserID      int64             `json:"userId"`
-	Order       int               `json:"order"`
-	LanguageID  int64             `json:"languageId"`
-	Status      string            `json:"status"`
-	SubmittedAt time.Time         `json:"submittedAt"`
-	CheckedAt   time.Time         `json:"checkedAt"`
-	Language    LanguageConfig    `json:"language"`
-	Task        Task              `json:"task"`
-	User        User              `json:"user"`
-	Result      *SubmissionResult `json:"result"`
+	ID          int64                  `json:"id"`
+	TaskID      int64                  `json:"taskId"`
+	UserID      int64                  `json:"userId"`
+	Order       int                    `json:"order"`
+	LanguageID  int64                  `json:"languageId"`
+	Status      types.SubmissionStatus `json:"status"`
+	SubmittedAt time.Time              `json:"submittedAt"`
+	CheckedAt   time.Time              `json:"checkedAt"`
+	Language    LanguageConfig         `json:"language"`
+	Task        Task                   `json:"task"`
+	User        User                   `json:"user"`
+	Result      *SubmissionResult      `json:"result"`
 }
 
 type SubmissionShort struct {

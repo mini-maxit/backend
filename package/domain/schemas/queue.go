@@ -1,6 +1,10 @@
 package schemas
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type QueueResponseMessage struct {
 	MessageID string          `json:"message_id"`
@@ -9,10 +13,10 @@ type QueueResponseMessage struct {
 	Payload   json.RawMessage `json:"payload"`
 }
 
-type TaskResponsePayload struct {
-	StatusCode  int64             `json:"status_code"`
-	Message     string            `json:"message"`
-	TestResults []QueueTestResult `json:"test_results"`
+type SubmissionResultWorkerResponse struct {
+	Code        types.SubmissionResultCode `json:"status_code"`
+	Message     string                     `json:"message"`
+	TestResults []QueueTestResult          `json:"test_results"`
 }
 
 type HandShakeResponsePayload struct {
@@ -30,9 +34,9 @@ type StatusResponsePayload struct {
 }
 
 type QueueTestResult struct {
-	Passed        bool    `json:"passed"`
-	ExecutionTime float64 `json:"execution_time"`
-	StatusCode    int     `json:"status_code"`
-	ErrorMessage  string  `json:"error_message"`
-	Order         int     `json:"order"`
+	Passed        bool                       `json:"passed"`
+	ExecutionTime float64                    `json:"execution_time"`
+	StatusCode    types.TestResultStatusCode `json:"status_code"`
+	ErrorMessage  string                     `json:"error_message"`
+	Order         int                        `json:"order"`
 }
