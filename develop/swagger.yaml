@@ -329,7 +329,7 @@ definitions:
       message:
         type: string
     type: object
-  PutInputOutput:
+  PutTestCase:
     properties:
       memoryLimit:
         type: integer
@@ -338,11 +338,11 @@ definitions:
       timeLimit:
         type: integer
     type: object
-  PutInputOutputRequest:
+  PutTestCaseLimitsRequest:
     properties:
       limits:
         items:
-          $ref: '#/definitions/PutInputOutput'
+          $ref: '#/definitions/PutTestCase'
         type: array
     type: object
   Submission:
@@ -449,11 +449,11 @@ definitions:
     properties:
       id:
         type: integer
-      inputOutputId:
-        type: integer
       passed:
         type: boolean
       submissionResultId:
+        type: integer
+      testCaseId:
         type: integer
     type: object
   User:
@@ -1884,7 +1884,7 @@ paths:
         name: limits
         required: true
         schema:
-          $ref: '#/definitions/PutInputOutputRequest'
+          $ref: '#/definitions/PutTestCaseLimitsRequest'
       produces:
       - application/json
       responses:
