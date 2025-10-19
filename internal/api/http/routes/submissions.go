@@ -53,7 +53,7 @@ type SumbissionImpl struct {
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission [get]
+//	@Router			/submissions [get]
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -99,7 +99,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 //	@Success		200	{object}	httputils.APIResponse[schemas.Submission]
 //	@Failure		400	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/submission/{id} [get]
+//	@Router			/submissions/{id} [get]
 func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -150,7 +150,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission/user/{id} [get]
+//	@Router			/submissions/users/{id} [get]
 func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -213,7 +213,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission/user/{id}/short [get]
+//	@Router			/submissions/users/{id}/short [get]
 func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -279,7 +279,7 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission/group/{id} [get]
+//	@Router			/submissions/groups/{id} [get]
 func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -335,7 +335,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/submission/task/{id} [get]
+//	@Router			/submissions/tasks/{id} [get]
 func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -385,7 +385,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/submission/languages [get]
+//	@Router			/submissions/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
@@ -419,7 +419,7 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
-//	@Router			/submission/submit [post]
+//	@Router			/submissions/submit [post]
 func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -526,8 +526,8 @@ func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/submit", route.SubmitSolution)
 	mux.HandleFunc("/languages", route.GetAvailableLanguages)
 	mux.HandleFunc("/{id}", route.GetByID)
-	mux.HandleFunc("/user/{id}", route.GetAllForUser)
-	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
-	mux.HandleFunc("/group/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/task/{id}", route.GetAllForTask)
+	mux.HandleFunc("/users/{id}", route.GetAllForUser)
+	mux.HandleFunc("/users/{id}/short", route.GetAllForUserShort)
+	mux.HandleFunc("/groups/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/tasks/{id}", route.GetAllForTask)
 }
