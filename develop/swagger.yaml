@@ -7,6 +7,50 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-AuthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/AuthResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-AvailableContest:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/AvailableContest'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-Contest:
+    properties:
+      data:
+        $ref: '#/definitions/Contest'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-Group:
+    properties:
+      data:
+        $ref: '#/definitions/Group'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-IDResponse:
+    properties:
+      data:
+        $ref: '#/definitions/IDResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-MessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/MessageResponse'
+      ok:
+        type: boolean
+    type: object
   APIResponse-Submission:
     properties:
       data:
@@ -14,10 +58,49 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-TaskCreateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/TaskCreateResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskWithContestStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/TaskWithContestStats'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-User:
     properties:
       data:
         $ref: '#/definitions/User'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-UserContestsWithStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/UserContestsWithStats'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-WorkerStatus:
+    properties:
+      data:
+        $ref: '#/definitions/WorkerStatus'
       ok:
         type: boolean
     type: object
@@ -45,107 +128,6 @@ definitions:
         items:
           $ref: '#/definitions/Task'
         type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/AvailableContest'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Submission'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_TaskWithContestStats:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/TaskWithContestStats'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_User:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/User'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_UserContestsWithStats:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/UserContestsWithStats'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_IDResponse:
-    properties:
-      data:
-        $ref: '#/definitions/IDResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse:
-    properties:
-      data:
-        $ref: '#/definitions/MessageResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Contest:
-    properties:
-      data:
-        $ref: '#/definitions/Contest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group:
-    properties:
-      data:
-        $ref: '#/definitions/Group'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse:
-    properties:
-      data:
-        $ref: '#/definitions/TaskCreateResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed:
-    properties:
-      data:
-        $ref: '#/definitions/TaskDetailed'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus:
-    properties:
-      data:
-        $ref: '#/definitions/WorkerStatus'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-routes_AuthResponse:
-    properties:
-      data:
-        $ref: '#/definitions/AuthResponse'
       ok:
         type: boolean
     type: object
@@ -568,6 +550,14 @@ definitions:
     - teacher
     - admin
     type: string
+    x-enum-comments:
+      UserRoleAdmin: UserRoleAdmin represents the admin role.
+      UserRoleStudent: UserRoleStudent represents the student role.
+      UserRoleTeacher: UserRoleTeacher represents the teacher role.
+    x-enum-descriptions:
+    - UserRoleStudent represents the student role.
+    - UserRoleTeacher represents the teacher role.
+    - UserRoleAdmin represents the admin role.
     x-enum-varnames:
     - UserRoleStudent
     - UserRoleTeacher
@@ -615,7 +605,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-routes_AuthResponse'
+            $ref: '#/definitions/APIResponse-AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -640,7 +630,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "405":
           description: Method Not Allowed
           schema:
@@ -657,7 +647,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-routes_AuthResponse'
+            $ref: '#/definitions/APIResponse-AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -696,7 +686,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/APIResponse-routes_AuthResponse'
+            $ref: '#/definitions/APIResponse-AuthResponse'
         "400":
           description: Bad Request
           schema:
@@ -734,7 +724,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_IDResponse'
+            $ref: '#/definitions/APIResponse-IDResponse'
         "400":
           description: Bad Request
           schema:
@@ -769,7 +759,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -807,7 +797,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Contest'
+            $ref: '#/definitions/APIResponse-Contest'
         "400":
           description: Bad Request
           schema:
@@ -853,7 +843,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Contest'
+            $ref: '#/definitions/APIResponse-Contest'
         "400":
           description: Bad Request
           schema:
@@ -893,7 +883,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -937,7 +927,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_TaskWithContestStats'
+            $ref: '#/definitions/APIResponse-TaskWithContestStats'
         "400":
           description: Bad Request
           schema:
@@ -970,7 +960,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
+            $ref: '#/definitions/APIResponse-AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -999,7 +989,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
+            $ref: '#/definitions/APIResponse-AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -1028,7 +1018,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_AvailableContest'
+            $ref: '#/definitions/APIResponse-AvailableContest'
         "400":
           description: Bad Request
           schema:
@@ -1094,7 +1084,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_IDResponse'
+            $ref: '#/definitions/APIResponse-IDResponse'
         "400":
           description: Bad Request
           schema:
@@ -1129,7 +1119,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
@@ -1171,7 +1161,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
@@ -1214,7 +1204,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1248,7 +1238,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_User'
+            $ref: '#/definitions/APIResponse-User'
         "400":
           description: Bad Request
           schema:
@@ -1290,7 +1280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1329,7 +1319,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1391,7 +1381,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1495,7 +1485,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1534,7 +1524,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1573,7 +1563,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1627,7 +1617,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse'
+            $ref: '#/definitions/APIResponse-TaskCreateResponse'
         "400":
           description: Bad Request
           schema:
@@ -1658,7 +1648,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1692,7 +1682,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed'
+            $ref: '#/definitions/APIResponse-TaskDetailed'
         "400":
           description: Bad Request
           schema:
@@ -1734,7 +1724,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1777,7 +1767,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1820,7 +1810,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1855,7 +1845,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1891,7 +1881,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1930,7 +1920,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -1973,7 +1963,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -2117,7 +2107,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -2156,7 +2146,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_github_com_mini-maxit_backend_package_domain_schemas_UserContestsWithStats'
+            $ref: '#/definitions/APIResponse-UserContestsWithStats'
         "400":
           description: Bad Request
           schema:
@@ -2197,7 +2187,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_internal_api_http_httputils_MessageResponse'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -2243,7 +2233,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-github_com_mini-maxit_backend_package_domain_schemas_WorkerStatus'
+            $ref: '#/definitions/APIResponse-WorkerStatus'
         "401":
           description: Not authorized - requires teacher or admin role
           schema:
