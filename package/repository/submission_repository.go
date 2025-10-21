@@ -390,12 +390,6 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID
 	return int(count), nil
 }
 
-func NewSubmissionRepository(db *gorm.DB) (SubmissionRepository, error) {
-	if !db.Migrator().HasTable(&models.Submission{}) {
-		err := db.Migrator().CreateTable(&models.Submission{})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &submissionRepository{}, nil
+func NewSubmissionRepository() SubmissionRepository {
+	return &submissionRepository{}
 }

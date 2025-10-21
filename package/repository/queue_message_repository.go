@@ -42,13 +42,6 @@ func (qm *queueMessageRepository) Delete(tx *gorm.DB, messageID string) error {
 	return nil
 }
 
-func NewQueueMessageRepository(db *gorm.DB) (QueueMessageRepository, error) {
-	if !db.Migrator().HasTable(&models.QueueMessage{}) {
-		err := db.Migrator().CreateTable(&models.QueueMessage{})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &queueMessageRepository{}, nil
+func NewQueueMessageRepository() QueueMessageRepository {
+	return &queueMessageRepository{}
 }
