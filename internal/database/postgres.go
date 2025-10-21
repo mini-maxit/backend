@@ -30,7 +30,7 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 		cfg.DB.Password,
 	)
 	log.Infof("Connecting to the database: %s", databaseURL)
-	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(databaseURL), GormConfig)
 	if err != nil {
 		return nil, err
 	}

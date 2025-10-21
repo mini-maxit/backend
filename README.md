@@ -12,6 +12,23 @@ You also need to have local image of file-storage build and stored. The tag for 
 docker compose up --build -d
 ```
 
+## Migrations
+
+Atlas is used for database migrations. You can find migration files in `migrations` folder.
+
+To generate new migration file you can use the following command:
+
+```bash
+atlas migrate diff --env gorm
+```
+
+To apply migrations to database you can use:
+
+```bash
+atlas migrate apply --env gorm --url <database_url>
+```
+
+
 ## You might need it
 
 ### DUMP=true
