@@ -14,7 +14,7 @@ docker compose up --build -d
 
 ## Migrations
 
-Atlas is used for database migrations. You can find migration files in `migrations` folder.
+[Atlas](https://atlasgo.io/getting-started#installation) is used for database migrations. You can find migration files in `migrations` folder.
 
 To generate new migration file you can use the following command:
 
