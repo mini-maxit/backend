@@ -81,6 +81,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-TestCase:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/TestCase'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-User:
     properties:
       data:
@@ -438,6 +447,15 @@ definitions:
         type: string
       updatedAt:
         type: string
+    type: object
+  TestCase:
+    properties:
+      memoryLimit:
+        type: integer
+      order:
+        type: integer
+      timeLimit:
+        type: integer
     type: object
   TestResult:
     properties:
@@ -1857,7 +1875,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/APIResponse-TestCase'
         "400":
           description: Bad Request
           schema:
