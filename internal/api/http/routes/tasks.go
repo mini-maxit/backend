@@ -770,7 +770,7 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 //	@Failure		400	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.TestCase]
 //	@Router			/tasks/{id}/limits [get]
 func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
