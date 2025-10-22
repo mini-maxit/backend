@@ -1,0 +1,33 @@
+name: PR Docker Build
+
+env:
+  LABEL_NAME: build-image
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, '{{ env.LABEL_NAME }}')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...
+
+  build-and-push:
+    needs: [check-and-build]
+    if: contains(github.event.pull_request.labels.*.name, '{{ env.LABEL_NAME }}')
+    uses: ./.github/workflows/docker-image.yaml
+    secrets: inherit
