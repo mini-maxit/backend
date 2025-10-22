@@ -103,7 +103,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	apiMux.PathPrefix("/").Handler(middleware.JWTValidationMiddleware(secureMux, init.DB, init.JWTService))
 
 	// Logging middleware
-	httpLoger := utils.NewHTTPLogger()
+	httpLoger := utils.NewNamedLogger("http")
 	loggingMux := mux.NewRouter()
 	loggingMux.PathPrefix("/").Handler(middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes

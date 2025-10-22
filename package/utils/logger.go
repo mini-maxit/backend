@@ -2,14 +2,13 @@ package utils
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
-
-const logPath = "logs/services/log.txt"
-const httpLogPath = "logs/http/log.txt"
 
 const (
 	timeKey   = "time"
@@ -19,28 +18,59 @@ const (
 )
 
 var sugarLogger *zap.SugaredLogger
-var httpSugarLogger *zap.SugaredLogger
 
-// InitializeLogger initializes the logger.
-func InitializeLogger() {
+// getProjectRoot finds the project root directory by looking for go.mod file
+func getProjectRoot() string {
+	// Get the current file's directory
+	_, currentFile, _, _ := runtime.Caller(0)
+	currentDir := filepath.Dir(currentFile)
+
+	// Walk up the directory tree to find go.mod
+	for {
+		goModPath := filepath.Join(currentDir, "go.mod")
+		if _, err := os.Stat(goModPath); err == nil {
+			return currentDir
+		}
+
+		parent := filepath.Dir(currentDir)
+		if parent == currentDir {
+			// Reached the root directory, fallback to current working directory
+			wd, _ := os.Getwd()
+			return wd
+		}
+		currentDir = parent
+	}
+}
+
+// getLogPath returns the absolute path to the log file in the project root
+func getLogPath() string {
+	projectRoot := getProjectRoot()
+	return filepath.Join(projectRoot, "logs", "app.log")
+}
+
+func initializeLogger() {
+	logPath := getLogPath()
+
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		logPath = "app.log"
+	}
+
 	w := zapcore.AddSync(&lumberjack.Logger{
-		Filename: logPath,
-		MaxAge:   28,
-		Compress: true,
+		Filename:   logPath,
+		MaxSize:    50,
+		MaxBackups: 10,
+		MaxAge:     28,
+		Compress:   true,
+		LocalTime:  true,
 	})
 
 	stdWriter := zapcore.AddSync(os.Stdout)
 
-	httpWriter := zapcore.AddSync(&lumberjack.Logger{
-		Filename: httpLogPath,
-		MaxAge:   1,
-		Compress: true,
-	})
-
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        timeKey,
 		LevelKey:       levelKey,
-		NameKey:        "source",
+		NameKey:        sourceKey,
 		MessageKey:     msgKey,
 		EncodeTime:     zapcore.ISO8601TimeEncoder,
 		EncodeLevel:    zapcore.CapitalLevelEncoder,
@@ -59,34 +89,16 @@ func InitializeLogger() {
 		zap.InfoLevel,
 	)
 
-	httpCore := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoderConfig),
-		httpWriter,
-		zap.InfoLevel,
-	)
-
 	core := zapcore.NewTee(fileCore, stdCore)
 
 	log := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	sugarLogger = log.Sugar()
-
-	httpCoreWithStdout := zapcore.NewTee(httpCore, stdCore)
-	httpLogger := zap.New(httpCoreWithStdout, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	httpSugarLogger = httpLogger.Sugar()
-}
-
-// NewHTTPLogger a new SugaredLogger.
-func NewHTTPLogger() *zap.SugaredLogger {
-	if httpSugarLogger == nil {
-		InitializeLogger()
-	}
-	return httpSugarLogger.Named("http")
 }
 
 // NewNamedLogger creates a new named SugaredLogger for a given service.
-func NewNamedLogger(serviceName string) *zap.SugaredLogger {
+func NewNamedLogger(name string) *zap.SugaredLogger {
 	if sugarLogger == nil {
-		InitializeLogger()
+		initializeLogger()
 	}
-	return sugarLogger.Named(serviceName)
+	return sugarLogger.Named(name)
 }
