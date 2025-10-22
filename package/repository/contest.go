@@ -42,6 +42,8 @@ type ContestRepository interface {
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
+	// AddTasksToContest assigns tasks to a contest
+	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
 }
 
 type contestRepository struct{}
@@ -431,6 +433,14 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 	}
 
 	return contests, nil
+}
+
+func (cr *contestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error {
+	err := tx.Create(&taskContest).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewContestRepository() ContestRepository {

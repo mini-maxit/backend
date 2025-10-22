@@ -25,6 +25,7 @@ type ContestRoute interface {
 	DeleteContest(w http.ResponseWriter, r *http.Request)
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTasksForContest(w http.ResponseWriter, r *http.Request)
+	AddTaskToContest(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -516,6 +517,69 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
+// AddTaskToContest godoc
+// @Tags			contest
+// @Summary		Add a task to a contest
+// @Description	Add an existing task to a specific contest
+// @Accept			json
+// @Produce		json
+// @Param			id		path		int						true	"Contest ID"
+// @Param			body	body		schemas.AddTaskToContest	true	"Add Task to Contest"
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		405		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
+// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+// @Router			/contests/{id}/tasks [post]
+func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	var request schemas.AddTaskToContest
+	err = httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		return
+	}
+
+	err = cr.contestService.AddTaskToContest(tx, &currentUser, contestID, &request)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		}
+		httputils.ReturnError(w, status, "Failed to add task to contest. "+err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task added to contest successfully"))
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -566,7 +630,14 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/tasks", contestRoute.GetTasksForContest)
+	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			contestRoute.GetTasksForContest(w, r)
+		case http.MethodPost:
+			contestRoute.AddTaskToContest(w, r)
+		}
+	})
 
 	mux.HandleFunc("/{id}/register", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

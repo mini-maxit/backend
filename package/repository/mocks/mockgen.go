@@ -1276,6 +1276,20 @@ func (m *MockContestRepository) EXPECT() *MockContestRepositoryMockRecorder {
 	return m.recorder
 }
 
+// AddTaskToContest mocks base method.
+func (m *MockContestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTaskToContest", tx, taskContest)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddTaskToContest indicates an expected call of AddTaskToContest.
+func (mr *MockContestRepositoryMockRecorder) AddTaskToContest(tx, taskContest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTaskToContest", reflect.TypeOf((*MockContestRepository)(nil).AddTaskToContest), tx, taskContest)
+}
+
 // Create mocks base method.
 func (m *MockContestRepository) Create(tx *gorm.DB, contest *models.Contest) (int64, error) {
 	m.ctrl.T.Helper()

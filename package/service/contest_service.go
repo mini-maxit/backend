@@ -35,12 +35,15 @@ type ContestService interface {
 	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
+	// AddTaskToContest adds a task to a contest
+	AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
 }
 
 const defaultContestSort = "created_at:desc"
 
 type contestService struct {
 	contestRepository    repository.ContestRepository
+	taskRepository       repository.TaskRepository
 	userRepository       repository.UserRepository
 	submissionRepository repository.SubmissionRepository
 
@@ -450,6 +453,53 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 	return result, nil
 }
 
+func (cs *contestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
+	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
+	if err != nil {
+		return err
+	}
+	// Check if contest exists
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+	_, err = cs.taskRepository.Get(tx, request.TaskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+		return myerrors.ErrNotAuthorized
+	}
+
+	startAt := time.Now()
+	if request.StartAt != nil {
+		startAt = *request.StartAt
+	}
+	endAt := contest.EndAt
+	if request.EndAt != nil {
+		endAt = request.EndAt
+	}
+	if endAt != nil && startAt.After(*endAt) {
+		return errors.New("task end time cannot be before start time")
+	}
+
+	taskContest := models.ContestTask{
+		ContestID:        contestID,
+		TaskID:           request.TaskID,
+		StartAt:          startAt,
+		EndAt:            endAt,
+		IsSubmissionOpen: true,
+	}
+
+	return cs.contestRepository.AddTaskToContest(tx, taskContest)
+}
+
 func ContestToSchema(model *models.Contest) *schemas.Contest {
 	return &schemas.Contest{
 		ID:               model.ID,
@@ -539,9 +589,10 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 	}
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository) ContestService {
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository) ContestService {
 	return &contestService{
 		contestRepository:    contestRepository,
+		taskRepository:       taskRepository,
 		userRepository:       userRepository,
 		submissionRepository: submissionRepository,
 		logger:               utils.NewNamedLogger("contest_service"),

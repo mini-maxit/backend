@@ -119,7 +119,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository)
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(

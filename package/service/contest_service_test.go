@@ -210,7 +210,8 @@ func TestContestService_GetPastContests(t *testing.T) {
 	cr := mock_repository.NewMockContestRepository(ctrl)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr)
 	tx := &gorm.DB{}
 
 	currentUser := schemas.User{
@@ -282,7 +283,8 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	cr := mock_repository.NewMockContestRepository(ctrl)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr)
 	tx := &gorm.DB{}
 
 	currentUser := schemas.User{
