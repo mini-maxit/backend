@@ -12,9 +12,8 @@ import (
 
 // @title		Mini-Maxit API
 // @version	1.0.0
-// @BasePath	/api/v1.
+// @BasePath	/api/v1
 func main() {
-	utils.InitializeLogger()
 	log := utils.NewNamedLogger("server")
 
 	if _, ok := os.LookupEnv("DEBUG"); ok {
