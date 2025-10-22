@@ -37,17 +37,6 @@ func (tr *testResultRepository) Put(t *gorm.DB, testResult *models.TestResult) e
 	return err
 }
 
-func NewTestResultRepository(db *gorm.DB) (TestRepository, error) {
-	if !db.Migrator().HasTable(&models.TestResult{}) {
-		err := db.Migrator().CreateTable(&models.TestResult{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err := db.Migrator().AutoMigrate(&models.TestResult{})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &testResultRepository{}, nil
+func NewTestResultRepository() TestRepository {
+	return &testResultRepository{}
 }

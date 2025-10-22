@@ -60,11 +60,6 @@ func (usr *submissionResultRepository) Put(tx *gorm.DB, submissionResult *models
 	return err
 }
 
-func NewSubmissionResultRepository(db *gorm.DB) (SubmissionResultRepository, error) {
-	if !db.Migrator().HasTable(&models.SubmissionResult{}) {
-		if err := db.Migrator().CreateTable(&models.SubmissionResult{}); err != nil {
-			return nil, err
-		}
-	}
-	return &submissionResultRepository{}, nil
+func NewSubmissionResultRepository() SubmissionResultRepository {
+	return &submissionResultRepository{}
 }

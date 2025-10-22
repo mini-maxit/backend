@@ -157,15 +157,6 @@ func (gr *groupRepository) GetTasks(tx *gorm.DB, groupID int64) ([]models.Task, 
 	return group.Tasks, nil
 }
 
-func NewGroupRepository(db *gorm.DB) (GroupRepository, error) {
-	tables := []any{&models.Group{}, &models.UserGroup{}, &models.TaskGroup{}}
-	for _, table := range tables {
-		if !db.Migrator().HasTable(table) {
-			err := db.Migrator().CreateTable(table)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return &groupRepository{}, nil
+func NewGroupRepository() GroupRepository {
+	return &groupRepository{}
 }

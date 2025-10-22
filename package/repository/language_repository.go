@@ -61,12 +61,6 @@ func (l *languageRepository) GetEnabled(tx *gorm.DB) ([]models.LanguageConfig, e
 	return tasks, nil
 }
 
-func NewLanguageRepository(db *gorm.DB) (LanguageRepository, error) {
-	if !db.Migrator().HasTable(&models.LanguageConfig{}) {
-		err := db.Migrator().CreateTable(&models.LanguageConfig{})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &languageRepository{}, nil
+func NewLanguageRepository() LanguageRepository {
+	return &languageRepository{}
 }

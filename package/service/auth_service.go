@@ -63,7 +63,6 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 		as.logger.Errorf("Error generating JWT tokens: %v", err.Error())
 		return nil, err
 	}
-	as.logger.Infof("User logged in successfully")
 	return tokens, nil
 }
 

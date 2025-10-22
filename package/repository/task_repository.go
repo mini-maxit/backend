@@ -281,16 +281,6 @@ func (tr *taskRepository) Delete(tx *gorm.DB, taskID int64) error {
 	return nil
 }
 
-func NewTaskRepository(db *gorm.DB) (TaskRepository, error) {
-	tables := []any{&models.Task{}, &models.TestCase{}, &models.TaskUser{}}
-	for _, table := range tables {
-		if !db.Migrator().HasTable(table) {
-			err := db.Migrator().CreateTable(table)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return &taskRepository{}, nil
+func NewTaskRepository() TaskRepository {
+	return &taskRepository{}
 }

@@ -433,15 +433,6 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 	return contests, nil
 }
 
-func NewContestRepository(db *gorm.DB) (ContestRepository, error) {
-	tables := []any{&models.Contest{}, &models.ContestTask{}, &models.ContestParticipant{}, &models.ContestParticipantGroup{}, &models.ContestPendingRegistration{}}
-	for _, table := range tables {
-		if !db.Migrator().HasTable(table) {
-			err := db.Migrator().CreateTable(table)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return &contestRepository{}, nil
+func NewContestRepository() ContestRepository {
+	return &contestRepository{}
 }

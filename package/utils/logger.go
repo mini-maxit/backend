@@ -70,7 +70,8 @@ func InitializeLogger() {
 	log := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	sugarLogger = log.Sugar()
 
-	httpLogger := zap.New(httpCore, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	httpCoreWithStdout := zapcore.NewTee(httpCore, stdCore)
+	httpLogger := zap.New(httpCoreWithStdout, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	httpSugarLogger = httpLogger.Sugar()
 }
 

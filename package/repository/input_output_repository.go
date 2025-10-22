@@ -67,12 +67,6 @@ func (i *testCaseRepository) Put(tx *gorm.DB, testCase *models.TestCase) error {
 	return err
 }
 
-func NewTestCaseRepository(db *gorm.DB) (TestCaseRepository, error) {
-	if !db.Migrator().HasTable(&models.TestCase{}) {
-		err := db.Migrator().CreateTable(&models.TestCase{})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &testCaseRepository{}, nil
+func NewTestCaseRepository() TestCaseRepository {
+	return &testCaseRepository{}
 }
