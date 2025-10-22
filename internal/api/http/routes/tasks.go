@@ -818,7 +818,7 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Updates task limits
 //	@Description	Updates task limits by task ID
 //	@Produce		json
-//	@Param			id		path		int								true	"Task ID"
+//	@Param			id		path		int									true	"Task ID"
 //	@Param			limits	body		schemas.PutTestCaseLimitsRequest	true	"Task limits"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
