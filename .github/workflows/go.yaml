@@ -32,8 +32,3 @@ jobs:
 
       - name: Test
         run: go test -v ./...
-
-  build-and-push:
-    needs: [build, test]
-    uses: ./.github/workflows/docker-image.yaml
-    secrets: inherit
