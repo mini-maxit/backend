@@ -22,11 +22,11 @@ type Contest struct {
 }
 
 type ContestTask struct {
-	ContestID        int64     `gorm:"primaryKey"`
-	TaskID           int64     `gorm:"primaryKey"`
-	StartAt          time.Time `gorm:"null"` // null means immediately available
-	EndAt            time.Time `gorm:"null"` // null means available until the end of the contest
-	IsSubmissionOpen *bool     `gorm:"default:true;not null"`
+	ContestID        int64      `gorm:"primaryKey"`
+	TaskID           int64      `gorm:"primaryKey"`
+	StartAt          time.Time  `gorm:"not null"`
+	EndAt            *time.Time `gorm:"null"`
+	IsSubmissionOpen bool       `gorm:"default:true;not null"`
 }
 
 type ContestParticipant struct {

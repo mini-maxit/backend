@@ -55,3 +55,9 @@ type UserContestsWithStats struct {
 	Past     []ContestWithStats `json:"past"`
 	Upcoming []ContestWithStats `json:"upcoming"`
 }
+
+type AddTaskToContest struct {
+	TaskID  int64      `json:"taskId" validate:"required"`
+	StartAt *time.Time `json:"startAt,omitempty"`
+	EndAt   *time.Time `json:"endAt,omitempty"`
+}
