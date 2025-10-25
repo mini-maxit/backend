@@ -140,6 +140,17 @@ definitions:
       ok:
         type: boolean
     type: object
+  AddTaskToContest:
+    properties:
+      endAt:
+        type: string
+      startAt:
+        type: string
+      taskId:
+        type: integer
+    required:
+    - taskId
+    type: object
   AuthResponse:
     properties:
       accessToken:
@@ -979,6 +990,52 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Get tasks for a contest with submission statistics
+      tags:
+      - contest
+    post:
+      consumes:
+      - application/json
+      description: Add an existing task to a specific contest
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Add Task to Contest
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AddTaskToContest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Add a task to a contest
       tags:
       - contest
   /contests/ongoing:
