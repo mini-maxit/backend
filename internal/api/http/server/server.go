@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/initialization"
@@ -16,7 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
-const ApiVersion = "v1"
+const APIVersion = "v1"
+const shudownTimeout = 5
+const ReadHeaderTimeout = 3
 
 type Server struct {
 	mux    http.Handler
@@ -29,8 +33,9 @@ func (s *Server) Start() error {
 	signal.Notify(sigChan, syscall.SIGINT, os.Interrupt)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: s.mux,
+		Addr:              fmt.Sprintf(":%d", s.port),
+		Handler:           s.mux,
+		ReadHeaderTimeout: ReadHeaderTimeout * time.Second,
 	}
 	ctx := context.Background()
 	go func() {
@@ -38,7 +43,7 @@ func (s *Server) Start() error {
 		s.logger.Info("Shutting down server...")
 
 		// Create a context with timeout to allow graceful shutdown
-		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, shudownTimeout*time.Second)
 		defer shutdownCancel()
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
@@ -47,60 +52,70 @@ func (s *Server) Start() error {
 	}()
 
 	s.logger.Infof("Starting server on port %d", s.port)
-	return http.ListenAndServe(server.Addr, server.Handler)
+	return server.ListenAndServe()
 }
 
 func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Server {
-	mux := http.NewServeMux()
-	apiPrefix := fmt.Sprintf("/api/%s", ApiVersion)
+	baseMux := mux.NewRouter()
+	apiPrefix := "/api/" + APIVersion
 
 	// Auth routes
-	authMux := http.NewServeMux()
-	authMux.HandleFunc("/login", init.AuthRoute.Login)
-	authMux.HandleFunc("/register", init.AuthRoute.Register)
+	authMux := mux.NewRouter()
+	routes.RegisterAuthRoute(authMux, init.AuthRoute)
 
 	// Task routes
-	taskMux := http.NewServeMux()
+	taskMux := mux.NewRouter()
 	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
 
 	// User routes
-	userMux := http.NewServeMux()
+	userMux := mux.NewRouter()
 	routes.RegisterUserRoutes(userMux, init.UserRoute)
 
 	// Submission routes
-	subbmissionMux := http.NewServeMux()
+	subbmissionMux := mux.NewRouter()
 	routes.RegisterSubmissionRoutes(subbmissionMux, init.SubmissionRoute)
 
 	// Group routes
-	groupMux := http.NewServeMux()
+	groupMux := mux.NewRouter()
 	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
 
-	// Session routes
-	sessionMux := http.NewServeMux()
-	sessionMux.HandleFunc("/", init.SessionRoute.CreateSession)
-	sessionMux.HandleFunc("/validate", init.SessionRoute.ValidateSession)
-	sessionMux.HandleFunc("/invalidate", init.SessionRoute.InvalidateSession)
+	// Contest routes
+	contestMux := mux.NewRouter()
+	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
 
-	// Secure routes (require authentication)
-	secureMux := http.NewServeMux()
-	secureMux.Handle("/task/", http.StripPrefix("/task", taskMux))
-	secureMux.Handle("/session/", http.StripPrefix("/session", sessionMux))
-	secureMux.Handle("/submission/", http.StripPrefix("/submission", subbmissionMux))
-	secureMux.Handle("/user/", http.StripPrefix("/user", userMux))
-	secureMux.Handle("/group/", http.StripPrefix("/group", groupMux))
+	// Worker routes
+	workerMux := mux.NewRouter()
+	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
+
+	// Secure routes (require authentication with JWT)
+	secureMux := mux.NewRouter()
+	secureMux.PathPrefix("/tasks/").Handler(http.StripPrefix("/tasks", taskMux))
+	secureMux.PathPrefix("/submissions/").Handler(http.StripPrefix("/submissions", subbmissionMux))
+	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))
+	secureMux.PathPrefix("/groups/").Handler(http.StripPrefix("/groups", groupMux))
+	secureMux.PathPrefix("/contests/").Handler(http.StripPrefix("/contests", contestMux))
+	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
 
 	// API routes
-	apiMux := http.NewServeMux()
-	apiMux.Handle("/auth/", http.StripPrefix("/auth", authMux))
-	apiMux.Handle("/", middleware.SessionValidationMiddleware(secureMux, init.Db, init.SessionService))
-	apiMux.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
+	apiMux := mux.NewRouter()
+	apiMux.PathPrefix("/auth/").Handler(http.StripPrefix("/auth", authMux))
+	apiMux.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("docs"))))
+	apiMux.PathPrefix("/").Handler(middleware.JWTValidationMiddleware(secureMux, init.DB, init.JWTService))
 
 	// Logging middleware
-	httpLoger := utils.NewHttpLogger()
-	loggingMux := http.NewServeMux()
-	loggingMux.Handle("/", middleware.LoggingMiddleware(apiMux, httpLoger))
+	httpLoger := utils.NewNamedLogger("http")
+	loggingMux := mux.NewRouter()
+	loggingMux.PathPrefix("/").Handler(middleware.LoggingMiddleware(apiMux, httpLoger))
 	// Add the API prefix to all routes
 	httpLoger.Infof("Query params middleware")
-	mux.Handle(apiPrefix+"/", http.StripPrefix(apiPrefix, middleware.RecoveryMiddleware(middleware.QueryParamsMiddleware(middleware.DatabaseMiddleware(loggingMux, init.Db)), log)))
-	return &Server{mux: mux, port: init.Cfg.Api.Port, logger: log}
+	baseMux.PathPrefix(apiPrefix + "/").Handler(http.StripPrefix(
+		apiPrefix, middleware.QueryParamsMiddleware(
+			middleware.DatabaseMiddleware(
+				middleware.RecoveryMiddleware(loggingMux, log), init.DB,
+			),
+		),
+	))
+
+	baseMux.NotFoundHandler = http.HandlerFunc(httputils.NotFoundHandler)
+	return &Server{mux: baseMux, port: init.Cfg.API.Port, logger: log}
 }

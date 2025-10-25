@@ -2,24 +2,19 @@ package config
 
 import (
 	"os"
-	"slices"
 	"strconv"
-	"strings"
 
-	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
 type Config struct {
-	FileStorageUrl string
+	FileStorageURL string
 	DB             DBConfig
-	Api            ApiConfig
-	BrokerConfig   BrokerConfig
+	API            APIConfig
+	Broker         BrokerConfig
+	JWTSecretKey   string
 	Dump           bool
-
-	EnabledLanguages []schemas.LanguageConfig
 }
 
 type DBConfig struct {
@@ -30,8 +25,9 @@ type DBConfig struct {
 	Name     string
 }
 
-type ApiConfig struct {
-	Port uint16
+type APIConfig struct {
+	Port             uint16
+	RefreshTokenPath string
 }
 
 type BrokerConfig struct {
@@ -50,93 +46,11 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultApiPort           = "8080"
-	defaultQueueName         = "worker_queue"
-	defaultResponseQueueName = "worker_response_queue"
+	defaultAPIPort             = "8080"
+	defaultAPIRefreshTokenPath = "/api/v1/auth/refresh"
+	defaultQueueName           = "worker_queue"
+	defaultResponseQueueName   = "worker_response_queue"
 )
-
-// DefaultLanguages is a list of languages that is enabled by default
-var DefaultLanguages = []schemas.LanguageConfig{
-	{
-		Type:          models.LangTypeC,
-		Version:       "99",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "11",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "18",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "11",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "14",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "17",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "20",
-		FileExtension: "cpp",
-	},
-}
-
-// AvailableLanguages is a list of languages that is acrively supported by the system and can be used if enabled.
-var AvailableLanguages = []schemas.LanguageConfig{
-	{
-		Type:          models.LangTypeC,
-		Version:       "99",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "11",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeC,
-		Version:       "18",
-		FileExtension: "c",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "11",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "14",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "17",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "20",
-		FileExtension: "cpp",
-	},
-	{
-		Type:          models.LangTypeCPP,
-		Version:       "23",
-		FileExtension: "cpp",
-	},
-}
 
 // NewConfig creates new Config instance
 //
@@ -168,13 +82,16 @@ var AvailableLanguages = []schemas.LanguageConfig{
 //
 //   - QUEUE_PASSWORD - broker password. Required
 //
-//   - LANGUAGES - comma-separated list of languages with their version, e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will exapnd to [DefaultLanguages]
+//   - JWT_SECRET_KEY - secret key for JWT token signing. Required
+//
+//   - LANGUAGES - comma-separated list of languages with their version,
+//     e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will expand to [DefaultLanguages]
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
-		log.Panic("DB_HOST is not set")
+		log.Warnf("DB_HOST is not set. Using default value %s", "localhost")
 	}
 	dbPortStr := os.Getenv("DB_PORT")
 	if dbPortStr == "" {
@@ -196,10 +113,16 @@ func NewConfig() *Config {
 
 	appPortStr := os.Getenv("APP_PORT")
 	if appPortStr == "" {
-		log.Warnf("API_PORT is not set. Using default port %s", defaultApiPort)
-		appPortStr = defaultApiPort
+		log.Warnf("API_PORT is not set. Using default port %s", defaultAPIPort)
+		appPortStr = defaultAPIPort
 	}
 	appPort := validatePort(appPortStr, "application", log)
+
+	refreshTokenPath := os.Getenv("API_REFRESH_TOKEN_PATH")
+	if refreshTokenPath == "" {
+		log.Warnf("API_REFRESH_TOKEN_PATH is not set. Using default path %s", defaultAPIRefreshTokenPath)
+		refreshTokenPath = defaultAPIRefreshTokenPath
+	}
 
 	fileStorageHost := os.Getenv("FILE_STORAGE_HOST")
 	if fileStorageHost == "" {
@@ -211,7 +134,7 @@ func NewConfig() *Config {
 	}
 	_ = validatePort(fileStoragePortStr, "file storage", log)
 
-	fileStorageUrl := "http://" + fileStorageHost + ":" + fileStoragePortStr
+	fileStorageURL := "http://" + fileStorageHost + ":" + fileStoragePortStr
 
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
@@ -242,6 +165,11 @@ func NewConfig() *Config {
 		log.Panic("QUEUE_PASSWORD is not set")
 	}
 
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		log.Panic("JWT_SECRET_KEY is not set")
+	}
+
 	dumpStr := os.Getenv("DUMP")
 	dump := dumpStr == "true"
 
@@ -253,10 +181,11 @@ func NewConfig() *Config {
 			Password: dbPassword,
 			Name:     dbName,
 		},
-		Api: ApiConfig{
-			Port: appPort,
+		API: APIConfig{
+			Port:             appPort,
+			RefreshTokenPath: refreshTokenPath,
 		},
-		BrokerConfig: BrokerConfig{
+		Broker: BrokerConfig{
 			QueueName:         queueName,
 			ResponseQueueName: responseQueueName,
 			Host:              queueHost,
@@ -264,9 +193,9 @@ func NewConfig() *Config {
 			User:              queueUser,
 			Password:          queuePassword,
 		},
-		FileStorageUrl:   fileStorageUrl,
-		Dump:             dump,
-		EnabledLanguages: parseLanguages(os.Getenv("LANGUAGES"), log),
+		FileStorageURL: fileStorageURL,
+		JWTSecretKey:   jwtSecretKey,
+		Dump:           dump,
 	}
 }
 
@@ -276,26 +205,4 @@ func validatePort(port string, which string, log *zap.SugaredLogger) uint16 {
 		log.Panicf("invalid %s port number %s", which, port)
 	}
 	return uint16(p)
-}
-
-func parseLanguages(input string, log *zap.SugaredLogger) []schemas.LanguageConfig {
-	if input == "" {
-		log.Warn("LANGUAGES is not set. Using default languages")
-		return DefaultLanguages
-	}
-	langs := make([]schemas.LanguageConfig, 0)
-	languages := strings.Split(input, ",")
-	for _, lang := range languages {
-		parts := strings.Split(lang, ":")
-		if len(parts) != 2 {
-			log.Panicf("invalid language format in config: %s. For available options refer to documentation", lang)
-		}
-		language := schemas.LanguageConfig{Type: models.LanguageType(parts[0]), Version: parts[1]}
-		if !slices.Contains(AvailableLanguages, language) {
-			log.Panicf("language %s is not available. Available languages: %v, for more refer to documentation", lang, AvailableLanguages)
-		}
-		langs = append(langs, language)
-	}
-
-	return langs
 }

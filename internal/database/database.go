@@ -1,6 +1,11 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+)
 
 type Database interface {
 	BeginTransaction() (*gorm.DB, error) // Returns opened database connection with transaction
@@ -8,5 +13,13 @@ type Database interface {
 	ShouldRollback() bool                // Returns whether the transaction should be rolled back
 	Rollback()                           // Sets the transaction to be rolled back after execution finishes
 	Commit() error                       // Commits the transaction
-	Db() *gorm.DB                        // Returns the database connection
+	DB() *gorm.DB                        // Returns the database connection
+}
+
+const SchemaName = "maxit"
+
+var GormConfig = &gorm.Config{
+	NamingStrategy: schema.NamingStrategy{
+		TablePrefix: fmt.Sprintf("%s.", SchemaName),
+	},
 }

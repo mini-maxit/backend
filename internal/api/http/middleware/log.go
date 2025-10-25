@@ -17,6 +17,12 @@ func LoggingMiddleware(next http.Handler, log *zap.SugaredLogger) http.Handler {
 		if r.TLS != nil {
 			protocol = "https"
 		}
-		log.Infof("method=%s path=%s host=%s service=%dms bytes=%d protocol=%s", r.Method, r.URL.Path, r.URL.Hostname(), time.Since(start).Milliseconds(), r.ContentLength, protocol)
+		log.Infof("method=%s path=%s host=%s service=%dms bytes=%d protocol=%s",
+			r.Method,
+			r.URL.Path,
+			r.URL.Hostname(),
+			time.Since(start).Milliseconds(),
+			r.ContentLength,
+			protocol)
 	})
 }

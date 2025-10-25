@@ -15,5 +15,12 @@ repos:
     hooks:
       - id: go-fmt
       - id: go-imports
-      - id: no-go-testing
       - id: golangci-lint
+      - id: go-unit-tests
+
+  - repo: local
+    hooks:
+      - id: swagger
+        language: script
+        name: Check if swagger is valid
+        entry: scripts/update-docs.sh
