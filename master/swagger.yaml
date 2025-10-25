@@ -1,119 +1,268 @@
 basePath: /api/v1
 definitions:
-  github_com_mini-maxit_backend_internal_api_http_httputils.ApiError:
+  APIError:
     properties:
       data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct'
+        $ref: '#/definitions/errorStruct'
       ok:
         type: boolean
     type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Group
-  : properties:
+  APIResponse-AuthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/AuthResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-AvailableContest:
+    properties:
       data:
         items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Group'
+          $ref: '#/definitions/AvailableContest'
         type: array
       ok:
         type: boolean
     type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_LanguageConfig
-  : properties:
+  APIResponse-Contest:
+    properties:
+      data:
+        $ref: '#/definitions/Contest'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-Group:
+    properties:
+      data:
+        $ref: '#/definitions/Group'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-IDResponse:
+    properties:
+      data:
+        $ref: '#/definitions/IDResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-MessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/MessageResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-Submission:
+    properties:
+      data:
+        $ref: '#/definitions/Submission'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskCreateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/TaskCreateResponse'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskWithContestStats:
+    properties:
       data:
         items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig'
+          $ref: '#/definitions/TaskWithContestStats'
         type: array
       ok:
         type: boolean
     type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission
-  : properties:
+  APIResponse-TestCase:
+    properties:
       data:
         items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Submission'
+          $ref: '#/definitions/TestCase'
         type: array
       ok:
         type: boolean
     type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task
-  : properties:
+  APIResponse-User:
+    properties:
+      data:
+        $ref: '#/definitions/User'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-UserContestsWithStats:
+    properties:
       data:
         items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task'
+          $ref: '#/definitions/UserContestsWithStats'
         type: array
       ok:
         type: boolean
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Group:
+  APIResponse-WorkerStatus:
     properties:
       data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Group'
+        $ref: '#/definitions/WorkerStatus'
       ok:
         type: boolean
     type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Session
-  : properties:
-      data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Session'
-      ok:
-        type: boolean
-    type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Submission
-  : properties:
-      data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Submission'
-      ok:
-        type: boolean
-    type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_SubmitResponse
-  : properties:
-      data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SubmitResponse'
-      ok:
-        type: boolean
-    type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse
-  : properties:
-      data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskCreateResponse'
-      ok:
-        type: boolean
-    type: object
-  ? github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed
-  : properties:
-      data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed'
-      ok:
-        type: boolean
-    type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_User:
+  APIResponse-array_Group:
     properties:
       data:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User'
+        items:
+          $ref: '#/definitions/Group'
+        type: array
       ok:
         type: boolean
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-int64:
+  APIResponse-array_LanguageConfig:
     properties:
       data:
+        items:
+          $ref: '#/definitions/LanguageConfig'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-array_Task:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  AddTaskToContest:
+    properties:
+      endAt:
+        type: string
+      startAt:
+        type: string
+      taskId:
         type: integer
-      ok:
-        type: boolean
+    required:
+    - taskId
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string:
+  AuthResponse:
     properties:
-      data:
+      accessToken:
         type: string
-      ok:
-        type: boolean
+      expiresAt:
+        type: string
     type: object
-  github_com_mini-maxit_backend_internal_api_http_httputils.errorStruct:
+  AvailableContest:
     properties:
-      code:
+      createdAt:
         type: string
-      message:
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      registrationStatus:
+        description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
+        type: string
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.CreateGroup:
+  Contest:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  ContestWithStats:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      participantCount:
+        type: integer
+      solvedTaskCount:
+        type: integer
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  CreateContest:
+    properties:
+      description:
+        type: string
+      endAt:
+        type: string
+      isRegistrationOpen:
+        type: boolean
+      isSubmissionOpen:
+        type: boolean
+      isVisible:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+      startAt:
+        type: string
+    required:
+    - name
+    type: object
+  CreateGroup:
     properties:
       name:
         maxLength: 50
@@ -122,150 +271,215 @@ definitions:
     required:
     - name
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.EditGroup:
+  EditContest:
     properties:
+      description:
+        type: string
+      endAt:
+        type: string
+      isRegistrationOpen:
+        type: boolean
+      isSubmissionOpen:
+        type: boolean
+      isVisible:
+        type: boolean
       name:
+        maxLength: 100
+        minLength: 3
+        type: string
+      startAt:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.Group:
+  EditGroup:
     properties:
-      created_at:
+      name:
+        maxLength: 50
+        minLength: 3
         type: string
-      created_by:
+    type: object
+  Group:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
         type: integer
       id:
         type: integer
       name:
         type: string
-      tasks:
-        items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task'
-        type: array
-      updated_at:
+      updatedAt:
         type: string
-      users:
-        items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User'
-        type: array
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig:
+  IDResponse:
     properties:
-      file_extension:
+      id:
+        type: integer
+    type: object
+  LanguageConfig:
+    properties:
+      fileExtension:
         type: string
       id:
         type: integer
       language:
-        $ref: '#/definitions/models.LanguageType'
+        type: string
       version:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.Session:
+  MessageResponse:
     properties:
-      expires_at:
-        type: string
-      session:
-        type: string
-      user_id:
-        type: integer
-      user_role:
+      message:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.Submission:
+  PutTestCase:
     properties:
-      checked_at:
+      memoryLimit:
+        type: integer
+      order:
+        type: integer
+      timeLimit:
+        type: integer
+    type: object
+  PutTestCaseLimitsRequest:
+    properties:
+      limits:
+        items:
+          $ref: '#/definitions/PutTestCase'
+        type: array
+    type: object
+  Submission:
+    properties:
+      checkedAt:
         type: string
       id:
         type: integer
       language:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.LanguageConfig'
-      language_id:
+        $ref: '#/definitions/LanguageConfig'
+      languageId:
         type: integer
       order:
         type: integer
       result:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.SubmissionResult'
+        $ref: '#/definitions/SubmissionResult'
       status:
-        type: string
-      status_message:
-        type: string
-      submitted_at:
+        $ref: '#/definitions/SubmissionStatus'
+      submittedAt:
         type: string
       task:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.Task'
-      task_id:
+        $ref: '#/definitions/Task'
+      taskId:
         type: integer
       user:
-        $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.User'
-      user_id:
+        $ref: '#/definitions/User'
+      userId:
         type: integer
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.SubmissionResult:
+  SubmissionResult:
     properties:
       code:
         type: string
-      created_at:
+      createdAt:
         type: string
       id:
         type: integer
       message:
         type: string
-      submission_id:
+      submissionId:
         type: integer
-      test_results:
+      testResults:
         items:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.TestResult'
+          $ref: '#/definitions/TestResult'
         type: array
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.SubmitResponse:
+  SubmissionStatus:
+    enum:
+    - received
+    - sent for evaluation
+    - evaluated
+    - lost
+    type: string
+    x-enum-varnames:
+    - SubmissionStatusReceived
+    - SubmissionStatusSentForEvaluation
+    - SubmissionStatusEvaluated
+    - SubmissionStatusLost
+  Task:
     properties:
-      message:
+      createdAt:
         type: string
-      submissionNumber:
-        type: integer
-    type: object
-  github_com_mini-maxit_backend_package_domain_schemas.Task:
-    properties:
-      created_at:
-        type: string
-      created_by:
+      createdBy:
         type: integer
       id:
         type: integer
       title:
         type: string
+      updatedAt:
+        type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.TaskCreateResponse:
+  TaskCreateResponse:
     properties:
       id:
         type: integer
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.TaskDetailed:
+  TaskDetailed:
     properties:
-      created_at:
+      createdAt:
         type: string
-      created_by:
+      createdBy:
         type: integer
-      created_by_name:
+      createdByName:
         type: string
-      description_url:
+      descriptionUrl:
         type: string
+      groupIds:
+        items:
+          type: integer
+        type: array
       id:
         type: integer
       title:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.TestResult:
+  TaskWithContestStats:
     properties:
+      attemptCount:
+        description: Number of submission attempts by the user
+        type: integer
+      bestScore:
+        description: Best score achieved by the user (percentage of passed tests)
+        type: number
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
       id:
         type: integer
-      input_output_id:
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  TestCase:
+    properties:
+      memoryLimit:
+        type: integer
+      order:
+        type: integer
+      timeLimit:
+        type: integer
+    type: object
+  TestResult:
+    properties:
+      id:
         type: integer
       passed:
         type: boolean
-      submission_result_id:
+      submissionResultId:
+        type: integer
+      testCaseId:
         type: integer
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.User:
+  User:
     properties:
       email:
         type: string
@@ -274,49 +488,64 @@ definitions:
       name:
         type: string
       role:
-        $ref: '#/definitions/types.UserRole'
+        $ref: '#/definitions/UserRole'
       surname:
         type: string
       username:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.UserChangePassword:
+  UserChangePassword:
     properties:
-      new_password:
+      newPassword:
         maxLength: 50
         minLength: 8
         type: string
-      new_password_confirm:
+      newPasswordConfirm:
         maxLength: 50
         minLength: 8
         type: string
-      old_password:
+      oldPassword:
         type: string
     required:
-    - new_password
-    - new_password_confirm
+    - newPassword
+    - newPasswordConfirm
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.UserEdit:
+  UserContestsWithStats:
+    properties:
+      ongoing:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
+      past:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
+      upcoming:
+        items:
+          $ref: '#/definitions/ContestWithStats'
+        type: array
+    type: object
+  UserEdit:
     properties:
       email:
         type: string
       name:
         type: string
       role:
-        $ref: '#/definitions/types.UserRole'
+        $ref: '#/definitions/UserRole'
       surname:
         type: string
       username:
         type: string
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.UserIds:
+  UserIDs:
     properties:
-      user_ids:
+      userIDs:
         items:
           type: integer
         type: array
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest:
+  UserLoginRequest:
     properties:
       email:
         type: string
@@ -326,7 +555,7 @@ definitions:
     - email
     - password
     type: object
-  github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest:
+  UserRegisterRequest:
     properties:
       confirmPassword:
         type: string
@@ -356,32 +585,547 @@ definitions:
     - surname
     - username
     type: object
-  models.LanguageType:
-    enum:
-    - c
-    - cpp
-    type: string
-    x-enum-varnames:
-    - LangTypeC
-    - LangTypeCPP
-  types.UserRole:
+  UserRole:
     enum:
     - student
     - teacher
     - admin
     type: string
+    x-enum-comments:
+      UserRoleAdmin: UserRoleAdmin represents the admin role.
+      UserRoleStudent: UserRoleStudent represents the student role.
+      UserRoleTeacher: UserRoleTeacher represents the teacher role.
+    x-enum-descriptions:
+    - UserRoleStudent represents the student role.
+    - UserRoleTeacher represents the teacher role.
+    - UserRoleAdmin represents the admin role.
     x-enum-varnames:
     - UserRoleStudent
     - UserRoleTeacher
     - UserRoleAdmin
-host: localhost:8080
+  WorkerStatus:
+    properties:
+      busyWorkers:
+        type: integer
+      statusTime:
+        type: string
+      totalWorkers:
+        type: integer
+      workerStatus:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  errorStruct:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
 info:
   contact: {}
-  description: This is the API documentation for the Mini Maxit API.
-  title: Mini Maxit API Documentation testing the workflow
-  version: "1.0"
+  title: Mini-Maxit API
+  version: 1.0.0
 paths:
-  /group/:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password, returns JWT tokens
+      parameters:
+      - description: User Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Login a user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Logs out a user by clearing the refresh token cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Logout a user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: Refreshes JWT tokens using a valid refresh token from cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Refresh JWT tokens
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user with name, surname, email, username and password,
+        returns JWT tokens
+      parameters:
+      - description: User Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/APIResponse-AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Register a user
+      tags:
+      - auth
+  /contests/:
+    post:
+      consumes:
+      - application/json
+      description: Create a new contest
+      parameters:
+      - description: Create Contest
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateContest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-IDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Create a contest
+      tags:
+      - contest
+  /contests/{id}:
+    delete:
+      description: Delete a contest by ID
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Delete a contest
+      tags:
+      - contest
+    get:
+      description: Get contest details by ID
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get a contest
+      tags:
+      - contest
+    put:
+      consumes:
+      - application/json
+      description: Edit contest details
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Edit Contest
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/EditContest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Edit a contest
+      tags:
+      - contest
+  /contests/{id}/register:
+    post:
+      description: Create a pending registration for a contest (requires contest creator
+        approval)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Register for a contest
+      tags:
+      - contest
+  /contests/{id}/tasks:
+    get:
+      description: Get tasks associated with a specific contest including best score
+        and attempt count for the current user
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-TaskWithContestStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get tasks for a contest with submission statistics
+      tags:
+      - contest
+    post:
+      consumes:
+      - application/json
+      description: Add an existing task to a specific contest
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Add Task to Contest
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AddTaskToContest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Add a task to a contest
+      tags:
+      - contest
+  /contests/ongoing:
+    get:
+      description: Get contests that are currently running with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AvailableContest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get ongoing contests
+      tags:
+      - contest
+  /contests/past:
+    get:
+      description: Get contests that have ended with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AvailableContest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get past contests
+      tags:
+      - contest
+  /contests/upcoming:
+    get:
+      description: Get contests that haven't started yet with pagination
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AvailableContest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get upcoming contests
+      tags:
+      - contest
+  /groups/:
     get:
       description: Get all groups
       produces:
@@ -390,23 +1134,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Group'
+            $ref: '#/definitions/APIResponse-array_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all groups
       tags:
       - group
@@ -420,34 +1164,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.CreateGroup'
+          $ref: '#/definitions/CreateGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-int64'
+            $ref: '#/definitions/APIResponse-IDResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Create a group
       tags:
       - group
-  /group/{id}:
+  /groups/{id}:
     get:
       description: Get a group
       parameters:
@@ -462,23 +1206,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a group
       tags:
       - group
@@ -497,34 +1241,76 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.EditGroup'
+          $ref: '#/definitions/EditGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Edit a group
       tags:
       - group
-  /group/{id}/users:
+  /groups/{id}/users:
+    delete:
+      consumes:
+      - application/json
+      description: Delete users from a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserIDs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Delete users from a group
+      tags:
+      - group
     get:
       description: Get users in a group
       parameters:
@@ -539,23 +1325,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get users in a group
       tags:
       - group
@@ -574,176 +1360,37 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserIds'
+          $ref: '#/definitions/UserIDs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Add users to a group
       tags:
       - group
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Logs in a user with email and password
-      parameters:
-      - description: User Login Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Session'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Login a user
-      tags:
-      - auth
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Registers a user with name, surname, email, username and password
-      parameters:
-      - description: User Register Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserRegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Session'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Register a user
-      tags:
-      - auth
-  /session/invalidate:
-    post:
-      description: Invalidates a session token
-      parameters:
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Invalidate a session
-      tags:
-      - session
-  /session/validate:
-    get:
-      description: Validates a session token
-      parameters:
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Validate a session
-      tags:
-      - session
-  /submission:
+  /submissions:
     get:
       description: Depending on the user role, this endpoint will return all submissions
-        for the current user if user is student, all submissions to owned tasks if
-        user is teacher, and all submissions in database if user is admin
+        for the current user.
       parameters:
       - description: Limit the number of returned submissions
         in: query
@@ -753,135 +1400,54 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for the current user
       tags:
       - submission
-  /submission/{id}:
+  /submissions/{id}:
     get:
-      description: Get a submission by its ID, if the user is a student, the submission
-        must belong to the user, if the user is a teacher, the submission must belong
-        to a task owned by the teacher, if the user is an admin, the submission can
-        be any submission
+      description: If the user is a student, the submission must belong to the user.
       parameters:
       - description: Submission ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a submission by ID
       tags:
       - submission
-  /submission/languages:
+  /submissions/groups/{id}:
     get:
-      description: Get all available languages for submitting solutions. Temporary
-        solution, while all tasks have same languages
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_LanguageConfig'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Get all available languages
-      tags:
-      - submission
-  /submission/task/{id}:
-    get:
-      description: Gets all submissions for specific task. If the user is a student
-        and has no access to this task, it fails with 403 Forbidden. For teacher it
-        returns all submissions for this task if he created it. For admin it returns
-        all submissions for specific task.
-      parameters:
-      - description: Task ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Limit the number of returned submissions
-        in: query
-        name: limit
-        type: integer
-      - description: Offset the returned submissions
-        in: query
-        name: offset
-        type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Get all submissions for a task
-      tags:
-      - submission
-  /submission/user/{id}:
-    get:
-      description: Gets all submissions for specific group. If the user is a student,
-        it fails with 403 Forbidden. For teacher it returns all submissions from this
-        group for tasks he created. For admin it returns all submissions for specific
-        group.
+      description: If the user is a student, it fails with 403 Forbidden.
       parameters:
       - description: Group ID
         in: path
@@ -896,39 +1462,135 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for a group
       tags:
       - submission
-  /submission/user/{id}/short:
+  /submissions/languages:
     get:
-      description: Gets all submissions for specific user. If the user is a student,
-        it fails with 403 Forbidden. For teacher it returns all submissions from this
-        user for tasks owned by the teacher. For admin it returns all submissions
-        for specific user.
+      description: Get all available languages for submitting solutions.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_LanguageConfig'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all available languages
+      tags:
+      - submission
+  /submissions/submit:
+    post:
+      consumes:
+      - multipart/form-data
+      description: The solution is uploaded to the FileStorage service and a submission
+        is created in the database.
+      parameters:
+      - description: Task ID
+        in: formData
+        name: taskID
+        required: true
+        type: integer
+      - description: Solution file
+        in: formData
+        name: solution
+        required: true
+        type: file
+      - description: Language ID
+        in: formData
+        name: languageID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Submit a solution
+      tags:
+      - submission
+  /submissions/tasks/{id}:
+    get:
+      description: If the user is a student and has no access to this task, it fails
+        with 403 Forbidden.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all submissions for a task
+      tags:
+      - submission
+  /submissions/users/{id}:
+    get:
+      description: If the user is a student, it fails with 403 Forbidden.
       parameters:
       - description: User ID
         in: path
@@ -943,34 +1605,68 @@ paths:
         in: query
         name: offset
         type: integer
-      - description: Session Token
-        in: header
-        name: Session
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Submission'
+            $ref: '#/definitions/APIResponse-Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all submissions for a user
       tags:
       - submission
-  /task/:
+  /submissions/users/{id}/short:
+    get:
+      description: If the user is a student, it fails with 403 Forbidden.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all submissions for a user
+      tags:
+      - submission
+  /tasks/:
     get:
       description: Returns all tasks
       produces:
@@ -979,11 +1675,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task'
+            $ref: '#/definitions/APIResponse-array_Task'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all tasks
       tags:
       - task
@@ -1008,23 +1704,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskCreateResponse'
+            $ref: '#/definitions/APIResponse-TaskCreateResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Upload a task
       tags:
       - task
-  /task/{id}:
+  /tasks/{id}:
     delete:
       description: Deletes a task by ID
       parameters:
@@ -1039,23 +1735,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Delete a task
       tags:
       - task
@@ -1073,23 +1769,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_TaskDetailed'
+            $ref: '#/definitions/APIResponse-TaskDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get a task
       tags:
       - task
@@ -1115,27 +1811,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Update a task
       tags:
       - task
-  /task/{id}/assign/groups:
+  /tasks/{id}/assign/groups:
     post:
       description: Assigns a task to groups by task ID and group IDs
       parameters:
@@ -1146,7 +1842,7 @@ paths:
         type: integer
       - description: Group IDs
         in: body
-        name: groupIds
+        name: groupIDs
         required: true
         schema:
           items:
@@ -1158,27 +1854,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Assign a task to groups
       tags:
       - task
-  /task/{id}/assign/users:
+  /tasks/{id}/assign/users:
     post:
       description: Assigns a task to users by task ID and user IDs
       parameters:
@@ -1189,7 +1885,7 @@ paths:
         type: integer
       - description: User IDs
         in: body
-        name: userIds
+        name: userIDs
         required: true
         schema:
           items:
@@ -1201,27 +1897,94 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Assign a task to users
       tags:
       - task
-  /task/{id}/unassign/groups:
+  /tasks/{id}/limits:
+    get:
+      description: Gets task limits by task ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-TestCase'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Gets task limits
+      tags:
+      - task
+    put:
+      description: Updates task limits by task ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task limits
+        in: body
+        name: limits
+        required: true
+        schema:
+          $ref: '#/definitions/PutTestCaseLimitsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Updates task limits
+      tags:
+      - task
+  /tasks/{id}/unassign/groups:
     delete:
       description: Unassigns a task from groups by task ID and group IDs
       parameters:
@@ -1232,7 +1995,7 @@ paths:
         type: integer
       - description: Group IDs
         in: body
-        name: groupIds
+        name: groupIDs
         required: true
         schema:
           items:
@@ -1244,27 +2007,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Unassign a task from groups
       tags:
       - task
-  /task/{id}/unassign/users:
+  /tasks/{id}/unassign/users:
     delete:
       description: Unassigns a task from users by task ID and user IDs
       parameters:
@@ -1275,7 +2038,7 @@ paths:
         type: integer
       - description: User IDs
         in: body
-        name: userIds
+        name: userIDs
         required: true
         schema:
           items:
@@ -1287,27 +2050,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Unassign a task from users
       tags:
       - task
-  /task/group/{id}:
+  /tasks/groups/{id}:
     get:
       description: Returns all tasks for a group by ID
       parameters:
@@ -1322,27 +2085,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-array_github_com_mini-maxit_backend_package_domain_schemas_Task'
+            $ref: '#/definitions/APIResponse-array_Task'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all tasks for a group
       tags:
       - task
-  /user/:
+  /users/:
     get:
       description: Get all users
       parameters:
@@ -1364,19 +2127,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_User'
+            $ref: '#/definitions/APIResponse-User'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get all users
       tags:
       - user
-  /user/{id}:
+  /users/{id}:
     get:
       description: Get user by ID
       parameters:
@@ -1391,29 +2154,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_User'
+            $ref: '#/definitions/APIResponse-User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Get user by ID
       tags:
       - user
     patch:
-      consumes:
-      - application/json
       description: Edit user
       parameters:
       - description: User ID
@@ -1421,46 +2182,79 @@ paths:
         name: id
         required: true
         type: integer
-      - description: User edit object
+      - description: User Edit Request
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserEdit'
+          $ref: '#/definitions/UserEdit'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Edit user
       tags:
       - user
-  /user/{id}/password:
-    patch:
-      consumes:
+  /users/{id}/contests:
+    get:
+      description: Get contests for a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
       - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-UserContestsWithStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contests for a user
+      tags:
+      - user
+  /users/{id}/password:
+    patch:
       description: Change user password
       parameters:
       - description: User ID
@@ -1468,75 +2262,78 @@ paths:
         name: id
         required: true
         type: integer
-      - description: User change password object
+      - description: User Change Password Request
         in: body
-        name: body
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_mini-maxit_backend_package_domain_schemas.UserChangePassword'
+          $ref: '#/definitions/UserChangePassword'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-string'
+            $ref: '#/definitions/APIResponse-MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIError'
       summary: Change user password
       tags:
       - user
-  /user/email:
+  /users/me:
     get:
-      description: Get user by email
-      parameters:
-      - description: User email
-        in: query
-        name: email
-        required: true
-        type: string
+      description: Get current user
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiResponse-github_com_mini-maxit_backend_package_domain_schemas_User'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
+            $ref: '#/definitions/APIResponse-User'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/github_com_mini-maxit_backend_internal_api_http_httputils.ApiError'
-      summary: Get user by email
+            $ref: '#/definitions/APIError'
+      summary: Get current user
       tags:
       - user
+  /workers/status:
+    get:
+      description: Returns the current status of all worker nodes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-WorkerStatus'
+        "401":
+          description: Not authorized - requires teacher or admin role
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/APIError'
+        "504":
+          description: Gateway timeout - worker status request timed out
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get worker status
+      tags:
+      - worker
 swagger: "2.0"
