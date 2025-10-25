@@ -9,31 +9,36 @@ import (
 )
 
 func NewTestConfig() *config.Config {
+	dbPort := 5432
+	apiPort := 8080
+	brokerPort := 5672
 	return &config.Config{
 		DB: config.DBConfig{
 			Host:     "localhost",
-			Port:     5432,
+			Port:     uint16(dbPort),
 			User:     "postgres",
 			Password: "postgres",
 			Name:     "test-maxit",
 		},
-		Api: config.ApiConfig{
-			Port: 8080,
+		API: config.APIConfig{
+			Port: uint16(apiPort),
 		},
-		BrokerConfig: config.BrokerConfig{
+		Broker: config.BrokerConfig{
 			QueueName:         "test_worker_queue",
 			ResponseQueueName: "test_worker_response_queue",
 			Host:              "localhost",
-			Port:              5672,
+			Port:              uint16(brokerPort),
 			User:              "guest",
 			Password:          "guest",
 		},
+		FileStorageURL: "filestorageurl",
 	}
 }
 
 func NewTestChannel(t *testing.T) (*amqp091.Connection, *amqp091.Channel) {
 	cfg := NewTestConfig()
-	conn, err := amqp091.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.BrokerConfig.User, cfg.BrokerConfig.Password, cfg.BrokerConfig.Host, cfg.BrokerConfig.Port))
+	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Broker.User, cfg.Broker.Password, cfg.Broker.Host, cfg.Broker.Port)
+	conn, err := amqp091.Dial(brokerURL)
 	if err != nil {
 		t.Fatalf("failed to create a new amqp connection: %v", err)
 	}

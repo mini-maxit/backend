@@ -4,4 +4,4 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 )
 
-var InvalidUser = schemas.User{Id: -1}
+var InvalidUser = schemas.User{ID: -1}

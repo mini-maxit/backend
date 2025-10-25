@@ -12,6 +12,23 @@ You also need to have local image of file-storage build and stored. The tag for 
 docker compose up --build -d
 ```
 
+## Migrations
+
+[Atlas](https://atlasgo.io/getting-started#installation) is used for database migrations. You can find migration files in `migrations` folder.
+
+To generate new migration file you can use the following command:
+
+```bash
+atlas migrate diff --env gorm
+```
+
+To apply migrations to database you can use:
+
+```bash
+atlas migrate apply --env gorm --url <database_url>
+```
+
+
 ## You might need it
 
 ### DUMP=true
@@ -22,8 +39,22 @@ If you set `DUMP=true` in the .env file, and start application using provided de
 - Teacher user. Email=`teacher@teacher.com` Password=`teacherteacher`
 - Student user. Email=`student@student.com` Password=`studentstudent`
 
+### Swagger docs
+In order to generate swagger documentation you need to have installed `swag` tool. You can install it using:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+Next you can generate swagger documentation using:
+
+```bash
+./scripts/update-docs.sh
+```
+
+You can access it at `/api/v1/docs` when the application is running.
+
+
 # Endpoints
 
-You can check automaticaly generated markdown documentation [here](./docs/swagger.md). Documentation is generated from swagger specification, which in turn is generated from code comments.
-
-If you prefer swagger specification you can access it [here](https://mini-maxit.github.io/backend/)
+You can check automaticaly generated swagger documentation [here](https://mini-maxit.github.io/backend/). Documentation is generated from code comments, so please excuse if there are mistakes.

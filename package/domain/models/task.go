@@ -1,17 +1,19 @@
 package models
 
-import "time"
-
 type Task struct {
-	Id        int64     `gorm:"primaryKey;autoIncrement"`
-	Title     string    `gorm:"type:varchar(255)"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
-	CreatedBy int64     `gorm:"foreignKey:UserID"`
-	Author    User      `gorm:"foreignKey:CreatedBy; references:Id"`
+	ID                int64  `gorm:"primaryKey;autoIncrement"`
+	Title             string `gorm:"type:varchar(255)"`
+	DescriptionFileID int64  `gorm:"null;default:null"`
+	CreatedBy         int64  `gorm:"foreignKey:UserID"`
+
+	BaseModel
+
+	Author          User    `gorm:"foreignKey:CreatedBy; references:ID"`
+	Groups          []Group `gorm:"many2many:task_groups;"`
+	DescriptionFile File    `gorm:"foreignKey:DescriptionFileID; references:ID"`
 }
 
 type TaskUser struct {
-	TaskId int64 `gorm:"primaryKey"`
-	UserId int64 `gorm:"primaryKey"`
+	TaskID int64 `gorm:"primaryKey"`
+	UserID int64 `gorm:"primaryKey"`
 }

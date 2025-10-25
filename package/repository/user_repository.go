@@ -7,35 +7,39 @@ import (
 )
 
 type UserRepository interface {
-	// CreateUser creates a new user and returns the user ID
-	CreateUser(tx *gorm.DB, user *models.User) (int64, error)
-	GetUser(tx *gorm.DB, userId int64) (*models.User, error)
-	GetUserByEmail(tx *gorm.DB, email string) (*models.User, error)
-	GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
-	EditUser(tx *gorm.DB, user *models.User) error
+	// Create creates a new user and returns the user ID
+	Create(tx *gorm.DB, user *models.User) (int64, error)
+	// Edit updates the user information by setting the new values
+	Edit(tx *gorm.DB, user *models.User) error
+	// GetAll returns all users with pagination and sorting
+	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
+	// Get returns a user by ID
+	Get(tx *gorm.DB, userID int64) (*models.User, error)
+	//
+	GetByEmail(tx *gorm.DB, email string) (*models.User, error)
 }
 
 type userRepository struct {
 }
 
-func (ur *userRepository) CreateUser(tx *gorm.DB, user *models.User) (int64, error) {
+func (ur *userRepository) Create(tx *gorm.DB, user *models.User) (int64, error) {
 	err := tx.Model(&models.User{}).Create(user).Error
 	if err != nil {
 		return 0, err
 	}
-	return user.Id, nil
+	return user.ID, nil
 }
 
-func (ur *userRepository) GetUser(tx *gorm.DB, userId int64) (*models.User, error) {
+func (ur *userRepository) Get(tx *gorm.DB, userID int64) (*models.User, error) {
 	user := &models.User{}
-	err := tx.Model(&models.User{}).Where("id = ?", userId).Take(user).Error
+	err := tx.Model(&models.User{}).Where("id = ?", userID).Take(user).Error
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (ur *userRepository) GetUserByEmail(tx *gorm.DB, email string) (*models.User, error) {
+func (ur *userRepository) GetByEmail(tx *gorm.DB, email string) (*models.User, error) {
 	user := &models.User{}
 	err := tx.Model(&models.User{}).Where("email = ?", email).First(user).Error
 	if err != nil {
@@ -44,7 +48,7 @@ func (ur *userRepository) GetUserByEmail(tx *gorm.DB, email string) (*models.Use
 	return user, nil
 }
 
-func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
+func (ur *userRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
 	users := &[]models.User{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -58,18 +62,11 @@ func (ur *userRepository) GetAllUsers(tx *gorm.DB, limit, offset int, sort strin
 	return *users, nil
 }
 
-func (ur *userRepository) EditUser(tx *gorm.DB, user *models.User) error {
-	err := tx.Model(&models.User{}).Where("id = ?", user.Id).Updates(user).Error
+func (ur *userRepository) Edit(tx *gorm.DB, user *models.User) error {
+	err := tx.Save(user).Error
 	return err
 }
 
-func NewUserRepository(db *gorm.DB) (UserRepository, error) {
-	if !db.Migrator().HasTable(&models.User{}) {
-		err := db.Migrator().CreateTable(&models.User{})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &userRepository{}, nil
+func NewUserRepository() UserRepository {
+	return &userRepository{}
 }
