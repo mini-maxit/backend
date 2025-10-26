@@ -1454,6 +1454,21 @@ func (mr *MockContestRepositoryMockRecorder) GetPastContestsWithStats(tx, userID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetPastContestsWithStats), tx, userID, offset, limit, sort)
 }
 
+// GetRegistrationRequests mocks base method.
+func (m *MockContestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int64) ([]models.ContestPendingRegistration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegistrationRequests", tx, contestID)
+	ret0, _ := ret[0].([]models.ContestPendingRegistration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRegistrationRequests indicates an expected call of GetRegistrationRequests.
+func (mr *MockContestRepositoryMockRecorder) GetRegistrationRequests(tx, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestRepository)(nil).GetRegistrationRequests), tx, contestID)
+}
+
 // GetTasksForContest mocks base method.
 func (m *MockContestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
 	m.ctrl.T.Helper()

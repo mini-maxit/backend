@@ -28,6 +28,7 @@ type ContestRoute interface {
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTasksForContest(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
+	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -628,6 +629,69 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task added to contest successfully"))
 }
 
+// GetRegistrationRequests godoc
+//
+//	@Tags			contest
+//	@Summary		Get registration requests for a contest
+//	@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
+//	@Router			/contests/{id}/registration-requests [get]
+func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	requests, err := cr.contestService.GetRegistrationRequests(tx, currentUser, contestID)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to get registration requests", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to get registration requests")
+		return
+	}
+
+	if requests == nil {
+		requests = []schemas.RegistrationRequest{}
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, requests)
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -691,6 +755,15 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		switch r.Method {
 		case http.MethodPost:
 			contestRoute.RegisterForContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			contestRoute.GetRegistrationRequests(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

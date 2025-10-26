@@ -37,6 +37,8 @@ type ContestService interface {
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
 	AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
+	// GetRegistrationRequests retrieves pending registration requests for a contest
+	GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.RegistrationRequest, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -588,6 +590,49 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 		},
 		SolvedTaskCount: model.SolvedCount,
 	}
+}
+
+func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.RegistrationRequest, error) {
+	// First, check if contest exists
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Check authorization - only contest creator or admin can view registration requests
+	if currentUser.Role != types.UserRoleAdmin && contest.CreatedBy != currentUser.ID {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	// Get registration requests from repository
+	requests, err := cs.contestRepository.GetRegistrationRequests(tx, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to schema
+	result := make([]schemas.RegistrationRequest, len(requests))
+	for i, req := range requests {
+		result[i] = schemas.RegistrationRequest{
+			ID:        req.ID,
+			ContestID: req.ContestID,
+			UserID:    req.UserID,
+			User: schemas.User{
+				ID:       req.User.ID,
+				Name:     req.User.Name,
+				Surname:  req.User.Surname,
+				Email:    req.User.Email,
+				Username: req.User.Username,
+				Role:     req.User.Role,
+			},
+			CreatedAt: req.CreatedAt,
+		}
+	}
+
+	return result, nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository) ContestService {

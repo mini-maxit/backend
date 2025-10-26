@@ -61,3 +61,11 @@ type AddTaskToContest struct {
 	StartAt *time.Time `json:"startAt,omitempty"`
 	EndAt   *time.Time `json:"endAt,omitempty"`
 }
+
+type RegistrationRequest struct {
+	ID        int64     `json:"id"`
+	ContestID int64     `json:"contestId"`
+	UserID    int64     `json:"userId"`
+	User      User      `json:"user"`
+	CreatedAt time.Time `json:"createdAt"`
+}
