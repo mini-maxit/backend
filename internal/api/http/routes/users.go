@@ -14,6 +14,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type UserRoute interface {
@@ -29,6 +30,7 @@ type UserRoute interface {
 type UserRouteImpl struct {
 	userService    service.UserService
 	contestService service.ContestService
+	logger         *zap.SugaredLogger
 }
 
 // GetAllUsers godoc
@@ -53,7 +55,8 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		u.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -61,7 +64,8 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := u.userService.GetAll(tx, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting users. "+err.Error())
+		u.logger.Errorw("Failed to get users", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "User service temporarily unavailable")
 		return
 	}
 
@@ -107,7 +111,8 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		u.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -118,7 +123,8 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error fetching user: "+err.Error())
+		u.logger.Errorw("Failed to get user", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "User service temporarily unavailable")
 		return
 	}
 
@@ -134,7 +140,7 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 //	@Param			id		path		int					true	"User ID"
 //	@Param			request	body		schemas.UserEdit	true	"User Edit Request"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
@@ -158,6 +164,11 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -165,7 +176,8 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		u.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -184,8 +196,10 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrNotAuthorized):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
 			return
+		default:
+			u.logger.Errorw("Failed to edit user", "error", err)
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error ocured during editing. "+err.Error())
+		httputils.ReturnError(w, http.StatusInternalServerError, "User edit service temporarily unavailable")
 		return
 	}
 
@@ -201,7 +215,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 //	@Param			id		path		int							true	"User ID"
 //	@Param			request	body		schemas.UserChangePassword	true	"User Change Password Request"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -226,6 +240,11 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	request := &schemas.UserChangePassword{}
 	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -233,7 +252,8 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		u.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -269,7 +289,8 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Default case
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error occurred during editing. "+err.Error())
+		u.logger.Errorw("Failed to change password", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Password change service temporarily unavailable")
 		return
 	}
 
@@ -341,7 +362,8 @@ func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		u.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -352,7 +374,8 @@ func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) 
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error fetching contests: "+err.Error())
+		u.logger.Errorw("Failed to get user contests", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
 		return
 	}
 
@@ -360,7 +383,11 @@ func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) 
 }
 
 func NewUserRoute(userService service.UserService, contestService service.ContestService) UserRoute {
-	route := &UserRouteImpl{userService: userService, contestService: contestService}
+	route := &UserRouteImpl{
+		userService:    userService,
+		contestService: contestService,
+		logger:         utils.NewNamedLogger("users"),
+	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {
 		log.Panicf("UserRoute struct is not valid: %s", err.Error())

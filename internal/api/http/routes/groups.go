@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -14,6 +15,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type GroupRoute interface {
@@ -29,6 +31,7 @@ type GroupRoute interface {
 
 type GroupRouteImpl struct {
 	groupService service.GroupService
+	logger       *zap.SugaredLogger
 }
 
 // CreateGroup godoc
@@ -39,7 +42,7 @@ type GroupRouteImpl struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		schemas.CreateGroup	true	"Create Group"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -54,6 +57,11 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	var request schemas.CreateGroup
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -65,7 +73,8 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -84,8 +93,10 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			gr.logger.Errorw("Failed to create group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
+		httputils.ReturnError(w, status, "Group creation failed")
 		return
 	}
 
@@ -114,7 +125,8 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -139,8 +151,10 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusNotFound
 		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			gr.logger.Errorw("Failed to get group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to get group. "+err.Error())
+		httputils.ReturnError(w, status, "Group retrieval failed")
 		return
 	}
 
@@ -168,7 +182,8 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -181,8 +196,10 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			gr.logger.Errorw("Failed to list groups", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to list groups. "+err.Error())
+		httputils.ReturnError(w, status, "Group listing failed")
 		return
 	}
 
@@ -202,7 +219,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int					true	"Group ID"
 //	@Param			body	body		schemas.EditGroup	true	"Edit Group"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -217,6 +234,11 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	var request schemas.EditGroup
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -224,7 +246,8 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -247,8 +270,10 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			gr.logger.Errorw("Failed to edit group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to create group. "+err.Error())
+		httputils.ReturnError(w, status, "Group edit failed")
 		return
 	}
 
@@ -264,7 +289,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int				true	"Group ID"
 //	@Param			body	body		schemas.UserIDs	true	"User IDs"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -291,6 +316,11 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	request := &schemas.UserIDs{}
 	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -298,7 +328,8 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -312,8 +343,10 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound
+		} else {
+			gr.logger.Errorw("Failed to add users to group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to add users to group. "+err.Error())
+		httputils.ReturnError(w, status, "User addition to group failed")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users added to group successfully"))
@@ -328,7 +361,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 //	@Produce		json
 //	@Param			id		path		int				true	"Group ID"
 //	@Param			body	body		schemas.UserIDs	true	"User IDs"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -355,6 +388,11 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 	request := &schemas.UserIDs{}
 	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -362,7 +400,8 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -383,8 +422,9 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 			status = http.StatusNotFound
 		default:
 			status = http.StatusInternalServerError
+			gr.logger.Errorw("Failed to delete users from group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to delete users from group. "+err.Error())
+		httputils.ReturnError(w, status, "User deletion from group failed")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users deleted from group successfully"))
@@ -424,7 +464,8 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -438,8 +479,10 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound
+		} else {
+			gr.logger.Errorw("Failed to get group users", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to get group users. "+err.Error())
+		httputils.ReturnError(w, status, "Group users retrieval failed")
 		return
 	}
 
@@ -467,7 +510,8 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		gr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -481,8 +525,10 @@ func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) 
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound
+		} else {
+			gr.logger.Errorw("Failed to get group tasks", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to get group tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Group tasks retrieval failed")
 		return
 	}
 
@@ -531,6 +577,7 @@ func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 func NewGroupRoute(groupService service.GroupService) GroupRoute {
 	route := &GroupRouteImpl{
 		groupService: groupService,
+		logger:       utils.NewNamedLogger("groups"),
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {

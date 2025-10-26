@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -14,6 +15,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type TaskRoute interface {
@@ -40,6 +42,7 @@ type taskRoute struct {
 
 	// Service that handles task-related operations
 	taskService service.TaskService
+	logger      *zap.SugaredLogger
 }
 
 type usersRequest struct {
@@ -59,7 +62,8 @@ func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -67,10 +71,10 @@ func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	task, err := tr.taskService.GetAllAssigned(tx, currentUser, queryParams)
-
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error getting tasks. "+err.Error())
+		tr.logger.Errorw("Failed to get assigned tasks", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
 		return
 	}
 
@@ -90,7 +94,8 @@ func (tr *taskRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -103,8 +108,10 @@ func (tr *taskRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to get created tasks", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
 	}
 
@@ -133,28 +140,31 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	tasks, err := tr.taskService.GetAll(tx, currentUser, queryParams)
+	task, err := tr.taskService.GetAll(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to get all tasks", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
 	}
 
-	if tasks == nil {
-		tasks = []schemas.Task{}
+	if task == nil {
+		task = []schemas.Task{}
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, tasks)
+	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
 // GetTask godoc
@@ -190,7 +200,8 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -205,8 +216,10 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusForbidden
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
+		default:
+			tr.logger.Errorw("Failed to get task", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting task. "+err.Error())
+		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
 	}
 
@@ -248,7 +261,8 @@ func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -262,8 +276,10 @@ func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to get tasks for group", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
 	}
 
@@ -312,7 +328,7 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 	// Extract the uploaded file
 	file, handler, err := r.FormFile("archive")
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Error retrieving the file. No task file found."+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "No task file found in request")
 		return
 	}
 	if !strings.HasSuffix(handler.Filename, ".zip") && !strings.HasSuffix(handler.Filename, ".tar.gz") {
@@ -323,9 +339,11 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
+	// Save the file
 	filePath, err := httputils.SaveMultiPartFile(file, handler)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
+		tr.logger.Errorw("Failed to save multipart file", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "File upload service temporarily unavailable")
 		return
 	}
 
@@ -340,7 +358,8 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -350,15 +369,18 @@ func (tr *taskRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to upload task", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Task upload service temporarily unavailable")
 		return
 	}
 
 	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error processing and uploading task. "+err.Error())
+		tr.logger.Errorw("Failed to process and upload task", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{ID: taskID})
@@ -402,7 +424,8 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -423,7 +446,8 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Error getting tasks. "+err.Error())
+			tr.logger.Errorw("Failed to edit task", "error", err)
+			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
 		}
 		return
 	}
@@ -450,14 +474,16 @@ func (tr *taskRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	// Save the file
 	filePath, err := httputils.SaveMultiPartFile(file, handler)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
+		tr.logger.Errorw("Failed to save multipart file", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "File upload service temporarily unavailable")
 		return
 	}
 
 	// Process and upload
 	if err := tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath); err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error processing and uploading task. "+err.Error())
+		tr.logger.Errorw("Failed to process and upload task", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task updated successfully"))
@@ -496,7 +522,8 @@ func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -508,8 +535,10 @@ func (tr *taskRoute) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to delete task", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error getting tasks. "+err.Error())
+		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
 	}
 
@@ -550,6 +579,11 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	request := usersRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -557,7 +591,8 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -569,8 +604,10 @@ func (tr *taskRoute) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to assign task to users", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error assigning task. "+err.Error())
+		httputils.ReturnError(w, status, "Task assignment service temporarily unavailable")
 		return
 	}
 
@@ -611,6 +648,11 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 	request := groupsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -618,7 +660,8 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -630,8 +673,10 @@ func (tr *taskRoute) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to assign task to groups", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error assigning task. "+err.Error())
+		httputils.ReturnError(w, status, "Task assignment service temporarily unavailable")
 		return
 	}
 
@@ -672,6 +717,11 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 	request := usersRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -679,7 +729,8 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -691,8 +742,10 @@ func (tr *taskRoute) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Reques
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to unassign task from users", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error unassigning task. "+err.Error())
+		httputils.ReturnError(w, status, "Task unassignment service temporarily unavailable")
 		return
 	}
 
@@ -733,6 +786,11 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 	request := groupsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -740,7 +798,8 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -752,8 +811,10 @@ func (tr *taskRoute) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Reque
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			tr.logger.Errorw("Failed to unassign task from groups", "error", err)
 		}
-		httputils.ReturnError(w, status, "Error unassigning task. "+err.Error())
+		httputils.ReturnError(w, status, "Task unassignment service temporarily unavailable")
 		return
 	}
 
@@ -792,7 +853,8 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -804,7 +866,8 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+			tr.logger.Errorw("Failed to get task limits", "error", err)
+			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
 		}
 		return
 	}
@@ -820,7 +883,7 @@ func (tr *taskRoute) GetLimits(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int									true	"Task ID"
 //	@Param			limits	body		schemas.PutTestCaseLimitsRequest	true	"Task limits"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
@@ -845,7 +908,8 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		tr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -854,6 +918,11 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -867,7 +936,8 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrNotAuthorized):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to update limits for this task.")
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Error puting limits. "+err.Error())
+			tr.logger.Errorw("Failed to put task limits", "error", err)
+			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
 		}
 		return
 	}
@@ -876,7 +946,11 @@ func (tr *taskRoute) PutLimits(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewTaskRoute(fileStorageURL string, taskService service.TaskService) TaskRoute {
-	route := &taskRoute{fileStorageURL: fileStorageURL, taskService: taskService}
+	route := &taskRoute{
+		fileStorageURL: fileStorageURL,
+		taskService:    taskService,
+		logger:         utils.NewNamedLogger("tasks"),
+	}
 
 	err := utils.ValidateStruct(*route)
 	if err != nil {

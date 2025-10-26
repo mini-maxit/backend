@@ -10,6 +10,8 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
+	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type WorkerRoute interface {
@@ -19,6 +21,7 @@ type WorkerRoute interface {
 
 type workerRoute struct {
 	workserService service.WorkerService
+	logger         *zap.SugaredLogger
 }
 
 // GetStatus godoc
@@ -48,7 +51,8 @@ func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnError(w, http.StatusGatewayTimeout, err.Error())
 			return
 		}
-		httputils.ReturnError(w, http.StatusInternalServerError, err.Error())
+		wr.logger.Errorw("Failed to get worker status", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Worker service temporarily unavailable")
 		return
 	}
 
@@ -62,5 +66,6 @@ func RegisterWorkerRoutes(mux *mux.Router, wr WorkerRoute) {
 func NewWorkerRoute(workserService service.WorkerService) WorkerRoute {
 	return &workerRoute{
 		workserService: workserService,
+		logger:         utils.NewNamedLogger("workers"),
 	}
 }

@@ -68,6 +68,16 @@ func PasswordValidator(fl validator.FieldLevel) bool {
 // NewValidator creates a new validator with custom validators.
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	// Configure validator to use JSON tag names instead of struct field names
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+
 	err := validate.RegisterValidation("username", UsernameValidator)
 	if err != nil {
 		return nil, err

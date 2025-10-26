@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -13,6 +14,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type ContestRoute interface {
@@ -30,6 +32,7 @@ type ContestRoute interface {
 
 type ContestRouteImpl struct {
 	contestService service.ContestService
+	logger         *zap.SugaredLogger
 }
 
 // CreateContest godoc
@@ -40,7 +43,7 @@ type ContestRouteImpl struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			body	body		schemas.CreateContest	true	"Create Contest"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -55,6 +58,11 @@ func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 	var request schemas.CreateContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -62,7 +70,8 @@ func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -74,8 +83,10 @@ func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to create contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to create contest. "+err.Error())
+		httputils.ReturnError(w, status, "Contest creation failed")
 		return
 	}
 
@@ -104,7 +115,8 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -129,8 +141,10 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusNotFound
 		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to get contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to get contest. "+err.Error())
+		httputils.ReturnError(w, status, "Contest retrieval failed")
 		return
 	}
 
@@ -158,7 +172,8 @@ func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Re
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -171,8 +186,10 @@ func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Re
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to list ongoing contests", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to list ongoing contests. "+err.Error())
+		httputils.ReturnError(w, status, "Contest listing failed")
 		return
 	}
 
@@ -204,7 +221,8 @@ func (cr *ContestRouteImpl) GetPastContests(w http.ResponseWriter, r *http.Reque
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -217,8 +235,10 @@ func (cr *ContestRouteImpl) GetPastContests(w http.ResponseWriter, r *http.Reque
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to list past contests", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to list past contests. "+err.Error())
+		httputils.ReturnError(w, status, "Contest listing failed")
 		return
 	}
 
@@ -250,7 +270,8 @@ func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.R
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error connecting to database. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -263,8 +284,10 @@ func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.R
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to list upcoming contests", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to list upcoming contests. "+err.Error())
+		httputils.ReturnError(w, status, "Contest listing failed")
 		return
 	}
 
@@ -284,7 +307,7 @@ func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.R
 //	@Produce		json
 //	@Param			id		path		int					true	"Contest ID"
 //	@Param			body	body		schemas.EditContest	true	"Edit Contest"
-//	@Failure		400		{object}	httputils.APIError
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
@@ -300,6 +323,11 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 	var request schemas.EditContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -307,7 +335,8 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -332,8 +361,10 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to edit contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to edit contest. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to edit contest")
 		return
 	}
 
@@ -363,7 +394,8 @@ func (cr *ContestRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -388,8 +420,10 @@ func (cr *ContestRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to delete contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to delete contest. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to delete contest")
 		return
 	}
 
@@ -420,7 +454,8 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -453,7 +488,10 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 		case errors.Is(err, myerrors.ErrAlreadyRegistered) || errors.Is(err, myerrors.ErrAlreadyParticipant):
 			status = http.StatusConflict
 		}
-		httputils.ReturnError(w, status, "Failed to register for contest. "+err.Error())
+		if status == http.StatusInternalServerError {
+			cr.logger.Errorw("Failed to register for contest", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to register for contest")
 		return
 	}
 
@@ -483,9 +521,9 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
-
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -510,8 +548,10 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 			status = http.StatusNotFound
 		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
 			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to get tasks for contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to get tasks for contest. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to get tasks for contest")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
@@ -525,7 +565,7 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 // @Produce		json
 // @Param			id		path		int						true	"Contest ID"
 // @Param			body	body		schemas.AddTaskToContest	true	"Add Task to Contest"
-// @Failure		400		{object}	httputils.APIError
+// @Failure		400		{object}	httputils.ValidationErrorResponse
 // @Failure		403		{object}	httputils.APIError
 // @Failure		404		{object}	httputils.APIError
 // @Failure		405		{object}	httputils.APIError
@@ -542,7 +582,8 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -560,6 +601,11 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 	var request schemas.AddTaskToContest
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
 		return
 	}
@@ -572,8 +618,10 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to add task to contest", "error", err)
 		}
-		httputils.ReturnError(w, status, "Failed to add task to contest. "+err.Error())
+		httputils.ReturnError(w, status, "Failed to add task to contest")
 		return
 	}
 
@@ -652,6 +700,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 func NewContestRoute(contestService service.ContestService) ContestRoute {
 	route := &ContestRouteImpl{
 		contestService: contestService,
+		logger:         utils.NewNamedLogger("contests"),
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {

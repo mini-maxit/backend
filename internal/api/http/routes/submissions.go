@@ -13,6 +13,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 )
 
 type SubmissionRoutes interface {
@@ -36,6 +37,7 @@ type SumbissionImpl struct {
 	taskService       service.TaskService
 	fileStorageURL    string
 	queueService      service.QueueService
+	logger            *zap.SugaredLogger
 }
 
 // GetAll godoc
@@ -63,7 +65,8 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -74,7 +77,8 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	submissions, err := s.submissionService.GetAll(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		s.logger.Errorw("Failed to get submissions", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		return
 	}
 
@@ -109,7 +113,8 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -126,7 +131,8 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	submission, err := s.submissionService.Get(tx, submissionID, currentUser)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submission. "+err.Error())
+		s.logger.Errorw("Failed to get submission", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		return
 	}
 
@@ -167,7 +173,8 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -184,7 +191,8 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 				"Permission denied. Current user is not allowed to view submissions for this user.",
 			)
 		default:
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+			s.logger.Errorw("Failed to get submissions for user", "error", err)
+			httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		}
 		return
 	}
@@ -230,7 +238,8 @@ func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Reque
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -296,7 +305,8 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -307,7 +317,8 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	submissions, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		s.logger.Errorw("Failed to get submissions for group", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		return
 	}
 
@@ -354,7 +365,8 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -363,7 +375,8 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	submissions, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions. "+err.Error())
+		s.logger.Errorw("Failed to get submissions for task", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		return
 	}
 
@@ -390,12 +403,14 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 	languages, err := s.submissionService.GetAvailableLanguages(tx)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get available languages. "+err.Error())
+		s.logger.Errorw("Failed to get available languages", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Language service temporarily unavailable")
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, languages)
@@ -456,7 +471,8 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	defer file.Close()
 	filePath, err := httputils.SaveMultiPartFile(file, handler)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Error saving multipart file. "+err.Error())
+		s.logger.Errorw("Failed to save multipart file", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "File upload service temporarily unavailable")
 		return
 	}
 
@@ -478,7 +494,8 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Transaction was not started by middleware. "+err.Error())
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
 
@@ -490,9 +507,10 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found")
 		default:
+			s.logger.Errorw("Failed to create submission", "error", err)
 			httputils.ReturnError(w,
 				http.StatusInternalServerError,
-				"Error creating submission. "+err.Error(),
+				"Submission service temporarily unavailable",
 			)
 		}
 		return
@@ -512,6 +530,7 @@ func NewSubmissionRoutes(
 		fileStorageURL:    fileStorageURL,
 		queueService:      queueService,
 		taskService:       taskService,
+		logger:            utils.NewNamedLogger("submissions"),
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {
