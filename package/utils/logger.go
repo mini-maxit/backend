@@ -45,7 +45,12 @@ func getProjectRoot() string {
 // getLogPath returns the absolute path to the log file in the project root
 func getLogPath() string {
 	projectRoot := getProjectRoot()
-	return filepath.Join(projectRoot, "logs", "app.log")
+	logDir := os.Getenv("LOG_DIR")
+	if logDir == "" {
+		logDir = "logs"
+	}
+
+	return filepath.Join(projectRoot, logDir, "app.log")
 }
 
 func initializeLogger() {
