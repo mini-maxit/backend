@@ -12,6 +12,13 @@ FROM alpine:latest
 
 WORKDIR /app
 
+# Install Atlas binary
+RUN apk add --no-cache curl && \
+    curl -L https://release.ariga.io/atlas/atlas-linux-amd64-latest -o /usr/local/bin/atlas && \
+    chmod +x /usr/local/bin/atlas
+
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/atlas.hcl .
 COPY --from=builder /app/backend.o .
 
 CMD ["./backend.o"]
