@@ -81,7 +81,7 @@ func (us *submissionRepository) GetAllForTeacher(
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
-		Joins("JOIN tasks ON tasks.id = submissions.task_id").Where(
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").Where(
 		"tasks.created_by = ?",
 		userID,
 	).Find(&submissions).Error
@@ -152,9 +152,9 @@ func (us *submissionRepository) GetAllForGroup(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN users ON users.id = submissions.user_id").
-		Joins("JOIN user_group ON user_group.user_id = users.id").
-		Joins("JOIN groups ON groups.id = user_group.group_id").
+		Joins("JOIN maxit.users ON users.id = submissions.user_id").
+		Joins("JOIN maxit.user_group ON user_group.user_id = users.id").
+		Joins("JOIN maxit.groups ON groups.id = user_group.group_id").
 		Where("groups.id = ?", groupID).
 		Find(&submissions).Error
 
@@ -182,9 +182,9 @@ func (us *submissionRepository) GetAllForGroupTeacher(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN tasks ON tasks.id = submissions.task_id").
-		Joins("JOIN task_group ON task_group.task_id = tasks.id").
-		Joins("JOIN groups ON groups.id = task_group.group_id").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.task_group ON task_group.task_id = tasks.id").
+		Joins("JOIN maxit.groups ON groups.id = task_group.group_id").
 		Where("groups.id = ? AND tasks.created_by_id = ?", groupID, userID).
 		Find(&submissions).Error
 
@@ -212,7 +212,7 @@ func (us *submissionRepository) GetAllForTask(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ?", taskID).
 		Find(&submissions).Error
 
@@ -240,7 +240,7 @@ func (us *submissionRepository) GetAllForTaskTeacher(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND tasks.created_by = ?", taskID, userID).
 		Find(&submissions).Error
 
@@ -267,7 +267,7 @@ func (us *submissionRepository) GetAllForTaskStudent(
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
-		Joins("JOIN tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
 		Where("tasks.id = ? AND submissions.user_id = ?", taskID, studentID).
 		Find(&submissions).Error
 
@@ -354,15 +354,15 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 	// Query to get the best score (highest percentage of passed tests)
 	err := tx.Model(&models.Submission{}).
 		Select("MAX(CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END) as best_score").
-		Joins("LEFT JOIN submission_results ON submissions.id = submission_results.submission_id").
+		Joins("LEFT JOIN maxit.submission_results ON submissions.id = submission_results.submission_id").
 		Joins(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM test_results
+			FROM maxit.test_results
 			GROUP BY submission_result_id
 		) as total_tests ON submission_results.id = total_tests.submission_result_id`).
 		Joins(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM test_results
+			FROM maxit.test_results
 			WHERE passed = true
 			GROUP BY submission_result_id
 		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`).

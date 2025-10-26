@@ -107,7 +107,7 @@ func (gr *groupRepository) GetAllForTeacher(
 func (gr *groupRepository) GetUsers(tx *gorm.DB, groupID int64) ([]models.User, error) {
 	var users []models.User
 	err := tx.Model(&models.User{}).
-		Joins("JOIN user_groups ON user_groups.user_id = users.id").
+		Joins("JOIN maxit.user_groups ON user_groups.user_id = users.id").
 		Where("user_groups.group_id = ?", groupID).
 		Find(&users).Error
 	if err != nil {

@@ -136,7 +136,7 @@ func (cr *contestRepository) IsUserParticipant(tx *gorm.DB, contestID int64, use
 	}
 	var groupCount int64
 	err = tx.Model(&models.ContestParticipantGroup{}).Where("contest_id = ?", contestID).
-		Joins("JOIN user_groups ON contest_participant_groups.group_id = user_groups.group_id").
+		Joins("JOIN maxit.user_groups ON maxit.contest_participant_groups.group_id = user_groups.group_id").
 		Where("user_groups.user_id = ?", userID).
 		Count(&groupCount).Error
 	if err != nil {
@@ -164,28 +164,28 @@ func (cr *contestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offset i
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_participants
+			FROM maxit.contest_participants
 			GROUP BY contest_id
 		) as direct_participants ON contests.id = direct_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
 		) as group_participants ON contests.id = group_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_tasks
+			FROM maxit.contest_tasks
 			GROUP BY contest_id
 		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
 		Joins(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
 		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID)
+		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID)
 
 	// Apply pagination and sorting
 	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
@@ -213,28 +213,28 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_participants
+			FROM maxit.contest_participants
 			GROUP BY contest_id
 		) as direct_participants ON contests.id = direct_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
 		) as group_participants ON contests.id = group_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_tasks
+			FROM maxit.contest_tasks
 			GROUP BY contest_id
 		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
 		Joins(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
 		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
 		Where(`(
 			(start_at IS NOT NULL AND start_at <= NOW() AND (end_at IS NULL OR end_at > NOW()))
 		)`)
@@ -265,28 +265,28 @@ func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64,
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_participants
+			FROM maxit.contest_participants
 			GROUP BY contest_id
 		) as direct_participants ON contests.id = direct_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
 		) as group_participants ON contests.id = group_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_tasks
+			FROM maxit.contest_tasks
 			GROUP BY contest_id
 		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
 		Joins(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
 		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
 		Where("end_at IS NOT NULL AND end_at <= NOW()")
 
 	// Apply pagination and sorting
@@ -315,28 +315,28 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_participants
+			FROM maxit.contest_participants
 			GROUP BY contest_id
 		) as direct_participants ON contests.id = direct_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
 		) as group_participants ON contests.id = group_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_tasks
+			FROM maxit.contest_tasks
 			GROUP BY contest_id
 		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
 		Joins(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
 		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
 		Where("start_at IS NOT NULL AND start_at > NOW()")
 
 	// Apply pagination and sorting
@@ -356,7 +356,7 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN contest_tasks ON contest_tasks.task_id = tasks.id").
+		Joins("JOIN maxit.contest_tasks ON contest_tasks.task_id = tasks.id").
 		Where("contest_tasks.contest_id = ?", contestID).
 		Find(&tasks).Error
 	if err != nil {
@@ -368,7 +368,7 @@ func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([
 func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN contest_tasks ON contest_tasks.task_id = tasks.id").
+		Joins("JOIN maxit.contest_tasks ON contest_tasks.task_id = tasks.id").
 		Where("contest_tasks.contest_id = ?", contestID).
 		Find(&tasks).Error
 	if err != nil {
@@ -389,41 +389,41 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 			COALESCE(user_solved_tasks.count, 0) as solved_count`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_participants
+			FROM maxit.contest_participants
 			GROUP BY contest_id
 		) as direct_participants ON contests.id = direct_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
 		) as group_participants ON contests.id = group_participants.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM contest_tasks
+			FROM maxit.contest_tasks
 			GROUP BY contest_id
 		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
 		Joins(`LEFT JOIN (
 			SELECT ct.contest_id, COUNT(*) as count
-			FROM contest_tasks ct
-			INNER JOIN submissions s ON s.task_id = ct.task_id AND s.user_id = ?
-			INNER JOIN submission_results sr ON sr.submission_id = s.id
+			FROM maxit.contest_tasks ct
+			INNER JOIN maxit.submissions s ON s.task_id = ct.task_id AND s.user_id = ?
+			INNER JOIN maxit.submission_results sr ON sr.submission_id = s.id
 			INNER JOIN (
 				SELECT submission_result_id,
 					   COUNT(*) as total_tests,
 					   COUNT(CASE WHEN passed = true THEN 1 END) as passed_tests
-				FROM test_results
+				FROM maxit.test_results
 				GROUP BY submission_result_id
 				HAVING COUNT(*) = COUNT(CASE WHEN passed = true THEN 1 END)
 			) perfect_results ON perfect_results.submission_result_id = sr.id
 			GROUP BY ct.contest_id
 		) as user_solved_tasks ON contests.id = user_solved_tasks.contest_id`, userID).
 		Where(`EXISTS (
-			SELECT 1 FROM contest_participants cp
+			SELECT 1 FROM maxit.contest_participants cp
 			WHERE cp.contest_id = contests.id AND cp.user_id = ?
 		) OR EXISTS (
-			SELECT 1 FROM contest_participant_groups cpg
-			JOIN user_groups ug ON cpg.group_id = ug.group_id
+			SELECT 1 FROM maxit.contest_participant_groups cpg
+			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
 			WHERE cpg.contest_id = contests.id AND ug.user_id = ?
 		)`, userID, userID)
 

@@ -86,9 +86,9 @@ func (tr *taskRepository) GetAllAssigned(
 	}
 
 	err = tx.Model(&models.Task{}).
-		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
-		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
-		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Joins("LEFT JOIN maxit.task_users ON task_users.task_id = tasks.id").
+		Joins("LEFT JOIN maxit.task_groups ON task_groups.task_id = tasks.id").
+		Joins("LEFT JOIN maxit.user_groups ON user_groups.group_id = task_groups.group_id").
 		Where("(task_users.user_id = ? OR user_groups.user_id = ?) AND tasks.deleted_at IS NULL", userID, userID).
 		Distinct().
 		Find(&tasks).Error
@@ -170,9 +170,9 @@ func (tr *taskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (b
 	var count int64
 
 	err := tx.Model(&models.Task{}).
-		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
-		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
-		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Joins("LEFT JOIN maxit.task_users ON task_users.task_id = tasks.id").
+		Joins("LEFT JOIN maxit.task_groups ON task_groups.task_id = tasks.id").
+		Joins("LEFT JOIN maxit.user_groups ON user_groups.group_id = task_groups.group_id").
 		Where(`(task_users.task_id = ? AND task_users.user_id = ? OR task_groups.task_id = ? AND user_groups.user_id = ?)
 			AND tasks.deleted_at IS NULL`,
 			taskID, userID, taskID, userID).
@@ -189,7 +189,7 @@ func (tr *taskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (b
 func (tr *taskRepository) IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
+		Joins("JOIN maxit.task_groups ON task_groups.task_id = tasks.id").
 		Where("task_groups.task_id = ? AND task_groups.group_id = ? AND tasks.deleted_at IS NULL", taskID, groupID).
 		Count(&count).Error
 	if err != nil {
@@ -224,7 +224,7 @@ func (tr *taskRepository) GetAllForGroup(
 	}
 
 	err = tx.Model(&models.Task{}).
-		Joins("JOIN task_groups ON task_groups.task_id = tasks.id").
+		Joins("JOIN maxit.task_groups ON task_groups.task_id = tasks.id").
 		Where("task_groups.group_id = ? AND tasks.deleted_at IS NULL", groupID).
 		Find(&tasks).Error
 
