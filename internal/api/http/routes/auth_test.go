@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
@@ -54,40 +55,16 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		tt := []struct {
-			body any
-			msg  string
-		}{
-			{
-				body: struct {
-					Email string `json:"email"`
-				}{
-					Email: "email",
-				},
-				msg: "Invalid request body",
-			},
-			{
-				body: struct {
-					Email    string `json:"email"`
-					Password string `json:"password"`
-					Invalid  string `json:"invalid"`
-				}{
-					Email:    "email@email.com",
-					Password: "password",
-					Invalid:  "invalid",
-				},
-				msg: "Invalid request body",
-			},
+		// Test malformed JSON that triggers non-validation errors
+		invalidBodies := []string{
+			`{"email": "test@email.com", "password": "password", "extra": "field"}`, // extra field
+			`{"email": "test@email.com", "password": "password"}{"extra": "json"}`,  // multiple JSON objects
 		}
 
-		for _, tc := range tt {
-			t.Logf("Testing with body: %v", tc.body)
-			jsonBody, err := json.Marshal(tc.body)
-			if err != nil {
-				t.Fatalf("Failed to marshal request body: %v", err)
-			}
+		for _, body := range invalidBodies {
+			t.Logf("Testing with body: %s", body)
 
-			resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(body))
 			if err != nil {
 				t.Fatalf("Failed to make request: %v", err)
 			}
@@ -101,7 +78,7 @@ func TestLogin(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, tc.msg)
+			assert.Contains(t, bodyString, "Could not validate request data")
 		}
 	})
 
@@ -133,7 +110,7 @@ func TestLogin(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -322,53 +299,16 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		invalidBodies := []any{
-			struct {
-				Email string `json:"email"`
-			}{
-				Email: "email",
-			},
-			struct {
-				Name            string `json:"name"`
-				Surname         string `json:"surname"`
-				Username        string `json:"username"`
-				Email           string `json:"email"`
-				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirmPassword"`
-				Invalid         string `json:"invalid"`
-			}{
-				Name:            "name",
-				Surname:         "surname",
-				Username:        "username",
-				Email:           "email",
-				Password:        "HardPassowrd123!",
-				ConfirmPassword: "HardPassowrd123!",
-				Invalid:         "invalid",
-			},
-			struct {
-				Name            string `json:"name"`
-				Surname         string `json:"surname"`
-				Username        string `json:"username"`
-				Email           string `json:"email"`
-				Password        string `json:"password"`
-				ConfirmPassword string `json:"confirmPassword"`
-			}{
-				Name:            "name",
-				Surname:         "surname",
-				Username:        "username",
-				Email:           "email",
-				Password:        "HardPassowrd123!",
-				ConfirmPassword: "HardPassowrd123!",
-			},
+		// Test malformed JSON that triggers non-validation errors
+		invalidBodies := []string{
+			`{"name": "test", "surname": "user", "username": "testuser", "email": "test@email.com", "password": "password", "confirmPassword": "password", "extra": "field"}`, // extra field
+			`{"name": "test", "surname": "user", "username": "testuser", "email": "test@email.com", "password": "password", "confirmPassword": "password"}{"extra": "json"}`,  // multiple JSON objects
 		}
 
 		for _, body := range invalidBodies {
-			jsonBody, err := json.Marshal(body)
-			if err != nil {
-				t.Fatalf("Failed to marshal request body: %v", err)
-			}
+			t.Logf("Testing with body: %s", body)
 
-			resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(body))
 			if err != nil {
 				t.Fatalf("Failed to make request: %v", err)
 			}
@@ -382,7 +322,7 @@ func TestRegister(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Invalid request body")
+			assert.Contains(t, bodyString, "Could not validate request data")
 		}
 	})
 
@@ -407,7 +347,7 @@ func TestRegister(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
@@ -583,7 +523,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("Invalid or expired refresh token", func(t *testing.T) {

@@ -80,7 +80,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Error connecting to database")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -108,7 +108,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Error getting users")
+		assert.Contains(t, bodyString, "User service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -241,7 +241,7 @@ func TestGetUserByID(t *testing.T) {
 		db.Validate()
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error connecting to database")
+		assert.Contains(t, w.Body.String(), "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestGetUserByID(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error fetching user")
+		assert.Contains(t, w.Body.String(), "User service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -394,7 +394,7 @@ func TestEditUser(t *testing.T) {
 		db.Validate()
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error connecting to database")
+		assert.Contains(t, w.Body.String(), "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -475,7 +475,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error ocured during editing")
+		assert.Contains(t, w.Body.String(), "User edit service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -626,7 +626,7 @@ func TestChangePassword(t *testing.T) {
 		db.Validate()
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error connecting to database")
+		assert.Contains(t, w.Body.String(), "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -770,7 +770,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Error occurred during editing")
+		assert.Contains(t, w.Body.String(), "Password change service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {

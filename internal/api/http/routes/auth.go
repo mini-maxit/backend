@@ -147,7 +147,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)

@@ -73,7 +73,7 @@ func TestGetAll(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -191,7 +191,7 @@ func TestGetByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -595,7 +595,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -823,7 +823,7 @@ func TestSubmitSolution(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Task not found", func(t *testing.T) {

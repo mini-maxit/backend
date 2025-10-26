@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -83,31 +84,17 @@ func TestCreateGroup(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		invalidBodies := []any{
-			struct {
-				Name string `json:"name"`
-			}{
-				Name: "",
-			},
-			struct {
-				Name  string `json:"name"`
-				Extra string `json:"extra"`
-			}{
-				Name:  "Group Name",
-				Extra: "Invalid Field",
-			},
+		// Test malformed JSON that triggers non-validation errors
+		invalidBodies := []string{
+			`{"name": "Test Group", "extra": "field"}`, // extra field
+			`{"name": "Test Group"}{"extra": "json"}`,  // multiple JSON objects
 		}
 
 		for _, body := range invalidBodies {
-			t.Logf("Testing with body: %v", body)
-			jsonBody, err := json.Marshal(body)
-			if err != nil {
-				t.Fatalf("Failed to marshal request body: %v", err)
-			}
+			t.Logf("Testing with body: %s", body)
 
-			resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(body))
 			if err != nil {
-				t.Logf("Body: %s", string(jsonBody))
 				t.Fatalf("Failed to make request: %v", err)
 			}
 			defer resp.Body.Close()
@@ -120,7 +107,7 @@ func TestCreateGroup(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Invalid request body")
+			assert.Contains(t, bodyString, "Could not validate request data")
 		}
 	})
 
@@ -148,7 +135,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
@@ -186,7 +173,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "not authorized")
+		assert.Contains(t, bodyString, "Group creation failed")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -310,7 +297,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "group not found")
+		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -334,7 +321,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -424,7 +411,7 @@ func TestGetAllGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "Group listing failed")
 	})
 
 	t.Run("No groups found", func(t *testing.T) {
@@ -532,7 +519,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Invalid request body")
+		assert.Contains(t, string(bodyBytes), "Could not validate request data")
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -551,7 +538,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {
@@ -579,7 +566,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "Group edit failed")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -681,7 +668,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Invalid request body")
+		assert.Contains(t, string(bodyBytes), "Could not validate request data")
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -701,7 +688,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {
@@ -734,7 +721,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "User addition to group failed")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -755,7 +742,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "record not found")
+		assert.Contains(t, string(bodyBytes), "User addition to group failed")
 	})
 	t.Run("Group not found", func(t *testing.T) {
 		body := schemas.UserIDs{
@@ -775,7 +762,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "group not found")
+		assert.Contains(t, string(bodyBytes), "User addition to group failed")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -875,7 +862,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Invalid request body")
+		assert.Contains(t, string(bodyBytes), "Could not validate request data")
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -895,7 +882,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Transaction was not started by middleware")
+		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {
@@ -928,7 +915,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -949,7 +936,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "record not found")
+		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
@@ -970,7 +957,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "group not found")
+		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -1078,7 +1065,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "group not found")
+		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -1102,7 +1089,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
 	})
 
 	t.Run("No users found", func(t *testing.T) {
@@ -1196,7 +1183,7 @@ func TestGetGroupTasks(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "group not found")
+		assert.Contains(t, string(bodyBytes), "Group tasks retrieval failed")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -1220,7 +1207,7 @@ func TestGetGroupTasks(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "not authorized")
+		assert.Contains(t, string(bodyBytes), "Group tasks retrieval failed")
 	})
 
 	t.Run("No tasks found", func(t *testing.T) {

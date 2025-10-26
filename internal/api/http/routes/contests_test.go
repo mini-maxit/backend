@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,31 +83,17 @@ func TestCreateContest(t *testing.T) {
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
-		invalidBodies := []any{
-			struct {
-				Name string `json:"name"`
-			}{
-				Name: "",
-			},
-			struct {
-				Name  string `json:"name"`
-				Extra string `json:"extra"`
-			}{
-				Name:  "Contest Name",
-				Extra: "Invalid Field",
-			},
+		// Test malformed JSON that triggers non-validation errors
+		invalidBodies := []string{
+			`{"name": "Test Contest", "description": "Test", "extra": "field"}`, // extra field
+			`{"name": "Test Contest", "description": "Test"}{"extra": "json"}`,  // multiple JSON objects
 		}
 
 		for _, body := range invalidBodies {
-			t.Logf("Testing with body: %v", body)
-			jsonBody, err := json.Marshal(body)
-			if err != nil {
-				t.Fatalf("Failed to marshal request body: %v", err)
-			}
+			t.Logf("Testing with body: %s", body)
 
-			resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(body))
 			if err != nil {
-				t.Logf("Body: %s", string(jsonBody))
 				t.Fatalf("Failed to make request: %v", err)
 			}
 			defer resp.Body.Close()
@@ -119,7 +106,7 @@ func TestCreateContest(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Invalid request body")
+			assert.Contains(t, bodyString, "Could not validate request data")
 		}
 	})
 
@@ -148,7 +135,7 @@ func TestCreateContest(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Transaction was not started by middleware")
+		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {

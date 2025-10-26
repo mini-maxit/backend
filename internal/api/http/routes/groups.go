@@ -62,7 +62,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 	if request.Name == "" {
@@ -239,7 +239,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 
@@ -321,7 +321,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 
@@ -393,7 +393,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 

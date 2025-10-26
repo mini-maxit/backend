@@ -63,7 +63,7 @@ func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 
@@ -328,7 +328,7 @@ func (cr *ContestRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 
@@ -606,7 +606,7 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 			httputils.ReturnValidationError(w, valErrs)
 			return
 		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
 		return
 	}
 
