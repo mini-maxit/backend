@@ -147,18 +147,18 @@ func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, query
 }
 
 // GetTasksForContest mocks base method.
-func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64, nameFilter string) ([]schemas.TaskWithContestStats, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTasksForContest", tx, currentUser, contestID)
+	ret := m.ctrl.Call(m, "GetTasksForContest", tx, currentUser, contestID, nameFilter)
 	ret0, _ := ret[0].([]schemas.TaskWithContestStats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTasksForContest indicates an expected call of GetTasksForContest.
-func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, contestID any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, contestID, nameFilter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContest", reflect.TypeOf((*MockContestService)(nil).GetTasksForContest), tx, currentUser, contestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContest", reflect.TypeOf((*MockContestService)(nil).GetTasksForContest), tx, currentUser, contestID, nameFilter)
 }
 
 // GetUpcomingContests mocks base method.
