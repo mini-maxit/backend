@@ -810,6 +810,7 @@ func TestGetTasksForContest(t *testing.T) {
 	})
 
 	t.Run("Success - no filter", func(t *testing.T) {
+		// Test returns all tasks when no filter is provided
 		tasks := []schemas.TaskWithContestStats{
 			{
 				ID:           1,
@@ -851,6 +852,7 @@ func TestGetTasksForContest(t *testing.T) {
 	})
 
 	t.Run("Success - with name filter", func(t *testing.T) {
+		// Test returns only filtered tasks when name filter is provided
 		tasks := []schemas.TaskWithContestStats{
 			{
 				ID:           1,
