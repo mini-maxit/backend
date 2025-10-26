@@ -19,6 +19,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -753,5 +754,142 @@ func TestGetOngoingContests(t *testing.T) {
 		defer resp.Body.Close()
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	})
+}
+
+func TestGetTasksForContest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewContestRoute(cs)
+	db := &testutils.MockDatabase{}
+	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetTasksForContest), db)
+	now := time.Now()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/contests/1/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusMethodNotAllowed, rec.Code)
+	})
+
+	t.Run("Invalid contest ID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/contests/invalid/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "invalid"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Contest not found", func(t *testing.T) {
+		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(999), "").Return(nil, myerrors.ErrNotFound)
+
+		req := httptest.NewRequest(http.MethodGet, "/contests/999/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "999"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(1), "").Return(nil, myerrors.ErrNotAuthorized)
+
+		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
+	t.Run("Success - no filter", func(t *testing.T) {
+		tasks := []schemas.TaskWithContestStats{
+			{
+				ID:           1,
+				Title:        "Binary Search",
+				CreatedBy:    1,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+				BestScore:    nil,
+				AttemptCount: 0,
+			},
+			{
+				ID:           2,
+				Title:        "Sorting Algorithm",
+				CreatedBy:    1,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+				BestScore:    nil,
+				AttemptCount: 0,
+			},
+		}
+
+		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(1), "").Return(tasks, nil)
+
+		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response httputils.APIResponse[[]schemas.TaskWithContestStats]
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.True(t, response.Ok)
+		assert.Len(t, response.Data, 2)
+		assert.Equal(t, "Binary Search", response.Data[0].Title)
+		assert.Equal(t, "Sorting Algorithm", response.Data[1].Title)
+	})
+
+	t.Run("Success - with name filter", func(t *testing.T) {
+		tasks := []schemas.TaskWithContestStats{
+			{
+				ID:           1,
+				Title:        "Binary Search",
+				CreatedBy:    1,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+				BestScore:    nil,
+				AttemptCount: 0,
+			},
+		}
+
+		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(1), "binary").Return(tasks, nil)
+
+		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks?name=binary", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var response httputils.APIResponse[[]schemas.TaskWithContestStats]
+		err := json.Unmarshal(rec.Body.Bytes(), &response)
+		require.NoError(t, err)
+		assert.True(t, response.Ok)
+		assert.Len(t, response.Data, 1)
+		assert.Equal(t, "Binary Search", response.Data[0].Title)
+	})
+
+	t.Run("Internal server error", func(t *testing.T) {
+		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(1), "").Return(nil, assert.AnError)
+
+		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "1"})
+		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
+		rec := httptest.NewRecorder()
+
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	})
 }
