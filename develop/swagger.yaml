@@ -603,6 +603,8 @@ definitions:
     - UserRoleStudent
     - UserRoleTeacher
     - UserRoleAdmin
+  ValidationErrorResponse:
+    type: object
   WorkerStatus:
     properties:
       busyWorkers:
@@ -650,7 +652,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -731,7 +733,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "405":
           description: Method Not Allowed
           schema:
@@ -769,7 +771,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -888,7 +890,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1018,7 +1020,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1175,7 +1177,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1252,7 +1254,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1295,7 +1297,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1371,7 +1373,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -1972,7 +1974,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -2198,7 +2200,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
@@ -2278,7 +2280,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
