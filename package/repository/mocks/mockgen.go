@@ -220,18 +220,18 @@ func (mr *MockContestRepositoryMockRecorder) GetPastContestsWithStats(tx, userID
 }
 
 // GetTasksForContest mocks base method.
-func (m *MockContestRepository) GetTasksForContest(tx *gorm.DB, contestID int64, nameFilter string) ([]models.Task, error) {
+func (m *MockContestRepository) GetTasksForContest(tx *gorm.DB, contestID int64, taskNameFilter string) ([]models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTasksForContest", tx, contestID, nameFilter)
+	ret := m.ctrl.Call(m, "GetTasksForContest", tx, contestID, taskNameFilter)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTasksForContest indicates an expected call of GetTasksForContest.
-func (mr *MockContestRepositoryMockRecorder) GetTasksForContest(tx, contestID, nameFilter any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) GetTasksForContest(tx, contestID, taskNameFilter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContest", reflect.TypeOf((*MockContestRepository)(nil).GetTasksForContest), tx, contestID, nameFilter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContest", reflect.TypeOf((*MockContestRepository)(nil).GetTasksForContest), tx, contestID, taskNameFilter)
 }
 
 // GetTasksForContestWithStats mocks base method.
@@ -503,18 +503,18 @@ func (mr *MockTaskRepositoryMockRecorder) Get(tx, taskID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort, titleFilter string) ([]models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", tx, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAll", tx, limit, offset, sort, titleFilter)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockTaskRepositoryMockRecorder) GetAll(tx, limit, offset, sort any) *gomock.Call {
+func (mr *MockTaskRepositoryMockRecorder) GetAll(tx, limit, offset, sort, titleFilter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskRepository)(nil).GetAll), tx, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskRepository)(nil).GetAll), tx, limit, offset, sort, titleFilter)
 }
 
 // GetAllAssigned mocks base method.

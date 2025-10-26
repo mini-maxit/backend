@@ -31,8 +31,8 @@ type ContestService interface {
 	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 	// RegisterForContest creates a pending registration for a contest
 	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
-	// GetTasksForContest retrieves all tasks associated with a contest with submission stats and optional name filter (for authorized users)
-	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64, nameFilter string) ([]schemas.TaskWithContestStats, error)
+	// GetTasksForContest retrieves all tasks associated with a contest with submission stats and optional task name filter (for authorized users)
+	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64, taskNameFilter string) ([]schemas.TaskWithContestStats, error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
@@ -359,7 +359,7 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 }
 
-func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64, nameFilter string) ([]schemas.TaskWithContestStats, error) {
+func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64, taskNameFilter string) ([]schemas.TaskWithContestStats, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -372,7 +372,7 @@ func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.Us
 		return nil, myerrors.ErrNotAuthorized
 	}
 
-	tasks, err := cs.contestRepository.GetTasksForContest(tx, contestID, nameFilter)
+	tasks, err := cs.contestRepository.GetTasksForContest(tx, contestID, taskNameFilter)
 	if err != nil {
 		return nil, err
 	}

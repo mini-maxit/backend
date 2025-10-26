@@ -25,8 +25,8 @@ type TaskRepository interface {
 	GetAllCreated(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAllForGroup returns all tasks assigned to a group. The tasks are paginated.
 	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
-	// GetAll returns all tasks. The tasks are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
+	// GetAll returns all tasks with optional title filter. The tasks are paginated.
+	GetAll(tx *gorm.DB, limit, offset int, sort string, titleFilter string) ([]models.Task, error)
 	// Get returns a task by its ID.
 	Get(tx *gorm.DB, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
@@ -198,13 +198,21 @@ func (tr *taskRepository) IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) 
 	return count > 0, nil
 }
 
-func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string, titleFilter string) ([]models.Task, error) {
 	tasks := []models.Task{}
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
+
+	query := tx.Model(&models.Task{}).Where("deleted_at IS NULL")
+
+	// Apply title filter if provided (case-insensitive partial match)
+	if titleFilter != "" {
+		query = query.Where("title ILIKE ?", "%"+titleFilter+"%")
+	}
+
+	err = query.Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}

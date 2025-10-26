@@ -502,17 +502,17 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 //
 //	@Tags			contest
 //	@Summary		Get tasks for a contest with submission statistics
-//	@Description	Get tasks associated with a specific contest including best score and attempt count for the current user. Supports optional name filtering for partial matches.
+//	@Description	Get tasks associated with a specific contest including best score and attempt count for the current user. Supports optional task name filtering for partial matches.
 //
 //	@Produce		json
-//	@Param			id		path		int		true	"Contest ID"
-//	@Param			name	query		string	false	"Filter tasks by name (case-insensitive partial match)"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		404		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.TaskWithContestStats]
+//	@Param			id			path		int		true	"Contest ID"
+//	@Param			taskName	query		string	false	"Filter tasks by name (case-insensitive partial match)"
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		404			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[[]schemas.TaskWithContestStats]
 //	@Router			/contests/{id}/tasks [get]
 func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -541,10 +541,10 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	// Extract optional name filter from query parameters
-	nameFilter := r.URL.Query().Get("name")
+	// Extract optional taskName filter from query parameters
+	taskNameFilter := r.URL.Query().Get("taskName")
 
-	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID, nameFilter)
+	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID, taskNameFilter)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

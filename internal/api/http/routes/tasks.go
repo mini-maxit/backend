@@ -126,10 +126,11 @@ func (tr *taskRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) 
 //
 //	@Tags			task
 //	@Summary		Get all tasks
-//	@Description	Returns all tasks
+//	@Description	Returns all tasks with optional task name filtering for partial matches
 //	@Produce		json
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
+//	@Param			taskName	query		string	false	"Filter tasks by name (case-insensitive partial match)"
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/tasks/ [get]
 func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -147,6 +148,13 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+
+	// Extract optional taskName filter from query parameters
+	taskNameFilter := r.URL.Query().Get("taskName")
+	if taskNameFilter != "" {
+		queryParams["taskName"] = taskNameFilter
+	}
+
 	task, err := tr.taskService.GetAll(tx, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()

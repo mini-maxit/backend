@@ -867,7 +867,7 @@ func TestGetTasksForContest(t *testing.T) {
 
 		cs.EXPECT().GetTasksForContest(gomock.Any(), gomock.Any(), int64(1), "binary").Return(tasks, nil)
 
-		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks?name=binary", nil)
+		req := httptest.NewRequest(http.MethodGet, "/contests/1/tasks?taskName=binary", nil)
 		req = mux.SetURLVars(req, map[string]string{"id": "1"})
 		req = req.WithContext(context.WithValue(req.Context(), httputils.UserKey, schemas.User{ID: 1}))
 		rec := httptest.NewRecorder()

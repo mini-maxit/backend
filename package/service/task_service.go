@@ -135,8 +135,14 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, queryParams map[strin
 		sort = defaultTaskSort
 	}
 
+	// Extract optional taskName filter from query parameters
+	titleFilter := ""
+	if taskName, ok := queryParams["taskName"].(string); ok {
+		titleFilter = taskName
+	}
+
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAll(tx, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAll(tx, limit, offset, sort, titleFilter)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err

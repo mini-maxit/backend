@@ -216,6 +216,7 @@ func TestGetAllTasks(t *testing.T) {
 			queryParams["limit"],
 			queryParams["offset"],
 			queryParams["sort"],
+			"", // empty titleFilter
 		).Return([]models.Task{}, nil).Times(1)
 		tasks, err := ts.GetAll(tx, adminUser, queryParams)
 		require.NoError(t, err)
@@ -231,7 +232,7 @@ func TestGetAllTasks(t *testing.T) {
 				CreatedBy: currentUser.ID,
 			},
 		}
-		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, nil).Times(1)
+		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, nil).Times(1)
 
 		resultTasks, err := ts.GetAll(tx, currentUser, queryParams)
 		require.NoError(t, err)

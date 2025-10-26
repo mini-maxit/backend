@@ -36,8 +36,8 @@ type ContestRepository interface {
 	IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
 	IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error)
-	// GetTasksForContest retrieves all tasks assigned to a contest with optional name filter
-	GetTasksForContest(tx *gorm.DB, contestID int64, nameFilter string) ([]models.Task, error)
+	// GetTasksForContest retrieves all tasks assigned to a contest with optional task name filter
+	GetTasksForContest(tx *gorm.DB, contestID int64, taskNameFilter string) ([]models.Task, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
@@ -353,15 +353,15 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 	return contests, nil
 }
 
-func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64, nameFilter string) ([]models.Task, error) {
+func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64, taskNameFilter string) ([]models.Task, error) {
 	var tasks []models.Task
 	query := tx.Model(&models.Task{}).
 		Joins("JOIN maxit.contest_tasks ON contest_tasks.task_id = tasks.id").
 		Where("contest_tasks.contest_id = ?", contestID)
 
-	// Apply name filter if provided (case-insensitive partial match)
-	if nameFilter != "" {
-		query = query.Where("tasks.title ILIKE ?", "%"+nameFilter+"%")
+	// Apply task name filter if provided (case-insensitive partial match)
+	if taskNameFilter != "" {
+		query = query.Where("tasks.title ILIKE ?", "%"+taskNameFilter+"%")
 	}
 
 	err := query.Find(&tasks).Error
