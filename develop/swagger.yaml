@@ -481,6 +481,8 @@ definitions:
     type: object
   User:
     properties:
+      createdAt:
+        type: string
       email:
         type: string
       id:
