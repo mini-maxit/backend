@@ -858,7 +858,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 		}
 
 		assert.True(t, response.Ok)
-		assert.Equal(t, 1, len(response.Data))
+		assert.Len(t, response.Data, 1)
 		assert.Equal(t, int64(1), response.Data[0].ID)
 		assert.Equal(t, "John", response.Data[0].User.Name)
 	})
