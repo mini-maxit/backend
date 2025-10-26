@@ -211,14 +211,5 @@ func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schema
 		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}
 
-	currentUser := schemas.User{
-		ID:       user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-		Role:     user.Role,
-		Name:     user.Name,
-		Surname:  user.Surname,
-	}
-
-	return &schemas.ValidateTokenResponse{Valid: true, User: currentUser}, nil
+	return &schemas.ValidateTokenResponse{Valid: true, User: *UserToSchema(user)}, nil
 }

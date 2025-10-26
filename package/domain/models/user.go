@@ -12,4 +12,5 @@ type User struct {
 	Username     string         `gorm:"NOT NULL;UNIQUE"`
 	PasswordHash string         `gorm:"NOT NULL"`
 	Role         types.UserRole `gorm:"NOT NULL;default:'student'"` // student, teacher, admin
+	BaseModel
 }

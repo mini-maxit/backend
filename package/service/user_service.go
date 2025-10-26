@@ -187,12 +187,13 @@ func (us *userService) ChangePassword(
 
 func UserToSchema(user *models.User) *schemas.User {
 	return &schemas.User{
-		ID:       user.ID,
-		Name:     user.Name,
-		Surname:  user.Surname,
-		Email:    user.Email,
-		Username: user.Username,
-		Role:     user.Role,
+		ID:        user.ID,
+		Name:      user.Name,
+		Surname:   user.Surname,
+		Email:     user.Email,
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
 	}
 }
 

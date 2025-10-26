@@ -1,15 +1,20 @@
 package schemas
 
-import "github.com/mini-maxit/backend/package/domain/types"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 // User represents the user.
 type User struct {
-	ID       int64          `json:"id"`
-	Name     string         `json:"name"`
-	Surname  string         `json:"surname"`
-	Email    string         `json:"email"`
-	Username string         `json:"username"`
-	Role     types.UserRole `json:"role"`
+	ID        int64          `json:"id"`
+	Name      string         `json:"name"`
+	Surname   string         `json:"surname"`
+	Email     string         `json:"email"`
+	Username  string         `json:"username"`
+	Role      types.UserRole `json:"role"`
+	CreatedAt time.Time      `json:"createdAt"`
 }
 
 // UserCreate represents the user create request.
