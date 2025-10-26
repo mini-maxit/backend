@@ -15,26 +15,7 @@ import (
 
 func main() {
 	stmts, err := gormschema.New("postgres", gormschema.WithConfig(database.GormConfig)).
-		Load(
-			&models.ContestParticipantGroup{},
-			&models.ContestParticipant{},
-			&models.ContestPendingRegistration{},
-			&models.ContestTask{},
-			&models.Contest{},
-			&models.File{},
-			&models.Group{},
-			&models.LanguageConfig{},
-			&models.QueueMessage{},
-			&models.SubmissionResult{},
-			&models.Submission{},
-			&models.TaskGroup{},
-			&models.TaskUser{},
-			&models.Task{},
-			&models.TestCase{},
-			&models.TestResult{},
-			&models.UserGroup{},
-			&models.User{},
-		)
+		Load(models.AllModels...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
 		os.Exit(1)
