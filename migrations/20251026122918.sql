@@ -12,10 +12,12 @@ CREATE TABLE "maxit"."users" (
   "name" text NOT NULL,
   "surname" text NOT NULL,
   "email" text NOT NULL,
+  "username" text NOT NULL,
   "password_hash" text NOT NULL,
   "role" text NOT NULL DEFAULT 'student',
   PRIMARY KEY ("id"),
-  CONSTRAINT "uni_maxit_users_email" UNIQUE ("email")
+  CONSTRAINT "uni_maxit_users_email" UNIQUE ("email"),
+  CONSTRAINT "uni_maxit_users_username" UNIQUE ("username")
 );
 -- Create "user_groups" table
 CREATE TABLE "maxit"."user_groups" (
@@ -107,6 +109,9 @@ CREATE INDEX "idx_maxit_tasks_deleted_at" ON "maxit"."tasks" ("deleted_at");
 CREATE TABLE "maxit"."contest_tasks" (
   "contest_id" bigint NOT NULL,
   "task_id" bigint NOT NULL,
+  "start_at" timestamptz NOT NULL,
+  "end_at" timestamptz NULL,
+  "is_submission_open" boolean NOT NULL DEFAULT true,
   PRIMARY KEY ("contest_id", "task_id"),
   CONSTRAINT "fk_maxit_contest_tasks_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_contest_tasks_task" FOREIGN KEY ("task_id") REFERENCES "maxit"."tasks" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
