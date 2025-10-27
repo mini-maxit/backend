@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type Contest struct {
 	ID                 int64      `gorm:"primaryKey"`
@@ -27,25 +31,36 @@ type ContestTask struct {
 	StartAt          time.Time  `gorm:"not null"`
 	EndAt            *time.Time `gorm:"null"`
 	IsSubmissionOpen bool       `gorm:"default:true;not null"`
+
+	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
+	Task    Task    `gorm:"foreignKey:TaskID;references:ID"`
 }
 
 type ContestParticipant struct {
 	ContestID int64 `gorm:"primaryKey"`
 	UserID    int64 `gorm:"primaryKey"`
+
+	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
+	User    User    `gorm:"foreignKey:UserID;references:ID"`
 }
 
 type ContestParticipantGroup struct {
 	ContestID int64 `gorm:"primaryKey"`
 	GroupID   int64 `gorm:"primaryKey"`
+
+	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
+	Group   Group   `gorm:"foreignKey:GroupID;references:ID"`
 }
 
-type ContestPendingRegistration struct {
-	ID        int64     `gorm:"primaryKey;autoIncrement"`
-	ContestID int64     `gorm:"not null"`
-	UserID    int64     `gorm:"not null"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	Contest   Contest   `gorm:"foreignKey:ContestID;references:ID"`
-	User      User      `gorm:"foreignKey:UserID;references:ID"`
+type ContestRegistrationRequests struct {
+	ID        int64                           `gorm:"primaryKey;autoIncrement"`
+	ContestID int64                           `gorm:"not null"`
+	UserID    int64                           `gorm:"not null"`
+	Status    types.RegistrationRequestStatus `gorm:"type:registration_request_status;not null"`
+	BaseModel
+
+	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
+	User    User    `gorm:"foreignKey:UserID;references:ID"`
 }
 
 // ContestWithStats extends Contest with computed fields for efficient querying

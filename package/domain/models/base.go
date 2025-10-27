@@ -7,8 +7,8 @@ import (
 )
 
 type BaseModel struct {
-	CreatedAt time.Time      `gorm:"autoCreateTime"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
+	CreatedAt time.Time      `gorm:"autoCreateTime;default:current_timestamp"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime;default:current_timestamp"`
 	DeletedAt gorm.DeletedAt `gorm:"index;default:null"`
 }
 
@@ -28,7 +28,7 @@ var AllModels = []interface{}{
 	&ContestParticipant{},
 	&ContestParticipantGroup{},
 	&ContestTask{},
-	&ContestPendingRegistration{},
+	&ContestRegistrationRequests{},
 	&File{},
 	&TestCase{},
 	&LanguageConfig{},

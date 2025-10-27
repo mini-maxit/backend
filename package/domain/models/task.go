@@ -16,4 +16,7 @@ type Task struct {
 type TaskUser struct {
 	TaskID int64 `gorm:"primaryKey"`
 	UserID int64 `gorm:"primaryKey"`
+
+	Task Task `gorm:"foreignKey:TaskID; references:ID"`
+	User User `gorm:"foreignKey:UserID; references:ID"`
 }

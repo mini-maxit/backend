@@ -11,6 +11,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -29,6 +30,8 @@ type ContestRoute interface {
 	GetTasksForContest(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
 	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
+	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
+	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -631,18 +634,19 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 
 // GetRegistrationRequests godoc
 //
-//	@Tags			contest
-//	@Summary		Get registration requests for a contest
-//	@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
-//	@Produce		json
-//	@Param			id	path		int	true	"Contest ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		404	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
-//	@Router			/contests/{id}/registration-requests [get]
+//		@Tags			contest
+//		@Summary		Get registration requests for a contest
+//		@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
+//		@Produce		json
+//		@Param			id	path		int	true	"Contest ID"
+//	 @Param 			status	query		string	false	"Filter by status (pending, approved, rejected)"	default(pending)
+//		@Failure		400	{object}	httputils.APIError
+//		@Failure		403	{object}	httputils.APIError
+//		@Failure		404	{object}	httputils.APIError
+//		@Failure		405	{object}	httputils.APIError
+//		@Failure		500	{object}	httputils.APIError
+//		@Success		200	{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
+//		@Router			/contests/{id}/registration-requests [get]
 func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -669,8 +673,17 @@ func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *ht
 	}
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	statusQuery := r.URL.Query().Get("status")
+	if statusQuery == "" {
+		statusQuery = "pending"
+	}
+	status, ok := types.ParseRegistrationRequestStatus(statusQuery)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status value")
+		return
+	}
 
-	requests, err := cr.contestService.GetRegistrationRequests(tx, currentUser, contestID)
+	requests, err := cr.contestService.GetRegistrationRequests(tx, currentUser, contestID, status)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -690,6 +703,110 @@ func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *ht
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, requests)
+}
+
+func (cr *ContestRouteImpl) ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	userStr := httputils.GetPathValue(r, "user_id")
+	userID, err := strconv.ParseInt(userStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	err = cr.contestService.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+	if err != nil {
+		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+			db.Rollback()
+		}
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+			status = http.StatusBadRequest
+		} else {
+			cr.logger.Errorw("Failed to approve registration request", "error", err)
+			httputils.ReturnError(w, status, "Failed to approve registration request")
+			return
+		}
+		httputils.ReturnError(w, status, err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request approved successfully"))
+}
+
+func (cr *ContestRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not Allowed")
+		return
+	}
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	userStr := httputils.GetPathValue(r, "user_id")
+	userID, err := strconv.ParseInt(userStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	err = cr.contestService.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+	if err != nil {
+		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+			db.Rollback()
+		}
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+			status = http.StatusNotFound
+		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+			status = http.StatusBadRequest
+		} else {
+			cr.logger.Errorw("Failed to reject registration request", "error", err)
+			httputils.ReturnError(w, status, "Failed to reject registration request")
+			return
+		}
+		httputils.ReturnError(w, status, err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request rejected successfully"))
 }
 
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
@@ -764,6 +881,17 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		switch r.Method {
 		case http.MethodGet:
 			contestRoute.GetRegistrationRequests(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/{id}/registration-requests/{user_id}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			contestRoute.ApproveRegistrationRequest(w, r)
+		case http.MethodDelete:
+			contestRoute.RejectRegistrationRequest(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

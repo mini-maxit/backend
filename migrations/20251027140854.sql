@@ -1,11 +1,11 @@
 -- Add new schema named "maxit"
 CREATE SCHEMA "maxit";
--- Create "task_users" table
-CREATE TABLE "maxit"."task_users" (
-  "task_id" bigint NOT NULL,
-  "user_id" bigint NOT NULL,
-  PRIMARY KEY ("task_id", "user_id")
-);
+-- Create enum type "user_role"
+CREATE TYPE "maxit"."user_role" AS ENUM ('student', 'teacher', 'admin');
+-- Create enum type "submission_status"
+CREATE TYPE "maxit"."submission_status" AS ENUM ('received', 'sent for evaluation', 'evaluated', 'lost');
+-- Create enum type "registration_request_status"
+CREATE TYPE "maxit"."registration_request_status" AS ENUM ('approved', 'rejected', 'pending');
 -- Create "users" table
 CREATE TABLE "maxit"."users" (
   "id" bigserial NOT NULL,
@@ -14,17 +14,16 @@ CREATE TABLE "maxit"."users" (
   "email" text NOT NULL,
   "username" text NOT NULL,
   "password_hash" text NOT NULL,
-  "role" text NOT NULL DEFAULT 'student',
+  "role" "maxit"."user_role" NOT NULL DEFAULT 'student',
+  "created_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "uni_maxit_users_email" UNIQUE ("email"),
   CONSTRAINT "uni_maxit_users_username" UNIQUE ("username")
 );
--- Create "user_groups" table
-CREATE TABLE "maxit"."user_groups" (
-  "user_id" bigint NOT NULL,
-  "group_id" bigint NOT NULL,
-  PRIMARY KEY ("user_id", "group_id")
-);
+-- Create index "idx_maxit_users_deleted_at" to table: "users"
+CREATE INDEX "idx_maxit_users_deleted_at" ON "maxit"."users" ("deleted_at");
 -- Create "contests" table
 CREATE TABLE "maxit"."contests" (
   "id" bigserial NOT NULL,
@@ -36,8 +35,8 @@ CREATE TABLE "maxit"."contests" (
   "is_registration_open" boolean NOT NULL DEFAULT true,
   "is_submission_open" boolean NOT NULL DEFAULT false,
   "is_visible" boolean NOT NULL DEFAULT false,
-  "created_at" timestamptz NULL,
-  "updated_at" timestamptz NULL,
+  "created_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
   "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "uni_maxit_contests_name" UNIQUE ("name"),
@@ -50,11 +49,14 @@ CREATE TABLE "maxit"."groups" (
   "id" bigserial NOT NULL,
   "name" text NOT NULL,
   "created_by" bigint NOT NULL,
-  "created_at" timestamptz NULL,
-  "updated_at" timestamptz NULL,
+  "created_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "fk_maxit_groups_author" FOREIGN KEY ("created_by") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+-- Create index "idx_maxit_groups_deleted_at" to table: "groups"
+CREATE INDEX "idx_maxit_groups_deleted_at" ON "maxit"."groups" ("deleted_at");
 -- Create "contest_participant_groups" table
 CREATE TABLE "maxit"."contest_participant_groups" (
   "contest_id" bigint NOT NULL,
@@ -71,16 +73,21 @@ CREATE TABLE "maxit"."contest_participants" (
   CONSTRAINT "fk_maxit_contest_participants_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_contest_participants_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
--- Create "contest_pending_registrations" table
-CREATE TABLE "maxit"."contest_pending_registrations" (
+-- Create "contest_registration_requests" table
+CREATE TABLE "maxit"."contest_registration_requests" (
   "id" bigserial NOT NULL,
   "contest_id" bigint NOT NULL,
   "user_id" bigint NOT NULL,
-  "created_at" timestamptz NULL,
+  "status" "maxit"."registration_request_status" NOT NULL,
+  "created_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "fk_maxit_contest_pending_registrations_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT "fk_maxit_contest_pending_registrations_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT "fk_maxit_contest_registration_requests_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT "fk_maxit_contest_registration_requests_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+-- Create index "idx_maxit_contest_registration_requests_deleted_at" to table: "contest_registration_requests"
+CREATE INDEX "idx_maxit_contest_registration_requests_deleted_at" ON "maxit"."contest_registration_requests" ("deleted_at");
 -- Create "files" table
 CREATE TABLE "maxit"."files" (
   "id" bigserial NOT NULL,
@@ -96,8 +103,8 @@ CREATE TABLE "maxit"."tasks" (
   "title" character varying(255) NULL,
   "description_file_id" bigint NULL,
   "created_by" bigint NULL,
-  "created_at" timestamptz NULL,
-  "updated_at" timestamptz NULL,
+  "created_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz NULL DEFAULT CURRENT_TIMESTAMP,
   "deleted_at" timestamptz NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "fk_maxit_tasks_author" FOREIGN KEY ("created_by") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -133,7 +140,7 @@ CREATE TABLE "maxit"."submissions" (
   "order" bigint NOT NULL,
   "language_id" bigint NOT NULL,
   "file_id" bigint NOT NULL,
-  "status" character varying(50) NOT NULL,
+  "status" "maxit"."submission_status" NOT NULL,
   "status_message" character varying(255) NULL DEFAULT NULL::character varying,
   "submitted_at" timestamp NULL,
   "checked_at" timestamp NULL,
@@ -169,6 +176,14 @@ CREATE TABLE "maxit"."task_groups" (
   CONSTRAINT "fk_maxit_task_groups_group" FOREIGN KEY ("group_id") REFERENCES "maxit"."groups" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_task_groups_task" FOREIGN KEY ("task_id") REFERENCES "maxit"."tasks" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+-- Create "task_users" table
+CREATE TABLE "maxit"."task_users" (
+  "task_id" bigint NOT NULL,
+  "user_id" bigint NOT NULL,
+  PRIMARY KEY ("task_id", "user_id"),
+  CONSTRAINT "fk_maxit_task_users_task" FOREIGN KEY ("task_id") REFERENCES "maxit"."tasks" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT "fk_maxit_task_users_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
 -- Create "test_cases" table
 CREATE TABLE "maxit"."test_cases" (
   "id" bigserial NOT NULL,
@@ -201,4 +216,12 @@ CREATE TABLE "maxit"."test_results" (
   CONSTRAINT "fk_maxit_test_results_stderr_file" FOREIGN KEY ("stderr_file_id") REFERENCES "maxit"."files" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_test_results_stdout_file" FOREIGN KEY ("stdout_file_id") REFERENCES "maxit"."files" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_test_results_test_case" FOREIGN KEY ("test_case_id") REFERENCES "maxit"."test_cases" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+-- Create "user_groups" table
+CREATE TABLE "maxit"."user_groups" (
+  "user_id" bigint NOT NULL,
+  "group_id" bigint NOT NULL,
+  PRIMARY KEY ("user_id", "group_id"),
+  CONSTRAINT "fk_maxit_user_groups_group" FOREIGN KEY ("group_id") REFERENCES "maxit"."groups" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT "fk_maxit_user_groups_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
