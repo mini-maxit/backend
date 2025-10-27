@@ -336,7 +336,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().AddUserAsParticipant(tx, contestID, userID).Return(nil).Times(1)
+		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -374,7 +374,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().AddUserAsParticipant(tx, contestID, userID).Return(nil).Times(1)
+		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -652,7 +652,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().AddUserAsParticipant(tx, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
+		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 

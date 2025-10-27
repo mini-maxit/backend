@@ -758,8 +758,8 @@ func (cr *ContestRouteImpl) ApproveRegistrationRequest(w http.ResponseWriter, r 
 }
 
 func (cr *ContestRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not Allowed")
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
@@ -886,16 +886,8 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/registration-requests/{user_id}", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			contestRoute.ApproveRegistrationRequest(w, r)
-		case http.MethodDelete:
-			contestRoute.RejectRegistrationRequest(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
+	mux.HandleFunc("/{id}/registration-requests/{user_id}/approve", contestRoute.ApproveRegistrationRequest)
+	mux.HandleFunc("/{id}/registration-requests/{user_id}/reject", contestRoute.RejectRegistrationRequest)
 }
 
 func NewContestRoute(contestService service.ContestService) ContestRoute {

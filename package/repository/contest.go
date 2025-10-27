@@ -45,16 +45,15 @@ type ContestRepository interface {
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
-	// GetRegistrationRequests retrieves pending registration requests for a contest
+	// GetRegistrationRequests retrieves 'status' registration requests for a contest
 	GetRegistrationRequests(tx *gorm.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
 	// DeleteRegistrationRequest deletes a pending registration request
 	DeleteRegistrationRequest(tx *gorm.DB, requestID int64) error
-	// AddUserAsParticipant adds a user as a participant to a contest
-	// TODO: rename to CreateContestParticiapnt
-	AddUserAsParticipant(tx *gorm.DB, contestID, userID int64) error
+	// CreateContestParticipant adds a user as a participant to a contest
+	CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error
 	// RejectRegistrationRequest rejects a pending registration request
 	UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error
-	//
+	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
 	GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 }
 
@@ -472,7 +471,7 @@ func (cr *contestRepository) DeleteRegistrationRequest(tx *gorm.DB, requestID in
 	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error
 }
 
-func (cr *contestRepository) AddUserAsParticipant(tx *gorm.DB, contestID, userID int64) error {
+func (cr *contestRepository) CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error {
 	participant := &models.ContestParticipant{
 		ContestID: contestID,
 		UserID:    userID,

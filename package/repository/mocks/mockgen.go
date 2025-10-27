@@ -1291,20 +1291,6 @@ func (mr *MockContestRepositoryMockRecorder) AddTaskToContest(tx, taskContest an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTaskToContest", reflect.TypeOf((*MockContestRepository)(nil).AddTaskToContest), tx, taskContest)
 }
 
-// AddUserAsParticipant mocks base method.
-func (m *MockContestRepository) AddUserAsParticipant(tx *gorm.DB, contestID, userID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUserAsParticipant", tx, contestID, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddUserAsParticipant indicates an expected call of AddUserAsParticipant.
-func (mr *MockContestRepositoryMockRecorder) AddUserAsParticipant(tx, contestID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserAsParticipant", reflect.TypeOf((*MockContestRepository)(nil).AddUserAsParticipant), tx, contestID, userID)
-}
-
 // Create mocks base method.
 func (m *MockContestRepository) Create(tx *gorm.DB, contest *models.Contest) (int64, error) {
 	m.ctrl.T.Helper()
@@ -1318,6 +1304,20 @@ func (m *MockContestRepository) Create(tx *gorm.DB, contest *models.Contest) (in
 func (mr *MockContestRepositoryMockRecorder) Create(tx, contest any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockContestRepository)(nil).Create), tx, contest)
+}
+
+// CreateContestParticipant mocks base method.
+func (m *MockContestRepository) CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateContestParticipant", tx, contestID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateContestParticipant indicates an expected call of CreateContestParticipant.
+func (mr *MockContestRepositoryMockRecorder) CreateContestParticipant(tx, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContestParticipant", reflect.TypeOf((*MockContestRepository)(nil).CreateContestParticipant), tx, contestID, userID)
 }
 
 // CreatePendingRegistration mocks base method.

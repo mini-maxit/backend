@@ -41,7 +41,7 @@ type ContestService interface {
 	GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
 	// ApproveRegistrationRequest approves a pending registration request for a contest
 	ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
-	//
+	// RejectRegistrationRequest rejects a pending registration request for a contest
 	RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
 }
 
@@ -686,7 +686,7 @@ func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser sc
 	if err != nil {
 		return err
 	}
-	return cs.contestRepository.AddUserAsParticipant(tx, contestID, userID)
+	return cs.contestRepository.CreateContestParticipant(tx, contestID, userID)
 }
 
 func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
@@ -723,15 +723,14 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 
 	// Check if pending registration exists
 	request, err := cs.contestRepository.GetPendingRegistrationRequest(tx, contestID, userID)
-	hasPending := request != nil
 	if err != nil {
 		return err
 	}
+	hasPending := request != nil
 	if !hasPending {
 		return myerrors.ErrNoPendingRegistration
 	}
 	if isParticipant {
-		cs.logger.Infof("deleting requiest %d", request.ID)
 		err = cs.contestRepository.DeleteRegistrationRequest(tx, request.ID)
 		if err != nil {
 			return err
