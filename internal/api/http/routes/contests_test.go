@@ -755,3 +755,111 @@ func TestGetOngoingContests(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 }
+
+func TestGetRegistrationRequests(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewContestRoute(cs)
+	db := &testutils.MockDatabase{}
+
+	mux := mux.NewRouter()
+
+	mux.HandleFunc("/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
+		route.GetRegistrationRequests(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/registration-requests", nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Contest not found", func(t *testing.T) {
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotFound)
+
+		resp, err := http.Get(server.URL + "/1/registration-requests")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized)
+
+		resp, err := http.Get(server.URL + "/1/registration-requests")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		mockRequests := []schemas.RegistrationRequest{
+			{
+				ID:        1,
+				ContestID: 1,
+				UserID:    2,
+				User: schemas.User{
+					ID:       2,
+					Name:     "John",
+					Surname:  "Doe",
+					Email:    "john@example.com",
+					Username: "johndoe",
+					Role:     "student",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(mockRequests, nil)
+
+		resp, err := http.Get(server.URL + "/1/registration-requests")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var response httputils.APIResponse[[]schemas.RegistrationRequest]
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		assert.True(t, response.Ok)
+		assert.Len(t, response.Data, 1)
+		assert.Equal(t, int64(1), response.Data[0].ID)
+		assert.Equal(t, "John", response.Data[0].User.Name)
+	})
+}

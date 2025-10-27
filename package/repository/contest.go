@@ -44,6 +44,8 @@ type ContestRepository interface {
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
+	// GetRegistrationRequests retrieves pending registration requests for a contest
+	GetRegistrationRequests(tx *gorm.DB, contestID int64) ([]models.ContestPendingRegistration, error)
 }
 
 type contestRepository struct{}
@@ -441,6 +443,15 @@ func (cr *contestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.Co
 		return err
 	}
 	return nil
+}
+
+func (cr *contestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int64) ([]models.ContestPendingRegistration, error) {
+	var requests []models.ContestPendingRegistration
+	err := tx.Preload("User").Where("contest_id = ?", contestID).Find(&requests).Error
+	if err != nil {
+		return nil, err
+	}
+	return requests, nil
 }
 
 func NewContestRepository() ContestRepository {
