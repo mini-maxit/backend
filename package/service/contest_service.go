@@ -620,14 +620,7 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 			ID:        req.ID,
 			ContestID: req.ContestID,
 			UserID:    req.UserID,
-			User: schemas.User{
-				ID:       req.User.ID,
-				Name:     req.User.Name,
-				Surname:  req.User.Surname,
-				Email:    req.User.Email,
-				Username: req.User.Username,
-				Role:     req.User.Role,
-			},
+			User:      *UserToSchema(&req.User),
 			CreatedAt: req.CreatedAt,
 		}
 	}
