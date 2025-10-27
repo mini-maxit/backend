@@ -128,7 +128,7 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 		results[i] = service.ContestWithStatsToAvailableContest(&contest)
 	}
 
-	assert.Equal(t, 2, len(results))
+	assert.Len(t, results, 2)
 
 	// Check first contest
 	assert.Equal(t, int64(1), results[0].ID)
@@ -206,7 +206,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 		result, err := cs.GetPastContests(tx, currentUser, queryParams)
 
 		require.NoError(t, err)
-		assert.Equal(t, 1, len(result))
+		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].ID)
 	})
 
@@ -270,7 +270,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
 
 		require.NoError(t, err)
-		assert.Equal(t, 1, len(result))
+		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].ID)
 	})
 
@@ -392,7 +392,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -408,7 +408,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotFound))
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("teacher not authorized - not contest creator", func(t *testing.T) {
@@ -430,7 +430,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -453,7 +453,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotFound))
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
@@ -491,7 +491,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrAlreadyParticipant))
+		require.ErrorIs(t, err, myerrors.ErrAlreadyParticipant)
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
@@ -521,7 +521,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNoPendingRegistration))
+		require.ErrorIs(t, err, myerrors.ErrNoPendingRegistration)
 	})
 
 	t.Run("error checking participant status", func(t *testing.T) {
@@ -757,7 +757,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -773,7 +773,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotFound))
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("teacher not authorized - not contest creator", func(t *testing.T) {
@@ -795,7 +795,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -818,7 +818,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNotFound))
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
@@ -856,7 +856,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrAlreadyParticipant))
+		require.ErrorIs(t, err, myerrors.ErrAlreadyParticipant)
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
@@ -886,7 +886,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		assert.True(t, errors.Is(err, myerrors.ErrNoPendingRegistration))
+		require.ErrorIs(t, err, myerrors.ErrNoPendingRegistration)
 	})
 
 	t.Run("error updating registration status", func(t *testing.T) {
@@ -1033,7 +1033,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("unauthorized - teacher viewing invisible contest not created by them", func(t *testing.T) {
@@ -1057,7 +1057,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		assert.True(t, errors.Is(err, myerrors.ErrNotAuthorized))
+		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -1073,7 +1073,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		assert.True(t, errors.Is(err, myerrors.ErrNotFound))
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
