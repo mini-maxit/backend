@@ -10,7 +10,7 @@ data "external_schema" "gorm" {
 data "composite_schema" "app" {
   # Load enum types first.
   schema "maxit" {
-    url = "file://schema.sql"
+    url = "file://cmd/loader/schema.sql"
   }
   # Then, load the GORM models.
   schema "maxit" {
