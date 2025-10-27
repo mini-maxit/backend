@@ -51,6 +51,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-RegistrationRequest:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/RegistrationRequest'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-Submission:
     properties:
       data:
@@ -136,6 +145,15 @@ definitions:
       data:
         items:
           $ref: '#/definitions/Task'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-array_User:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/User'
         type: array
       ok:
         type: boolean
@@ -346,6 +364,19 @@ definitions:
         items:
           $ref: '#/definitions/PutTestCase'
         type: array
+    type: object
+  RegistrationRequest:
+    properties:
+      contestId:
+        type: integer
+      createdAt:
+        type: string
+      id:
+        type: integer
+      user:
+        $ref: '#/definitions/User'
+      userId:
+        type: integer
     type: object
   Submission:
     properties:
@@ -956,6 +987,46 @@ paths:
       summary: Register for a contest
       tags:
       - contest
+  /contests/{id}/registration-requests:
+    get:
+      description: Get all pending registration requests for a specific contest (only
+        accessible by contest creator or admin)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-RegistrationRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get registration requests for a contest
+      tags:
+      - contest
   /contests/{id}/tasks:
     get:
       description: Get tasks associated with a specific contest including best score
@@ -1329,7 +1400,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-User'
+            $ref: '#/definitions/APIResponse-array_User'
         "400":
           description: Bad Request
           schema:
