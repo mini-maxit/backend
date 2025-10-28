@@ -373,11 +373,23 @@ definitions:
         type: string
       id:
         type: integer
+      status:
+        $ref: '#/definitions/RegistrationRequestStatus'
       user:
         $ref: '#/definitions/User'
       userId:
         type: integer
     type: object
+  RegistrationRequestStatus:
+    enum:
+    - approved
+    - rejected
+    - pending
+    type: string
+    x-enum-varnames:
+    - RegistrationRequestStatusApproved
+    - RegistrationRequestStatusRejected
+    - RegistrationRequestStatusPending
   Submission:
     properties:
       checkedAt:
@@ -997,6 +1009,11 @@ paths:
         name: id
         required: true
         type: integer
+      - default: pending
+        description: Filter by status (pending, approved, rejected)
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
