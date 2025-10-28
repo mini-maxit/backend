@@ -394,6 +394,8 @@ definitions:
     properties:
       checkedAt:
         type: string
+      contestId:
+        type: integer
       id:
         type: integer
       language:
@@ -1044,6 +1046,56 @@ paths:
       summary: Get registration requests for a contest
       tags:
       - contest
+  /contests/{id}/submissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all submissions for a specific contest. Only accessible by
+        teachers (contest creators) and admins.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get submissions for a contest
+      tags:
+      - contest
   /contests/{id}/tasks:
     get:
       description: Get tasks associated with a specific contest including best score
@@ -1604,6 +1656,10 @@ paths:
         in: formData
         name: taskID
         required: true
+        type: integer
+      - description: Contest ID
+        in: formData
+        name: contestID
         type: integer
       - description: Solution file
         in: formData
