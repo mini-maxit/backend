@@ -489,6 +489,9 @@ func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestI
 	if err != nil {
 		return nil, err
 	}
+	if err := utils.ValidateStruct(&request); err != nil {
+		return nil, err
+	}
 	return &request, nil
 }
 

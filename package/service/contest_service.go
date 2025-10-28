@@ -724,10 +724,12 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 	// Check if pending registration exists
 	request, err := cs.contestRepository.GetPendingRegistrationRequest(tx, contestID, userID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNoPendingRegistration
+		}
 		return err
 	}
-	hasPending := request != nil
-	if !hasPending {
+	if request == nil {
 		return myerrors.ErrNoPendingRegistration
 	}
 	if isParticipant {
