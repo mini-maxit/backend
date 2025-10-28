@@ -158,3 +158,5 @@ var ErrContestEnded = errors.New("contest has ended")
 var ErrAlreadyRegistered = errors.New("already registered for this contest")
 
 var ErrAlreadyParticipant = errors.New("user is already a participant of this contest")
+
+var ErrNoPendingRegistration = errors.New("no pending registration for this contest")

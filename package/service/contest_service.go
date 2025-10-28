@@ -38,7 +38,11 @@ type ContestService interface {
 	// AddTaskToContest adds a task to a contest
 	AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
 	// GetRegistrationRequests retrieves pending registration requests for a contest
-	GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.RegistrationRequest, error)
+	GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
+	// ApproveRegistrationRequest approves a pending registration request for a contest
+	ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
+	// RejectRegistrationRequest rejects a pending registration request for a contest
+	RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -322,9 +326,10 @@ func (cs *contestService) RegisterForContest(tx *gorm.DB, currentUser schemas.Us
 	}
 
 	// Create pending registration
-	registration := &models.ContestPendingRegistration{
+	registration := &models.ContestRegistrationRequests{
 		ContestID: contestID,
 		UserID:    currentUser.ID,
+		Status:    types.RegistrationRequestStatusPending,
 	}
 
 	_, err = cs.contestRepository.CreatePendingRegistration(tx, registration)
@@ -592,7 +597,7 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 	}
 }
 
-func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.RegistrationRequest, error) {
+func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, status types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
 	// First, check if contest exists
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
@@ -608,7 +613,7 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 	}
 
 	// Get registration requests from repository
-	requests, err := cs.contestRepository.GetRegistrationRequests(tx, contestID)
+	requests, err := cs.contestRepository.GetRegistrationRequests(tx, contestID, status)
 	if err != nil {
 		return nil, err
 	}
@@ -622,10 +627,120 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 			UserID:    req.UserID,
 			User:      *UserToSchema(&req.User),
 			CreatedAt: req.CreatedAt,
+			Status:    req.Status,
 		}
 	}
 
 	return result, nil
+}
+
+func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
+		return err
+	}
+
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+		return myerrors.ErrNotAuthorized
+	}
+
+	// Check if user exists
+	_, err = cs.userRepository.Get(tx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Check if already a participant
+	isParticipant, err := cs.contestRepository.IsUserParticipant(tx, contestID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if pending registration exists
+	request, err := cs.contestRepository.GetPendingRegistrationRequest(tx, contestID, userID)
+	if err != nil {
+		return err
+	}
+	hasPending := request != nil
+	if !hasPending {
+		return myerrors.ErrNoPendingRegistration
+	}
+	if isParticipant {
+		err = cs.contestRepository.DeleteRegistrationRequest(tx, request.ID)
+		if err != nil {
+			return err
+		}
+		return myerrors.ErrAlreadyParticipant
+	}
+	err = cs.contestRepository.UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved)
+	if err != nil {
+		return err
+	}
+	return cs.contestRepository.CreateContestParticipant(tx, contestID, userID)
+}
+
+func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
+		return err
+	}
+
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+		return myerrors.ErrNotAuthorized
+	}
+
+	// Check if user exists
+	_, err = cs.userRepository.Get(tx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Check if already a participant
+	isParticipant, err := cs.contestRepository.IsUserParticipant(tx, contestID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check if pending registration exists
+	request, err := cs.contestRepository.GetPendingRegistrationRequest(tx, contestID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNoPendingRegistration
+		}
+		return err
+	}
+	if request == nil {
+		return myerrors.ErrNoPendingRegistration
+	}
+	if isParticipant {
+		err = cs.contestRepository.DeleteRegistrationRequest(tx, request.ID)
+		if err != nil {
+			return err
+		}
+		return myerrors.ErrAlreadyParticipant
+	}
+
+	return cs.contestRepository.UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected)
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository) ContestService {

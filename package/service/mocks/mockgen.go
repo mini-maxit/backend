@@ -57,6 +57,20 @@ func (mr *MockContestServiceMockRecorder) AddTaskToContest(tx, currentUser, cont
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTaskToContest", reflect.TypeOf((*MockContestService)(nil).AddTaskToContest), tx, currentUser, contestID, request)
 }
 
+// ApproveRegistrationRequest mocks base method.
+func (m *MockContestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApproveRegistrationRequest", tx, currentUser, contestID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApproveRegistrationRequest indicates an expected call of ApproveRegistrationRequest.
+func (mr *MockContestServiceMockRecorder) ApproveRegistrationRequest(tx, currentUser, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApproveRegistrationRequest", reflect.TypeOf((*MockContestService)(nil).ApproveRegistrationRequest), tx, currentUser, contestID, userID)
+}
+
 // Create mocks base method.
 func (m *MockContestService) Create(tx *gorm.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
 	m.ctrl.T.Helper()
@@ -147,18 +161,18 @@ func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, query
 }
 
 // GetRegistrationRequests mocks base method.
-func (m *MockContestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.RegistrationRequest, error) {
+func (m *MockContestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationRequests", tx, currentUser, contestID)
+	ret := m.ctrl.Call(m, "GetRegistrationRequests", tx, currentUser, contestID, statusFilter)
 	ret0, _ := ret[0].([]schemas.RegistrationRequest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrationRequests indicates an expected call of GetRegistrationRequests.
-func (mr *MockContestServiceMockRecorder) GetRegistrationRequests(tx, currentUser, contestID any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetRegistrationRequests(tx, currentUser, contestID, statusFilter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestService)(nil).GetRegistrationRequests), tx, currentUser, contestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestService)(nil).GetRegistrationRequests), tx, currentUser, contestID, statusFilter)
 }
 
 // GetTasksForContest mocks base method.
@@ -218,6 +232,20 @@ func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser schemas
 func (mr *MockContestServiceMockRecorder) RegisterForContest(tx, currentUser, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterForContest", reflect.TypeOf((*MockContestService)(nil).RegisterForContest), tx, currentUser, contestID)
+}
+
+// RejectRegistrationRequest mocks base method.
+func (m *MockContestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RejectRegistrationRequest", tx, currentUser, contestID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RejectRegistrationRequest indicates an expected call of RejectRegistrationRequest.
+func (mr *MockContestServiceMockRecorder) RejectRegistrationRequest(tx, currentUser, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectRegistrationRequest", reflect.TypeOf((*MockContestService)(nil).RejectRegistrationRequest), tx, currentUser, contestID, userID)
 }
 
 // MockUserService is a mock of UserService interface.

@@ -16,15 +16,16 @@ type Submission struct {
 	Order         int                    `gorm:"not null"`
 	LanguageID    int64                  `gorm:"not null; foreignKey:LanguageID"`
 	FileID        int64                  `gorm:"not null; foreignKey:FileID"`
-	Status        types.SubmissionStatus `gorm:"type:varchar(50);not null"`
+	Status        types.SubmissionStatus `gorm:"type:submission_status;not null"`
 	StatusMessage string                 `gorm:"type:varchar(255);default:null"`
 	SubmittedAt   time.Time              `gorm:"type:timestamp;autoCreateTime"`
 	CheckedAt     time.Time              `gorm:"type:timestamp;default:null"`
-	Language      LanguageConfig         `gorm:"foreignKey:LanguageID;references:ID"`
-	Task          Task                   `gorm:"foreignKey:TaskID;references:ID"`
-	User          User                   `gorm:"foreignKey:UserID;references:ID"`
-	Result        *SubmissionResult      `gorm:"foreignKey:SubmissionID;references:ID"`
-	File          File                   `gorm:"foreignKey:FileID;references:ID"`
+
+	Language LanguageConfig    `gorm:"foreignKey:LanguageID;references:ID"`
+	Task     Task              `gorm:"foreignKey:TaskID;references:ID"`
+	User     User              `gorm:"foreignKey:UserID;references:ID"`
+	Result   *SubmissionResult `gorm:"foreignKey:SubmissionID;references:ID"`
+	File     File              `gorm:"foreignKey:FileID;references:ID"`
 }
 
 type SubmissionResult struct {

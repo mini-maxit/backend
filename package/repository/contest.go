@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
 )
@@ -31,7 +32,7 @@ type ContestRepository interface {
 	// Delete removes a contest
 	Delete(tx *gorm.DB, contestID int64) error
 	// CreatePendingRegistration creates a pending registration request
-	CreatePendingRegistration(tx *gorm.DB, registration *models.ContestPendingRegistration) (int64, error)
+	CreatePendingRegistration(tx *gorm.DB, registration *models.ContestRegistrationRequests) (int64, error)
 	// IsPendingRegistrationExists checks if pending registration already exists
 	IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
@@ -44,8 +45,16 @@ type ContestRepository interface {
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
-	// GetRegistrationRequests retrieves pending registration requests for a contest
-	GetRegistrationRequests(tx *gorm.DB, contestID int64) ([]models.ContestPendingRegistration, error)
+	// GetRegistrationRequests retrieves 'status' registration requests for a contest
+	GetRegistrationRequests(tx *gorm.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
+	// DeleteRegistrationRequest deletes a pending registration request
+	DeleteRegistrationRequest(tx *gorm.DB, requestID int64) error
+	// CreateContestParticipant adds a user as a participant to a contest
+	CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error
+	// RejectRegistrationRequest rejects a pending registration request
+	UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error
+	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
+	GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 }
 
 type contestRepository struct{}
@@ -109,7 +118,7 @@ func (cr *contestRepository) Delete(tx *gorm.DB, contestID int64) error {
 	return nil
 }
 
-func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration *models.ContestPendingRegistration) (int64, error) {
+func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration *models.ContestRegistrationRequests) (int64, error) {
 	err := tx.Create(registration).Error
 	if err != nil {
 		return 0, err
@@ -119,8 +128,8 @@ func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration
 
 func (cr *contestRepository) IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error) {
 	var count int64
-	err := tx.Model(&models.ContestPendingRegistration{}).
-		Where("contest_id = ? AND user_id = ?", contestID, userID).
+	err := tx.Model(&models.ContestRegistrationRequests{}).
+		Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).
 		Count(&count).Error
 	if err != nil {
 		return false, err
@@ -445,13 +454,45 @@ func (cr *contestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.Co
 	return nil
 }
 
-func (cr *contestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int64) ([]models.ContestPendingRegistration, error) {
-	var requests []models.ContestPendingRegistration
-	err := tx.Preload("User").Where("contest_id = ?", contestID).Find(&requests).Error
+func (cr *contestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
+	var requests []models.ContestRegistrationRequests
+	err := tx.Preload("User").Where("contest_id = ? AND status = ?", contestID, status).Find(&requests).Error
 	if err != nil {
 		return nil, err
 	}
 	return requests, nil
+}
+
+func (cr *contestRepository) UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error {
+	return tx.Model(models.ContestRegistrationRequests{}).Where("id = ?", requestID).Updates(models.ContestRegistrationRequests{Status: status}).Error
+}
+
+func (cr *contestRepository) DeleteRegistrationRequest(tx *gorm.DB, requestID int64) error {
+	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error
+}
+
+func (cr *contestRepository) CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error {
+	participant := &models.ContestParticipant{
+		ContestID: contestID,
+		UserID:    userID,
+	}
+	err := tx.Create(participant).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
+	var request models.ContestRegistrationRequests
+	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).First(&request).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := utils.ValidateStruct(&request); err != nil {
+		return nil, err
+	}
+	return &request, nil
 }
 
 func NewContestRepository() ContestRepository {

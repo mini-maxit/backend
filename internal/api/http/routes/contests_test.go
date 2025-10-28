@@ -800,7 +800,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotFound)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrNotFound)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -812,7 +812,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -841,7 +841,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1)).Return(mockRequests, nil)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(mockRequests, nil)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -861,5 +861,150 @@ func TestGetRegistrationRequests(t *testing.T) {
 		assert.Len(t, response.Data, 1)
 		assert.Equal(t, int64(1), response.Data[0].ID)
 		assert.Equal(t, "John", response.Data[0].User.Name)
+	})
+}
+
+func TestApproveRegistrationRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cs := mock_service.NewMockContestService(ctrl)
+	route := routes.NewContestRoute(cs)
+	db := &testutils.MockDatabase{}
+
+	mux := mux.NewRouter()
+
+	mux.HandleFunc("/{id}/registration-requests/{user_id}/approve", func(w http.ResponseWriter, r *http.Request) {
+		route.ApproveRegistrationRequest(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only POST", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/registration-requests/2/approve", nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid contest ID", func(t *testing.T) {
+		resp, err := http.Post(server.URL+"/invalid/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Invalid user ID", func(t *testing.T) {
+		resp, err := http.Post(server.URL+"/1/registration-requests/invalid/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Contest not found", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
+
+		resp, err := http.Post(server.URL+"/999/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("User not found", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(999)).Return(myerrors.ErrNotFound)
+
+		resp, err := http.Post(server.URL+"/1/registration-requests/999/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
+
+		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("No pending registration", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
+
+		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("User already participant", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrAlreadyParticipant)
+
+		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
+
+		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var response httputils.APIResponse[httputils.MessageResponse]
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		assert.True(t, response.Ok)
+		assert.Equal(t, "Registration request approved successfully", response.Data.Message)
 	})
 }

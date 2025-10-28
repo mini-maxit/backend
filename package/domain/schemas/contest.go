@@ -1,6 +1,10 @@
 package schemas
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type Contest struct {
 	ID               int64      `json:"id"`
@@ -63,9 +67,10 @@ type AddTaskToContest struct {
 }
 
 type RegistrationRequest struct {
-	ID        int64     `json:"id"`
-	ContestID int64     `json:"contestId"`
-	UserID    int64     `json:"userId"`
-	User      User      `json:"user"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        int64                           `json:"id"`
+	ContestID int64                           `json:"contestId"`
+	UserID    int64                           `json:"userId"`
+	User      User                            `json:"user"`
+	Status    types.RegistrationRequestStatus `json:"status"`
+	CreatedAt time.Time                       `json:"createdAt"`
 }
