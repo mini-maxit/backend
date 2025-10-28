@@ -32,11 +32,13 @@ type ContestRoute interface {
 	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
+	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
-	contestService service.ContestService
-	logger         *zap.SugaredLogger
+	contestService    service.ContestService
+	submissionService service.SubmissionService
+	logger            *zap.SugaredLogger
 }
 
 // CreateContest godoc
@@ -562,20 +564,21 @@ func (cr *ContestRouteImpl) GetTasksForContest(w http.ResponseWriter, r *http.Re
 }
 
 // AddTaskToContest godoc
-// @Tags			contest
-// @Summary		Add a task to a contest
-// @Description	Add an existing task to a specific contest
-// @Accept			json
-// @Produce		json
-// @Param			id		path		int						true	"Contest ID"
-// @Param			body	body		schemas.AddTaskToContest	true	"Add Task to Contest"
-// @Failure		400		{object}	httputils.ValidationErrorResponse
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		405		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-// @Router			/contests/{id}/tasks [post]
+//
+//	@Tags			contest
+//	@Summary		Add a task to a contest
+//	@Description	Add an existing task to a specific contest
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int							true	"Contest ID"
+//	@Param			body	body		schemas.AddTaskToContest	true	"Add Task to Contest"
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests/{id}/tasks [post]
 func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -634,19 +637,19 @@ func (cr *ContestRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 
 // GetRegistrationRequests godoc
 //
-//		@Tags			contest
-//		@Summary		Get registration requests for a contest
-//		@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
-//		@Produce		json
-//		@Param			id	path		int	true	"Contest ID"
-//	 @Param 			status	query		string	false	"Filter by status (pending, approved, rejected)"	default(pending)
-//		@Failure		400	{object}	httputils.APIError
-//		@Failure		403	{object}	httputils.APIError
-//		@Failure		404	{object}	httputils.APIError
-//		@Failure		405	{object}	httputils.APIError
-//		@Failure		500	{object}	httputils.APIError
-//		@Success		200	{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
-//		@Router			/contests/{id}/registration-requests [get]
+//	@Tags			contest
+//	@Summary		Get registration requests for a contest
+//	@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			status	query		string	false	"Filter by status (pending, approved, rejected)"	default(pending)
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
+//	@Router			/contests/{id}/registration-requests [get]
 func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -888,12 +891,92 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 
 	mux.HandleFunc("/{id}/registration-requests/{user_id}/approve", contestRoute.ApproveRegistrationRequest)
 	mux.HandleFunc("/{id}/registration-requests/{user_id}/reject", contestRoute.RejectRegistrationRequest)
+
+	mux.HandleFunc("/{id}/submissions", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			contestRoute.GetContestSubmissions(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
 }
 
-func NewContestRoute(contestService service.ContestService) ContestRoute {
+// GetContestSubmissions godoc
+//
+//	@Tags			contest
+//	@Summary		Get submissions for a contest
+//	@Description	Get all submissions for a specific contest. Only accessible by teachers (contest creators) and admins.
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Router			/contests/{id}/submissions [get]
+func (cr *ContestRouteImpl) GetContestSubmissions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	// Only teachers and admins can view all contest submissions
+	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
+		httputils.ReturnError(w, http.StatusForbidden, "Only teachers and admins can view contest submissions")
+		return
+	}
+
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+
+	submissions, err := cr.submissionService.GetAllForContest(tx, contestID, currentUser, queryParams)
+	if err != nil {
+		db.Rollback()
+		switch {
+		case errors.Is(err, myerrors.ErrNotFound):
+			httputils.ReturnError(w, http.StatusNotFound, "Contest not found")
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. You are not the creator of this contest.")
+		default:
+			cr.logger.Errorw("Failed to get contest submissions", "error", err)
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get contest submissions")
+		}
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
+func NewContestRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestRoute {
 	route := &ContestRouteImpl{
-		contestService: contestService,
-		logger:         utils.NewNamedLogger("contests"),
+		contestService:    contestService,
+		submissionService: submissionService,
+		logger:            utils.NewNamedLogger("contests"),
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {

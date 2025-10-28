@@ -22,6 +22,8 @@ type SubmissionRepository interface {
 	GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
 	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
+	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
 	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
@@ -286,7 +288,7 @@ func (us *submissionRepository) Create(tx *gorm.DB, submission *models.Submissio
 }
 
 func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) error {
-	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Update("status", "processing").Error
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusEvaluated}).Error
 	return err
 }
 
@@ -388,6 +390,34 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID
 	}
 
 	return int(count), nil
+}
+
+func (us *submissionRepository) GetAllForContest(
+	tx *gorm.DB,
+	contestID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("contest_id = ?", contestID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {

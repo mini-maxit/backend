@@ -17,6 +17,7 @@ type Submission struct {
 	LanguageID    int64                  `gorm:"not null; foreignKey:LanguageID"`
 	FileID        int64                  `gorm:"not null; foreignKey:FileID"`
 	Status        types.SubmissionStatus `gorm:"type:submission_status;not null"`
+	ContestID     *int64                 `gorm:"default:null"`
 	StatusMessage string                 `gorm:"type:varchar(255);default:null"`
 	SubmittedAt   time.Time              `gorm:"type:timestamp;autoCreateTime"`
 	CheckedAt     time.Time              `gorm:"type:timestamp;default:null"`
@@ -26,6 +27,7 @@ type Submission struct {
 	User     User              `gorm:"foreignKey:UserID;references:ID"`
 	Result   *SubmissionResult `gorm:"foreignKey:SubmissionID;references:ID"`
 	File     File              `gorm:"foreignKey:FileID;references:ID"`
+	Contest  *Contest          `gorm:"foreignKey:ContestID;references:ID"`
 }
 
 type SubmissionResult struct {

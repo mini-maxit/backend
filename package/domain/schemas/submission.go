@@ -10,6 +10,7 @@ type Submission struct {
 	ID          int64                  `json:"id"`
 	TaskID      int64                  `json:"taskId"`
 	UserID      int64                  `json:"userId"`
+	ContestID   *int64                 `json:"contestId,omitempty"`
 	Order       int                    `json:"order"`
 	LanguageID  int64                  `json:"languageId"`
 	Status      types.SubmissionStatus `json:"status"`

@@ -102,6 +102,21 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUser(tx, userID, limit, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllByUser), tx, userID, limit, offset, sort)
 }
 
+// GetAllForContest mocks base method.
+func (m *MockSubmissionRepository) GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, limit, offset, sort)
+	ret0, _ := ret[0].([]models.Submission)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllForContest indicates an expected call of GetAllForContest.
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForContest(tx, contestID, limit, offset, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForContest), tx, contestID, limit, offset, sort)
+}
+
 // GetAllForGroup mocks base method.
 func (m *MockSubmissionRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
@@ -1436,6 +1451,21 @@ func (m *MockContestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offse
 func (mr *MockContestRepositoryMockRecorder) GetAllWithStats(tx, userID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetAllWithStats), tx, userID, offset, limit, sort)
+}
+
+// GetContestTask mocks base method.
+func (m *MockContestRepository) GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestTask", tx, contestID, taskID)
+	ret0, _ := ret[0].(*models.ContestTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestTask indicates an expected call of GetContestTask.
+func (mr *MockContestRepositoryMockRecorder) GetContestTask(tx, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTask", reflect.TypeOf((*MockContestRepository)(nil).GetContestTask), tx, contestID, taskID)
 }
 
 // GetContestsForUserWithStats mocks base method.

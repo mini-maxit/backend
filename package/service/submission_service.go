@@ -20,7 +20,7 @@ import (
 
 type SubmissionService interface {
 	// Create creates a new submission for a given task, user, language, and order.
-	Create(tx *gorm.DB, taskID int64, userID int64, languageID int64, order int, fileID int64) (int64, error)
+	Create(tx *gorm.DB, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error)
 	// CreateSubmissionResult creates a new submission result based on the response message.
 	CreateSubmissionResult(tx *gorm.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
@@ -29,6 +29,8 @@ type SubmissionService interface {
 	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
 	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
+	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
 	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUserShort retrieves a short version of all submissions for a specific user
@@ -50,12 +52,13 @@ type SubmissionService interface {
 	// MarkProcessing marks a submission as processing.
 	MarkProcessing(tx *gorm.DB, submissionID int64) error
 	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
-	Submit(tx *gorm.DB, user *schemas.User, taskID int64, languageID int64, submissionFilePath string) (int64, error)
+	Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
 
 type submissionService struct {
+	contestService             ContestService
 	filestorage                filestorage.FileStorageService
 	fileRepository             repository.File
 	submissionRepository       repository.SubmissionRepository
@@ -312,6 +315,54 @@ func (ss *submissionService) GetAllForTask(
 	return result, nil
 }
 
+func (ss *submissionService) GetAllForContest(
+	tx *gorm.DB,
+	contestID int64,
+	user schemas.User,
+	queryParams map[string]any,
+) ([]schemas.Submission, error) {
+	var err error
+	submissionModels := []models.Submission{}
+
+	limit := queryParams["limit"].(int)
+	offset := queryParams["offset"].(int)
+	sort := queryParams["sort"].(string)
+	if sort == "" {
+		sort = defaultSortOrder
+	}
+
+	switch user.Role {
+	case types.UserRoleAdmin:
+		// Admin is allowed to view all submissions for the contest
+		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, limit, offset, sort)
+	case types.UserRoleTeacher:
+		// Teacher is allowed to view all submissions for contests they created
+		contest, er := ss.contestService.Get(tx, user, contestID)
+		if er != nil {
+			ss.logger.Errorf("Error getting contest: %v", er.Error())
+			return nil, er
+		}
+		if contest.CreatedBy != user.ID {
+			return nil, myerrors.ErrPermissionDenied
+		}
+		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, limit, offset, sort)
+	case types.UserRoleStudent:
+		// Students are not allowed to view all submissions for a contest
+		return nil, myerrors.ErrPermissionDenied
+	}
+
+	if err != nil {
+		ss.logger.Errorf("Error getting submissions for contest: %v", err.Error())
+		return nil, err
+	}
+
+	result := []schemas.Submission{}
+	for _, submission := range submissionModels {
+		result = append(result, *ss.modelToSchema(&submission))
+	}
+	return result, nil
+}
+
 func (ss *submissionService) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
 	err := ss.submissionRepository.MarkFailed(tx, submissionID, errorMsg)
 	if err != nil {
@@ -347,6 +398,7 @@ func (ss *submissionService) Create(
 	taskID int64,
 	userID int64,
 	languageID int64,
+	contestID *int64,
 	order int,
 	fileID int64,
 ) (int64, error) {
@@ -356,6 +408,7 @@ func (ss *submissionService) Create(
 		UserID:     userID,
 		Order:      order,
 		LanguageID: languageID,
+		ContestID:  contestID,
 		FileID:     fileID,
 		Status:     types.SubmissionStatusReceived,
 	}
@@ -387,7 +440,6 @@ func (ss *submissionService) CreateSubmissionResult(
 		ss.logger.Errorf("Error getting submission result: %v", err.Error())
 		return -1, err
 	}
-	ss.logger.Info("Got submission result: ", submissionResult)
 	submissionResult.Code = submissionResultResponse.Code
 	if !submissionResult.Code.IsValid() {
 		ss.logger.Errorf("Invalid submission result code received from wokrer: %d", submissionResult.Code)
@@ -401,8 +453,7 @@ func (ss *submissionService) CreateSubmissionResult(
 		return -1, err
 	}
 	// Save test results
-	for i, responseTestResult := range submissionResultResponse.TestResults {
-		ss.logger.Infof("Processing test result %d: %+v\n", i, responseTestResult)
+	for _, responseTestResult := range submissionResultResponse.TestResults {
 		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(tx, submissionID, responseTestResult.Order)
 		if err != nil {
 			ss.logger.Errorf("Error getting test result: %v", err.Error())
@@ -445,14 +496,23 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 func (ss *submissionService) Submit(
 	tx *gorm.DB,
 	user *schemas.User,
-	taskID int64,
+	taskID,
 	languageID int64,
+	contestID *int64, // null means no contest
 	submissionFilePath string,
 ) (int64, error) {
 	_, err := ss.taskService.Get(tx, *user, taskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting task: %v", err.Error())
 		return -1, err
+	}
+	if contestID != nil {
+		// Validate contest submission (checks contest status, task in contest, user participation, submission windows, etc.)
+		err = ss.contestService.ValidateContestSubmission(tx, *contestID, taskID, user.ID)
+		if err != nil {
+			ss.logger.Errorf("Contest submission validation failed: %v", err.Error())
+			return -1, err
+		}
 	}
 	// Upload solution file to storage
 	latest, err := ss.submissionRepository.GetLatestForTaskByUser(tx, user.ID, taskID)
@@ -485,7 +545,7 @@ func (ss *submissionService) Submit(
 		ss.logger.Errorf("Error creating file record: %v", err.Error())
 		return -1, err
 	}
-	submissionID, err := ss.Create(tx, taskID, user.ID, languageID, newOrder, file.ID)
+	submissionID, err := ss.Create(tx, taskID, user.ID, languageID, contestID, newOrder, file.ID)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission: %v", err.Error())
 		return 0, err
@@ -593,6 +653,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 }
 
 func NewSubmissionService(
+	contestService ContestService,
 	filestorage filestorage.FileStorageService,
 	fileRepository repository.File,
 	submissionRepository repository.SubmissionRepository,
@@ -607,7 +668,8 @@ func NewSubmissionService(
 	queueService QueueService,
 ) SubmissionService {
 	log := utils.NewNamedLogger("submission_service")
-	return &submissionService{
+	service := &submissionService{
+		contestService:             contestService,
 		filestorage:                filestorage,
 		fileRepository:             fileRepository,
 		submissionRepository:       submissionRepository,
@@ -622,6 +684,10 @@ func NewSubmissionService(
 		queueService:               queueService,
 		logger:                     log,
 	}
+	if err := utils.ValidateStruct(*service); err != nil {
+		log.Fatalf("Invalid submission service: %v", err)
+	}
+	return service
 }
 
 func (ss *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
@@ -657,6 +723,7 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 		ID:          submission.ID,
 		TaskID:      submission.TaskID,
 		UserID:      submission.UserID,
+		ContestID:   submission.ContestID,
 		Order:       submission.Order,
 		LanguageID:  submission.LanguageID,
 		Status:      submission.Status,

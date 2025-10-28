@@ -42,7 +42,8 @@ func (cm *ContestMatcher) String() string {
 func TestCreateContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.CreateContest), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +185,8 @@ func TestCreateContest(t *testing.T) {
 func TestGetContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -271,7 +273,8 @@ func TestGetContest(t *testing.T) {
 func TestEditContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -421,7 +424,8 @@ func TestEditContest(t *testing.T) {
 func TestDeleteContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -513,7 +517,8 @@ func TestDeleteContest(t *testing.T) {
 func TestRegisterForContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -653,7 +658,8 @@ func TestRegisterForContest(t *testing.T) {
 func TestGetOngoingContests(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetOngoingContests), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -759,7 +765,8 @@ func TestGetOngoingContests(t *testing.T) {
 func TestGetRegistrationRequests(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -867,7 +874,8 @@ func TestGetRegistrationRequests(t *testing.T) {
 func TestApproveRegistrationRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewContestRoute(cs)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()

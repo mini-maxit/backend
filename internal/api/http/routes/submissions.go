@@ -428,6 +428,7 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			taskID		formData	int		true	"Task ID"
+//	@Param			contestID	formData	int		false "Contest ID"
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Success		200			{object}	map[string]int64
@@ -491,6 +492,17 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	contestStr := r.FormValue("contestID")
+	var contestID *int64 = nil
+	if contestStr != "" {
+		parsedContestID, err := strconv.ParseInt(contestStr, 10, 64)
+		if err != nil {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID.")
+			return
+		}
+		contestID = &parsedContestID
+	}
+
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -500,12 +512,32 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Create the submission with the correct order
-	submissionID, err := s.submissionService.Submit(tx, &currentUser, taskID, languageID, filePath)
+	submissionID, err := s.submissionService.Submit(tx, &currentUser, taskID, languageID, contestID, filePath)
 	if err != nil {
 		db.Rollback()
 		switch {
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found")
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to submit solution to this task.")
+		case errors.Is(err, myerrors.ErrContestNotStarted):
+			httputils.ReturnError(w, http.StatusBadRequest, "Contest has not started yet.")
+		case errors.Is(err, myerrors.ErrContestEnded):
+			httputils.ReturnError(w, http.StatusBadRequest, "Contest has already ended.")
+		case errors.Is(err, myerrors.ErrNotContestParticipant):
+			httputils.ReturnError(w, http.StatusBadRequest, "User is not a participant of the contest.")
+		case errors.Is(err, myerrors.ErrContestSubmissionClosed):
+			httputils.ReturnError(w, http.StatusBadRequest, "Contest submissions are closed.")
+		case errors.Is(err, myerrors.ErrTaskSubmissionClosed):
+			httputils.ReturnError(w, http.StatusBadRequest, "Submissions for this task are closed.")
+		case errors.Is(err, myerrors.ErrTaskNotStarted):
+			httputils.ReturnError(w, http.StatusBadRequest, "Task submission period has not started yet.")
+		case errors.Is(err, myerrors.ErrTaskSubmissionEnded):
+			httputils.ReturnError(w, http.StatusBadRequest, "Submissions for this task have ended.")
+		case errors.Is(err, myerrors.ErrTaskNotInContest):
+			httputils.ReturnError(w, http.StatusBadRequest, "Task is not part of this contest.")
+		case errors.Is(err, myerrors.ErrInvalidLanguage):
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid language for the task.")
 		default:
 			s.logger.Errorw("Failed to create submission", "error", err)
 			httputils.ReturnError(w,

@@ -220,6 +220,21 @@ func (mr *MockContestServiceMockRecorder) GetUserContests(tx, userID any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserContests", reflect.TypeOf((*MockContestService)(nil).GetUserContests), tx, userID)
 }
 
+// IsTaskInContest mocks base method.
+func (m *MockContestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTaskInContest", tx, contestID, taskID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsTaskInContest indicates an expected call of IsTaskInContest.
+func (mr *MockContestServiceMockRecorder) IsTaskInContest(tx, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTaskInContest", reflect.TypeOf((*MockContestService)(nil).IsTaskInContest), tx, contestID, taskID)
+}
+
 // RegisterForContest mocks base method.
 func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()
@@ -246,6 +261,20 @@ func (m *MockContestService) RejectRegistrationRequest(tx *gorm.DB, currentUser 
 func (mr *MockContestServiceMockRecorder) RejectRegistrationRequest(tx, currentUser, contestID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectRegistrationRequest", reflect.TypeOf((*MockContestService)(nil).RejectRegistrationRequest), tx, currentUser, contestID, userID)
+}
+
+// ValidateContestSubmission mocks base method.
+func (m *MockContestService) ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateContestSubmission", tx, contestID, taskID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateContestSubmission indicates an expected call of ValidateContestSubmission.
+func (mr *MockContestServiceMockRecorder) ValidateContestSubmission(tx, contestID, taskID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateContestSubmission", reflect.TypeOf((*MockContestService)(nil).ValidateContestSubmission), tx, contestID, taskID, userID)
 }
 
 // MockUserService is a mock of UserService interface.
@@ -894,18 +923,18 @@ func (m *MockSubmissionService) EXPECT() *MockSubmissionServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockSubmissionService) Create(tx *gorm.DB, taskID, userID, languageID int64, order int, fileID int64) (int64, error) {
+func (m *MockSubmissionService) Create(tx *gorm.DB, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", tx, taskID, userID, languageID, order, fileID)
+	ret := m.ctrl.Call(m, "Create", tx, taskID, userID, languageID, contestID, order, fileID)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockSubmissionServiceMockRecorder) Create(tx, taskID, userID, languageID, order, fileID any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) Create(tx, taskID, userID, languageID, contestID, order, fileID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSubmissionService)(nil).Create), tx, taskID, userID, languageID, order, fileID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSubmissionService)(nil).Create), tx, taskID, userID, languageID, contestID, order, fileID)
 }
 
 // CreateSubmissionResult mocks base method.
@@ -951,6 +980,21 @@ func (m *MockSubmissionService) GetAll(tx *gorm.DB, user schemas.User, queryPara
 func (mr *MockSubmissionServiceMockRecorder) GetAll(tx, user, queryParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSubmissionService)(nil).GetAll), tx, user, queryParams)
+}
+
+// GetAllForContest mocks base method.
+func (m *MockSubmissionService) GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, user, queryParams)
+	ret0, _ := ret[0].([]schemas.Submission)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllForContest indicates an expected call of GetAllForContest.
+func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, user, queryParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForContest), tx, contestID, user, queryParams)
 }
 
 // GetAllForGroup mocks base method.
@@ -1071,18 +1115,18 @@ func (mr *MockSubmissionServiceMockRecorder) MarkProcessing(tx, submissionID any
 }
 
 // Submit mocks base method.
-func (m *MockSubmissionService) Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, submissionFilePath string) (int64, error) {
+func (m *MockSubmissionService) Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Submit", tx, user, taskID, languageID, submissionFilePath)
+	ret := m.ctrl.Call(m, "Submit", tx, user, taskID, languageID, contestID, submissionFilePath)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Submit indicates an expected call of Submit.
-func (mr *MockSubmissionServiceMockRecorder) Submit(tx, user, taskID, languageID, submissionFilePath any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) Submit(tx, user, taskID, languageID, contestID, submissionFilePath any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Submit", reflect.TypeOf((*MockSubmissionService)(nil).Submit), tx, user, taskID, languageID, submissionFilePath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Submit", reflect.TypeOf((*MockSubmissionService)(nil).Submit), tx, user, taskID, languageID, contestID, submissionFilePath)
 }
 
 // MockLanguageService is a mock of LanguageService interface.

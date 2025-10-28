@@ -43,6 +43,11 @@ type ContestService interface {
 	ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
 	// RejectRegistrationRequest rejects a pending registration request for a contest
 	RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
+	// IsTaskInContest checks if a task is part of a contest
+	IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error)
+	// ValidateContestSubmission validates if a user can submit a solution for a task in a contest
+	// Returns an error if submission is not allowed (contest/task not open, user not participant, etc.)
+	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -741,6 +746,78 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 	}
 
 	return cs.contestRepository.UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected)
+}
+
+func (cs *contestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error) {
+	contestTask, err := cs.contestRepository.GetContestTask(tx, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return contestTask != nil, nil
+}
+
+func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error {
+	// Get contest
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Check if contest submissions are open
+	if contest.IsSubmissionOpen == nil || !*contest.IsSubmissionOpen {
+		return myerrors.ErrContestSubmissionClosed
+	}
+
+	// Check if contest has started
+	if contest.StartAt != nil && time.Now().Before(*contest.StartAt) {
+		return myerrors.ErrContestNotStarted
+	}
+
+	// Check if contest has ended
+	if contest.EndAt != nil && time.Now().After(*contest.EndAt) {
+		return myerrors.ErrContestEnded
+	}
+
+	// Check if user is a participant
+	isParticipant, err := cs.contestRepository.IsUserParticipant(tx, contestID, userID)
+	if err != nil {
+		return err
+	}
+	if !isParticipant {
+		return myerrors.ErrNotContestParticipant
+	}
+
+	// Check if task is in contest
+	contestTask, err := cs.contestRepository.GetContestTask(tx, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrTaskNotInContest
+		}
+		return err
+	}
+
+	// Check if task submissions are open for this contest
+	if !contestTask.IsSubmissionOpen {
+		return myerrors.ErrTaskSubmissionClosed
+	}
+
+	// Check if task submission period has started
+	if time.Now().Before(contestTask.StartAt) {
+		return myerrors.ErrTaskNotStarted
+	}
+
+	// Check if task submission period has ended
+	if contestTask.EndAt != nil && time.Now().After(*contestTask.EndAt) {
+		return myerrors.ErrTaskSubmissionEnded
+	}
+
+	return nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository) ContestService {
