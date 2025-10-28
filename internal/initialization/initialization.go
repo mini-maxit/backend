@@ -123,6 +123,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
+		contestService,
 		filestorage,
 		fileRepository,
 		submissionRepository,
@@ -140,7 +141,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
-	contestRoute := routes.NewContestRoute(contestService)
+	contestRoute := routes.NewContestRoute(contestService, submissionService)
 	groupRoute := routes.NewGroupRoute(groupService)
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)

@@ -55,6 +55,8 @@ type ContestRepository interface {
 	UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error
 	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
 	GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error)
+	// GetContestTask retrieves the ContestTask relationship for validation
+	GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error)
 }
 
 type contestRepository struct{}
@@ -493,6 +495,15 @@ func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestI
 		return nil, err
 	}
 	return &request, nil
+}
+
+func (cr *contestRepository) GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error) {
+	var contestTask models.ContestTask
+	err := tx.Where("contest_id = ? AND task_id = ?", contestID, taskID).First(&contestTask).Error
+	if err != nil {
+		return nil, err
+	}
+	return &contestTask, nil
 }
 
 func NewContestRepository() ContestRepository {

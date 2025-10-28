@@ -140,6 +140,7 @@ CREATE TABLE "maxit"."submissions" (
   "order" bigint NOT NULL,
   "language_id" bigint NOT NULL,
   "file_id" bigint NOT NULL,
+  "contest_id" bigint NULL,
   "status" "maxit"."submission_status" NOT NULL,
   "status_message" character varying(255) NULL DEFAULT NULL::character varying,
   "submitted_at" timestamp NULL,
@@ -148,7 +149,8 @@ CREATE TABLE "maxit"."submissions" (
   CONSTRAINT "fk_maxit_submissions_file" FOREIGN KEY ("file_id") REFERENCES "maxit"."files" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_submissions_language" FOREIGN KEY ("language_id") REFERENCES "maxit"."language_configs" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_submissions_task" FOREIGN KEY ("task_id") REFERENCES "maxit"."tasks" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT "fk_maxit_submissions_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
+  CONSTRAINT "fk_maxit_submissions_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT "fk_maxit_submissions_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 -- Create "queue_messages" table
 CREATE TABLE "maxit"."queue_messages" (

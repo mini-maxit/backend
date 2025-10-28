@@ -847,7 +847,7 @@ func TestSubmitSolution(t *testing.T) {
 		require.NoError(t, err)
 		writer.Close()
 
-		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), gomock.Any()).Return(int64(0), myerrors.ErrNotFound).Times(1)
+		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), nil, gomock.Any()).Return(int64(0), myerrors.ErrNotFound).Times(1)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL, body)
 		require.NoError(t, err)
@@ -883,7 +883,7 @@ func TestSubmitSolution(t *testing.T) {
 		require.NoError(t, err)
 		writer.Close()
 
-		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(1), int64(1), gomock.Any()).Return(int64(123), nil).Times(1)
+		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(1), int64(1), nil, gomock.Any()).Return(int64(123), nil).Times(1)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL, body)
 		require.NoError(t, err)

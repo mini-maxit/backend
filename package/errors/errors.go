@@ -160,3 +160,26 @@ var ErrAlreadyRegistered = errors.New("already registered for this contest")
 var ErrAlreadyParticipant = errors.New("user is already a participant of this contest")
 
 var ErrNoPendingRegistration = errors.New("no pending registration for this contest")
+
+var ErrTaskNotInContest = errors.New("task is not part of the contest")
+
+// ErrInvalidLanguage is returned when the language is not valid for the task.
+var ErrInvalidLanguage = errors.New("invalid language for the task")
+
+// ErrContestSubmissionClosed is returned when contest submissions are closed.
+var ErrContestSubmissionClosed = errors.New("contest submissions are closed")
+
+// ErrTaskSubmissionClosed is returned when task submissions are closed for this contest.
+var ErrTaskSubmissionClosed = errors.New("task submissions are closed for this contest task")
+
+// ErrContestNotStarted is returned when the contest has not started yet.
+var ErrContestNotStarted = errors.New("contest has not started yet")
+
+// ErrTaskNotStarted is returned when the task period has not started yet.
+var ErrTaskNotStarted = errors.New("task submission period has not started yet")
+
+// ErrTaskSubmissionEnded is returned when the task submission period has ended.
+var ErrTaskSubmissionEnded = errors.New("task submission period has ended")
+
+// ErrNotContestParticipant is returned when user is not a participant of the contest.
+var ErrNotContestParticipant = errors.New("user is not a participant of this contest")
