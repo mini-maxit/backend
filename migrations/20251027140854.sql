@@ -150,7 +150,7 @@ CREATE TABLE "maxit"."submissions" (
   CONSTRAINT "fk_maxit_submissions_language" FOREIGN KEY ("language_id") REFERENCES "maxit"."language_configs" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_submissions_task" FOREIGN KEY ("task_id") REFERENCES "maxit"."tasks" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT "fk_maxit_submissions_user" FOREIGN KEY ("user_id") REFERENCES "maxit"."users" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT "fk_maxit_submissions_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION;
+  CONSTRAINT "fk_maxit_submissions_contest" FOREIGN KEY ("contest_id") REFERENCES "maxit"."contests" ("id") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 -- Create "queue_messages" table
 CREATE TABLE "maxit"."queue_messages" (
