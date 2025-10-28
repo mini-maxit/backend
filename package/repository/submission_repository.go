@@ -288,22 +288,20 @@ func (us *submissionRepository) Create(tx *gorm.DB, submission *models.Submissio
 }
 
 func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) error {
-	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusEvaluated}).Error
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusSentForEvaluation}).Error
 	return err
 }
 
 func (us *submissionRepository) MarkEvaluated(tx *gorm.DB, submissionID int64) error {
-	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(map[string]any{
-		"status":     types.SubmissionStatusEvaluated,
-		"checked_at": time.Now(),
-	}).Error
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusEvaluated, CheckedAt: time.Now()}).Error
 	return err
 }
 
 func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
-	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(map[string]any{
-		"status":         types.SubmissionStatusEvaluated,
-		"status_message": errorMsg,
+	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{
+		Status:        types.SubmissionStatusEvaluated,
+		StatusMessage: errorMsg,
+		CheckedAt:     time.Now(),
 	}).Error
 	return err
 }

@@ -496,8 +496,7 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 func (ss *submissionService) Submit(
 	tx *gorm.DB,
 	user *schemas.User,
-	taskID,
-	languageID int64,
+	taskID, languageID int64,
 	contestID *int64, // null means no contest
 	submissionFilePath string,
 ) (int64, error) {

@@ -202,9 +202,8 @@ func TestCreateSubmissionResult(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 			setup := setupSubmissionServiceTest(t)
+			defer setup.ctrl.Finish()
 
 			tc.setupMocks(setup.submissionRepository, setup.submissionResultRepository, setup.testCaseRepository, setup.testResultRepository)
 			id, err := setup.service.CreateSubmissionResult(nil, submission.ID, tc.queueResponse)
@@ -219,10 +218,8 @@ func TestCreateSubmissionResult(t *testing.T) {
 }
 
 func TestGetAvailableLanguages(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	t.Run("Success", func(t *testing.T) {
 		expectedLanguages := []schemas.LanguageConfig{
@@ -250,10 +247,8 @@ func TestGetAvailableLanguages(t *testing.T) {
 	})
 }
 func TestGetAll(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 	testCases := []struct {
 		name           string
 		user           schemas.User
@@ -337,9 +332,8 @@ func TestGetAll(t *testing.T) {
 	}
 }
 func TestGet(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	testCases := []struct {
 		name               string
@@ -411,9 +405,8 @@ func TestGet(t *testing.T) {
 }
 
 func TestSubmissionGetAllForGroup(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	t.Run("Admin retrieves all submissions for a group", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
@@ -506,10 +499,8 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 }
 
 func TestSubmissionGetAllForUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	t.Run("Admin retrieves all submissions for a user", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
@@ -617,10 +608,8 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 }
 
 func TestGetAllForUserShort(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	t.Run("Admin retrieves short submissions for a user", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
@@ -722,10 +711,8 @@ func TestGetAllForUserShort(t *testing.T) {
 }
 
 func TestGetAllForTask(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	t.Run("Admin retrieves all submissions for a task", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
@@ -846,10 +833,8 @@ func TestGetAllForTask(t *testing.T) {
 	})
 }
 func TestMarkSubmissionStatus(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
 
 	testCases := []struct {
 		name          string
