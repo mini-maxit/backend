@@ -158,16 +158,19 @@ func (ss *submissionService) filterSubmissionsForTeacher(
 	user schemas.User,
 	submissionModels []models.Submission,
 ) []models.Submission {
+	// Create a cache for contest lookups to avoid redundant database queries
+	contestCache := make(map[int64]*schemas.Contest)
+
 	filteredSubmissions := []models.Submission{}
 	for _, submission := range submissionModels {
-		if ss.isTeacherAuthorized(tx, user, submission) {
+		if ss.isTeacherAuthorized(tx, user, submission, contestCache) {
 			filteredSubmissions = append(filteredSubmissions, submission)
 		}
 	}
 	return filteredSubmissions
 }
 
-func (ss *submissionService) isTeacherAuthorized(tx *gorm.DB, user schemas.User, submission models.Submission) bool {
+func (ss *submissionService) isTeacherAuthorized(tx *gorm.DB, user schemas.User, submission models.Submission, contestCache map[int64]*schemas.Contest) bool {
 	// Check if teacher created the task
 	if submission.Task.CreatedBy == user.ID {
 		return true
@@ -175,8 +178,24 @@ func (ss *submissionService) isTeacherAuthorized(tx *gorm.DB, user schemas.User,
 
 	// Check if teacher created the contest
 	if submission.ContestID != nil {
-		contest, err := ss.contestService.Get(tx, user, *submission.ContestID)
-		if err == nil && contest.CreatedBy == user.ID {
+		contestID := *submission.ContestID
+
+		// Check cache first
+		contest, found := contestCache[contestID]
+		if !found {
+			// Fetch from database and cache the result
+			var err error
+			contest, err = ss.contestService.Get(tx, user, contestID)
+			if err != nil {
+				// Cache nil to avoid repeated failed lookups
+				contestCache[contestID] = nil
+				return false
+			}
+			contestCache[contestID] = contest
+		}
+
+		// Check if contest was found and user is the creator
+		if contest != nil && contest.CreatedBy == user.ID {
 			return true
 		}
 	}
