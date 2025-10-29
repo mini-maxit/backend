@@ -119,30 +119,55 @@ func (ss *submissionService) getFilteredSubmissions(
 		return nil, myerrors.ErrPermissionDenied
 	}
 
-	// Fetch submissions based on filters
-	submissionModels, err := ss.fetchSubmissionsByFilters(tx, targetUserID, contestID, taskID, paginationParams)
+	// Fetch submissions based on filters and user role
+	limit := paginationParams.Limit
+	offset := paginationParams.Offset
+	sort := paginationParams.Sort
+
+	var submissionModels []models.Submission
+	var err error
+
+	// For teachers viewing other users' submissions, use teacher-specific repository methods
+	// that filter at the database level using JOINs
+	if user.Role == types.UserRoleTeacher && targetUserID != user.ID {
+		submissionModels, err = ss.fetchSubmissionsByFiltersForTeacher(tx, targetUserID, user.ID, contestID, taskID, limit, offset, sort)
+	} else {
+		// For admins and users viewing their own submissions, use standard repository methods
+		submissionModels, err = ss.fetchSubmissionsByFilters(tx, targetUserID, contestID, taskID, limit, offset, sort)
+	}
+
 	if err != nil {
 		ss.logger.Errorf("Error getting filtered submissions: %v", err.Error())
 		return nil, err
 	}
 
-	// Apply teacher authorization filter
-	if user.Role == types.UserRoleTeacher && targetUserID != user.ID {
-		return ss.filterSubmissionsForTeacher(tx, user, submissionModels), nil
-	}
-
 	return submissionModels, nil
+}
+
+func (ss *submissionService) fetchSubmissionsByFiltersForTeacher(
+	tx *gorm.DB,
+	userID, teacherID int64,
+	contestID, taskID *int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	if contestID != nil && taskID != nil {
+		return ss.submissionRepository.GetAllByUserForContestAndTaskByTeacher(tx, userID, *contestID, *taskID, teacherID, limit, offset, sort)
+	} else if contestID != nil {
+		return ss.submissionRepository.GetAllByUserForContestByTeacher(tx, userID, *contestID, teacherID, limit, offset, sort)
+	} else if taskID != nil {
+		return ss.submissionRepository.GetAllByUserForTaskByTeacher(tx, userID, *taskID, teacherID, limit, offset, sort)
+	}
+	return ss.submissionRepository.GetAllByUserForTeacher(tx, userID, teacherID, limit, offset, sort)
 }
 
 func (ss *submissionService) fetchSubmissionsByFilters(
 	tx *gorm.DB,
 	userID int64,
 	contestID, taskID *int64,
-	paginationParams schemas.PaginationParams,
+	limit, offset int,
+	sort string,
 ) ([]models.Submission, error) {
-	limit := paginationParams.Limit
-	offset := paginationParams.Offset
-	sort := paginationParams.Sort
 	if contestID != nil && taskID != nil {
 		return ss.submissionRepository.GetAllByUserForContestAndTask(tx, userID, *contestID, *taskID, limit, offset, sort)
 	} else if contestID != nil {
@@ -151,37 +176,6 @@ func (ss *submissionService) fetchSubmissionsByFilters(
 		return ss.submissionRepository.GetAllByUserForTask(tx, userID, *taskID, limit, offset, sort)
 	}
 	return ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
-}
-
-func (ss *submissionService) filterSubmissionsForTeacher(
-	tx *gorm.DB,
-	user schemas.User,
-	submissionModels []models.Submission,
-) []models.Submission {
-	filteredSubmissions := []models.Submission{}
-	for _, submission := range submissionModels {
-		if ss.isTeacherAuthorized(tx, user, submission) {
-			filteredSubmissions = append(filteredSubmissions, submission)
-		}
-	}
-	return filteredSubmissions
-}
-
-func (ss *submissionService) isTeacherAuthorized(tx *gorm.DB, user schemas.User, submission models.Submission) bool {
-	// Check if teacher created the task
-	if submission.Task.CreatedBy == user.ID {
-		return true
-	}
-
-	// Check if teacher created the contest
-	if submission.ContestID != nil {
-		contest, err := ss.contestService.Get(tx, user, *submission.ContestID)
-		if err == nil && contest.CreatedBy == user.ID {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (ss *submissionService) getUnfilteredSubmissions(
