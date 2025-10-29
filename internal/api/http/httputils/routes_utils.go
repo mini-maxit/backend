@@ -249,9 +249,18 @@ func ReturnValidationError(w http.ResponseWriter, validationErrors validator.Val
 }
 
 func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParams {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
+	limit, ok := queryParams["limit"].(int)
+	if !ok {
+		limit = 20
+	}
+	offset, ok := queryParams["offset"].(int)
+	if !ok {
+		offset = 0
+	}
+	sort, ok := queryParams["sort"].(string)
+	if !ok {
+		sort = ""
+	}
 	return schemas.PaginationParams{
 		Limit:  limit,
 		Offset: offset,
