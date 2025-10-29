@@ -262,7 +262,7 @@ func TestGetAll(t *testing.T) {
 			user:   schemas.User{Role: "admin"},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
-				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "created_at:asc").Return([]models.Submission{
+				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
 					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
 				}, nil).Times(1)
@@ -278,7 +278,7 @@ func TestGetAll(t *testing.T) {
 			user:   schemas.User{Role: "teacher", ID: 1},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
-				return setup.submissionRepository.EXPECT().GetAllForTeacher(gomock.Any(), int64(1), 10, 0, "created_at:asc").Return(
+				return setup.submissionRepository.EXPECT().GetAllForTeacher(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 					[]models.Submission{
 						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 						{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
@@ -295,7 +295,7 @@ func TestGetAll(t *testing.T) {
 			user:   schemas.User{Role: "student", ID: 1},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
-				return setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "created_at:asc").Return(
+				return setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 					[]models.Submission{
 						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 					}, nil).Times(1)
@@ -310,7 +310,7 @@ func TestGetAll(t *testing.T) {
 			user:   schemas.User{Role: "admin"},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
-				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "created_at:asc").Return(
+				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return(
 					nil, gorm.ErrInvalidData,
 				).Times(1)
 			},
@@ -322,7 +322,7 @@ func TestGetAll(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.expectedMethod()
-			queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "created_at:asc"}
+			queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: ""}
 
 			submissions, err := setup.service.GetAll(nil, tc.user, tc.userID, nil, nil, queryParams)
 
