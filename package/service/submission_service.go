@@ -101,30 +101,6 @@ func (ss *submissionService) GetAll(
 	return ss.modelsToSchemas(submissionModels), nil
 }
 
-func (ss *submissionService) extractFilterParams(queryParams map[string]any) (*int64, *int64, *int64) {
-	var userID, contestID, taskID *int64
-
-	if val, ok := queryParams["userId"]; ok && val != nil {
-		if id, ok := val.(int64); ok {
-			userID = &id
-		}
-	}
-
-	if val, ok := queryParams["contestId"]; ok && val != nil {
-		if id, ok := val.(int64); ok {
-			contestID = &id
-		}
-	}
-
-	if val, ok := queryParams["taskId"]; ok && val != nil {
-		if id, ok := val.(int64); ok {
-			taskID = &id
-		}
-	}
-
-	return userID, contestID, taskID
-}
-
 func (ss *submissionService) getFilteredSubmissions(
 	tx *gorm.DB,
 	user schemas.User,
