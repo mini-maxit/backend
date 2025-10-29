@@ -24,11 +24,17 @@ type SubmissionRepository interface {
 	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
 	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
+	GetAllByUserForContest(tx *gorm.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
+	GetAllByUserForTask(tx *gorm.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContestAndTask returns all submissions by a user for a specific contest and task. The submissions are paginated.
+	GetAllByUserForContestAndTask(tx *gorm.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
 	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
-	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error) // Get returns a submission by its ID.
+	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error)
 	// Get returns a submission by its ID.
 	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
 	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
@@ -410,6 +416,90 @@ func (us *submissionRepository) GetAllForContest(
 		Preload("Result").
 		Preload("Result.TestResults").
 		Where("contest_id = ?", contestID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContest(
+	tx *gorm.DB,
+	userID, contestID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND contest_id = ?", userID, contestID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForTask(
+	tx *gorm.DB,
+	userID, taskID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND task_id = ?", userID, taskID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContestAndTask(
+	tx *gorm.DB,
+	userID, contestID, taskID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND contest_id = ? AND task_id = ?", userID, contestID, taskID).
 		Find(&submissions).Error
 
 	if err != nil {

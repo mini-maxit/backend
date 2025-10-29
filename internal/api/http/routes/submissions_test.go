@@ -77,7 +77,7 @@ func TestGetAll(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		require.NoError(t, err)
@@ -89,7 +89,7 @@ func TestGetAll(t *testing.T) {
 	})
 
 	t.Run("Success with empty list", func(t *testing.T) {
-		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return([]schemas.Submission{}, nil).Times(1)
+		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]schemas.Submission{}, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		require.NoError(t, err)
@@ -118,7 +118,7 @@ func TestGetAll(t *testing.T) {
 				Status: types.SubmissionStatusReceived,
 			},
 		}
-		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
+		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		require.NoError(t, err)
