@@ -113,7 +113,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
 		return
 	}
-	submissions, err := s.submissionService.GetAll(tx, currentUser, userID, contestID, taskID, paginationParams)
+	submissions, err := s.submissionService.GetAll(tx, currentUser, userID, taskID, contestID, paginationParams)
 	if err != nil {
 		db.Rollback()
 		if errors.Is(err, myerrors.ErrPermissionDenied) {
