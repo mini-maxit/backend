@@ -1531,11 +1531,24 @@ paths:
       summary: Add users to a group
       tags:
       - group
-  /submissions:
+  /submissions/:
     get:
-      description: Depending on the user role, this endpoint will return all submissions
-        for the current user.
+      description: Get submissions with optional filters by userId, contestId, and/or
+        taskId. Students can only view their own submissions. Teachers can view submissions
+        for tasks/contests they created. Admins have full access.
       parameters:
+      - description: User ID filter
+        in: query
+        name: userId
+        type: integer
+      - description: Contest ID filter
+        in: query
+        name: contestId
+        type: integer
+      - description: Task ID filter
+        in: query
+        name: taskId
+        type: integer
       - description: Limit the number of returned submissions
         in: query
         name: limit
@@ -1544,6 +1557,10 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: Sort order
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -1555,11 +1572,15 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get all submissions for the current user
+      summary: Get all submissions with optional filtering
       tags:
       - submission
   /submissions/{id}:
