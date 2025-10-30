@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -244,5 +245,25 @@ func ReturnValidationError(w http.ResponseWriter, validationErrors validator.Val
 	if err != nil {
 		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+}
+
+func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParams {
+	limit, ok := queryParams["limit"].(int)
+	if !ok {
+		limit = 20
+	}
+	offset, ok := queryParams["offset"].(int)
+	if !ok {
+		offset = 0
+	}
+	sort, ok := queryParams["sort"].(string)
+	if !ok {
+		sort = ""
+	}
+	return schemas.PaginationParams{
+		Limit:  limit,
+		Offset: offset,
+		Sort:   sort,
 	}
 }

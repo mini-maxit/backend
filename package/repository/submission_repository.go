@@ -24,11 +24,29 @@ type SubmissionRepository interface {
 	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
 	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
+	GetAllByUserForContest(tx *gorm.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
+	GetAllByUserForTask(tx *gorm.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContestAndTask returns all submissions by a user for a specific contest and task. The submissions are paginated.
+	GetAllByUserForContestAndTask(tx *gorm.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
 	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForTeacher returns all submissions by a specific user, filtered to only include submissions
+	// for tasks created by the teacher. The submissions are paginated.
+	GetAllByUserForTeacher(tx *gorm.DB, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForTaskByTeacher returns all submissions by a user for a specific task,
+	// filtered to only include submissions where the teacher created the task. The submissions are paginated.
+	GetAllByUserForTaskByTeacher(tx *gorm.DB, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContestByTeacher returns all submissions by a user for a specific contest,
+	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
+	GetAllByUserForContestByTeacher(tx *gorm.DB, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	// GetAllByUserForContestAndTaskByTeacher returns all submissions by a user for a specific contest and task,
+	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
+	GetAllByUserForContestAndTaskByTeacher(tx *gorm.DB, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
-	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error) // Get returns a submission by its ID.
+	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error)
 	// Get returns a submission by its ID.
 	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
 	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
@@ -410,6 +428,209 @@ func (us *submissionRepository) GetAllForContest(
 		Preload("Result").
 		Preload("Result.TestResults").
 		Where("contest_id = ?", contestID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContest(
+	tx *gorm.DB,
+	userID, contestID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND contest_id = ?", userID, contestID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForTask(
+	tx *gorm.DB,
+	userID, taskID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND task_id = ?", userID, taskID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContestAndTask(
+	tx *gorm.DB,
+	userID, contestID, taskID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Where("user_id = ? AND contest_id = ? AND task_id = ?", userID, contestID, taskID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForTeacher(
+	tx *gorm.DB,
+	userID, teacherID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins("LEFT JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Where("submissions.user_id = ? AND (tasks.created_by = ? OR (submissions.contest_id IS NOT NULL AND contests.created_by = ?))", userID, teacherID, teacherID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForTaskByTeacher(
+	tx *gorm.DB,
+	userID, taskID, teacherID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Where("submissions.user_id = ? AND submissions.task_id = ? AND tasks.created_by = ?", userID, taskID, teacherID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContestByTeacher(
+	tx *gorm.DB,
+	userID, contestID, teacherID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, teacherID, teacherID).
+		Find(&submissions).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
+}
+
+func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
+	tx *gorm.DB,
+	userID, contestID, taskID, teacherID int64,
+	limit, offset int,
+	sort string,
+) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+
+	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Model(&models.Submission{}).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins("JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, taskID, teacherID, teacherID).
 		Find(&submissions).Error
 
 	if err != nil {
