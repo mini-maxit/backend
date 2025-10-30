@@ -1046,6 +1046,96 @@ paths:
       summary: Get registration requests for a contest
       tags:
       - contest
+  /contests/{id}/registration-requests/{user_id}/approve:
+    post:
+      description: Approve a pending registration request for a contest (only accessible
+        by contest creator or admin)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Approve a registration request
+      tags:
+      - contest
+  /contests/{id}/registration-requests/{user_id}/reject:
+    post:
+      description: Reject a pending registration request for a contest (only accessible
+        by contest creator or admin)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Reject a registration request
+      tags:
+      - contest
   /contests/{id}/submissions:
     get:
       consumes:
