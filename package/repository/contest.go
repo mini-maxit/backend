@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"fmt"
+
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
@@ -149,7 +152,7 @@ func (cr *contestRepository) IsUserParticipant(tx *gorm.DB, contestID int64, use
 	}
 	var groupCount int64
 	err = tx.Model(&models.ContestParticipantGroup{}).Where("contest_id = ?", contestID).
-		Joins("JOIN maxit.user_groups ON maxit.contest_participant_groups.group_id = user_groups.group_id").
+		Joins(fmt.Sprintf("JOIN %s ON contest_participant_groups.group_id = user_groups.group_id", database.ResolveTableName(tx, &models.UserGroup{}))).
 		Where("user_groups.user_id = ?", userID).
 		Count(&groupCount).Error
 	if err != nil {
@@ -175,30 +178,30 @@ func (cr *contestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offset i
 			COALESCE(contest_task_count.count, 0) as task_count,
 			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_participants
+			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks
+			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
-		Joins(`LEFT JOIN (
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID)
+		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID)
 
 	// Apply pagination and sorting
 	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
@@ -224,30 +227,30 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int
 			COALESCE(contest_task_count.count, 0) as task_count,
 			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_participants
+			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks
+			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
-		Joins(`LEFT JOIN (
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
 		Where(`(
 			(start_at IS NOT NULL AND start_at <= NOW() AND (end_at IS NULL OR end_at > NOW()))
 		)`)
@@ -276,30 +279,30 @@ func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64,
 			COALESCE(contest_task_count.count, 0) as task_count,
 			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_participants
+			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks
+			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
-		Joins(`LEFT JOIN (
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
 		Where("end_at IS NOT NULL AND end_at <= NOW()")
 
 	// Apply pagination and sorting
@@ -326,30 +329,30 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 			COALESCE(contest_task_count.count, 0) as task_count,
 			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
 			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_participants
+			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks
+			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN maxit.contest_participants user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, userID).
-		Joins(`LEFT JOIN (
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, userID).
-		Joins(`LEFT JOIN maxit.contest_pending_registrations pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, userID).
+		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
 		Where("start_at IS NOT NULL AND start_at > NOW()")
 
 	// Apply pagination and sorting
@@ -369,7 +372,7 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN maxit.contest_tasks ON contest_tasks.task_id = tasks.id").
+		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
 		Find(&tasks).Error
 	if err != nil {
@@ -381,7 +384,7 @@ func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([
 func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
-		Joins("JOIN maxit.contest_tasks ON contest_tasks.task_id = tasks.id").
+		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
 		Find(&tasks).Error
 	if err != nil {
@@ -400,45 +403,45 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
 			COALESCE(user_solved_tasks.count, 0) as solved_count`).
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_participants
+			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`).
-		Joins(`LEFT JOIN (
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks
+			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`).
-		Joins(`LEFT JOIN (
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT ct.contest_id, COUNT(*) as count
-			FROM maxit.contest_tasks ct
-			INNER JOIN maxit.submissions s ON s.task_id = ct.task_id AND s.user_id = ?
-			INNER JOIN maxit.submission_results sr ON sr.submission_id = s.id
+			FROM %s ct
+			INNER JOIN %s s ON s.task_id = ct.task_id AND s.user_id = ?
+			INNER JOIN %s sr ON sr.submission_id = s.id
 			INNER JOIN (
 				SELECT submission_result_id,
 					   COUNT(*) as total_tests,
 					   COUNT(CASE WHEN passed = true THEN 1 END) as passed_tests
-				FROM maxit.test_results
+				FROM %s
 				GROUP BY submission_result_id
 				HAVING COUNT(*) = COUNT(CASE WHEN passed = true THEN 1 END)
 			) perfect_results ON perfect_results.submission_result_id = sr.id
 			GROUP BY ct.contest_id
-		) as user_solved_tasks ON contests.id = user_solved_tasks.contest_id`, userID).
-		Where(`EXISTS (
-			SELECT 1 FROM maxit.contest_participants cp
+		) as user_solved_tasks ON contests.id = user_solved_tasks.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}), database.ResolveTableName(tx, &models.Submission{}), database.ResolveTableName(tx, &models.SubmissionResult{}), database.ResolveTableName(tx, &models.TestResult{})), userID).
+		Where(fmt.Sprintf(`EXISTS (
+			SELECT 1 FROM %s cp
 			WHERE cp.contest_id = contests.id AND cp.user_id = ?
 		) OR EXISTS (
-			SELECT 1 FROM maxit.contest_participant_groups cpg
-			JOIN maxit.user_groups ug ON cpg.group_id = ug.group_id
+			SELECT 1 FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE cpg.contest_id = contests.id AND ug.user_id = ?
-		)`, userID, userID)
+		)`, database.ResolveTableName(tx, &models.ContestParticipant{}), database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID, userID)
 
 	err := query.Find(&contests).Error
 	if err != nil {
@@ -486,15 +489,16 @@ func (cr *contestRepository) CreateContestParticipant(tx *gorm.DB, contestID, us
 }
 
 func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
-	var request models.ContestRegistrationRequests
-	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).First(&request).Error
+	var request []*models.ContestRegistrationRequests
+	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).Limit(1).Find(&request).Error
 	if err != nil {
 		return nil, err
 	}
-	if err := utils.ValidateStruct(&request); err != nil {
-		return nil, err
+	if len(request) == 0 {
+		return nil, gorm.ErrRecordNotFound
 	}
-	return &request, nil
+
+	return request[0], nil
 }
 
 func (cr *contestRepository) GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error) {

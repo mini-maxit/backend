@@ -708,21 +708,6 @@ func (cr *ContestRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *ht
 	httputils.ReturnSuccess(w, http.StatusOK, requests)
 }
 
-// ApproveRegistrationRequest godoc
-//
-//	@Tags			contest
-//	@Summary		Approve a registration request
-//	@Description	Approve a pending registration request for a contest (only accessible by contest creator or admin)
-//	@Produce		json
-//	@Param			id		path		int	true	"Contest ID"
-//	@Param			user_id	path		int	true	"User ID"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		404		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests/{id}/registration-requests/{user_id}/approve [post]
 func (cr *ContestRouteImpl) ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -776,20 +761,20 @@ func (cr *ContestRouteImpl) ApproveRegistrationRequest(w http.ResponseWriter, r 
 }
 
 // RejectRegistrationRequest godoc
+// @Tags			contest
 //
-//	@Tags			contest
 //	@Summary		Reject a registration request
 //	@Description	Reject a pending registration request for a contest (only accessible by contest creator or admin)
-//	@Produce		json
-//	@Param			id		path		int	true	"Contest ID"
-//	@Param			user_id	path		int	true	"User ID"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		404		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests/{id}/registration-requests/{user_id}/reject [post]
+//
+// @Produce		json
+// @Param			id		path		int		true	"Contest ID"
+// @Param			user_id	path		int		true	"User ID"
+// @Failure		400		{object}	httputils.APIError
+// @Failure		403		{object}	httputils.APIError
+// @Failure		404		{object}	httputils.APIError
+// @Failure		405		{object}	httputils.APIError
+// @Failure		500		{object}	httputils.APIError
+// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 func (cr *ContestRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

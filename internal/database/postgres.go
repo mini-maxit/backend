@@ -3,88 +3,14 @@ package database
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/config"
-	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
-
-// SchemaPlugin automatically adds schema prefixes to table names
-type SchemaPlugin struct {
-	tableNames []string
-}
-
-// Name returns the plugin name
-func (sp *SchemaPlugin) Name() string {
-	return "schema_plugin"
-}
-
-// Initialize registers the plugin callbacks and extracts table names from models
-func (sp *SchemaPlugin) Initialize(db *gorm.DB) error {
-	// Extract table names dynamically from GORM models
-	sp.extractTableNames(db)
-
-	// Register callback to process joins before query execution
-	return db.Callback().Query().Before("gorm:query").Register("schema_plugin:auto_prefix", sp.autoPrefix)
-}
-
-// extractTableNames dynamically gets table names from registered GORM models
-func (sp *SchemaPlugin) extractTableNames(db *gorm.DB) {
-	sp.tableNames = make([]string, 0, len(models.AllModels))
-
-	for _, model := range models.AllModels {
-		stmt := &gorm.Statement{DB: db}
-		err := stmt.Parse(model)
-		if err == nil {
-			// Get the table name without schema prefix
-			tableName := stmt.Schema.Table
-			// Remove schema prefix if it exists
-			if strings.Contains(tableName, ".") {
-				parts := strings.Split(tableName, ".")
-				tableName = parts[len(parts)-1]
-			}
-			sp.tableNames = append(sp.tableNames, tableName)
-		}
-	}
-}
-
-// autoPrefix automatically adds schema prefix to table names surrounded by spaces
-func (sp *SchemaPlugin) autoPrefix(db *gorm.DB) {
-	if db.Statement.SQL.Len() == 0 {
-		return
-	}
-
-	sql := db.Statement.SQL.String()
-
-	for _, tableName := range sp.tableNames {
-		schemaTable := SchemaName + "." + tableName
-
-		// Skip if already has schema prefix
-		if strings.Contains(sql, schemaTable) {
-			continue
-		}
-
-		// Look for table name surrounded by spaces: " table_name "
-		pattern := " " + tableName + " "
-		replacement := " " + schemaTable + " "
-
-		sql = strings.ReplaceAll(sql, pattern, replacement)
-	}
-
-	// Update the SQL in the statement
-	db.Statement.SQL.Reset()
-	db.Statement.SQL.WriteString(sql)
-}
-
-// NewSchemaPlugin creates a new instance of the schema plugin
-func NewSchemaPlugin() *SchemaPlugin {
-	return &SchemaPlugin{}
-}
 
 type PostgresDB struct {
 	db             *gorm.DB
@@ -108,13 +34,6 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// Register the schema plugin to automatically handle schema prefixes
-	if err := db.Use(NewSchemaPlugin()); err != nil {
-		log.Errorf("Failed to register schema plugin: %s", err.Error())
-		return nil, err
-	}
-	log.Info("Schema plugin registered successfully")
 
 	sqlDB, err := db.DB()
 	if err != nil {

@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
@@ -101,10 +103,12 @@ func (us *submissionRepository) GetAllForTeacher(
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").Where(
-		"tasks.created_by = ?",
-		userID,
-	).Find(&submissions).Error
+		Joins(
+			fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id",
+				database.ResolveTableName(tx, &models.Task{}),
+			)).
+		Where("tasks.created_by = ?", userID).
+		Find(&submissions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +176,9 @@ func (us *submissionRepository) GetAllForGroup(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN maxit.users ON users.id = submissions.user_id").
-		Joins("JOIN maxit.user_group ON user_group.user_id = users.id").
-		Joins("JOIN maxit.groups ON groups.id = user_group.group_id").
+		Joins(fmt.Sprintf("JOIN %s ON users.id = submissions.user_id", database.ResolveTableName(tx, &models.User{}))).
+		Joins(fmt.Sprintf("JOIN %s ON user_group.user_id = users.id", database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf("JOIN %s ON groups.id = user_group.group_id", database.ResolveTableName(tx, &models.Group{}))).
 		Where("groups.id = ?", groupID).
 		Find(&submissions).Error
 
@@ -202,9 +206,9 @@ func (us *submissionRepository) GetAllForGroupTeacher(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
-		Joins("JOIN maxit.task_group ON task_group.task_id = tasks.id").
-		Joins("JOIN maxit.groups ON groups.id = task_group.group_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("JOIN %s ON task_group.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskGroup{}))).
+		Joins(fmt.Sprintf("JOIN %s ON groups.id = task_group.group_id", database.ResolveTableName(tx, &models.Group{}))).
 		Where("groups.id = ? AND tasks.created_by_id = ?", groupID, userID).
 		Find(&submissions).Error
 
@@ -232,7 +236,7 @@ func (us *submissionRepository) GetAllForTask(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Where("tasks.id = ?", taskID).
 		Find(&submissions).Error
 
@@ -260,7 +264,7 @@ func (us *submissionRepository) GetAllForTaskTeacher(
 		Preload("Task").
 		Preload("User").
 		Preload("Result").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Where("tasks.id = ? AND tasks.created_by = ?", taskID, userID).
 		Find(&submissions).Error
 
@@ -287,7 +291,7 @@ func (us *submissionRepository) GetAllForTaskStudent(
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Where("tasks.id = ? AND submissions.user_id = ?", taskID, studentID).
 		Find(&submissions).Error
 
@@ -372,15 +376,15 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 	// Query to get the best score (highest percentage of passed tests)
 	err := tx.Model(&models.Submission{}).
 		Select("MAX(CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END) as best_score").
-		Joins("LEFT JOIN maxit.submission_results ON submissions.id = submission_results.submission_id").
+		Joins("LEFT JOIN submission_results ON submissions.id = submission_results.submission_id").
 		Joins(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM maxit.test_results
+			FROM test_results
 			GROUP BY submission_result_id
 		) as total_tests ON submission_results.id = total_tests.submission_result_id`).
 		Joins(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM maxit.test_results
+			FROM test_results
 			WHERE passed = true
 			GROUP BY submission_result_id
 		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`).
@@ -539,8 +543,8 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 		Preload("User").
 		Preload("Result").
 		Preload("Result.TestResults").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
-		Joins("LEFT JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("LEFT JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
 		Where("submissions.user_id = ? AND (tasks.created_by = ? OR (submissions.contest_id IS NOT NULL AND contests.created_by = ?))", userID, teacherID, teacherID).
 		Find(&submissions).Error
 
@@ -569,7 +573,7 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 		Preload("User").
 		Preload("Result").
 		Preload("Result.TestResults").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Where("submissions.user_id = ? AND submissions.task_id = ? AND tasks.created_by = ?", userID, taskID, teacherID).
 		Find(&submissions).Error
 
@@ -598,8 +602,8 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 		Preload("User").
 		Preload("Result").
 		Preload("Result.TestResults").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
-		Joins("JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
 		Where("submissions.user_id = ? AND submissions.contest_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, teacherID, teacherID).
 		Find(&submissions).Error
 
@@ -628,8 +632,8 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 		Preload("User").
 		Preload("Result").
 		Preload("Result.TestResults").
-		Joins("JOIN maxit.tasks ON tasks.id = submissions.task_id").
-		Joins("JOIN maxit.contests ON contests.id = submissions.contest_id").
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
 		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, taskID, teacherID, teacherID).
 		Find(&submissions).Error
 

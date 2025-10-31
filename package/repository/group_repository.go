@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"fmt"
+
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -107,7 +110,7 @@ func (gr *groupRepository) GetAllForTeacher(
 func (gr *groupRepository) GetUsers(tx *gorm.DB, groupID int64) ([]models.User, error) {
 	var users []models.User
 	err := tx.Model(&models.User{}).
-		Joins("JOIN maxit.user_groups ON user_groups.user_id = users.id").
+		Joins(fmt.Sprintf("JOIN %s ON user_groups.user_id = users.id", database.ResolveTableName(tx, &models.UserGroup{}))).
 		Where("user_groups.group_id = ?", groupID).
 		Find(&users).Error
 	if err != nil {
