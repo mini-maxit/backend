@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -18,7 +19,7 @@ import (
 
 func TestGetUserByEmail(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
 
@@ -51,7 +52,7 @@ func TestGetUserByEmail(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
@@ -85,7 +86,7 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestEditUser(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
@@ -145,7 +146,7 @@ func TestEditUser(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
@@ -190,7 +191,7 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestChangeRole(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
@@ -230,7 +231,7 @@ func TestChangeRole(t *testing.T) {
 }
 
 func TestChangePassword(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)

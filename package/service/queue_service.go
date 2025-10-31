@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"context"
 	"encoding/json"
 	"strconv"
@@ -13,18 +14,17 @@ import (
 	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const publishTimeoutSeconds = 5
 
 type QueueService interface {
 	// PublishTask publishes a task to the queue
-	GetSubmissionID(tx *gorm.DB, messageID string) (int64, error)
+	GetSubmissionID(tx *database.DB, messageID string) (int64, error)
 	// PublishHandshake publishes a handshake message to the queue
 	PublishHandshake() error
 	// PublishSubmission publishes a submission message to the queue
-	PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error
+	PublishSubmission(tx *database.DB, submissionID int64, submissionResultID int64) error
 	// PublishWorkerStatus publishes a worker status message to the queue
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
@@ -75,7 +75,7 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error {
+func (qs *queueService) PublishSubmission(tx *database.DB, submissionID int64, submissionResultID int64) error {
 	submission, err := qs.submissionRepository.Get(tx, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err.Error())
@@ -164,7 +164,7 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 	return nil
 }
 
-func (qs *queueService) GetSubmissionID(tx *gorm.DB, messageID string) (int64, error) {
+func (qs *queueService) GetSubmissionID(tx *database.DB, messageID string) (int64, error) {
 	queueMessage, err := qs.queueRepository.Get(tx, messageID)
 	if err != nil {
 		return 0, err

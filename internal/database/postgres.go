@@ -46,17 +46,17 @@ func NewPostgresDB(cfg *config.Config) (*PostgresDB, error) {
 	return &PostgresDB{db: db, logger: log}, nil
 }
 
-func (p *PostgresDB) DB() *gorm.DB {
-	return p.db
+func (p *PostgresDB) DB() *DB {
+	return NewDB(p.db)
 }
 
 func (p *PostgresDB) NewSession() Database {
 	return &PostgresDB{db: p.db.Session(&gorm.Session{}), logger: p.logger}
 }
 
-func (p *PostgresDB) BeginTransaction() (*gorm.DB, error) {
+func (p *PostgresDB) BeginTransaction() (*DB, error) {
 	if p.tx != nil {
-		return p.tx, nil
+		return NewDB(p.tx), nil
 	}
 	tx := p.db.Begin()
 	if tx.Error != nil {
@@ -64,7 +64,7 @@ func (p *PostgresDB) BeginTransaction() (*gorm.DB, error) {
 		return nil, tx.Error
 	}
 	p.tx = tx
-	return tx, nil
+	return NewDB(tx), nil
 }
 
 func (p *PostgresDB) ShouldRollback() bool {

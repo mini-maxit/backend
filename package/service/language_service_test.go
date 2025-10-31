@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -23,7 +24,7 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 
 	workerLanguages := schemas.HandShakeResponsePayload{
 		Languages: []struct {
@@ -211,7 +212,7 @@ func TestLanguageServiceGetAll(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 
 	t.Run("Success with languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{
@@ -258,7 +259,7 @@ func TestLanguageServiceGetAllEnabled(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 
 	t.Run("Success with enabled languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{

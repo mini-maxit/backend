@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"errors"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -21,7 +22,7 @@ type AuthService interface {
 	// Method should check if such user exists, and if he does create valid JWT tokens and return them.
 	// Possible errors: ErrInvalidCredentials, ErrUserNotFound, validator.ValidationErrors,
 	// errors returned by JWTService, repository.UserRepository.
-	Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error)
+	Login(tx *database.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error)
 
 	// Register registers user if he is not registered yet
 	//
@@ -29,10 +30,10 @@ type AuthService interface {
 	// creates new user, creates JWT tokens for him and returns them.
 	// Possible errors: ErrUserAlreadyExists, errors returned by JWTService,
 	// repository.UserRepository, bcrypt lib.
-	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error)
+	Register(tx *database.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error)
 
 	// RefreshTokens refreshes JWT tokens using a valid refresh token
-	RefreshTokens(tx *gorm.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error)
+	RefreshTokens(tx *database.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error)
 }
 
 // authService implements AuthService interface.
@@ -43,7 +44,7 @@ type authService struct {
 }
 
 // Login implements Login method of [AuthService] interface.
-func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
+func (as *authService) Login(tx *database.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
 	user, err := as.userRepository.GetByEmail(tx, userLogin.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -67,7 +68,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 }
 
 // Register implements Register method of [AuthService] interface.
-func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
+func (as *authService) Register(tx *database.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
 	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
@@ -111,7 +112,7 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 
 // RefreshTokens implements RefreshTokens method of [AuthService] interface
 func (as *authService) RefreshTokens(
-	tx *gorm.DB,
+	tx *database.DB,
 	refreshRequest schemas.RefreshTokenRequest,
 ) (*schemas.JWTTokens, error) {
 	tokens, err := as.jwtService.RefreshTokens(tx, refreshRequest.RefreshToken)

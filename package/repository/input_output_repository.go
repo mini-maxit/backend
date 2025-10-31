@@ -1,50 +1,50 @@
 package repository
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
-	"gorm.io/gorm"
 )
 
 type TestCaseRepository interface {
 	// Create creates a new input output record in the database
-	Create(tx *gorm.DB, testCase *models.TestCase) error
+	Create(tx *database.DB, testCase *models.TestCase) error
 	// DeleteAll deletes all input output records for given task
-	DeleteAll(tx *gorm.DB, taskID int64) error
+	DeleteAll(tx *database.DB, taskID int64) error
 	// GetTestCaseID returns the ID of the input output record with the given task ID and order
-	GetTestCaseID(db *gorm.DB, taskID int64, order int) (int64, error)
+	GetTestCaseID(db *database.DB, taskID int64, order int) (int64, error)
 	// GetByTask returns all input/output for given task
-	GetByTask(db *gorm.DB, taskID int64) ([]models.TestCase, error)
+	GetByTask(db *database.DB, taskID int64) ([]models.TestCase, error)
 	// Get returns input/ouput with given ID
-	Get(tx *gorm.DB, ioID int64) (*models.TestCase, error)
+	Get(tx *database.DB, ioID int64) (*models.TestCase, error)
 	// Put updates input/output with given ID
-	Put(tx *gorm.DB, testCase *models.TestCase) error
+	Put(tx *database.DB, testCase *models.TestCase) error
 }
 
 type testCaseRepository struct{}
 
-func (i *testCaseRepository) Create(tx *gorm.DB, testCase *models.TestCase) error {
-	err := tx.Create(testCase).Error
+func (i *testCaseRepository) Create(tx *database.DB, testCase *models.TestCase) error {
+	err := tx.Create(testCase).Error()
 	return err
 }
 
-func (i *testCaseRepository) GetTestCaseID(tx *gorm.DB, taskID int64, order int) (int64, error) {
+func (i *testCaseRepository) GetTestCaseID(tx *database.DB, taskID int64, order int) (int64, error) {
 	var testCaseID int64
 	err := tx.Model(&models.TestCase{}).Select("id").Where(
 		`task_id = ? AND "order" = ?`,
 		taskID,
 		order,
-	).Scan(&testCaseID).Error
+	).Scan(&testCaseID).Error()
 	return testCaseID, err
 }
 
-func (i *testCaseRepository) DeleteAll(tx *gorm.DB, taskID int64) error {
-	err := tx.Where("task_id = ?", taskID).Delete(&models.TestCase{}).Error
+func (i *testCaseRepository) DeleteAll(tx *database.DB, taskID int64) error {
+	err := tx.Where("task_id = ?", taskID).Delete(&models.TestCase{}).Error()
 	return err
 }
 
-func (i *testCaseRepository) GetByTask(tx *gorm.DB, taskID int64) ([]models.TestCase, error) {
+func (i *testCaseRepository) GetByTask(tx *database.DB, taskID int64) ([]models.TestCase, error) {
 	testCase := []models.TestCase{}
-	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCase).Error
+	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCase).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -52,9 +52,9 @@ func (i *testCaseRepository) GetByTask(tx *gorm.DB, taskID int64) ([]models.Test
 	return testCase, nil
 }
 
-func (i *testCaseRepository) Get(tx *gorm.DB, ioID int64) (*models.TestCase, error) {
+func (i *testCaseRepository) Get(tx *database.DB, ioID int64) (*models.TestCase, error) {
 	testCase := &models.TestCase{}
-	err := tx.Model(&models.TestCase{}).Where("id = ?", ioID).First(testCase).Error
+	err := tx.Model(&models.TestCase{}).Where("id = ?", ioID).First(testCase).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +62,8 @@ func (i *testCaseRepository) Get(tx *gorm.DB, ioID int64) (*models.TestCase, err
 	return testCase, nil
 }
 
-func (i *testCaseRepository) Put(tx *gorm.DB, testCase *models.TestCase) error {
-	err := tx.Save(testCase).Error
+func (i *testCaseRepository) Put(tx *database.DB, testCase *models.TestCase) error {
+	err := tx.Save(testCase).Error()
 	return err
 }
 

@@ -6,69 +6,67 @@ import (
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
-	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type TaskRepository interface {
 	// AssignToGroup assigns a task to a group.
-	AssignToGroup(tx *gorm.DB, taskID, groupID int64) error
+	AssignToGroup(tx *database.DB, taskID, groupID int64) error
 	// AssignToUser assigns a task to a used.
-	AssignToUser(tx *gorm.DB, taskID, userID int64) error
+	AssignToUser(tx *database.DB, taskID, userID int64) error
 	// Create creates a new empty task and returns the task ID.
-	Create(tx *gorm.DB, task *models.Task) (int64, error)
+	Create(tx *database.DB, task *models.Task) (int64, error)
 	// Delete deletes a task. It does not actually delete the task from the database, but performs a soft delete.
-	Delete(tx *gorm.DB, taskID int64) error
+	Delete(tx *database.DB, taskID int64) error
 	// Edit edits a task, by setting the fields of the task to the fields of the function argument.
-	Edit(tx *gorm.DB, taskID int64, task *models.Task) error
+	Edit(tx *database.DB, taskID int64, task *models.Task) error
 	// GetAllAssigned returns all tasks assigned to a user, either directly or through a group. The tasks are paginated.
-	GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllAssigned(tx *database.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
-	GetAllCreated(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllCreated(tx *database.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAllForGroup returns all tasks assigned to a group. The tasks are paginated.
-	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllForGroup(tx *database.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAll returns all tasks. The tasks are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
+	GetAll(tx *database.DB, limit, offset int, sort string) ([]models.Task, error)
 	// Get returns a task by its ID.
-	Get(tx *gorm.DB, taskID int64) (*models.Task, error)
+	Get(tx *database.DB, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
-	GetByTitle(tx *gorm.DB, title string) (*models.Task, error)
+	GetByTitle(tx *database.DB, title string) (*models.Task, error)
 	// IsAssignedToGroup checks if a task is assigned to a group.
-	IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) (bool, error)
+	IsAssignedToGroup(tx *database.DB, taskID, groupID int64) (bool, error)
 	// IsAssignedToUser checks if a task is assigned to a user.
-	IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (bool, error)
+	IsAssignedToUser(tx *database.DB, taskID, userID int64) (bool, error)
 	// UnassignFromGroup unassigns a task from a group.
-	UnassignFromGroup(tx *gorm.DB, taskID, groupID int64) error
+	UnassignFromGroup(tx *database.DB, taskID, groupID int64) error
 	// UnassignFromUser unassigns a task from a user.
-	UnassignFromUser(tx *gorm.DB, taskID, userID int64) error
+	UnassignFromUser(tx *database.DB, taskID, userID int64) error
 }
 
 type taskRepository struct {
 }
 
-func (tr *taskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) {
-	err := tx.Model(models.Task{}).Create(&task).Error
+func (tr *taskRepository) Create(tx *database.DB, task *models.Task) (int64, error) {
+	err := tx.Model(models.Task{}).Create(&task).Error()
 	if err != nil {
 		return 0, err
 	}
 	return task.ID, nil
 }
 
-func (tr *taskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, error) {
+func (tr *taskRepository) GetByTitle(tx *database.DB, title string) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Model(&models.Task{}).Where("title = ?", title).First(task).Error
+	err := tx.Model(&models.Task{}).Where("title = ?", title).First(task).Error()
 	if err != nil {
 		return nil, err
 	}
 	return task, nil
 }
 
-func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
+func (tr *taskRepository) Get(tx *database.DB, taskID int64) (*models.Task, error) {
 	task := &models.Task{}
 	err := tx.Preload("Author").Preload("Groups").Preload("DescriptionFile").Model(&models.Task{}).Where(
 		"id = ? AND deleted_at IS NULL",
 		taskID,
-	).First(task).Error
+	).First(task).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -76,24 +74,21 @@ func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
 }
 
 func (tr *taskRepository) GetAllAssigned(
-	tx *gorm.DB,
+	tx *database.DB,
 	userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Task, error) {
 	var tasks []models.Task
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
+	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 
-	err = tx.Model(&models.Task{}).
+	err := tx.Model(&models.Task{}).
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
 		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
 		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
 		Where("(task_users.user_id = ? OR user_groups.user_id = ?) AND tasks.deleted_at IS NULL", userID, userID).
 		Distinct().
-		Find(&tasks).Error
+		Find(&tasks).Error()
 
 	if err != nil {
 		return nil, err
@@ -101,46 +96,46 @@ func (tr *taskRepository) GetAllAssigned(
 	return tasks, nil
 }
 
-func (tr *taskRepository) AssignToUser(tx *gorm.DB, taskID, userID int64) error {
+func (tr *taskRepository) AssignToUser(tx *database.DB, taskID, userID int64) error {
 	taskUser := &models.TaskUser{
 		TaskID: taskID,
 		UserID: userID,
 	}
-	err := tx.Model(&models.TaskUser{}).Create(&taskUser).Error
+	err := tx.Model(&models.TaskUser{}).Create(&taskUser).Error()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tr *taskRepository) AssignToGroup(tx *gorm.DB, taskID, groupID int64) error {
+func (tr *taskRepository) AssignToGroup(tx *database.DB, taskID, groupID int64) error {
 	taskGroup := &models.TaskGroup{
 		TaskID:  taskID,
 		GroupID: groupID,
 	}
-	err := tx.Model(&models.TaskGroup{}).Create(&taskGroup).Error
+	err := tx.Model(&models.TaskGroup{}).Create(&taskGroup).Error()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tr *taskRepository) UnassignFromUser(tx *gorm.DB, taskID, userID int64) error {
+func (tr *taskRepository) UnassignFromUser(tx *database.DB, taskID, userID int64) error {
 	err := tx.Model(&models.TaskUser{}).Where("task_id = ? AND user_id = ?",
 		taskID,
 		userID,
-	).Delete(&models.TaskUser{}).Error
+	).Delete(&models.TaskUser{}).Error()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tr *taskRepository) UnassignFromGroup(tx *gorm.DB, taskID, groupID int64) error {
+func (tr *taskRepository) UnassignFromGroup(tx *database.DB, taskID, groupID int64) error {
 	err := tx.Model(&models.TaskGroup{}).Where("task_id = ? AND group_id = ?",
 		taskID,
 		groupID,
-	).Delete(&models.TaskGroup{}).Error
+	).Delete(&models.TaskGroup{}).Error()
 	if err != nil {
 		return err
 	}
@@ -148,27 +143,24 @@ func (tr *taskRepository) UnassignFromGroup(tx *gorm.DB, taskID, groupID int64) 
 }
 
 func (tr *taskRepository) GetAllCreated(
-	tx *gorm.DB,
+	tx *database.DB,
 	userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Task, error) {
 	var tasks []models.Task
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
+	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 
-	err = tx.Model(&models.Task{}).
+	err := tx.Model(&models.Task{}).
 		Where("created_by_id = ? AND deleted_at IS NULL", userID).
-		Find(&tasks).Error
+		Find(&tasks).Error()
 	if err != nil {
 		return nil, err
 	}
 	return tasks, nil
 }
 
-func (tr *taskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (bool, error) {
+func (tr *taskRepository) IsAssignedToUser(tx *database.DB, taskID, userID int64) (bool, error) {
 	var count int64
 
 	err := tx.Model(&models.Task{}).
@@ -179,7 +171,7 @@ func (tr *taskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (b
 			AND tasks.deleted_at IS NULL`,
 			taskID, userID, taskID, userID).
 		Distinct().
-		Count(&count).Error
+		Count(&count).Error()
 
 	if err != nil {
 		return false, err
@@ -188,25 +180,22 @@ func (tr *taskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (b
 	return count > 0, nil
 }
 
-func (tr *taskRepository) IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) (bool, error) {
+func (tr *taskRepository) IsAssignedToGroup(tx *database.DB, taskID, groupID int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.Task{}).
-		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskGroup{}))).
+		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.TaskGroup{}))).
 		Where("task_groups.task_id = ? AND task_groups.group_id = ? AND tasks.deleted_at IS NULL", taskID, groupID).
-		Count(&count).Error
+		Count(&count).Error()
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAll(tx *database.DB, limit, offset int, sort string) ([]models.Task, error) {
 	tasks := []models.Task{}
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
-	err = tx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
+	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
+	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -214,21 +203,18 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 }
 
 func (tr *taskRepository) GetAllForGroup(
-	tx *gorm.DB,
+	tx *database.DB,
 	groupID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Task, error) {
 	var tasks []models.Task
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
+	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 
-	err = tx.Model(&models.Task{}).
-		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskGroup{}))).
+	err := tx.Model(&models.Task{}).
+		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.TaskGroup{}))).
 		Where("task_groups.group_id = ? AND tasks.deleted_at IS NULL", groupID).
-		Find(&tasks).Error
+		Find(&tasks).Error()
 
 	if err != nil {
 		return nil, err
@@ -237,11 +223,11 @@ func (tr *taskRepository) GetAllForGroup(
 	return tasks, nil
 }
 
-func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
+func (tr *taskRepository) GetTimeLimits(tx *database.DB, taskID int64) ([]int64, error) {
 	testCases := []models.TestCase{}
 	err := tx.Model(&models.TestCase{}).
 		Where("task_id = ?", taskID).
-		Find(&testCases).Error
+		Find(&testCases).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -253,9 +239,9 @@ func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, err
 	return timeLimits, nil
 }
 
-func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
+func (tr *taskRepository) GetMemoryLimits(tx *database.DB, taskID int64) ([]int64, error) {
 	testCases := []models.TestCase{}
-	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCases).Error
+	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCases).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -267,16 +253,16 @@ func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, e
 	return memoryLimits, nil
 }
 
-func (tr *taskRepository) Edit(tx *gorm.DB, taskID int64, task *models.Task) error {
-	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Updates(task).Error
+func (tr *taskRepository) Edit(tx *database.DB, taskID int64, task *models.Task) error {
+	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Updates(task).Error()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tr *taskRepository) Delete(tx *gorm.DB, taskID int64) error {
-	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Update("deleted_at", time.Now()).Error
+func (tr *taskRepository) Delete(tx *database.DB, taskID int64) error {
+	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Update("deleted_at", time.Now()).Error()
 	if err != nil {
 		return err
 	}

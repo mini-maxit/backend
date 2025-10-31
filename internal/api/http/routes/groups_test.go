@@ -1,6 +1,7 @@
 package routes_test
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -153,7 +154,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 
 		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+			func(tx *database.DB, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, expectedGroup.Name, group.Name)
 				assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
 				return 0, myerrors.ErrNotAuthorized
@@ -214,7 +215,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 
 		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+			func(tx *database.DB, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, "Test Group", group.Name)
 				assert.Equal(t, int64(1), group.CreatedBy)
 				return 1, nil
@@ -431,7 +432,7 @@ func TestGetAllGroup(t *testing.T) {
 
 	t.Run("Limit and offset query params", func(t *testing.T) {
 		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
+			func(tx *database.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
 				assert.Equal(t, "2", queryParams["limit"])
 				assert.Equal(t, "0", queryParams["offset"])
 				return []schemas.Group{}, nil

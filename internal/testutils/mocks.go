@@ -13,11 +13,11 @@ type MockDatabase struct {
 	invalid bool
 }
 
-func (db *MockDatabase) BeginTransaction() (*gorm.DB, error) {
+func (db *MockDatabase) BeginTransaction() (*database.DB, error) {
 	if db.invalid {
 		return nil, gorm.ErrInvalidDB
 	}
-	return &gorm.DB{}, nil
+	return database.NewDB(&gorm.DB{}), nil
 }
 
 func (db *MockDatabase) NewSession() database.Database {
@@ -43,11 +43,8 @@ func (db *MockDatabase) Validate() {
 	db.invalid = false
 }
 
-func (db *MockDatabase) DB() *gorm.DB {
-	return &gorm.DB{}
-}
-func (db *MockDatabase) ResolveTableName(model interface{}) string {
-	return "mock_table"
+func (db *MockDatabase) DB() *database.DB {
+	return database.NewDB(&gorm.DB{})
 }
 
 func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {

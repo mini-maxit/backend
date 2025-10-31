@@ -29,7 +29,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 		session := db.NewSession()
 		tx, err := session.BeginTransaction()
 		if err != nil {
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
 		}
 		ctx = context.WithValue(ctx, httputils.DatabaseKey, session)
@@ -39,7 +39,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 			if session.ShouldRollback() {
 				tx.Rollback()
 			} else {
-				err := tx.Commit().Error
+				err := tx.Commit().Error()
 				if err != nil {
 					tx.Rollback()
 					httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())

@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"encoding/json"
 	"math/rand/v2"
 	"reflect"
@@ -118,7 +119,7 @@ func TestCreate(t *testing.T) {
 		setup.submissionRepository.EXPECT().Create(
 			gomock.Any(),
 			gomock.AssignableToTypeOf(&models.Submission{}),
-		).DoAndReturn(func(_ *gorm.DB, s *models.Submission) (int64, error) {
+		).DoAndReturn(func(_ *database.DB, s *models.Submission) (int64, error) {
 			if !reflect.DeepEqual(s, expectedModel) {
 				t.Fatalf("invalid submission model passed to repo. exp=%v got=%v", expectedModel, s)
 			}
@@ -135,7 +136,7 @@ func TestCreate(t *testing.T) {
 	t.Run("Fails if repository fails unexpectedly", func(t *testing.T) {
 		setup.submissionRepository.EXPECT().
 			Create(gomock.Any(), gomock.AssignableToTypeOf(&models.Submission{})).
-			DoAndReturn(func(_ *gorm.DB, _ *models.Submission) (int64, error) {
+			DoAndReturn(func(_ *database.DB, _ *models.Submission) (int64, error) {
 				return 0, gorm.ErrInvalidData
 			}).
 			Times(1)
@@ -843,13 +844,13 @@ func TestMarkSubmissionStatus(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		method        func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error
+		method        func(s service.SubmissionService, tx *database.DB, id int64, args ...interface{}) error
 		expectedCall  func()
 		expectedError bool
 	}{
 		{
 			name: "Successfully mark submission as failed",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, args ...interface{}) error {
 				return s.MarkFailed(tx, id, args[0].(string))
 			},
 			expectedCall: func() {
@@ -859,7 +860,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as failed",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, args ...interface{}) error {
 				return s.MarkFailed(tx, id, args[0].(string))
 			},
 			expectedCall: func() {
@@ -869,7 +870,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Successfully mark submission as complete",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, _ ...interface{}) error {
 				return s.MarkComplete(tx, id)
 			},
 			expectedCall: func() {
@@ -879,7 +880,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as complete",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, _ ...interface{}) error {
 				return s.MarkComplete(tx, id)
 			},
 			expectedCall: func() {
@@ -889,7 +890,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Successfully mark submission as processing",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, _ ...interface{}) error {
 				return s.MarkProcessing(tx, id)
 			},
 			expectedCall: func() {
@@ -899,7 +900,7 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as processing",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
+			method: func(s service.SubmissionService, tx *database.DB, id int64, _ ...interface{}) error {
 				return s.MarkProcessing(tx, id)
 			},
 			expectedCall: func() {

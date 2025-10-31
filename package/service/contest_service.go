@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"errors"
 	"time"
 
@@ -16,38 +17,38 @@ import (
 
 type ContestService interface {
 	// Create creates a new contest
-	Create(tx *gorm.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error)
+	Create(tx *database.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error)
 	// Get retrieves a contest by ID
-	Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error)
+	Get(tx *database.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error)
 	// GetOngoingContests retrieves contests that are currently running
-	GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetOngoingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
 	// GetPastContests retrieves contests that have ended
-	GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetPastContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
 	// GetUpcomingContests retrieves contests that haven't started yet
-	GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetUpcomingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
 	// Edit updates a contest
-	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
+	Edit(tx *database.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
 	// Delete removes a contest
-	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
+	Delete(tx *database.DB, currentUser schemas.User, contestID int64) error
 	// RegisterForContest creates a pending registration for a contest
-	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
+	RegisterForContest(tx *database.DB, currentUser schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all tasks associated with a contest with submission stats (for authorized users)
-	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
+	GetTasksForContest(tx *database.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetUserContests retrieves all contests a user is participating in
-	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
+	GetUserContests(tx *database.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
-	AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
+	AddTaskToContest(tx *database.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
 	// GetRegistrationRequests retrieves pending registration requests for a contest
-	GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
+	GetRegistrationRequests(tx *database.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
 	// ApproveRegistrationRequest approves a pending registration request for a contest
-	ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
+	ApproveRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error
 	// RejectRegistrationRequest rejects a pending registration request for a contest
-	RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
+	RejectRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error
 	// IsTaskInContest checks if a task is part of a contest
-	IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error)
+	IsTaskInContest(tx *database.DB, contestID, taskID int64) (bool, error)
 	// ValidateContestSubmission validates if a user can submit a solution for a task in a contest
 	// Returns an error if submission is not allowed (contest/task not open, user not participant, etc.)
-	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
+	ValidateContestSubmission(tx *database.DB, contestID, taskID, userID int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -61,7 +62,7 @@ type contestService struct {
 	logger *zap.SugaredLogger
 }
 
-func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
+func (cs *contestService) Create(tx *database.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return 0, err
@@ -99,7 +100,7 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 	return contestID, nil
 }
 
-func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
+func (cs *contestService) Get(tx *database.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -121,7 +122,7 @@ func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID i
 	return ContestToSchema(contest), nil
 }
 
-func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (cs *contestService) GetOngoingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
@@ -149,7 +150,7 @@ func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.Us
 	return result, nil
 }
 
-func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (cs *contestService) GetPastContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
@@ -177,7 +178,7 @@ func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User,
 	return result, nil
 }
 
-func (cs *contestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (cs *contestService) GetUpcomingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
@@ -205,7 +206,7 @@ func (cs *contestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.U
 	return result, nil
 }
 
-func (cs *contestService) isContestVisibleToUser(tx *gorm.DB, contest *models.Contest, user *schemas.User) bool {
+func (cs *contestService) isContestVisibleToUser(tx *database.DB, contest *models.Contest, user *schemas.User) bool {
 	if *contest.IsVisible {
 		return true
 	}
@@ -224,7 +225,7 @@ func (cs *contestService) isContestVisibleToUser(tx *gorm.DB, contest *models.Co
 	return isParticipant
 }
 
-func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
+func (cs *contestService) Edit(tx *database.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -261,7 +262,7 @@ func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID 
 	return ContestToSchema(newModel), nil
 }
 
-func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+func (cs *contestService) Delete(tx *database.DB, currentUser schemas.User, contestID int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
@@ -282,7 +283,7 @@ func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestI
 	return cs.contestRepository.Delete(tx, contestID)
 }
 
-func (cs *contestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+func (cs *contestService) RegisterForContest(tx *database.DB, currentUser schemas.User, contestID int64) error {
 	// Get the contest
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
@@ -371,7 +372,7 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 }
 
-func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+func (cs *contestService) GetTasksForContest(tx *database.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -415,7 +416,7 @@ func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.Us
 	return result, nil
 }
 
-func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error) {
+func (cs *contestService) GetUserContests(tx *database.DB, userID int64) (schemas.UserContestsWithStats, error) {
 	user, err := cs.userRepository.Get(tx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -465,7 +466,7 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 	return result, nil
 }
 
-func (cs *contestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
+func (cs *contestService) AddTaskToContest(tx *database.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
@@ -602,7 +603,7 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 	}
 }
 
-func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, status types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
+func (cs *contestService) GetRegistrationRequests(tx *database.DB, currentUser schemas.User, contestID int64, status types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
 	// First, check if contest exists
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
@@ -639,7 +640,7 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 	return result, nil
 }
 
-func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+func (cs *contestService) ApproveRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error {
 	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
 		return err
 	}
@@ -694,7 +695,7 @@ func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser sc
 	return cs.contestRepository.CreateContestParticipant(tx, contestID, userID)
 }
 
-func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+func (cs *contestService) RejectRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error {
 	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
 		return err
 	}
@@ -748,7 +749,7 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 	return cs.contestRepository.UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected)
 }
 
-func (cs *contestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error) {
+func (cs *contestService) IsTaskInContest(tx *database.DB, contestID, taskID int64) (bool, error) {
 	contestTask, err := cs.contestRepository.GetContestTask(tx, contestID, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -759,7 +760,7 @@ func (cs *contestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int64) 
 	return contestTask != nil, nil
 }
 
-func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error {
+func (cs *contestService) ValidateContestSubmission(tx *database.DB, contestID, taskID, userID int64) error {
 	// Get contest
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {

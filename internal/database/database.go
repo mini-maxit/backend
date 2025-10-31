@@ -8,13 +8,12 @@ import (
 )
 
 type Database interface {
-	BeginTransaction() (*gorm.DB, error) // Returns opened database connection with transaction
-	NewSession() Database                // Returns a new session
-	ShouldRollback() bool                // Returns whether the transaction should be rolled back
-	Rollback()                           // Sets the transaction to be rolled back after execution finishes
-	Commit() error                       // Commits the transaction
-	DB() *gorm.DB                        // Returns the database connection
-	// ResolveTableName(model interface{}) string // Returns the full table name with schema prefix
+	BeginTransaction() (*DB, error) // Returns opened database connection with transaction
+	NewSession() Database           // Returns a new session
+	ShouldRollback() bool           // Returns whether the transaction should be rolled back
+	Rollback()                      // Sets the transaction to be rolled back after execution finishes
+	Commit() error                  // Commits the transaction
+	DB() *DB                        // Returns the database connection wrapped in our DB type
 }
 
 const SchemaName = "maxit"

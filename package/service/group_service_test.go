@@ -2,6 +2,7 @@
 package service_test
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -17,7 +18,7 @@ import (
 )
 
 func TestCreateGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -46,7 +47,7 @@ func TestCreateGroup(t *testing.T) {
 }
 
 func TestDeleteGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -84,7 +85,7 @@ func TestDeleteGroup(t *testing.T) {
 }
 
 func TestGetAllGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -142,7 +143,7 @@ func TestGetAllGroup(t *testing.T) {
 }
 
 func TestGetGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -169,7 +170,7 @@ func TestGetGroup(t *testing.T) {
 }
 
 func TestAddUsersToGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -199,7 +200,7 @@ func TestAddUsersToGroup(t *testing.T) {
 }
 
 func TestGetGroupUsers(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -232,7 +233,7 @@ func TestGetGroupUsers(t *testing.T) {
 	})
 }
 func TestEditGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -303,7 +304,7 @@ func TestEditGroup(t *testing.T) {
 	})
 }
 func TestDeleteUsersFromGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -368,7 +369,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 	})
 }
 func TestGetGroupTasks(t *testing.T) {
-	tx := &gorm.DB{}
+	tx := database.NewDB(&gorm.DB{})
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
