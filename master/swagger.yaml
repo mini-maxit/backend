@@ -67,6 +67,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-Task:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-TaskCreateResponse:
     properties:
       data:
@@ -136,15 +145,6 @@ definitions:
       data:
         items:
           $ref: '#/definitions/LanguageConfig'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_Task:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Task'
         type: array
       ok:
         type: boolean
@@ -1098,8 +1098,7 @@ paths:
       - contest
   /contests/{id}/tasks:
     get:
-      description: Get tasks associated with a specific contest including best score
-        and attempt count for the current user
+      description: Get all tasks associated with a specific contest
       parameters:
       - description: Contest ID
         in: path
@@ -1112,7 +1111,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskWithContestStats'
+            $ref: '#/definitions/APIResponse-Task'
         "400":
           description: Bad Request
           schema:
@@ -1133,7 +1132,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get tasks for a contest with submission statistics
+      summary: Get tasks for a contest
       tags:
       - contest
     post:
@@ -1180,6 +1179,46 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Add a task to a contest
+      tags:
+      - contest
+  /contests/{id}/tasks/user-statistics:
+    get:
+      description: Get tasks associated with a specific contest including best score
+        and attempt count for the current user
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-TaskWithContestStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get tasks for a contest with submission statistics
       tags:
       - contest
   /contests/ongoing:
@@ -1844,7 +1883,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Task'
+            $ref: '#/definitions/APIResponse-Task'
         "500":
           description: Internal Server Error
           schema:
@@ -2254,7 +2293,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Task'
+            $ref: '#/definitions/APIResponse-Task'
         "400":
           description: Bad Request
           schema:
