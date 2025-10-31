@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"errors"
+	"github.com/mini-maxit/backend/internal/database"
 	"testing"
 	"time"
 

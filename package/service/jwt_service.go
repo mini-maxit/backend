@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"errors"
 	"fmt"
+	"github.com/mini-maxit/backend/internal/database"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"

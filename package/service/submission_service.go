@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"encoding/json"
 	"errors"
+	"github.com/mini-maxit/backend/internal/database"
 	"time"
 
 	"slices"

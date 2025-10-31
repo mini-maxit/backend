@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
@@ -183,7 +182,7 @@ func (tr *taskRepository) IsAssignedToUser(tx *database.DB, taskID, userID int64
 func (tr *taskRepository) IsAssignedToGroup(tx *database.DB, taskID, groupID int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.Task{}).
-		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.TaskGroup{}))).
+		Join("JOIN", &models.TaskGroup{}, "task_groups.task_id = tasks.id").
 		Where("task_groups.task_id = ? AND task_groups.group_id = ? AND tasks.deleted_at IS NULL", taskID, groupID).
 		Count(&count).Error()
 	if err != nil {
@@ -212,7 +211,7 @@ func (tr *taskRepository) GetAllForGroup(
 	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 
 	err := tx.Model(&models.Task{}).
-		Joins(fmt.Sprintf("JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.TaskGroup{}))).
+		Join("JOIN", &models.TaskGroup{}, "task_groups.task_id = tasks.id").
 		Where("task_groups.group_id = ? AND tasks.deleted_at IS NULL", groupID).
 		Find(&tasks).Error()
 

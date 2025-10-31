@@ -1,9 +1,9 @@
 package service_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"archive/zip"
 	"fmt"
+	"github.com/mini-maxit/backend/internal/database"
 	"os"
 	"testing"
 

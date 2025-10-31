@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"encoding/json"
+	"github.com/mini-maxit/backend/internal/database"
 	"math/rand/v2"
 	"reflect"
 	"testing"

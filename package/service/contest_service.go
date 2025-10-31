@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"errors"
+	"github.com/mini-maxit/backend/internal/database"
 	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"

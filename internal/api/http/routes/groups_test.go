@@ -1,10 +1,10 @@
 package routes_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/mini-maxit/backend/internal/database"
 	"io"
 	"net/http"
 	"net/http/httptest"

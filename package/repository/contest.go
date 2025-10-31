@@ -145,7 +145,7 @@ func (cr *contestRepository) IsUserParticipant(tx *database.DB, contestID int64,
 	}
 	var groupCount int64
 	err = tx.Model(&models.ContestParticipantGroup{}).Where("contest_id = ?", contestID).
-		Joins(fmt.Sprintf("JOIN %s ON contest_participant_groups.group_id = user_groups.group_id", database.ResolveTableName(tx.GormDB(), &models.UserGroup{}))).
+		Join("JOIN", &models.UserGroup{}, "contest_participant_groups.group_id = user_groups.group_id").
 		Where("user_groups.user_id = ?", userID).
 		Count(&groupCount).Error()
 	if err != nil {

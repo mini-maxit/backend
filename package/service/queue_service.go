@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
 	"context"
 	"encoding/json"
+	"github.com/mini-maxit/backend/internal/database"
 	"strconv"
 	"sync"
 	"time"
