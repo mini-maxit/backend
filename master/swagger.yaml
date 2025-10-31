@@ -957,6 +957,46 @@ paths:
       summary: Edit a contest
       tags:
       - contest
+  /contests/{id}/available-tasks:
+    get:
+      description: Get all tasks that are NOT yet assigned to the specified contest
+        (admin/teacher only)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Task'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get available tasks for a contest
+      tags:
+      - contest
   /contests/{id}/register:
     post:
       description: Create a pending registration for a contest (requires contest creator
