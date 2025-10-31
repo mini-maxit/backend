@@ -31,8 +31,10 @@ type ContestService interface {
 	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 	// RegisterForContest creates a pending registration for a contest
 	RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error
-	// GetTasksForContest retrieves all tasks associated with a contest with submission stats (for authorized users)
-	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
+	// GetTasksForContest retrieves all tasks associated with a contest (for authorized users)
+	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
+	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
+	GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
@@ -371,7 +373,38 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 }
 
-func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	if !cs.isContestVisibleToUser(tx, contest, &currentUser) {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	tasks, err := cs.contestRepository.GetTasksForContest(tx, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.Task, len(tasks))
+	for i, task := range tasks {
+		result[i] = schemas.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

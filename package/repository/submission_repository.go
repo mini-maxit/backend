@@ -376,18 +376,18 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 	// Query to get the best score (highest percentage of passed tests)
 	err := tx.Model(&models.Submission{}).
 		Select("MAX(CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END) as best_score").
-		Joins("LEFT JOIN submission_results ON submissions.id = submission_results.submission_id").
-		Joins(`LEFT JOIN (
+		Joins(fmt.Sprintf("LEFT JOIN %s ON submissions.id = submission_results.submission_id", database.ResolveTableName(tx, &models.SubmissionResult{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM test_results
+			FROM %s
 			GROUP BY submission_result_id
-		) as total_tests ON submission_results.id = total_tests.submission_result_id`).
-		Joins(`LEFT JOIN (
+		) as total_tests ON submission_results.id = total_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT submission_result_id, COUNT(*) as count
-			FROM test_results
+			FROM %s
 			WHERE passed = true
 			GROUP BY submission_result_id
-		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`).
+		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
 		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, types.SubmissionStatusEvaluated).
 		Scan(&bestScore).Error
 
