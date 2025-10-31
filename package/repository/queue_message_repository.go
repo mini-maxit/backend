@@ -7,17 +7,17 @@ import (
 
 type QueueMessageRepository interface {
 	// Create creates a new queue message and returns the message ID
-	Create(tx *database.DB, queueMessage *models.QueueMessage) (string, error)
+	Create(tx database.Database, queueMessage *models.QueueMessage) (string, error)
 	// Delete deletes a queue message by ID
-	Delete(tx *database.DB, messageID string) error
+	Delete(tx database.Database, messageID string) error
 	// Get returns a queue message by ID
-	Get(tx *database.DB, messageID string) (*models.QueueMessage, error)
+	Get(tx database.Database, messageID string) (*models.QueueMessage, error)
 }
 
 type queueMessageRepository struct {
 }
 
-func (qm *queueMessageRepository) Create(tx *database.DB, queueMessage *models.QueueMessage) (string, error) {
+func (qm *queueMessageRepository) Create(tx database.Database, queueMessage *models.QueueMessage) (string, error) {
 	err := tx.Create(queueMessage).Error()
 	if err != nil {
 		return "", err
@@ -25,7 +25,7 @@ func (qm *queueMessageRepository) Create(tx *database.DB, queueMessage *models.Q
 	return queueMessage.ID, nil
 }
 
-func (qm *queueMessageRepository) Get(tx *database.DB, messageID string) (*models.QueueMessage, error) {
+func (qm *queueMessageRepository) Get(tx database.Database, messageID string) (*models.QueueMessage, error) {
 	queueMessage := &models.QueueMessage{}
 	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageID).First(queueMessage).Error()
 	if err != nil {
@@ -34,7 +34,7 @@ func (qm *queueMessageRepository) Get(tx *database.DB, messageID string) (*model
 	return queueMessage, nil
 }
 
-func (qm *queueMessageRepository) Delete(tx *database.DB, messageID string) error {
+func (qm *queueMessageRepository) Delete(tx database.Database, messageID string) error {
 	err := tx.Model(&models.QueueMessage{}).Where("id = ?", messageID).Delete(&models.QueueMessage{}).Error()
 	if err != nil {
 		return err

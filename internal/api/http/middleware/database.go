@@ -39,7 +39,7 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 			if session.ShouldRollback() {
 				tx.Rollback()
 			} else {
-				err := tx.Commit().Error()
+				err := session.Commit()
 				if err != nil {
 					tx.Rollback()
 					httputils.ReturnError(w, http.StatusInternalServerError, "Failed to commit transaction. "+err.Error())

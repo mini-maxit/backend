@@ -1,7 +1,8 @@
 package service_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/testutils"
+	"gorm.io/gorm"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -14,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 func TestRegister(t *testing.T) {
@@ -24,7 +24,7 @@ func TestRegister(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("get user by email when user exists", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(tx, "email2@email.com").Return(&models.User{
@@ -109,7 +109,7 @@ func TestLogin(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	password := "Password123!"
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -178,7 +178,7 @@ func TestRefreshTokens(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful token refresh", func(t *testing.T) {
 		// userID := int64(1)

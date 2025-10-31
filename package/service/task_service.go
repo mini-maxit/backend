@@ -20,46 +20,46 @@ import (
 
 type TaskService interface {
 	// AssignToGroups assigns a task to multiple groups.
-	AssignToGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error
+	AssignToGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error
 	// AssignToUsers assigns a task to multiple users.
-	AssignToUsers(tx *database.DB, currentUser schemas.User, taskID int64, userIDs []int64) error
+	AssignToUsers(tx database.Database, currentUser schemas.User, taskID int64, userIDs []int64) error
 	// Create creates a new task.
-	Create(tx *database.DB, currentUser schemas.User, task *schemas.Task) (int64, error)
+	Create(tx database.Database, currentUser schemas.User, task *schemas.Task) (int64, error)
 	// CreateTestCase creates input and output files for a task.
-	CreateTestCase(tx *database.DB, taskID int64, archivePath string) error
+	CreateTestCase(tx database.Database, taskID int64, archivePath string) error
 	// Delete deletes a task.
-	Delete(tx *database.DB, currentUser schemas.User, taskID int64) error
+	Delete(tx database.Database, currentUser schemas.User, taskID int64) error
 	// Edit edits an existing task.
-	Edit(tx *database.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error
+	Edit(tx database.Database, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error
 	// GetAll retrieves all tasks based on query parameters.
-	GetAll(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAll(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
 	// GetAllAssigned retrieves all tasks assigned to the current user.
-	GetAllAssigned(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAllAssigned(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
-	GetAllCreated(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAllCreated(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
 	// GetAllForGroup retrieves all tasks for a specific group.
 	GetAllForGroup(
-		tx *database.DB,
+		tx database.Database,
 		currentUser schemas.User,
 		groupID int64,
 		queryParams map[string]any,
 	) ([]schemas.Task, error)
 	// Get retrieves a detailed view of a specific task.
-	Get(tx *database.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
+	Get(tx database.Database, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
 	// GetByTitle retrieves a task by its title.
-	GetByTitle(tx *database.DB, title string) (*schemas.Task, error)
+	GetByTitle(tx database.Database, title string) (*schemas.Task, error)
 	// GetLimits retrieves limits associated with each input/output
-	GetLimits(tx *database.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error)
+	GetLimits(tx database.Database, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error)
 	// ParseTestCase parses the input and output files from an archive.
 	ParseTestCase(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
-	ProcessAndUpload(tx *database.DB, currentUser schemas.User, taskID int64, archivePath string) error
+	ProcessAndUpload(tx database.Database, currentUser schemas.User, taskID int64, archivePath string) error
 	// UnassignFromGroups unassigns a task from multiple groups.
-	UnassignFromGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error
+	UnassignFromGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error
 	// UnassignFromUsers unassigns a task from multiple users.
-	UnassignFromUsers(tx *database.DB, currentUser schemas.User, taskID int64, userID []int64) error
+	UnassignFromUsers(tx database.Database, currentUser schemas.User, taskID int64, userID []int64) error
 	// PutLimits updates limits associated with each input/output.
-	PutLimits(tx *database.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
+	PutLimits(tx database.Database, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
 }
 
 const defaultTaskSort = "created_at:desc"
@@ -75,7 +75,7 @@ type taskService struct {
 	logger *zap.SugaredLogger
 }
 
-func (ts *taskService) Create(tx *database.DB, currentUser schemas.User, task *schemas.Task) (int64, error) {
+func (ts *taskService) Create(tx database.Database, currentUser schemas.User, task *schemas.Task) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -110,7 +110,7 @@ func (ts *taskService) Create(tx *database.DB, currentUser schemas.User, task *s
 	return taskID, nil
 }
 
-func (ts *taskService) GetByTitle(tx *database.DB, title string) (*schemas.Task, error) {
+func (ts *taskService) GetByTitle(tx database.Database, title string) (*schemas.Task, error) {
 	task, err := ts.taskRepository.GetByTitle(tx, title)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -123,7 +123,7 @@ func (ts *taskService) GetByTitle(tx *database.DB, title string) (*schemas.Task,
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(tx *database.DB, _ schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx database.Database, _ schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
 	// if err != nil {
 	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -153,7 +153,7 @@ func (ts *taskService) GetAll(tx *database.DB, _ schemas.User, queryParams map[s
 }
 
 func (ts *taskService) GetAllForGroup(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	groupID int64,
 	queryParams map[string]any,
@@ -185,7 +185,7 @@ func (ts *taskService) GetAllForGroup(
 	return result, nil
 }
 
-func (ts *taskService) Get(tx *database.DB, _ schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) Get(tx database.Database, _ schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
@@ -233,7 +233,7 @@ func (ts *taskService) Get(tx *database.DB, _ schemas.User, taskID int64) (*sche
 }
 
 func (ts *taskService) GetAllAssigned(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	queryParams map[string]any,
 ) ([]schemas.Task, error) {
@@ -260,7 +260,7 @@ func (ts *taskService) GetAllAssigned(
 }
 
 func (ts *taskService) GetAllCreated(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	queryParams map[string]any,
 ) ([]schemas.Task, error) {
@@ -291,7 +291,7 @@ func (ts *taskService) GetAllCreated(
 	return result, nil
 }
 
-func (ts *taskService) AssignToUsers(tx *database.DB, currentUser schemas.User, taskID int64, userIDs []int64) error {
+func (ts *taskService) AssignToUsers(tx database.Database, currentUser schemas.User, taskID int64, userIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -334,7 +334,7 @@ func (ts *taskService) AssignToUsers(tx *database.DB, currentUser schemas.User, 
 	return nil
 }
 
-func (ts *taskService) AssignToGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
+func (ts *taskService) AssignToGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -377,7 +377,7 @@ func (ts *taskService) AssignToGroups(tx *database.DB, currentUser schemas.User,
 	return nil
 }
 
-func (ts *taskService) UnassignFromUsers(tx *database.DB, currentUser schemas.User, taskID int64, userID []int64) error {
+func (ts *taskService) UnassignFromUsers(tx database.Database, currentUser schemas.User, taskID int64, userID []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -413,7 +413,7 @@ func (ts *taskService) UnassignFromUsers(tx *database.DB, currentUser schemas.Us
 	return nil
 }
 
-func (ts *taskService) UnassignFromGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
+func (ts *taskService) UnassignFromGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -449,7 +449,7 @@ func (ts *taskService) UnassignFromGroups(tx *database.DB, currentUser schemas.U
 	return nil
 }
 
-func (ts *taskService) Delete(tx *database.DB, currentUser schemas.User, taskID int64) error {
+func (ts *taskService) Delete(tx database.Database, currentUser schemas.User, taskID int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -474,7 +474,7 @@ func (ts *taskService) Delete(tx *database.DB, currentUser schemas.User, taskID 
 	return nil
 }
 
-func (ts *taskService) Edit(tx *database.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
+func (ts *taskService) Edit(tx database.Database, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
 	currentTask, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -587,7 +587,7 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 	return len(inputFiles), nil
 }
 
-func (ts *taskService) CreateTestCase(tx *database.DB, taskID int64, archivePath string) error {
+func (ts *taskService) CreateTestCase(tx database.Database, taskID int64, archivePath string) error {
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -620,7 +620,7 @@ func (ts *taskService) CreateTestCase(tx *database.DB, taskID int64, archivePath
 	return nil
 }
 
-func (ts *taskService) ProcessAndUpload(tx *database.DB, currentUser schemas.User, taskID int64, archivePath string) error {
+func (ts *taskService) ProcessAndUpload(tx database.Database, currentUser schemas.User, taskID int64, archivePath string) error {
 	if currentUser.Role == types.UserRoleStudent {
 		return myerrors.ErrNotAllowed
 	}
@@ -699,7 +699,7 @@ func (ts *taskService) ProcessAndUpload(tx *database.DB, currentUser schemas.Use
 	return nil
 }
 
-func (ts *taskService) GetLimits(tx *database.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
+func (ts *taskService) GetLimits(tx database.Database, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -721,7 +721,7 @@ func (ts *taskService) GetLimits(tx *database.DB, currentUser schemas.User, task
 }
 
 func (ts *taskService) PutLimits(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	taskID int64,
 	newLimits schemas.PutTestCaseLimitsRequest,

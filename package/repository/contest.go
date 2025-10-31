@@ -11,59 +11,59 @@ import (
 
 type ContestRepository interface {
 	// Create creates a new contest
-	Create(tx *database.DB, contest *models.Contest) (int64, error)
+	Create(tx database.Database, contest *models.Contest) (int64, error)
 	// Get retrieves a contest by ID
-	Get(tx *database.DB, contestID int64) (*models.Contest, error)
+	Get(tx database.Database, contestID int64) (*models.Contest, error)
 	// GetAll retrieves all contests with pagination and sorting
-	GetAll(tx *database.DB, offset int, limit int, sort string) ([]models.Contest, error)
+	GetAll(tx database.Database, offset int, limit int, sort string) ([]models.Contest, error)
 	// GetAllWithStats retrieves all contests with participant counts and user registration status.
 	// This method efficiently calculates participant counts (both direct participants and those via groups)
 	// and determines the user's registration status for each contest in a single SQL query.
 	// Returns ContestWithStats which includes ParticipantCount, IsParticipant, and HasPendingReg fields.
-	GetAllWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetAllWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
-	GetOngoingContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetOngoingContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetPastContestsWithStats retrieves contests that have ended with stats
-	GetPastContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetPastContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
-	GetUpcomingContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetUpcomingContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreator(tx *database.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error)
+	GetAllForCreator(tx database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error)
 	// Edit updates a contest
-	Edit(tx *database.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
+	Edit(tx database.Database, contestID int64, contest *models.Contest) (*models.Contest, error)
 	// Delete removes a contest
-	Delete(tx *database.DB, contestID int64) error
+	Delete(tx database.Database, contestID int64) error
 	// CreatePendingRegistration creates a pending registration request
-	CreatePendingRegistration(tx *database.DB, registration *models.ContestRegistrationRequests) (int64, error)
+	CreatePendingRegistration(tx database.Database, registration *models.ContestRegistrationRequests) (int64, error)
 	// IsPendingRegistrationExists checks if pending registration already exists
-	IsPendingRegistrationExists(tx *database.DB, contestID int64, userID int64) (bool, error)
+	IsPendingRegistrationExists(tx database.Database, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
-	IsUserParticipant(tx *database.DB, contestID int64, userID int64) (bool, error)
+	IsUserParticipant(tx database.Database, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
-	GetTasksForContest(tx *database.DB, contestID int64) ([]models.Task, error)
+	GetTasksForContest(tx database.Database, contestID int64) ([]models.Task, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
-	GetTasksForContestWithStats(tx *database.DB, contestID, userID int64) ([]models.Task, error)
+	GetTasksForContestWithStats(tx database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
-	GetContestsForUserWithStats(tx *database.DB, userID int64) ([]models.ParticipantContestStats, error)
+	GetContestsForUserWithStats(tx database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
-	AddTaskToContest(tx *database.DB, taskContest models.ContestTask) error
+	AddTaskToContest(tx database.Database, taskContest models.ContestTask) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
-	GetRegistrationRequests(tx *database.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
+	GetRegistrationRequests(tx database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
 	// DeleteRegistrationRequest deletes a pending registration request
-	DeleteRegistrationRequest(tx *database.DB, requestID int64) error
+	DeleteRegistrationRequest(tx database.Database, requestID int64) error
 	// CreateContestParticipant adds a user as a participant to a contest
-	CreateContestParticipant(tx *database.DB, contestID, userID int64) error
+	CreateContestParticipant(tx database.Database, contestID, userID int64) error
 	// RejectRegistrationRequest rejects a pending registration request
-	UpdateRegistrationRequestStatus(tx *database.DB, requestID int64, status types.RegistrationRequestStatus) error
+	UpdateRegistrationRequestStatus(tx database.Database, requestID int64, status types.RegistrationRequestStatus) error
 	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
-	GetPendingRegistrationRequest(tx *database.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error)
+	GetPendingRegistrationRequest(tx database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 	// GetContestTask retrieves the ContestTask relationship for validation
-	GetContestTask(tx *database.DB, contestID, taskID int64) (*models.ContestTask, error)
+	GetContestTask(tx database.Database, contestID, taskID int64) (*models.ContestTask, error)
 }
 
 type contestRepository struct{}
 
-func (cr *contestRepository) Create(tx *database.DB, contest *models.Contest) (int64, error) {
+func (cr *contestRepository) Create(tx database.Database, contest *models.Contest) (int64, error) {
 	err := tx.Create(contest).Error()
 	if err != nil {
 		return 0, err
@@ -71,7 +71,7 @@ func (cr *contestRepository) Create(tx *database.DB, contest *models.Contest) (i
 	return contest.ID, nil
 }
 
-func (cr *contestRepository) Get(tx *database.DB, contestID int64) (*models.Contest, error) {
+func (cr *contestRepository) Get(tx database.Database, contestID int64) (*models.Contest, error) {
 	var contest models.Contest
 	err := tx.Where("id = ?", contestID).First(&contest).Error()
 	if err != nil {
@@ -80,7 +80,7 @@ func (cr *contestRepository) Get(tx *database.DB, contestID int64) (*models.Cont
 	return &contest, nil
 }
 
-func (cr *contestRepository) GetAll(tx *database.DB, offset int, limit int, sort string) ([]models.Contest, error) {
+func (cr *contestRepository) GetAll(tx database.Database, offset int, limit int, sort string) ([]models.Contest, error) {
 	var contests []models.Contest
 	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 	err := tx.Model(&models.Contest{}).Find(&contests).Error()
@@ -90,7 +90,7 @@ func (cr *contestRepository) GetAll(tx *database.DB, offset int, limit int, sort
 	return contests, nil
 }
 
-func (cr *contestRepository) GetAllForCreator(tx *database.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error) {
+func (cr *contestRepository) GetAllForCreator(tx database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error) {
 	var contests []models.Contest
 	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 	err := tx.Model(&models.Contest{}).Where("created_by = ?", creatorID).Find(&contests).Error()
@@ -100,7 +100,7 @@ func (cr *contestRepository) GetAllForCreator(tx *database.DB, creatorID int64, 
 	return contests, nil
 }
 
-func (cr *contestRepository) Edit(tx *database.DB, contestID int64, contest *models.Contest) (*models.Contest, error) {
+func (cr *contestRepository) Edit(tx database.Database, contestID int64, contest *models.Contest) (*models.Contest, error) {
 	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error()
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (cr *contestRepository) Edit(tx *database.DB, contestID int64, contest *mod
 	return cr.Get(tx, contestID)
 }
 
-func (cr *contestRepository) Delete(tx *database.DB, contestID int64) error {
+func (cr *contestRepository) Delete(tx database.Database, contestID int64) error {
 	err := tx.Where("id = ?", contestID).Delete(&models.Contest{}).Error()
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (cr *contestRepository) Delete(tx *database.DB, contestID int64) error {
 	return nil
 }
 
-func (cr *contestRepository) CreatePendingRegistration(tx *database.DB, registration *models.ContestRegistrationRequests) (int64, error) {
+func (cr *contestRepository) CreatePendingRegistration(tx database.Database, registration *models.ContestRegistrationRequests) (int64, error) {
 	err := tx.Create(registration).Error()
 	if err != nil {
 		return 0, err
@@ -124,7 +124,7 @@ func (cr *contestRepository) CreatePendingRegistration(tx *database.DB, registra
 	return registration.ID, nil
 }
 
-func (cr *contestRepository) IsPendingRegistrationExists(tx *database.DB, contestID int64, userID int64) (bool, error) {
+func (cr *contestRepository) IsPendingRegistrationExists(tx database.Database, contestID int64, userID int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.ContestRegistrationRequests{}).
 		Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).
@@ -135,7 +135,7 @@ func (cr *contestRepository) IsPendingRegistrationExists(tx *database.DB, contes
 	return count > 0, nil
 }
 
-func (cr *contestRepository) IsUserParticipant(tx *database.DB, contestID int64, userID int64) (bool, error) {
+func (cr *contestRepository) IsUserParticipant(tx database.Database, contestID int64, userID int64) (bool, error) {
 	var userCount int64
 	err := tx.Model(&models.ContestParticipant{}).
 		Where("contest_id = ? AND user_id = ?", contestID, userID).
@@ -154,7 +154,7 @@ func (cr *contestRepository) IsUserParticipant(tx *database.DB, contestID int64,
 	return userCount > 0 || groupCount > 0, nil
 }
 
-func (cr *contestRepository) GetAllWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetAllWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
 	var contests []models.ContestWithStats
 
 	// Build an efficient query that calculates participant counts and user registration status
@@ -207,7 +207,7 @@ func (cr *contestRepository) GetAllWithStats(tx *database.DB, userID int64, offs
 	return contests, nil
 }
 
-func (cr *contestRepository) GetOngoingContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetOngoingContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
 	var contests []models.ContestWithStats
 
 	// Build query for ongoing contests (started but not ended, or no end date but started)
@@ -256,7 +256,7 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *database.DB, userID
 	return contests, nil
 }
 
-func (cr *contestRepository) GetPastContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetPastContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
 	var contests []models.ContestWithStats
 
 	// Build query for past contests (ended)
@@ -303,7 +303,7 @@ func (cr *contestRepository) GetPastContestsWithStats(tx *database.DB, userID in
 	return contests, nil
 }
 
-func (cr *contestRepository) GetUpcomingContestsWithStats(tx *database.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetUpcomingContestsWithStats(tx database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
 	var contests []models.ContestWithStats
 
 	// Build query for upcoming contests (not started yet)
@@ -350,7 +350,7 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *database.DB, userI
 	return contests, nil
 }
 
-func (cr *contestRepository) GetTasksForContest(tx *database.DB, contestID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetTasksForContest(tx database.Database, contestID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.ContestTask{}))).
@@ -362,7 +362,7 @@ func (cr *contestRepository) GetTasksForContest(tx *database.DB, contestID int64
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetTasksForContestWithStats(tx *database.DB, contestID, userID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetTasksForContestWithStats(tx database.Database, contestID, userID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx.GormDB(), &models.ContestTask{}))).
@@ -374,7 +374,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(tx *database.DB, contes
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetContestsForUserWithStats(tx *database.DB, userID int64) ([]models.ParticipantContestStats, error) {
+func (cr *contestRepository) GetContestsForUserWithStats(tx database.Database, userID int64) ([]models.ParticipantContestStats, error) {
 	var contests []models.ParticipantContestStats
 
 	// Build query to get contests where user is a participant with statistics
@@ -432,7 +432,7 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *database.DB, userID
 	return contests, nil
 }
 
-func (cr *contestRepository) AddTaskToContest(tx *database.DB, taskContest models.ContestTask) error {
+func (cr *contestRepository) AddTaskToContest(tx database.Database, taskContest models.ContestTask) error {
 	err := tx.Create(&taskContest).Error()
 	if err != nil {
 		return err
@@ -440,7 +440,7 @@ func (cr *contestRepository) AddTaskToContest(tx *database.DB, taskContest model
 	return nil
 }
 
-func (cr *contestRepository) GetRegistrationRequests(tx *database.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
+func (cr *contestRepository) GetRegistrationRequests(tx database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
 	var requests []models.ContestRegistrationRequests
 	err := tx.Preload("User").Where("contest_id = ? AND status = ?", contestID, status).Find(&requests).Error()
 	if err != nil {
@@ -449,15 +449,15 @@ func (cr *contestRepository) GetRegistrationRequests(tx *database.DB, contestID 
 	return requests, nil
 }
 
-func (cr *contestRepository) UpdateRegistrationRequestStatus(tx *database.DB, requestID int64, status types.RegistrationRequestStatus) error {
+func (cr *contestRepository) UpdateRegistrationRequestStatus(tx database.Database, requestID int64, status types.RegistrationRequestStatus) error {
 	return tx.Model(models.ContestRegistrationRequests{}).Where("id = ?", requestID).Updates(models.ContestRegistrationRequests{Status: status}).Error()
 }
 
-func (cr *contestRepository) DeleteRegistrationRequest(tx *database.DB, requestID int64) error {
+func (cr *contestRepository) DeleteRegistrationRequest(tx database.Database, requestID int64) error {
 	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error()
 }
 
-func (cr *contestRepository) CreateContestParticipant(tx *database.DB, contestID, userID int64) error {
+func (cr *contestRepository) CreateContestParticipant(tx database.Database, contestID, userID int64) error {
 	participant := &models.ContestParticipant{
 		ContestID: contestID,
 		UserID:    userID,
@@ -469,7 +469,7 @@ func (cr *contestRepository) CreateContestParticipant(tx *database.DB, contestID
 	return nil
 }
 
-func (cr *contestRepository) GetPendingRegistrationRequest(tx *database.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
+func (cr *contestRepository) GetPendingRegistrationRequest(tx database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
 	var request []*models.ContestRegistrationRequests
 	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).Limit(1).Find(&request).Error()
 	if err != nil {
@@ -482,7 +482,7 @@ func (cr *contestRepository) GetPendingRegistrationRequest(tx *database.DB, cont
 	return request[0], nil
 }
 
-func (cr *contestRepository) GetContestTask(tx *database.DB, contestID, taskID int64) (*models.ContestTask, error) {
+func (cr *contestRepository) GetContestTask(tx database.Database, contestID, taskID int64) (*models.ContestTask, error) {
 	var contestTask models.ContestTask
 	err := tx.Where("contest_id = ? AND task_id = ?", contestID, taskID).First(&contestTask).Error()
 	if err != nil {

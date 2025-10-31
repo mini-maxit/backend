@@ -7,19 +7,19 @@ import (
 
 type TestRepository interface {
 	// Create creates a new test result in the database
-	Create(tx *database.DB, testResult *models.TestResult) error
-	Put(tx *database.DB, testResult *models.TestResult) error
-	GetBySubmissionAndOrder(tx *database.DB, submissionID int64, order int) (*models.TestResult, error)
+	Create(tx database.Database, testResult *models.TestResult) error
+	Put(tx database.Database, testResult *models.TestResult) error
+	GetBySubmissionAndOrder(tx database.Database, submissionID int64, order int) (*models.TestResult, error)
 }
 
 type testResultRepository struct{}
 
-func (tr *testResultRepository) Create(tx *database.DB, testResult *models.TestResult) error {
+func (tr *testResultRepository) Create(tx database.Database, testResult *models.TestResult) error {
 	err := tx.Create(&testResult).Error()
 	return err
 }
 
-func (tr *testResultRepository) GetBySubmissionAndOrder(tx *database.DB, submissionID int64, order int) (*models.TestResult, error) {
+func (tr *testResultRepository) GetBySubmissionAndOrder(tx database.Database, submissionID int64, order int) (*models.TestResult, error) {
 	testResult := &models.TestResult{}
 	err := tx.Model(&models.TestResult{}).
 		Joins("LEFT JOIN submission_results ON test_results.submission_result_id = submission_results.id").
@@ -32,7 +32,7 @@ func (tr *testResultRepository) GetBySubmissionAndOrder(tx *database.DB, submiss
 	return testResult, nil
 }
 
-func (tr *testResultRepository) Put(t *database.DB, testResult *models.TestResult) error {
+func (tr *testResultRepository) Put(t database.Database, testResult *models.TestResult) error {
 	err := t.Model(&models.TestResult{}).Where("id = ?", testResult.ID).Save(&testResult).Error()
 	return err
 }

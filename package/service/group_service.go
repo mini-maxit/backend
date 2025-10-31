@@ -15,23 +15,23 @@ import (
 
 type GroupService interface {
 	// AddUsers adds users to a group.
-	AddUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error
+	AddUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error
 	// Create creates a new group.
-	Create(tx *database.DB, currentUser schemas.User, group *schemas.Group) (int64, error)
+	Create(tx database.Database, currentUser schemas.User, group *schemas.Group) (int64, error)
 	// Delete removes a group by its ID.
-	Delete(tx *database.DB, currentUser schemas.User, groupID int64) error
+	Delete(tx database.Database, currentUser schemas.User, groupID int64) error
 	// DeleteUsers removes users from a group.
-	DeleteUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error
+	DeleteUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error
 	// Edit updates the information of a group.
-	Edit(tx *database.DB, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
+	Edit(tx database.Database, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
 	// Get retrieves detailed information about a group by its ID.
-	Get(tx *database.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
+	Get(tx database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
 	// GetAll retrieves all groups based on query parameters.
-	GetAll(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error)
+	GetAll(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error)
 	// GetTasks retrieves all tasks associated with a group.
-	GetTasks(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error)
+	GetTasks(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.Task, error)
 	// GetUsers retrieves all users associated with a group.
-	GetUsers(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error)
+	GetUsers(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error)
 }
 
 const defaultGroupSort = "created_at:desc"
@@ -42,7 +42,7 @@ type groupService struct {
 	userService     UserService
 }
 
-func (gs *groupService) Create(tx *database.DB, currentUser schemas.User, group *schemas.Group) (int64, error) {
+func (gs *groupService) Create(tx database.Database, currentUser schemas.User, group *schemas.Group) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return 0, err
@@ -69,7 +69,7 @@ func (gs *groupService) Create(tx *database.DB, currentUser schemas.User, group 
 	return groupID, nil
 }
 
-func (gs *groupService) Delete(tx *database.DB, currentUser schemas.User, groupID int64) error {
+func (gs *groupService) Delete(tx database.Database, currentUser schemas.User, groupID int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (gs *groupService) Delete(tx *database.DB, currentUser schemas.User, groupI
 }
 
 func (gs *groupService) Edit(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	groupID int64,
 	editInfo *schemas.EditGroup,
@@ -130,7 +130,7 @@ func (gs *groupService) Edit(
 }
 
 func (gs *groupService) GetAll(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	queryParams map[string]any,
 ) ([]schemas.Group, error) {
@@ -171,7 +171,7 @@ func (gs *groupService) GetAll(
 	return result, nil
 }
 
-func (gs *groupService) Get(tx *database.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
+func (gs *groupService) Get(tx database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func (gs *groupService) Get(tx *database.DB, currentUser schemas.User, groupID i
 	return GroupToSchemaDetailed(group), nil
 }
 
-func (gs *groupService) AddUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (gs *groupService) AddUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func (gs *groupService) AddUsers(tx *database.DB, currentUser schemas.User, grou
 	return nil
 }
 
-func (gs *groupService) DeleteUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (gs *groupService) DeleteUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
@@ -272,7 +272,7 @@ func (gs *groupService) DeleteUsers(tx *database.DB, currentUser schemas.User, g
 	return nil
 }
 
-func (gs *groupService) GetUsers(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
+func (gs *groupService) GetUsers(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -303,7 +303,7 @@ func (gs *groupService) GetUsers(tx *database.DB, currentUser schemas.User, grou
 	return result, nil
 }
 
-func (gs *groupService) GetTasks(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
+func (gs *groupService) GetTasks(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

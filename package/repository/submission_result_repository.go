@@ -7,25 +7,25 @@ import (
 
 type SubmissionResultRepository interface {
 	// Create creates a new submission result in the database
-	Create(tx *database.DB, solutionResult models.SubmissionResult) (int64, error)
+	Create(tx database.Database, solutionResult models.SubmissionResult) (int64, error)
 	//
-	Get(tx *database.DB, submissionResultID int64) (*models.SubmissionResult, error)
+	Get(tx database.Database, submissionResultID int64) (*models.SubmissionResult, error)
 
-	GetBySubmission(tx *database.DB, submissionID int64) (*models.SubmissionResult, error)
+	GetBySubmission(tx database.Database, submissionID int64) (*models.SubmissionResult, error)
 
-	Put(tx *database.DB, submissionResult *models.SubmissionResult) error
+	Put(tx database.Database, submissionResult *models.SubmissionResult) error
 }
 
 type submissionResultRepository struct{}
 
-func (usr *submissionResultRepository) Create(tx *database.DB, submissionResult models.SubmissionResult) (int64, error) {
+func (usr *submissionResultRepository) Create(tx database.Database, submissionResult models.SubmissionResult) (int64, error) {
 	if err := tx.Create(&submissionResult).Error(); err != nil {
 		return 0, err
 	}
 	return submissionResult.ID, nil
 }
 
-func (usr *submissionResultRepository) Get(tx *database.DB, submissionResultID int64) (*models.SubmissionResult, error) {
+func (usr *submissionResultRepository) Get(tx database.Database, submissionResultID int64) (*models.SubmissionResult, error) {
 	submissionResult := &models.SubmissionResult{}
 	if err := tx.
 		Preload("TestResults").
@@ -41,7 +41,7 @@ func (usr *submissionResultRepository) Get(tx *database.DB, submissionResultID i
 	return submissionResult, nil
 }
 
-func (usr *submissionResultRepository) GetBySubmission(tx *database.DB, submissionID int64) (*models.SubmissionResult, error) {
+func (usr *submissionResultRepository) GetBySubmission(tx database.Database, submissionID int64) (*models.SubmissionResult, error) {
 	submissionResult := &models.SubmissionResult{}
 	if err := tx.Model(submissionResult).
 		Preload("TestResults").
@@ -55,7 +55,7 @@ func (usr *submissionResultRepository) GetBySubmission(tx *database.DB, submissi
 	return submissionResult, nil
 }
 
-func (usr *submissionResultRepository) Put(tx *database.DB, submissionResult *models.SubmissionResult) error {
+func (usr *submissionResultRepository) Put(tx database.Database, submissionResult *models.SubmissionResult) error {
 	err := tx.Model(&models.SubmissionResult{}).Where("id = ?", submissionResult.ID).Save(submissionResult).Error()
 	return err
 }

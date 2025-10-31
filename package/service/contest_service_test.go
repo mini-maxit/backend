@@ -2,7 +2,8 @@ package service_test
 
 import (
 	"errors"
-	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/testutils"
+	"gorm.io/gorm"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestContestWithStatsToSchema(t *testing.T) {
@@ -176,7 +176,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := schemas.User{
@@ -240,7 +240,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := schemas.User{
@@ -304,7 +304,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
 		currentUser := schemas.User{
@@ -671,7 +671,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
 		currentUser := schemas.User{
@@ -938,7 +938,7 @@ func TestContestService_Get(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {
 		currentUser := schemas.User{

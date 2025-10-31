@@ -19,17 +19,17 @@ import (
 
 type UserService interface {
 	// ChangePassword changes the password of a user.
-	ChangePassword(tx *database.DB, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error
+	ChangePassword(tx database.Database, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error
 	// ChangeRole changes the role of a user.
-	ChangeRole(tx *database.DB, currentUser schemas.User, userID int64, role types.UserRole) error
+	ChangeRole(tx database.Database, currentUser schemas.User, userID int64, role types.UserRole) error
 	// Edit updates the information of a user.
-	Edit(tx *database.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
+	Edit(tx database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
 	// GetAll retrieves all users based on the provided query parameters.
-	GetAll(tx *database.DB, queryParams map[string]any) ([]schemas.User, error)
+	GetAll(tx database.Database, queryParams map[string]any) ([]schemas.User, error)
 	// GetByEmail retrieves a user by their email.
-	GetByEmail(tx *database.DB, email string) (*schemas.User, error)
+	GetByEmail(tx database.Database, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
-	Get(tx *database.DB, userID int64) (*schemas.User, error)
+	Get(tx database.Database, userID int64) (*schemas.User, error)
 }
 
 type userService struct {
@@ -37,7 +37,7 @@ type userService struct {
 	logger         *zap.SugaredLogger
 }
 
-func (us *userService) GetByEmail(tx *database.DB, email string) (*schemas.User, error) {
+func (us *userService) GetByEmail(tx database.Database, email string) (*schemas.User, error) {
 	userModel, err := us.userRepository.GetByEmail(tx, email)
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
@@ -50,7 +50,7 @@ func (us *userService) GetByEmail(tx *database.DB, email string) (*schemas.User,
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(tx *database.DB, queryParams map[string]any) ([]schemas.User, error) {
+func (us *userService) GetAll(tx database.Database, queryParams map[string]any) ([]schemas.User, error) {
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
@@ -72,7 +72,7 @@ func (us *userService) GetAll(tx *database.DB, queryParams map[string]any) ([]sc
 	return users, nil
 }
 
-func (us *userService) Get(tx *database.DB, userID int64) (*schemas.User, error) {
+func (us *userService) Get(tx database.Database, userID int64) (*schemas.User, error) {
 	userModel, err := us.userRepository.Get(tx, userID)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -85,7 +85,7 @@ func (us *userService) Get(tx *database.DB, userID int64) (*schemas.User, error)
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) Edit(tx *database.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
+func (us *userService) Edit(tx database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	if currentUser.Role != types.UserRoleAdmin && currentUser.ID != userID {
 		return myerrors.ErrNotAuthorized
 	}
@@ -113,7 +113,7 @@ func (us *userService) Edit(tx *database.DB, currentUser schemas.User, userID in
 	return nil
 }
 
-func (us *userService) ChangeRole(tx *database.DB, currentUser schemas.User, userID int64, role types.UserRole) error {
+func (us *userService) ChangeRole(tx database.Database, currentUser schemas.User, userID int64, role types.UserRole) error {
 	if currentUser.Role != types.UserRoleAdmin {
 		return myerrors.ErrNotAuthorized
 	}
@@ -135,7 +135,7 @@ func (us *userService) ChangeRole(tx *database.DB, currentUser schemas.User, use
 }
 
 func (us *userService) ChangePassword(
-	tx *database.DB,
+	tx database.Database,
 	currentUser schemas.User,
 	userID int64,
 	data *schemas.UserChangePassword,

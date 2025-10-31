@@ -44,7 +44,7 @@ func (m *MockAuthService) EXPECT() *MockAuthServiceMockRecorder {
 }
 
 // Login mocks base method.
-func (m *MockAuthService) Login(tx *database.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
+func (m *MockAuthService) Login(tx database.Database, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Login", tx, userLogin)
 	ret0, _ := ret[0].(*schemas.JWTTokens)
@@ -59,7 +59,7 @@ func (mr *MockAuthServiceMockRecorder) Login(tx, userLogin any) *gomock.Call {
 }
 
 // RefreshTokens mocks base method.
-func (m *MockAuthService) RefreshTokens(tx *database.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error) {
+func (m *MockAuthService) RefreshTokens(tx database.Database, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefreshTokens", tx, refreshRequest)
 	ret0, _ := ret[0].(*schemas.JWTTokens)
@@ -74,7 +74,7 @@ func (mr *MockAuthServiceMockRecorder) RefreshTokens(tx, refreshRequest any) *go
 }
 
 // Register mocks base method.
-func (m *MockAuthService) Register(tx *database.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
+func (m *MockAuthService) Register(tx database.Database, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Register", tx, userRegister)
 	ret0, _ := ret[0].(*schemas.JWTTokens)
@@ -113,7 +113,7 @@ func (m *MockSubmissionService) EXPECT() *MockSubmissionServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockSubmissionService) Create(tx *database.DB, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error) {
+func (m *MockSubmissionService) Create(tx database.Database, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, taskID, userID, languageID, contestID, order, fileID)
 	ret0, _ := ret[0].(int64)
@@ -128,7 +128,7 @@ func (mr *MockSubmissionServiceMockRecorder) Create(tx, taskID, userID, language
 }
 
 // CreateSubmissionResult mocks base method.
-func (m *MockSubmissionService) CreateSubmissionResult(tx *database.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error) {
+func (m *MockSubmissionService) CreateSubmissionResult(tx database.Database, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSubmissionResult", tx, submissionID, responseMessage)
 	ret0, _ := ret[0].(int64)
@@ -143,7 +143,7 @@ func (mr *MockSubmissionServiceMockRecorder) CreateSubmissionResult(tx, submissi
 }
 
 // Get mocks base method.
-func (m *MockSubmissionService) Get(tx *database.DB, submissionID int64, user schemas.User) (schemas.Submission, error) {
+func (m *MockSubmissionService) Get(tx database.Database, submissionID int64, user schemas.User) (schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, submissionID, user)
 	ret0, _ := ret[0].(schemas.Submission)
@@ -158,7 +158,7 @@ func (mr *MockSubmissionServiceMockRecorder) Get(tx, submissionID, user any) *go
 }
 
 // GetAll mocks base method.
-func (m *MockSubmissionService) GetAll(tx *database.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAll(tx database.Database, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, user, userID, taskID, contestID, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
@@ -173,7 +173,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAll(tx, user, userID, taskID, co
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionService) GetAllForContest(tx *database.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForContest(tx database.Database, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, user, queryParams)
 	ret0, _ := ret[0].([]schemas.Submission)
@@ -188,7 +188,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, use
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockSubmissionService) GetAllForGroup(tx *database.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForGroup(tx database.Database, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, user, queryParams)
 	ret0, _ := ret[0].([]schemas.Submission)
@@ -203,7 +203,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForGroup(tx, groupID, user, q
 }
 
 // GetAllForTask mocks base method.
-func (m *MockSubmissionService) GetAllForTask(tx *database.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForTask(tx database.Database, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, user, queryParams)
 	ret0, _ := ret[0].([]schemas.Submission)
@@ -218,7 +218,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForTask(tx, taskID, user, que
 }
 
 // GetAllForUser mocks base method.
-func (m *MockSubmissionService) GetAllForUser(tx *database.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForUser(tx database.Database, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForUser", tx, userID, user, queryParams)
 	ret0, _ := ret[0].([]schemas.Submission)
@@ -233,7 +233,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForUser(tx, userID, user, que
 }
 
 // GetAllForUserShort mocks base method.
-func (m *MockSubmissionService) GetAllForUserShort(tx *database.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.SubmissionShort, error) {
+func (m *MockSubmissionService) GetAllForUserShort(tx database.Database, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.SubmissionShort, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForUserShort", tx, userID, user, queryParams)
 	ret0, _ := ret[0].([]schemas.SubmissionShort)
@@ -248,7 +248,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForUserShort(tx, userID, user
 }
 
 // GetAvailableLanguages mocks base method.
-func (m *MockSubmissionService) GetAvailableLanguages(tx *database.DB) ([]schemas.LanguageConfig, error) {
+func (m *MockSubmissionService) GetAvailableLanguages(tx database.Database) ([]schemas.LanguageConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAvailableLanguages", tx)
 	ret0, _ := ret[0].([]schemas.LanguageConfig)
@@ -263,7 +263,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAvailableLanguages(tx any) *gomo
 }
 
 // MarkComplete mocks base method.
-func (m *MockSubmissionService) MarkComplete(tx *database.DB, submissionID int64) error {
+func (m *MockSubmissionService) MarkComplete(tx database.Database, submissionID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkComplete", tx, submissionID)
 	ret0, _ := ret[0].(error)
@@ -277,7 +277,7 @@ func (mr *MockSubmissionServiceMockRecorder) MarkComplete(tx, submissionID any) 
 }
 
 // MarkFailed mocks base method.
-func (m *MockSubmissionService) MarkFailed(tx *database.DB, submissionID int64, errorMsg string) error {
+func (m *MockSubmissionService) MarkFailed(tx database.Database, submissionID int64, errorMsg string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkFailed", tx, submissionID, errorMsg)
 	ret0, _ := ret[0].(error)
@@ -291,7 +291,7 @@ func (mr *MockSubmissionServiceMockRecorder) MarkFailed(tx, submissionID, errorM
 }
 
 // MarkProcessing mocks base method.
-func (m *MockSubmissionService) MarkProcessing(tx *database.DB, submissionID int64) error {
+func (m *MockSubmissionService) MarkProcessing(tx database.Database, submissionID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkProcessing", tx, submissionID)
 	ret0, _ := ret[0].(error)
@@ -305,7 +305,7 @@ func (mr *MockSubmissionServiceMockRecorder) MarkProcessing(tx, submissionID any
 }
 
 // Submit mocks base method.
-func (m *MockSubmissionService) Submit(tx *database.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error) {
+func (m *MockSubmissionService) Submit(tx database.Database, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Submit", tx, user, taskID, languageID, contestID, submissionFilePath)
 	ret0, _ := ret[0].(int64)
@@ -344,7 +344,7 @@ func (m *MockJWTService) EXPECT() *MockJWTServiceMockRecorder {
 }
 
 // AuthenticateToken mocks base method.
-func (m *MockJWTService) AuthenticateToken(tx *database.DB, tokenString string) (*schemas.ValidateTokenResponse, error) {
+func (m *MockJWTService) AuthenticateToken(tx database.Database, tokenString string) (*schemas.ValidateTokenResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuthenticateToken", tx, tokenString)
 	ret0, _ := ret[0].(*schemas.ValidateTokenResponse)
@@ -359,7 +359,7 @@ func (mr *MockJWTServiceMockRecorder) AuthenticateToken(tx, tokenString any) *go
 }
 
 // GenerateTokens mocks base method.
-func (m *MockJWTService) GenerateTokens(tx *database.DB, userId int64) (*schemas.JWTTokens, error) {
+func (m *MockJWTService) GenerateTokens(tx database.Database, userId int64) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateTokens", tx, userId)
 	ret0, _ := ret[0].(*schemas.JWTTokens)
@@ -374,7 +374,7 @@ func (mr *MockJWTServiceMockRecorder) GenerateTokens(tx, userId any) *gomock.Cal
 }
 
 // RefreshTokens mocks base method.
-func (m *MockJWTService) RefreshTokens(tx *database.DB, refreshToken string) (*schemas.JWTTokens, error) {
+func (m *MockJWTService) RefreshTokens(tx database.Database, refreshToken string) (*schemas.JWTTokens, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefreshTokens", tx, refreshToken)
 	ret0, _ := ret[0].(*schemas.JWTTokens)
@@ -413,7 +413,7 @@ func (m *MockUserService) EXPECT() *MockUserServiceMockRecorder {
 }
 
 // ChangePassword mocks base method.
-func (m *MockUserService) ChangePassword(tx *database.DB, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error {
+func (m *MockUserService) ChangePassword(tx database.Database, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangePassword", tx, currentUser, userID, data)
 	ret0, _ := ret[0].(error)
@@ -427,7 +427,7 @@ func (mr *MockUserServiceMockRecorder) ChangePassword(tx, currentUser, userID, d
 }
 
 // ChangeRole mocks base method.
-func (m *MockUserService) ChangeRole(tx *database.DB, currentUser schemas.User, userID int64, role types.UserRole) error {
+func (m *MockUserService) ChangeRole(tx database.Database, currentUser schemas.User, userID int64, role types.UserRole) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChangeRole", tx, currentUser, userID, role)
 	ret0, _ := ret[0].(error)
@@ -441,7 +441,7 @@ func (mr *MockUserServiceMockRecorder) ChangeRole(tx, currentUser, userID, role 
 }
 
 // Edit mocks base method.
-func (m *MockUserService) Edit(tx *database.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
+func (m *MockUserService) Edit(tx database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, userID, updateInfo)
 	ret0, _ := ret[0].(error)
@@ -455,7 +455,7 @@ func (mr *MockUserServiceMockRecorder) Edit(tx, currentUser, userID, updateInfo 
 }
 
 // Get mocks base method.
-func (m *MockUserService) Get(tx *database.DB, userID int64) (*schemas.User, error) {
+func (m *MockUserService) Get(tx database.Database, userID int64) (*schemas.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, userID)
 	ret0, _ := ret[0].(*schemas.User)
@@ -470,7 +470,7 @@ func (mr *MockUserServiceMockRecorder) Get(tx, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserService) GetAll(tx *database.DB, queryParams map[string]any) ([]schemas.User, error) {
+func (m *MockUserService) GetAll(tx database.Database, queryParams map[string]any) ([]schemas.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, queryParams)
 	ret0, _ := ret[0].([]schemas.User)
@@ -485,7 +485,7 @@ func (mr *MockUserServiceMockRecorder) GetAll(tx, queryParams any) *gomock.Call 
 }
 
 // GetByEmail mocks base method.
-func (m *MockUserService) GetByEmail(tx *database.DB, email string) (*schemas.User, error) {
+func (m *MockUserService) GetByEmail(tx database.Database, email string) (*schemas.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByEmail", tx, email)
 	ret0, _ := ret[0].(*schemas.User)
@@ -524,7 +524,7 @@ func (m *MockTaskService) EXPECT() *MockTaskServiceMockRecorder {
 }
 
 // AssignToGroups mocks base method.
-func (m *MockTaskService) AssignToGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
+func (m *MockTaskService) AssignToGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssignToGroups", tx, currentUser, taskID, groupIDs)
 	ret0, _ := ret[0].(error)
@@ -538,7 +538,7 @@ func (mr *MockTaskServiceMockRecorder) AssignToGroups(tx, currentUser, taskID, g
 }
 
 // AssignToUsers mocks base method.
-func (m *MockTaskService) AssignToUsers(tx *database.DB, currentUser schemas.User, taskID int64, userIDs []int64) error {
+func (m *MockTaskService) AssignToUsers(tx database.Database, currentUser schemas.User, taskID int64, userIDs []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssignToUsers", tx, currentUser, taskID, userIDs)
 	ret0, _ := ret[0].(error)
@@ -552,7 +552,7 @@ func (mr *MockTaskServiceMockRecorder) AssignToUsers(tx, currentUser, taskID, us
 }
 
 // Create mocks base method.
-func (m *MockTaskService) Create(tx *database.DB, currentUser schemas.User, task *schemas.Task) (int64, error) {
+func (m *MockTaskService) Create(tx database.Database, currentUser schemas.User, task *schemas.Task) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, currentUser, task)
 	ret0, _ := ret[0].(int64)
@@ -567,7 +567,7 @@ func (mr *MockTaskServiceMockRecorder) Create(tx, currentUser, task any) *gomock
 }
 
 // CreateTestCase mocks base method.
-func (m *MockTaskService) CreateTestCase(tx *database.DB, taskID int64, archivePath string) error {
+func (m *MockTaskService) CreateTestCase(tx database.Database, taskID int64, archivePath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTestCase", tx, taskID, archivePath)
 	ret0, _ := ret[0].(error)
@@ -581,7 +581,7 @@ func (mr *MockTaskServiceMockRecorder) CreateTestCase(tx, taskID, archivePath an
 }
 
 // Delete mocks base method.
-func (m *MockTaskService) Delete(tx *database.DB, currentUser schemas.User, taskID int64) error {
+func (m *MockTaskService) Delete(tx database.Database, currentUser schemas.User, taskID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", tx, currentUser, taskID)
 	ret0, _ := ret[0].(error)
@@ -595,7 +595,7 @@ func (mr *MockTaskServiceMockRecorder) Delete(tx, currentUser, taskID any) *gomo
 }
 
 // Edit mocks base method.
-func (m *MockTaskService) Edit(tx *database.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
+func (m *MockTaskService) Edit(tx database.Database, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, taskID, updateInfo)
 	ret0, _ := ret[0].(error)
@@ -609,7 +609,7 @@ func (mr *MockTaskServiceMockRecorder) Edit(tx, currentUser, taskID, updateInfo 
 }
 
 // Get mocks base method.
-func (m *MockTaskService) Get(tx *database.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (m *MockTaskService) Get(tx database.Database, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, currentUser, taskID)
 	ret0, _ := ret[0].(*schemas.TaskDetailed)
@@ -624,7 +624,7 @@ func (mr *MockTaskServiceMockRecorder) Get(tx, currentUser, taskID any) *gomock.
 }
 
 // GetAll mocks base method.
-func (m *MockTaskService) GetAll(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAll(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -639,7 +639,7 @@ func (mr *MockTaskServiceMockRecorder) GetAll(tx, currentUser, queryParams any) 
 }
 
 // GetAllAssigned mocks base method.
-func (m *MockTaskService) GetAllAssigned(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllAssigned(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAssigned", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -654,7 +654,7 @@ func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, queryPara
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskService) GetAllCreated(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllCreated(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllCreated", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -669,7 +669,7 @@ func (mr *MockTaskServiceMockRecorder) GetAllCreated(tx, currentUser, queryParam
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockTaskService) GetAllForGroup(tx *database.DB, currentUser schemas.User, groupID int64, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllForGroup(tx database.Database, currentUser schemas.User, groupID int64, queryParams map[string]any) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForGroup", tx, currentUser, groupID, queryParams)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -684,7 +684,7 @@ func (mr *MockTaskServiceMockRecorder) GetAllForGroup(tx, currentUser, groupID, 
 }
 
 // GetByTitle mocks base method.
-func (m *MockTaskService) GetByTitle(tx *database.DB, title string) (*schemas.Task, error) {
+func (m *MockTaskService) GetByTitle(tx database.Database, title string) (*schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByTitle", tx, title)
 	ret0, _ := ret[0].(*schemas.Task)
@@ -699,7 +699,7 @@ func (mr *MockTaskServiceMockRecorder) GetByTitle(tx, title any) *gomock.Call {
 }
 
 // GetLimits mocks base method.
-func (m *MockTaskService) GetLimits(tx *database.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
+func (m *MockTaskService) GetLimits(tx database.Database, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLimits", tx, currentUser, taskID)
 	ret0, _ := ret[0].([]schemas.TestCase)
@@ -729,7 +729,7 @@ func (mr *MockTaskServiceMockRecorder) ParseTestCase(archivePath any) *gomock.Ca
 }
 
 // ProcessAndUpload mocks base method.
-func (m *MockTaskService) ProcessAndUpload(tx *database.DB, currentUser schemas.User, taskID int64, archivePath string) error {
+func (m *MockTaskService) ProcessAndUpload(tx database.Database, currentUser schemas.User, taskID int64, archivePath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessAndUpload", tx, currentUser, taskID, archivePath)
 	ret0, _ := ret[0].(error)
@@ -743,7 +743,7 @@ func (mr *MockTaskServiceMockRecorder) ProcessAndUpload(tx, currentUser, taskID,
 }
 
 // PutLimits mocks base method.
-func (m *MockTaskService) PutLimits(tx *database.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error {
+func (m *MockTaskService) PutLimits(tx database.Database, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PutLimits", tx, currentUser, taskID, limits)
 	ret0, _ := ret[0].(error)
@@ -757,7 +757,7 @@ func (mr *MockTaskServiceMockRecorder) PutLimits(tx, currentUser, taskID, limits
 }
 
 // UnassignFromGroups mocks base method.
-func (m *MockTaskService) UnassignFromGroups(tx *database.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
+func (m *MockTaskService) UnassignFromGroups(tx database.Database, currentUser schemas.User, taskID int64, groupIDs []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnassignFromGroups", tx, currentUser, taskID, groupIDs)
 	ret0, _ := ret[0].(error)
@@ -771,7 +771,7 @@ func (mr *MockTaskServiceMockRecorder) UnassignFromGroups(tx, currentUser, taskI
 }
 
 // UnassignFromUsers mocks base method.
-func (m *MockTaskService) UnassignFromUsers(tx *database.DB, currentUser schemas.User, taskID int64, userID []int64) error {
+func (m *MockTaskService) UnassignFromUsers(tx database.Database, currentUser schemas.User, taskID int64, userID []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnassignFromUsers", tx, currentUser, taskID, userID)
 	ret0, _ := ret[0].(error)
@@ -809,7 +809,7 @@ func (m *MockLanguageService) EXPECT() *MockLanguageServiceMockRecorder {
 }
 
 // GetAll mocks base method.
-func (m *MockLanguageService) GetAll(tx *database.DB) ([]schemas.LanguageConfig, error) {
+func (m *MockLanguageService) GetAll(tx database.Database) ([]schemas.LanguageConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx)
 	ret0, _ := ret[0].([]schemas.LanguageConfig)
@@ -824,7 +824,7 @@ func (mr *MockLanguageServiceMockRecorder) GetAll(tx any) *gomock.Call {
 }
 
 // GetAllEnabled mocks base method.
-func (m *MockLanguageService) GetAllEnabled(tx *database.DB) ([]schemas.LanguageConfig, error) {
+func (m *MockLanguageService) GetAllEnabled(tx database.Database) ([]schemas.LanguageConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllEnabled", tx)
 	ret0, _ := ret[0].([]schemas.LanguageConfig)
@@ -839,7 +839,7 @@ func (mr *MockLanguageServiceMockRecorder) GetAllEnabled(tx any) *gomock.Call {
 }
 
 // Init mocks base method.
-func (m *MockLanguageService) Init(tx *database.DB, enabledLanguages schemas.HandShakeResponsePayload) error {
+func (m *MockLanguageService) Init(tx database.Database, enabledLanguages schemas.HandShakeResponsePayload) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", tx, enabledLanguages)
 	ret0, _ := ret[0].(error)
@@ -877,7 +877,7 @@ func (m *MockGroupService) EXPECT() *MockGroupServiceMockRecorder {
 }
 
 // AddUsers mocks base method.
-func (m *MockGroupService) AddUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (m *MockGroupService) AddUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddUsers", tx, currentUser, groupID, userIDs)
 	ret0, _ := ret[0].(error)
@@ -891,7 +891,7 @@ func (mr *MockGroupServiceMockRecorder) AddUsers(tx, currentUser, groupID, userI
 }
 
 // Create mocks base method.
-func (m *MockGroupService) Create(tx *database.DB, currentUser schemas.User, group *schemas.Group) (int64, error) {
+func (m *MockGroupService) Create(tx database.Database, currentUser schemas.User, group *schemas.Group) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, currentUser, group)
 	ret0, _ := ret[0].(int64)
@@ -906,7 +906,7 @@ func (mr *MockGroupServiceMockRecorder) Create(tx, currentUser, group any) *gomo
 }
 
 // Delete mocks base method.
-func (m *MockGroupService) Delete(tx *database.DB, currentUser schemas.User, groupID int64) error {
+func (m *MockGroupService) Delete(tx database.Database, currentUser schemas.User, groupID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", tx, currentUser, groupID)
 	ret0, _ := ret[0].(error)
@@ -920,7 +920,7 @@ func (mr *MockGroupServiceMockRecorder) Delete(tx, currentUser, groupID any) *go
 }
 
 // DeleteUsers mocks base method.
-func (m *MockGroupService) DeleteUsers(tx *database.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (m *MockGroupService) DeleteUsers(tx database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteUsers", tx, currentUser, groupID, userIDs)
 	ret0, _ := ret[0].(error)
@@ -934,7 +934,7 @@ func (mr *MockGroupServiceMockRecorder) DeleteUsers(tx, currentUser, groupID, us
 }
 
 // Edit mocks base method.
-func (m *MockGroupService) Edit(tx *database.DB, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
+func (m *MockGroupService) Edit(tx database.Database, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, groupID, editInfo)
 	ret0, _ := ret[0].(*schemas.Group)
@@ -949,7 +949,7 @@ func (mr *MockGroupServiceMockRecorder) Edit(tx, currentUser, groupID, editInfo 
 }
 
 // Get mocks base method.
-func (m *MockGroupService) Get(tx *database.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
+func (m *MockGroupService) Get(tx database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, currentUser, groupID)
 	ret0, _ := ret[0].(*schemas.GroupDetailed)
@@ -964,7 +964,7 @@ func (mr *MockGroupServiceMockRecorder) Get(tx, currentUser, groupID any) *gomoc
 }
 
 // GetAll mocks base method.
-func (m *MockGroupService) GetAll(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error) {
+func (m *MockGroupService) GetAll(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.Group)
@@ -979,7 +979,7 @@ func (mr *MockGroupServiceMockRecorder) GetAll(tx, currentUser, queryParams any)
 }
 
 // GetTasks mocks base method.
-func (m *MockGroupService) GetTasks(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
+func (m *MockGroupService) GetTasks(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTasks", tx, currentUser, groupID)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -994,7 +994,7 @@ func (mr *MockGroupServiceMockRecorder) GetTasks(tx, currentUser, groupID any) *
 }
 
 // GetUsers mocks base method.
-func (m *MockGroupService) GetUsers(tx *database.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
+func (m *MockGroupService) GetUsers(tx database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUsers", tx, currentUser, groupID)
 	ret0, _ := ret[0].([]schemas.User)
@@ -1033,7 +1033,7 @@ func (m *MockContestService) EXPECT() *MockContestServiceMockRecorder {
 }
 
 // AddTaskToContest mocks base method.
-func (m *MockContestService) AddTaskToContest(tx *database.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
+func (m *MockContestService) AddTaskToContest(tx database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTaskToContest", tx, currentUser, contestID, request)
 	ret0, _ := ret[0].(error)
@@ -1047,7 +1047,7 @@ func (mr *MockContestServiceMockRecorder) AddTaskToContest(tx, currentUser, cont
 }
 
 // ApproveRegistrationRequest mocks base method.
-func (m *MockContestService) ApproveRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error {
+func (m *MockContestService) ApproveRegistrationRequest(tx database.Database, currentUser schemas.User, contestID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ApproveRegistrationRequest", tx, currentUser, contestID, userID)
 	ret0, _ := ret[0].(error)
@@ -1061,7 +1061,7 @@ func (mr *MockContestServiceMockRecorder) ApproveRegistrationRequest(tx, current
 }
 
 // Create mocks base method.
-func (m *MockContestService) Create(tx *database.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
+func (m *MockContestService) Create(tx database.Database, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, currentUser, contest)
 	ret0, _ := ret[0].(int64)
@@ -1076,7 +1076,7 @@ func (mr *MockContestServiceMockRecorder) Create(tx, currentUser, contest any) *
 }
 
 // Delete mocks base method.
-func (m *MockContestService) Delete(tx *database.DB, currentUser schemas.User, contestID int64) error {
+func (m *MockContestService) Delete(tx database.Database, currentUser schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", tx, currentUser, contestID)
 	ret0, _ := ret[0].(error)
@@ -1090,7 +1090,7 @@ func (mr *MockContestServiceMockRecorder) Delete(tx, currentUser, contestID any)
 }
 
 // Edit mocks base method.
-func (m *MockContestService) Edit(tx *database.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
+func (m *MockContestService) Edit(tx database.Database, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, contestID, editInfo)
 	ret0, _ := ret[0].(*schemas.Contest)
@@ -1105,7 +1105,7 @@ func (mr *MockContestServiceMockRecorder) Edit(tx, currentUser, contestID, editI
 }
 
 // Get mocks base method.
-func (m *MockContestService) Get(tx *database.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
+func (m *MockContestService) Get(tx database.Database, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, currentUser, contestID)
 	ret0, _ := ret[0].(*schemas.Contest)
@@ -1120,7 +1120,7 @@ func (mr *MockContestServiceMockRecorder) Get(tx, currentUser, contestID any) *g
 }
 
 // GetOngoingContests mocks base method.
-func (m *MockContestService) GetOngoingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetOngoingContests(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
@@ -1135,7 +1135,7 @@ func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, qu
 }
 
 // GetPastContests mocks base method.
-func (m *MockContestService) GetPastContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetPastContests(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
@@ -1150,7 +1150,7 @@ func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, query
 }
 
 // GetRegistrationRequests mocks base method.
-func (m *MockContestService) GetRegistrationRequests(tx *database.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
+func (m *MockContestService) GetRegistrationRequests(tx database.Database, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistrationRequests", tx, currentUser, contestID, statusFilter)
 	ret0, _ := ret[0].([]schemas.RegistrationRequest)
@@ -1165,7 +1165,7 @@ func (mr *MockContestServiceMockRecorder) GetRegistrationRequests(tx, currentUse
 }
 
 // GetTasksForContest mocks base method.
-func (m *MockContestService) GetTasksForContest(tx *database.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+func (m *MockContestService) GetTasksForContest(tx database.Database, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTasksForContest", tx, currentUser, contestID)
 	ret0, _ := ret[0].([]schemas.TaskWithContestStats)
@@ -1180,7 +1180,7 @@ func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, co
 }
 
 // GetUpcomingContests mocks base method.
-func (m *MockContestService) GetUpcomingContests(tx *database.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetUpcomingContests(tx database.Database, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, queryParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
@@ -1195,7 +1195,7 @@ func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, q
 }
 
 // GetUserContests mocks base method.
-func (m *MockContestService) GetUserContests(tx *database.DB, userID int64) (schemas.UserContestsWithStats, error) {
+func (m *MockContestService) GetUserContests(tx database.Database, userID int64) (schemas.UserContestsWithStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserContests", tx, userID)
 	ret0, _ := ret[0].(schemas.UserContestsWithStats)
@@ -1210,7 +1210,7 @@ func (mr *MockContestServiceMockRecorder) GetUserContests(tx, userID any) *gomoc
 }
 
 // IsTaskInContest mocks base method.
-func (m *MockContestService) IsTaskInContest(tx *database.DB, contestID, taskID int64) (bool, error) {
+func (m *MockContestService) IsTaskInContest(tx database.Database, contestID, taskID int64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsTaskInContest", tx, contestID, taskID)
 	ret0, _ := ret[0].(bool)
@@ -1225,7 +1225,7 @@ func (mr *MockContestServiceMockRecorder) IsTaskInContest(tx, contestID, taskID 
 }
 
 // RegisterForContest mocks base method.
-func (m *MockContestService) RegisterForContest(tx *database.DB, currentUser schemas.User, contestID int64) error {
+func (m *MockContestService) RegisterForContest(tx database.Database, currentUser schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterForContest", tx, currentUser, contestID)
 	ret0, _ := ret[0].(error)
@@ -1239,7 +1239,7 @@ func (mr *MockContestServiceMockRecorder) RegisterForContest(tx, currentUser, co
 }
 
 // RejectRegistrationRequest mocks base method.
-func (m *MockContestService) RejectRegistrationRequest(tx *database.DB, currentUser schemas.User, contestID, userID int64) error {
+func (m *MockContestService) RejectRegistrationRequest(tx database.Database, currentUser schemas.User, contestID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RejectRegistrationRequest", tx, currentUser, contestID, userID)
 	ret0, _ := ret[0].(error)
@@ -1253,7 +1253,7 @@ func (mr *MockContestServiceMockRecorder) RejectRegistrationRequest(tx, currentU
 }
 
 // ValidateContestSubmission mocks base method.
-func (m *MockContestService) ValidateContestSubmission(tx *database.DB, contestID, taskID, userID int64) error {
+func (m *MockContestService) ValidateContestSubmission(tx database.Database, contestID, taskID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateContestSubmission", tx, contestID, taskID, userID)
 	ret0, _ := ret[0].(error)
@@ -1291,7 +1291,7 @@ func (m *MockQueueService) EXPECT() *MockQueueServiceMockRecorder {
 }
 
 // GetSubmissionID mocks base method.
-func (m *MockQueueService) GetSubmissionID(tx *database.DB, messageID string) (int64, error) {
+func (m *MockQueueService) GetSubmissionID(tx database.Database, messageID string) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSubmissionID", tx, messageID)
 	ret0, _ := ret[0].(int64)
@@ -1334,7 +1334,7 @@ func (mr *MockQueueServiceMockRecorder) PublishHandshake() *gomock.Call {
 }
 
 // PublishSubmission mocks base method.
-func (m *MockQueueService) PublishSubmission(tx *database.DB, submissionID, submissionResultID int64) error {
+func (m *MockQueueService) PublishSubmission(tx database.Database, submissionID, submissionResultID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PublishSubmission", tx, submissionID, submissionResultID)
 	ret0, _ := ret[0].(error)

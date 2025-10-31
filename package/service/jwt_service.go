@@ -25,9 +25,9 @@ const (
 )
 
 type JWTService interface {
-	GenerateTokens(tx *database.DB, userId int64) (*schemas.JWTTokens, error)
-	RefreshTokens(tx *database.DB, refreshToken string) (*schemas.JWTTokens, error)
-	AuthenticateToken(tx *database.DB, tokenString string) (*schemas.ValidateTokenResponse, error)
+	GenerateTokens(tx database.Database, userId int64) (*schemas.JWTTokens, error)
+	RefreshTokens(tx database.Database, refreshToken string) (*schemas.JWTTokens, error)
+	AuthenticateToken(tx database.Database, tokenString string) (*schemas.ValidateTokenResponse, error)
 }
 
 type jwtService struct {
@@ -103,7 +103,7 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 }
 
 // GenerateTokens creates both access and refresh tokens for a user
-func (j *jwtService) GenerateTokens(tx *database.DB, userId int64) (*schemas.JWTTokens, error) {
+func (j *jwtService) GenerateTokens(tx database.Database, userId int64) (*schemas.JWTTokens, error) {
 	user, err := j.userRepository.Get(tx, userId)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
@@ -185,7 +185,7 @@ func (j *jwtService) validateRefreshToken(tokenString string) (*schemas.JWTClaim
 }
 
 // RefreshTokens generates new tokens using a valid refresh token
-func (j *jwtService) RefreshTokens(tx *database.DB, refreshToken string) (*schemas.JWTTokens, error) {
+func (j *jwtService) RefreshTokens(tx database.Database, refreshToken string) (*schemas.JWTTokens, error) {
 	claims, err := j.validateRefreshToken(refreshToken)
 	if err != nil {
 		j.logger.Errorf("Error validating refresh token: %v", err)
@@ -196,7 +196,7 @@ func (j *jwtService) RefreshTokens(tx *database.DB, refreshToken string) (*schem
 }
 
 // AuthenticateToken validates a token and returns user information
-func (j *jwtService) AuthenticateToken(tx *database.DB, tokenString string) (*schemas.ValidateTokenResponse, error) {
+func (j *jwtService) AuthenticateToken(tx database.Database, tokenString string) (*schemas.ValidateTokenResponse, error) {
 	claims, err := j.validateAccessToken(tokenString)
 	if err != nil {
 		j.logger.Errorf("Error validating access token: %v", err)

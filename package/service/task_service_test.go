@@ -3,7 +3,7 @@ package service_test
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/mini-maxit/backend/internal/database"
+	"gorm.io/gorm"
 	"os"
 	"testing"
 
@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func addDescription(t *testing.T, zipWriter *zip.Writer) {
@@ -112,7 +111,7 @@ func createTestArchive(t *testing.T, caseType string) string {
 }
 
 func TestCreateTask(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
@@ -163,7 +162,7 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestGetTaskByTitle(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -200,7 +199,7 @@ func TestGetTaskByTitle(t *testing.T) {
 }
 
 func TestGetAllTasks(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -241,7 +240,7 @@ func TestGetAllTasks(t *testing.T) {
 }
 
 func TestGetTask(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -326,7 +325,7 @@ func TestGetTask(t *testing.T) {
 }
 
 func TestAssignTaskToUsers(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -375,7 +374,7 @@ func TestAssignTaskToUsers(t *testing.T) {
 }
 
 func TestAssignTaskToGroups(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -434,7 +433,7 @@ func TestAssignTaskToGroups(t *testing.T) {
 }
 
 func TestGetAllAssignedTasks(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -483,7 +482,7 @@ func TestGetAllAssignedTasks(t *testing.T) {
 }
 
 func TestDeleteTask(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -516,7 +515,7 @@ func TestDeleteTask(t *testing.T) {
 }
 
 func TestEditTask(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -556,7 +555,7 @@ func TestEditTask(t *testing.T) {
 }
 
 func TestTaskGetAllForGroup(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -615,7 +614,7 @@ func TestTaskGetAllForGroup(t *testing.T) {
 }
 
 func TestGetAllCreatedTasks(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -729,7 +728,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 }
 
 func TestUnAssignTaskFromUsers(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -771,7 +770,7 @@ func TestUnAssignTaskFromUsers(t *testing.T) {
 }
 
 func TestUnAssignTaskFromGroups(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -816,7 +815,7 @@ func TestUnAssignTaskFromGroups(t *testing.T) {
 }
 
 func TestCreateTestCase(t *testing.T) {
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -950,7 +949,7 @@ func TestGetLimits(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	taskID := int64(1)
 
@@ -981,7 +980,7 @@ func TestPutLimit(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	taskID := int64(1)
 	ioID := int64(1)

@@ -6,13 +6,13 @@ import (
 )
 
 type File interface {
-	Create(tx *database.DB, file *models.File) error
+	Create(tx database.Database, file *models.File) error
 }
 
 type file struct {
 }
 
-func (f *file) Create(tx *database.DB, file *models.File) error {
+func (f *file) Create(tx database.Database, file *models.File) error {
 	err := tx.Model(models.File{}).Create(&file).Error()
 	if err != nil {
 		return err

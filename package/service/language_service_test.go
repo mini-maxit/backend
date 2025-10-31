@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/testutils"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 var trueValue = true
@@ -24,7 +23,7 @@ func TestLanguageServiceInit(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	workerLanguages := schemas.HandShakeResponsePayload{
 		Languages: []struct {
@@ -212,7 +211,7 @@ func TestLanguageServiceGetAll(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("Success with languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{
@@ -259,7 +258,7 @@ func TestLanguageServiceGetAllEnabled(t *testing.T) {
 
 	lr := mock_repository.NewMockLanguageRepository(ctrl)
 	ls := service.NewLanguageService(lr)
-	tx := database.NewDB(&gorm.DB{})
+	tx := &testutils.MockDatabase{}
 
 	t.Run("Success with enabled languages", func(t *testing.T) {
 		languages := []models.LanguageConfig{

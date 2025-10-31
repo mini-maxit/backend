@@ -11,59 +11,59 @@ import (
 
 type SubmissionRepository interface {
 	// Create creates a new submission and returns the submission ID.
-	Create(tx *database.DB, submission *models.Submission) (int64, error)
+	Create(tx database.Database, submission *models.Submission) (int64, error)
 	// GetAll returns all submissions. The submissions are paginated.
-	GetAll(tx *database.DB, limit, offset int, sort string) ([]models.Submission, error)
+	GetAll(tx database.Database, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUser returns all submissions by a user. The submissions are paginated.
-	GetAllByUser(tx *database.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUser(tx database.Database, userID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
-	GetAllForGroup(tx *database.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForGroup(tx database.Database, groupID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTask returns all submissions for a task. The submissions are paginated.
-	GetAllForTask(tx *database.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTask(tx database.Database, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
-	GetAllForTaskByUser(tx *database.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTaskByUser(tx database.Database, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
-	GetAllForContest(tx *database.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForContest(tx database.Database, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
-	GetAllByUserForContest(tx *database.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContest(tx database.Database, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
-	GetAllByUserForTask(tx *database.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTask(tx database.Database, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForContestAndTask returns all submissions by a user for a specific contest and task. The submissions are paginated.
-	GetAllByUserForContestAndTask(tx *database.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestAndTask(tx database.Database, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
-	GetAllForTeacher(tx *database.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTeacher(tx database.Database, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForTeacher returns all submissions by a specific user, filtered to only include submissions
 	// for tasks created by the teacher. The submissions are paginated.
-	GetAllByUserForTeacher(tx *database.DB, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTeacher(tx database.Database, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForTaskByTeacher returns all submissions by a user for a specific task,
 	// filtered to only include submissions where the teacher created the task. The submissions are paginated.
-	GetAllByUserForTaskByTeacher(tx *database.DB, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTaskByTeacher(tx database.Database, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForContestByTeacher returns all submissions by a user for a specific contest,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestByTeacher(tx *database.DB, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestByTeacher(tx database.Database, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUserForContestAndTaskByTeacher returns all submissions by a user for a specific contest and task,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestAndTaskByTeacher(tx *database.DB, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestAndTaskByTeacher(tx database.Database, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
-	GetLatestForTaskByUser(tx *database.DB, taskID, userID int64) (*models.Submission, error)
+	GetLatestForTaskByUser(tx database.Database, taskID, userID int64) (*models.Submission, error)
 	// Get returns a submission by its ID.
-	Get(tx *database.DB, submissionID int64) (*models.Submission, error)
+	Get(tx database.Database, submissionID int64) (*models.Submission, error)
 	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
-	GetBestScoreForTaskByUser(tx *database.DB, taskID, userID int64) (*float64, error)
+	GetBestScoreForTaskByUser(tx database.Database, taskID, userID int64) (*float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
-	GetAttemptCountForTaskByUser(tx *database.DB, taskID, userID int64) (int, error)
+	GetAttemptCountForTaskByUser(tx database.Database, taskID, userID int64) (int, error)
 	// MarkEvaluated marks a submission as evaluated.
-	MarkEvaluated(tx *database.DB, submissionID int64) error
+	MarkEvaluated(tx database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed.
-	MarkFailed(db *database.DB, submissionID int64, errorMsg string) error
+	MarkFailed(db database.Database, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
-	MarkProcessing(tx *database.DB, submissionID int64) error
+	MarkProcessing(tx database.Database, submissionID int64) error
 }
 
 type submissionRepository struct{}
 
-func (us *submissionRepository) GetAll(tx *database.DB, limit, offset int, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAll(tx database.Database, limit, offset int, sort string) ([]models.Submission, error) {
 	submissions := []models.Submission{}
 	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 
@@ -81,7 +81,7 @@ func (us *submissionRepository) GetAll(tx *database.DB, limit, offset int, sort 
 }
 
 func (us *submissionRepository) GetAllForTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	limit, offset int,
 	sort string,
@@ -105,7 +105,7 @@ func (us *submissionRepository) GetAllForTeacher(
 	return submissions, nil
 }
 
-func (us *submissionRepository) Get(tx *database.DB, submissionID int64) (*models.Submission, error) {
+func (us *submissionRepository) Get(tx database.Database, submissionID int64) (*models.Submission, error) {
 	var submission models.Submission
 	err := tx.Where("id = ?", submissionID).
 		Preload("Language").
@@ -122,7 +122,7 @@ func (us *submissionRepository) Get(tx *database.DB, submissionID int64) (*model
 }
 
 func (us *submissionRepository) GetAllByUser(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	limit, offset int,
 	sort string,
@@ -145,7 +145,7 @@ func (us *submissionRepository) GetAllByUser(
 }
 
 func (us *submissionRepository) GetAllForGroup(
-	tx *database.DB,
+	tx database.Database,
 	groupID int64,
 	limit, offset int,
 	sort string,
@@ -171,7 +171,7 @@ func (us *submissionRepository) GetAllForGroup(
 }
 
 func (us *submissionRepository) GetAllForGroupTeacher(
-	tx *database.DB,
+	tx database.Database,
 	groupID, userID int64,
 	limit, offset int,
 	sort string,
@@ -197,7 +197,7 @@ func (us *submissionRepository) GetAllForGroupTeacher(
 }
 
 func (us *submissionRepository) GetAllForTask(
-	tx *database.DB,
+	tx database.Database,
 	taskID int64,
 	limit, offset int,
 	sort string,
@@ -221,7 +221,7 @@ func (us *submissionRepository) GetAllForTask(
 }
 
 func (us *submissionRepository) GetAllForTaskTeacher(
-	tx *database.DB,
+	tx database.Database,
 	taskID, userID int64,
 	limit, offset int,
 	sort string,
@@ -245,7 +245,7 @@ func (us *submissionRepository) GetAllForTaskTeacher(
 }
 
 func (us *submissionRepository) GetAllForTaskStudent(
-	tx *database.DB,
+	tx database.Database,
 	taskID, studentID int64,
 	limit, offset int,
 	sort string,
@@ -267,7 +267,7 @@ func (us *submissionRepository) GetAllForTaskStudent(
 	return submissions, nil
 }
 
-func (us *submissionRepository) Create(tx *database.DB, submission *models.Submission) (int64, error) {
+func (us *submissionRepository) Create(tx database.Database, submission *models.Submission) (int64, error) {
 	err := tx.Create(submission).Error()
 	if err != nil {
 		return 0, err
@@ -275,17 +275,17 @@ func (us *submissionRepository) Create(tx *database.DB, submission *models.Submi
 	return submission.ID, nil
 }
 
-func (us *submissionRepository) MarkProcessing(tx *database.DB, submissionID int64) error {
+func (us *submissionRepository) MarkProcessing(tx database.Database, submissionID int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusSentForEvaluation}).Error()
 	return err
 }
 
-func (us *submissionRepository) MarkEvaluated(tx *database.DB, submissionID int64) error {
+func (us *submissionRepository) MarkEvaluated(tx database.Database, submissionID int64) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusEvaluated, CheckedAt: time.Now()}).Error()
 	return err
 }
 
-func (us *submissionRepository) MarkFailed(tx *database.DB, submissionID int64, errorMsg string) error {
+func (us *submissionRepository) MarkFailed(tx database.Database, submissionID int64, errorMsg string) error {
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{
 		Status:        types.SubmissionStatusEvaluated,
 		StatusMessage: errorMsg,
@@ -295,7 +295,7 @@ func (us *submissionRepository) MarkFailed(tx *database.DB, submissionID int64, 
 }
 
 func (us *submissionRepository) GetAllForTaskByUser(
-	tx *database.DB,
+	tx database.Database,
 	taskID, userID int64,
 	limit, offset int,
 	sort string,
@@ -318,7 +318,7 @@ func (us *submissionRepository) GetAllForTaskByUser(
 }
 
 func (sr *submissionRepository) GetLatestForTaskByUser(
-	tx *database.DB,
+	tx database.Database,
 	taskID, userID int64,
 ) (*models.Submission, error) {
 	submission := models.Submission{}
@@ -332,7 +332,7 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 	return &submission, nil
 }
 
-func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *database.DB, taskID, userID int64) (*float64, error) {
+func (sr *submissionRepository) GetBestScoreForTaskByUser(tx database.Database, taskID, userID int64) (*float64, error) {
 	var bestScore *float64
 
 	// Query to get the best score (highest percentage of passed tests)
@@ -360,7 +360,7 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *database.DB, taskI
 	return bestScore, nil
 }
 
-func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *database.DB, taskID, userID int64) (int, error) {
+func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx database.Database, taskID, userID int64) (int, error) {
 	var count int64
 
 	err := tx.Model(&models.Submission{}).
@@ -375,7 +375,7 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *database.DB, ta
 }
 
 func (us *submissionRepository) GetAllForContest(
-	tx *database.DB,
+	tx database.Database,
 	contestID int64,
 	limit, offset int,
 	sort string,
@@ -399,7 +399,7 @@ func (us *submissionRepository) GetAllForContest(
 }
 
 func (us *submissionRepository) GetAllByUserForContest(
-	tx *database.DB,
+	tx database.Database,
 	userID, contestID int64,
 	limit, offset int,
 	sort string,
@@ -423,7 +423,7 @@ func (us *submissionRepository) GetAllByUserForContest(
 }
 
 func (us *submissionRepository) GetAllByUserForTask(
-	tx *database.DB,
+	tx database.Database,
 	userID, taskID int64,
 	limit, offset int,
 	sort string,
@@ -447,7 +447,7 @@ func (us *submissionRepository) GetAllByUserForTask(
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTask(
-	tx *database.DB,
+	tx database.Database,
 	userID, contestID, taskID int64,
 	limit, offset int,
 	sort string,
@@ -471,7 +471,7 @@ func (us *submissionRepository) GetAllByUserForContestAndTask(
 }
 
 func (us *submissionRepository) GetAllByUserForTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID, teacherID int64,
 	limit, offset int,
 	sort string,
@@ -497,7 +497,7 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForTaskByTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,
@@ -522,7 +522,7 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForContestByTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID, contestID, teacherID int64,
 	limit, offset int,
 	sort string,
@@ -548,7 +548,7 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID, contestID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,

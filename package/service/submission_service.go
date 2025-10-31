@@ -21,39 +21,39 @@ import (
 
 type SubmissionService interface {
 	// Create creates a new submission for a given task, user, language, and order.
-	Create(tx *database.DB, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error)
+	Create(tx database.Database, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error)
 	// CreateSubmissionResult creates a new submission result based on the response message.
-	CreateSubmissionResult(tx *database.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
+	CreateSubmissionResult(tx database.Database, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
-	GetAll(tx *database.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
+	GetAll(tx database.Database, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForGroup retrieves all submissions for a specific group based on the user's role and query parameters.
-	GetAllForGroup(tx *database.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForGroup(tx database.Database, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
-	GetAllForTask(tx *database.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForTask(tx database.Database, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
-	GetAllForContest(tx *database.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForContest(tx database.Database, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *database.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForUser(tx database.Database, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUserShort retrieves a short version of all submissions for a specific user
 	// based on the current user's role and query parameters.
 	GetAllForUserShort(
-		tx *database.DB,
+		tx database.Database,
 		userID int64,
 		user schemas.User,
 		queryParams map[string]any,
 	) ([]schemas.SubmissionShort, error)
 	// GetAvailableLanguages retrieves all available languages.
-	GetAvailableLanguages(tx *database.DB) ([]schemas.LanguageConfig, error)
+	GetAvailableLanguages(tx database.Database) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
-	Get(tx *database.DB, submissionID int64, user schemas.User) (schemas.Submission, error)
+	Get(tx database.Database, submissionID int64, user schemas.User) (schemas.Submission, error)
 	// MarkComplete marks a submission as complete.
-	MarkComplete(tx *database.DB, submissionID int64) error
+	MarkComplete(tx database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed with an error message.
-	MarkFailed(tx *database.DB, submissionID int64, errorMsg string) error
+	MarkFailed(tx database.Database, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
-	MarkProcessing(tx *database.DB, submissionID int64) error
+	MarkProcessing(tx database.Database, submissionID int64) error
 	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
-	Submit(tx *database.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
+	Submit(tx database.Database, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
@@ -76,7 +76,7 @@ type submissionService struct {
 }
 
 func (ss *submissionService) GetAll(
-	tx *database.DB,
+	tx database.Database,
 	user schemas.User,
 	userID, taskID, contestID *int64,
 	paginationParams schemas.PaginationParams,
@@ -103,7 +103,7 @@ func (ss *submissionService) GetAll(
 }
 
 func (ss *submissionService) getFilteredSubmissions(
-	tx *database.DB,
+	tx database.Database,
 	user schemas.User,
 	userID, contestID, taskID *int64,
 	paginationParams schemas.PaginationParams,
@@ -146,7 +146,7 @@ func (ss *submissionService) getFilteredSubmissions(
 }
 
 func (ss *submissionService) fetchSubmissionsByFiltersForTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID, teacherID int64,
 	contestID, taskID *int64,
 	limit, offset int,
@@ -163,7 +163,7 @@ func (ss *submissionService) fetchSubmissionsByFiltersForTeacher(
 }
 
 func (ss *submissionService) fetchSubmissionsByFilters(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	contestID, taskID *int64,
 	limit, offset int,
@@ -180,7 +180,7 @@ func (ss *submissionService) fetchSubmissionsByFilters(
 }
 
 func (ss *submissionService) getUnfilteredSubmissions(
-	tx *database.DB,
+	tx database.Database,
 	user schemas.User,
 	paginationParams schemas.PaginationParams,
 ) ([]models.Submission, error) {
@@ -216,7 +216,7 @@ func (ss *submissionService) modelsToSchemas(submissionModels []models.Submissio
 	return result
 }
 
-func (ss *submissionService) Get(tx *database.DB, submissionID int64, user schemas.User) (schemas.Submission, error) {
+func (ss *submissionService) Get(tx database.Database, submissionID int64, user schemas.User) (schemas.Submission, error) {
 	submissionModel, err := ss.submissionRepository.Get(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission: %v", err.Error())
@@ -244,7 +244,7 @@ func (ss *submissionService) Get(tx *database.DB, submissionID int64, user schem
 }
 
 func (ss *submissionService) GetAllForUser(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	currentUser schemas.User,
 	queryParams map[string]any,
@@ -289,7 +289,7 @@ func (ss *submissionService) GetAllForUser(
 }
 
 func (ss *submissionService) GetAllForUserShort(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	currentUser schemas.User,
 	queryParams map[string]any,
@@ -321,7 +321,7 @@ func (ss *submissionService) GetAllForUserShort(
 }
 
 func (ss *submissionService) GetAllForGroup(
-	tx *database.DB,
+	tx database.Database,
 	groupID int64,
 	user schemas.User,
 	queryParams map[string]any,
@@ -370,7 +370,7 @@ func (ss *submissionService) GetAllForGroup(
 }
 
 func (ss *submissionService) GetAllForTask(
-	tx *database.DB,
+	tx database.Database,
 	taskID int64,
 	user schemas.User,
 	queryParams map[string]any,
@@ -421,7 +421,7 @@ func (ss *submissionService) GetAllForTask(
 }
 
 func (ss *submissionService) GetAllForContest(
-	tx *database.DB,
+	tx database.Database,
 	contestID int64,
 	user schemas.User,
 	queryParams map[string]any,
@@ -468,7 +468,7 @@ func (ss *submissionService) GetAllForContest(
 	return result, nil
 }
 
-func (ss *submissionService) MarkFailed(tx *database.DB, submissionID int64, errorMsg string) error {
+func (ss *submissionService) MarkFailed(tx database.Database, submissionID int64, errorMsg string) error {
 	err := ss.submissionRepository.MarkFailed(tx, submissionID, errorMsg)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission failed: %v", err.Error())
@@ -478,7 +478,7 @@ func (ss *submissionService) MarkFailed(tx *database.DB, submissionID int64, err
 	return nil
 }
 
-func (ss *submissionService) MarkComplete(tx *database.DB, submissionID int64) error {
+func (ss *submissionService) MarkComplete(tx database.Database, submissionID int64) error {
 	err := ss.submissionRepository.MarkEvaluated(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
@@ -488,7 +488,7 @@ func (ss *submissionService) MarkComplete(tx *database.DB, submissionID int64) e
 	return nil
 }
 
-func (ss *submissionService) MarkProcessing(tx *database.DB, submissionID int64) error {
+func (ss *submissionService) MarkProcessing(tx database.Database, submissionID int64) error {
 	err := ss.submissionRepository.MarkProcessing(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission processing: %v", err.Error())
@@ -499,7 +499,7 @@ func (ss *submissionService) MarkProcessing(tx *database.DB, submissionID int64)
 }
 
 func (ss *submissionService) Create(
-	tx *database.DB,
+	tx database.Database,
 	taskID int64,
 	userID int64,
 	languageID int64,
@@ -528,7 +528,7 @@ func (ss *submissionService) Create(
 }
 
 func (ss *submissionService) CreateSubmissionResult(
-	tx *database.DB,
+	tx database.Database,
 	submissionID int64,
 	responseMessage schemas.QueueResponseMessage,
 ) (int64, error) {
@@ -588,7 +588,7 @@ func (ss *submissionService) CreateSubmissionResult(
 	return submissionResult.ID, nil
 }
 
-func (ss *submissionService) GetAvailableLanguages(tx *database.DB) ([]schemas.LanguageConfig, error) {
+func (ss *submissionService) GetAvailableLanguages(tx database.Database) ([]schemas.LanguageConfig, error) {
 	languages, err := ss.languageService.GetAllEnabled(tx)
 	if err != nil {
 		ss.logger.Errorf("Error getting all languages: %v", err.Error())
@@ -599,7 +599,7 @@ func (ss *submissionService) GetAvailableLanguages(tx *database.DB) ([]schemas.L
 }
 
 func (ss *submissionService) Submit(
-	tx *database.DB,
+	tx database.Database,
 	user *schemas.User,
 	taskID, languageID int64,
 	contestID *int64, // null means no contest
@@ -670,7 +670,7 @@ func (ss *submissionService) Submit(
 }
 
 // creates blank submission result for the submission together with testResults
-func (ss *submissionService) createSubmissionResult(tx *database.DB, submissionID int64) (int64, error) {
+func (ss *submissionService) createSubmissionResult(tx database.Database, submissionID int64) (int64, error) {
 	submissionResult := models.SubmissionResult{
 		SubmissionID: submissionID,
 		Code:         types.SubmissionResultCodeUnknown,

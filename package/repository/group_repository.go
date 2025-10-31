@@ -7,33 +7,33 @@ import (
 
 type GroupRepository interface {
 	// AddUser adds user to group. If user already belongs to group, returns error
-	AddUser(tx *database.DB, groupID int64, userID int64) error
+	AddUser(tx database.Database, groupID int64, userID int64) error
 	// Create new group
-	Create(tx *database.DB, group *models.Group) (int64, error)
+	Create(tx database.Database, group *models.Group) (int64, error)
 	// Delete group by id
-	Delete(tx *database.DB, groupID int64) error
+	Delete(tx database.Database, groupID int64) error
 	// DeleteUser deletes user from group. If user does not belong to group, returns error
-	DeleteUser(tx *database.DB, groupID int64, userID int64) error
+	DeleteUser(tx database.Database, groupID int64, userID int64) error
 	// Edit group by id, replace all fields with values from function argument
-	Edit(tx *database.DB, groupID int64, group *models.Group) (*models.Group, error)
+	Edit(tx database.Database, groupID int64, group *models.Group) (*models.Group, error)
 	// Get group by id
-	Get(tx *database.DB, groupID int64) (*models.Group, error)
+	Get(tx database.Database, groupID int64) (*models.Group, error)
 	// GetAll returns all groups with pagination and sorting
-	GetAll(tx *database.DB, offset int, limit int, sort string) ([]models.Group, error)
+	GetAll(tx database.Database, offset int, limit int, sort string) ([]models.Group, error)
 	// GetAllForTeacher returns all groups created by teacher with pagination and sorting
-	GetAllForTeacher(tx *database.DB, teacherID int64, offset int, limit int, sort string) ([]models.Group, error)
+	GetAllForTeacher(tx database.Database, teacherID int64, offset int, limit int, sort string) ([]models.Group, error)
 	// GetTasks returns all tasks assigned to group
-	GetTasks(tx *database.DB, groupID int64) ([]models.Task, error)
+	GetTasks(tx database.Database, groupID int64) ([]models.Task, error)
 	// GetUsers returns all users that belong to group
-	GetUsers(tx *database.DB, groupID int64) ([]models.User, error)
+	GetUsers(tx database.Database, groupID int64) ([]models.User, error)
 	// UserBelongsTo checks if user belongs to group
-	UserBelongsTo(tx *database.DB, groupID int64, userID int64) (bool, error)
+	UserBelongsTo(tx database.Database, groupID int64, userID int64) (bool, error)
 }
 
 type groupRepository struct {
 }
 
-func (gr *groupRepository) Create(tx *database.DB, group *models.Group) (int64, error) {
+func (gr *groupRepository) Create(tx database.Database, group *models.Group) (int64, error) {
 	err := tx.Create(group).Error()
 	if err != nil {
 		return 0, err
@@ -41,7 +41,7 @@ func (gr *groupRepository) Create(tx *database.DB, group *models.Group) (int64, 
 	return group.ID, nil
 }
 
-func (gr *groupRepository) Get(tx *database.DB, groupID int64) (*models.Group, error) {
+func (gr *groupRepository) Get(tx database.Database, groupID int64) (*models.Group, error) {
 	var group models.Group
 	err := tx.Where("id = ?", groupID).Preload("Tasks").Preload("Users").First(&group).Error()
 	if err != nil {
@@ -50,7 +50,7 @@ func (gr *groupRepository) Get(tx *database.DB, groupID int64) (*models.Group, e
 	return &group, nil
 }
 
-func (gr *groupRepository) Delete(tx *database.DB, groupID int64) error {
+func (gr *groupRepository) Delete(tx database.Database, groupID int64) error {
 	err := tx.Where("id = ?", groupID).Delete(&models.Group{}).Error()
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (gr *groupRepository) Delete(tx *database.DB, groupID int64) error {
 	return nil
 }
 
-func (gr *groupRepository) Edit(tx *database.DB, groupID int64, group *models.Group) (*models.Group, error) {
+func (gr *groupRepository) Edit(tx database.Database, groupID int64, group *models.Group) (*models.Group, error) {
 	err := tx.Model(&models.Group{}).Where("id = ?", groupID).Updates(group).Error()
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (gr *groupRepository) Edit(tx *database.DB, groupID int64, group *models.Gr
 	return gr.Get(tx, groupID)
 }
 
-func (gr *groupRepository) GetAll(tx *database.DB, offset int, limit int, sort string) ([]models.Group, error) {
+func (gr *groupRepository) GetAll(tx database.Database, offset int, limit int, sort string) ([]models.Group, error) {
 	var groups []models.Group
 	tx = tx.ApplyPaginationAndSort(limit, offset, sort)
 	err := tx.Model(&models.Group{}).Find(&groups).Error()
@@ -78,7 +78,7 @@ func (gr *groupRepository) GetAll(tx *database.DB, offset int, limit int, sort s
 }
 
 func (gr *groupRepository) GetAllForTeacher(
-	tx *database.DB,
+	tx database.Database,
 	userID int64,
 	offset, limit int,
 	sort string,
@@ -97,7 +97,7 @@ func (gr *groupRepository) GetAllForTeacher(
 	return groups, nil
 }
 
-func (gr *groupRepository) GetUsers(tx *database.DB, groupID int64) ([]models.User, error) {
+func (gr *groupRepository) GetUsers(tx database.Database, groupID int64) ([]models.User, error) {
 	var users []models.User
 	err := tx.Model(&models.User{}).
 		Join("JOIN", &models.UserGroup{}, "user_groups.user_id = users.id").
@@ -109,7 +109,7 @@ func (gr *groupRepository) GetUsers(tx *database.DB, groupID int64) ([]models.Us
 	return users, nil
 }
 
-func (gr *groupRepository) AddUser(tx *database.DB, groupID int64, userID int64) error {
+func (gr *groupRepository) AddUser(tx database.Database, groupID int64, userID int64) error {
 	userGroup := &models.UserGroup{
 		GroupID: groupID,
 		UserID:  userID,
@@ -121,12 +121,12 @@ func (gr *groupRepository) AddUser(tx *database.DB, groupID int64, userID int64)
 	return nil
 }
 
-func (gr *groupRepository) DeleteUser(tx *database.DB, groupID int64, userID int64) error {
+func (gr *groupRepository) DeleteUser(tx database.Database, groupID int64, userID int64) error {
 	err := tx.Where("group_id = ? AND user_id = ?", groupID, userID).Delete(&models.UserGroup{}).Error()
 	return err
 }
 
-func (gr *groupRepository) UserBelongsTo(tx *database.DB, groupID int64, userID int64) (bool, error) {
+func (gr *groupRepository) UserBelongsTo(tx database.Database, groupID int64, userID int64) (bool, error) {
 	var count int64
 	err := tx.Model(&models.UserGroup{}).
 		Where("group_id = ? AND user_id = ?", groupID, userID).
@@ -138,7 +138,7 @@ func (gr *groupRepository) UserBelongsTo(tx *database.DB, groupID int64, userID 
 }
 
 // TODO: refactor this, maybe this should be in task repository.
-func (gr *groupRepository) GetTasks(tx *database.DB, groupID int64) ([]models.Task, error) {
+func (gr *groupRepository) GetTasks(tx database.Database, groupID int64) ([]models.Task, error) {
 	group := &models.Group{}
 	err := tx.
 		Where("id = ?", groupID).
