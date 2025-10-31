@@ -636,7 +636,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router			/contests/{id}/available-tasks [get]
+//	@Router			/contests/{id}/tasks/assignable-tasks [get]
 func (cr *ContestRouteImpl) GetAvailableTasksForContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -996,7 +996,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	})
 
 	mux.HandleFunc("/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
-	mux.HandleFunc("/{id}/available-tasks", contestRoute.GetAvailableTasksForContest)
+	mux.HandleFunc("/{id}/tasks/assignable-tasks", contestRoute.GetAvailableTasksForContest)
 	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
