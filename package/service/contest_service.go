@@ -35,6 +35,8 @@ type ContestService interface {
 	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
+	// GetAvailableTasksForContest retrieves all tasks NOT assigned to a contest (for authorized users)
+	GetAvailableTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
@@ -443,6 +445,44 @@ func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser sch
 			UpdatedAt:    task.UpdatedAt,
 			BestScore:    bestScore,
 			AttemptCount: attemptCount,
+		}
+	}
+	return result, nil
+}
+
+func (cs *contestService) GetAvailableTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Only admins and teachers can see available tasks for adding to contest
+	err = utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
+	if err != nil {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	// Additional check: user must be the contest creator (for teachers)
+	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	tasks, err := cs.contestRepository.GetAvailableTasksForContest(tx, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.Task, len(tasks))
+	for i, task := range tasks {
+		result[i] = schemas.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
 		}
 	}
 	return result, nil

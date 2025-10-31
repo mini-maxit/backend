@@ -44,6 +44,8 @@ type ContestRepository interface {
 	GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
+	// GetAvailableTasksForContest retrieves all tasks NOT assigned to a contest
+	GetAvailableTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
@@ -386,6 +388,21 @@ func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID,
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
+		Find(&tasks).Error
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (cr *contestRepository) GetAvailableTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
+	var tasks []models.Task
+	err := tx.Model(&models.Task{}).
+		Where("id NOT IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.ContestTask{})).
+				Select("task_id").
+				Where("contest_id = ?", contestID),
+		).
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
