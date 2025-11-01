@@ -44,8 +44,8 @@ type ContestRepository interface {
 	GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
-	// GetAvailableTasksForContest retrieves all tasks NOT assigned to a contest
-	GetAvailableTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
+	// GetAssignableTasks retrieves all tasks NOT assigned to a contest
+	GetAssignableTasks(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
@@ -395,7 +395,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID,
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetAvailableTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetAssignableTasks(tx *gorm.DB, contestID int64) ([]models.Task, error) {
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Where("id NOT IN (?)",

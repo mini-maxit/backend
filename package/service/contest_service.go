@@ -35,8 +35,8 @@ type ContestService interface {
 	GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
-	// GetAvailableTasksForContest retrieves all tasks NOT assigned to a contest (for authorized users)
-	GetAvailableTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
+	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (for authorized users)
+	GetAssignableTasks(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
@@ -450,7 +450,7 @@ func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser sch
 	return result, nil
 }
 
-func (cs *contestService) GetAvailableTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+func (cs *contestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -470,7 +470,7 @@ func (cs *contestService) GetAvailableTasksForContest(tx *gorm.DB, currentUser s
 		return nil, myerrors.ErrNotAuthorized
 	}
 
-	tasks, err := cs.contestRepository.GetAvailableTasksForContest(tx, contestID)
+	tasks, err := cs.contestRepository.GetAssignableTasks(tx, contestID)
 	if err != nil {
 		return nil, err
 	}

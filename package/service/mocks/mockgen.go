@@ -130,19 +130,19 @@ func (mr *MockContestServiceMockRecorder) Get(tx, currentUser, contestID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContestService)(nil).Get), tx, currentUser, contestID)
 }
 
-// GetAvailableTasksForContest mocks base method.
-func (m *MockContestService) GetAvailableTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+// GetAssignableTasks mocks base method.
+func (m *MockContestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAvailableTasksForContest", tx, currentUser, contestID)
+	ret := m.ctrl.Call(m, "GetAssignableTasks", tx, currentUser, contestID)
 	ret0, _ := ret[0].([]schemas.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAvailableTasksForContest indicates an expected call of GetAvailableTasksForContest.
-func (mr *MockContestServiceMockRecorder) GetAvailableTasksForContest(tx, currentUser, contestID any) *gomock.Call {
+// GetAssignableTasks indicates an expected call of GetAssignableTasks.
+func (mr *MockContestServiceMockRecorder) GetAssignableTasks(tx, currentUser, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableTasksForContest", reflect.TypeOf((*MockContestService)(nil).GetAvailableTasksForContest), tx, currentUser, contestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestService)(nil).GetAssignableTasks), tx, currentUser, contestID)
 }
 
 // GetOngoingContests mocks base method.

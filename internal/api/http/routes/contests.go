@@ -29,7 +29,7 @@ type ContestRoute interface {
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetContestTasks(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
-	GetAvailableTasksForContest(w http.ResponseWriter, r *http.Request)
+	GetAssignableTasks(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
 	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
@@ -622,7 +622,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
-// GetAvailableTasksForContest godoc
+// GetAssignableTasks godoc
 //
 //	@Tags			contest
 //	@Summary		Get available tasks for a contest
@@ -637,7 +637,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
 //	@Router			/contests/{id}/tasks/assignable-tasks [get]
-func (cr *ContestRouteImpl) GetAvailableTasksForContest(w http.ResponseWriter, r *http.Request) {
+func (cr *ContestRouteImpl) GetAssignableTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -664,7 +664,7 @@ func (cr *ContestRouteImpl) GetAvailableTasksForContest(w http.ResponseWriter, r
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	tasks, err := cr.contestService.GetAvailableTasksForContest(tx, currentUser, contestID)
+	tasks, err := cr.contestService.GetAssignableTasks(tx, currentUser, contestID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -996,7 +996,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	})
 
 	mux.HandleFunc("/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
-	mux.HandleFunc("/{id}/tasks/assignable-tasks", contestRoute.GetAvailableTasksForContest)
+	mux.HandleFunc("/{id}/tasks/assignable-tasks", contestRoute.GetAssignableTasks)
 	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
