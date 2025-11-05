@@ -796,7 +796,49 @@ paths:
       summary: Register a user
       tags:
       - auth
-  /contests/:
+  /contests:
+    get:
+      description: Get global contests accessible to the (ongoing, upcoming, past)
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      - description: Contest status
+        enum:
+        - ongoing
+        - upcoming
+        - past
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-AvailableContest'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get global contests
+      tags:
+      - global-contests
     post:
       consumes:
       - application/json
@@ -1259,93 +1301,6 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Get tasks for a contest with submission statistics
-      tags:
-      - contest
-  /contests/ongoing:
-    get:
-      description: Get contests that are currently running with pagination
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-AvailableContest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get ongoing contests
-      tags:
-      - contest
-  /contests/past:
-    get:
-      description: Get contests that have ended with pagination
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-AvailableContest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get past contests
-      tags:
-      - contest
-  /contests/upcoming:
-    get:
-      description: Get contests that haven't started yet with pagination
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-AvailableContest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get upcoming contests
       tags:
       - contest
   /groups/:
