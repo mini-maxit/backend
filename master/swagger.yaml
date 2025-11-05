@@ -131,6 +131,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-array_Contest:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Contest'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-array_Group:
     properties:
       data:
@@ -1182,6 +1191,44 @@ paths:
       summary: Get available tasks for a contest
       tags:
       - contests-management
+  /contests-management/contests/created:
+    get:
+      description: Get all contests created by the currently authenticated user
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contests created by the current user
+      tags:
+      - contests-management
   /contests/{id}:
     get:
       description: Get contest details by ID
@@ -1263,6 +1310,50 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Register for a contest
+      tags:
+      - contests
+  /contests/{id}/tasks/{task_id}:
+    get:
+      description: Get detailed information about a specific task within a contest
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-TaskDetailed'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get a specific task from a contest
       tags:
       - contests
   /contests/{id}/tasks/user-statistics:
