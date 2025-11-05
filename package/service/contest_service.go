@@ -500,13 +500,13 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 		if err != nil {
 			return schemas.UserContestsWithStats{}, err
 		}
-		
+
 		// Merge created contests with participated contests, avoiding duplicates
 		contestMap := make(map[int64]bool)
 		for _, contest := range contestsWithStats {
 			contestMap[contest.ID] = true
 		}
-		
+
 		for _, contest := range createdContests {
 			if !contestMap[contest.ID] {
 				contestsWithStats = append(contestsWithStats, contest)
