@@ -1365,6 +1365,20 @@ func (mr *MockQueueServiceMockRecorder) GetSubmissionID(tx, messageID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSubmissionID", reflect.TypeOf((*MockQueueService)(nil).GetSubmissionID), tx, messageID)
 }
 
+// IsConnected mocks base method.
+func (m *MockQueueService) IsConnected() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsConnected")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsConnected indicates an expected call of IsConnected.
+func (mr *MockQueueServiceMockRecorder) IsConnected() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConnected", reflect.TypeOf((*MockQueueService)(nil).IsConnected))
+}
+
 // LastWorkerStatus mocks base method.
 func (m *MockQueueService) LastWorkerStatus() schemas.WorkerStatus {
 	m.ctrl.T.Helper()
@@ -1421,6 +1435,20 @@ func (mr *MockQueueServiceMockRecorder) PublishWorkerStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWorkerStatus", reflect.TypeOf((*MockQueueService)(nil).PublishWorkerStatus))
 }
 
+// Reconnect mocks base method.
+func (m *MockQueueService) Reconnect() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reconnect")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Reconnect indicates an expected call of Reconnect.
+func (mr *MockQueueServiceMockRecorder) Reconnect() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconnect", reflect.TypeOf((*MockQueueService)(nil).Reconnect))
+}
+
 // RetryPendingSubmissions mocks base method.
 func (m *MockQueueService) RetryPendingSubmissions(db *gorm.DB) error {
 	m.ctrl.T.Helper()
@@ -1433,6 +1461,18 @@ func (m *MockQueueService) RetryPendingSubmissions(db *gorm.DB) error {
 func (mr *MockQueueServiceMockRecorder) RetryPendingSubmissions(db any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryPendingSubmissions", reflect.TypeOf((*MockQueueService)(nil).RetryPendingSubmissions), db)
+}
+
+// SetConnectionNotifyCallback mocks base method.
+func (m *MockQueueService) SetConnectionNotifyCallback(callback func(bool)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetConnectionNotifyCallback", callback)
+}
+
+// SetConnectionNotifyCallback indicates an expected call of SetConnectionNotifyCallback.
+func (mr *MockQueueServiceMockRecorder) SetConnectionNotifyCallback(callback any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionNotifyCallback", reflect.TypeOf((*MockQueueService)(nil).SetConnectionNotifyCallback), callback)
 }
 
 // StatusCond mocks base method.
@@ -1501,6 +1541,21 @@ func (m *MockWorkerService) EXPECT() *MockWorkerServiceMockRecorder {
 	return m.recorder
 }
 
+// GetQueueStatus mocks base method.
+func (m *MockWorkerService) GetQueueStatus(currentUser schemas.User) (*schemas.QueueStatus, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQueueStatus", currentUser)
+	ret0, _ := ret[0].(*schemas.QueueStatus)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetQueueStatus indicates an expected call of GetQueueStatus.
+func (mr *MockWorkerServiceMockRecorder) GetQueueStatus(currentUser any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueueStatus", reflect.TypeOf((*MockWorkerService)(nil).GetQueueStatus), currentUser)
+}
+
 // GetStatus mocks base method.
 func (m *MockWorkerService) GetStatus(currentUser schemas.User) (*schemas.WorkerStatus, error) {
 	m.ctrl.T.Helper()
@@ -1514,4 +1569,18 @@ func (m *MockWorkerService) GetStatus(currentUser schemas.User) (*schemas.Worker
 func (mr *MockWorkerServiceMockRecorder) GetStatus(currentUser any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockWorkerService)(nil).GetStatus), currentUser)
+}
+
+// ReconnectQueue mocks base method.
+func (m *MockWorkerService) ReconnectQueue(currentUser schemas.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReconnectQueue", currentUser)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReconnectQueue indicates an expected call of ReconnectQueue.
+func (mr *MockWorkerServiceMockRecorder) ReconnectQueue(currentUser any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconnectQueue", reflect.TypeOf((*MockWorkerService)(nil).ReconnectQueue), currentUser)
 }

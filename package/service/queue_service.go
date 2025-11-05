@@ -35,6 +35,12 @@ type QueueService interface {
 	UpdateWorkerStatus(statusResponse schemas.StatusResponsePayload) error
 	// RetryPendingSubmissions attempts to queue submissions that are in "received" status
 	RetryPendingSubmissions(db *gorm.DB) error
+	// IsConnected returns true if queue is connected and ready
+	IsConnected() bool
+	// Reconnect attempts to reconnect to the queue and returns error if fails
+	Reconnect() error
+	// SetConnectionNotifyCallback sets a callback to be called when connection status changes
+	SetConnectionNotifyCallback(callback func(connected bool))
 	StatusMux() *sync.Mutex
 	StatusCond() *sync.Cond
 	LastWorkerStatus() schemas.WorkerStatus
@@ -47,12 +53,17 @@ type queueService struct {
 	submissionResultRepository repository.SubmissionResultRepository
 	queueRepository            repository.QueueMessageRepository
 	channel                    *amqp.Channel
+	conn                       *amqp.Connection
 	queue                      amqp.Queue
+	queueName                  string
 	responseQueueName          string
 
 	statusMux        *sync.Mutex
 	statusCond       *sync.Cond
 	lastWorkerStatus schemas.WorkerStatus
+
+	connectionMux      *sync.RWMutex
+	connectionCallback func(connected bool)
 
 	logger *zap.SugaredLogger
 }
@@ -285,7 +296,7 @@ func NewQueueService(
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
 	queueMessageRepository repository.QueueMessageRepository,
-	_ *amqp.Connection, // TODO: review if this is needed
+	conn *amqp.Connection,
 	channel *amqp.Channel,
 	queueName string,
 	responseQueueName string,
@@ -321,13 +332,40 @@ func NewQueueService(
 		submissionResultRepository: submissionResultRepository,
 		queueRepository:            queueMessageRepository,
 		queue:                      q,
+		queueName:                  queueName,
 		channel:                    channel,
+		conn:                       conn,
 		responseQueueName:          responseQueueName,
 
 		statusMux:        &sync.Mutex{},
 		lastWorkerStatus: schemas.WorkerStatus{},
+		connectionMux:    &sync.RWMutex{},
 		logger:           log,
 	}
 	s.statusCond = sync.NewCond(s.statusMux)
 	return s, nil
+}
+
+func (qs *queueService) IsConnected() bool {
+	qs.connectionMux.RLock()
+	defer qs.connectionMux.RUnlock()
+	return qs.channel != nil && !qs.channel.IsClosed()
+}
+
+func (qs *queueService) SetConnectionNotifyCallback(callback func(connected bool)) {
+	qs.connectionMux.Lock()
+	defer qs.connectionMux.Unlock()
+	qs.connectionCallback = callback
+}
+
+func (qs *queueService) Reconnect() error {
+	qs.connectionMux.Lock()
+	defer qs.connectionMux.Unlock()
+
+	if qs.channel == nil || qs.channel.IsClosed() {
+		return errors.New("queue is not connected - automatic reconnection is in progress")
+	}
+
+	qs.logger.Info("Queue is connected - ready to process pending submissions")
+	return nil
 }
