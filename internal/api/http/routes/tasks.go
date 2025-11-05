@@ -17,8 +17,7 @@ import (
 )
 
 type TaskRoute interface {
-	GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
-	GetAllForGroup(w http.ResponseWriter, r *http.Request)
+	GetMyTasks(w http.ResponseWriter, r *http.Request)
 	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
 }
@@ -39,7 +38,16 @@ type groupsRequest struct {
 	GroupIDs []int64 `json:"groupIDs"`
 }
 
-func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request) {
+// GetMyTasks godoc
+//
+//	@Tags			tasks
+//	@Summary		Get my assigned tasks
+//	@Description	Returns all tasks assigned to the current user
+//	@Produce		json
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
+//	@Router			/tasks/my [get]
+func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -74,12 +82,13 @@ func (tr *taskRoute) GetAllAssignedTasks(w http.ResponseWriter, r *http.Request)
 // GetAllTasks godoc
 //
 //	@Tags			task
-//	@Summary		Get all tasks
+//	@Summary		Get all globally available tasks
 //	@Description	Returns all tasks
 //	@Produce		json
 //	@Failure		500	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router			/tasks/ [get]
+//	@Router			/tasks [get]
 func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -175,70 +184,6 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
-// GetAllForGroup godoc
-//
-//	@Tags			task
-//	@Summary		Get all tasks for a group
-//	@Description	Returns all tasks for a group by ID
-//	@Produce		json
-//	@Param			id	path		int	true	"Group ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router			/tasks/groups/{id} [get]
-func (tr *taskRoute) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	groupIDStr := httputils.GetPathValue(r, "id")
-
-	if groupIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
-		return
-	}
-
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	tasks, err := tr.taskService.GetAllForGroup(tx, currentUser, groupID, queryParams)
-	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		} else {
-			tr.logger.Errorw("Failed to get tasks for group", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task service temporarily unavailable")
-		return
-	}
-
-	if tasks == nil {
-		tasks = []schemas.Task{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, tasks)
-}
-
 func NewTaskRoute(taskService service.TaskService) TaskRoute {
 	route := &taskRoute{
 		taskService: taskService,
@@ -254,7 +199,7 @@ func NewTaskRoute(taskService service.TaskService) TaskRoute {
 }
 
 func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			route.GetAllTasks(w, r)
@@ -262,7 +207,7 @@ func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			route.GetTask(w, r)
@@ -270,6 +215,5 @@ func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	// mux.HandleFunc("/group/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/assigned", route.GetAllAssignedTasks)
+	mux.HandleFunc("/tasks/my", route.GetMyTasks)
 }

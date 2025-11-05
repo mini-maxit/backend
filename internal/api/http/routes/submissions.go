@@ -471,7 +471,7 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			taskID		formData	int		true	"Task ID"
-//	@Param			contestID	formData	int		false "Contest ID"
+//	@Param			contestID	formData	int		false	"Contest ID"
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Success		200			{object}	map[string]int64

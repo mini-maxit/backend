@@ -96,7 +96,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
 	secureMux.PathPrefix("/tasks-management/").Handler(http.StripPrefix("/tasks-management", tasksManagementMux))
-	secureMux.PathPrefix("/tasks/").Handler(http.StripPrefix("/tasks", taskMux))
+	secureMux.PathPrefix("/tasks/").Handler(taskMux)
 	secureMux.PathPrefix("/submissions/").Handler(http.StripPrefix("/submissions", subbmissionMux))
 	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))
 	secureMux.PathPrefix("/groups/").Handler(http.StripPrefix("/groups", groupMux))

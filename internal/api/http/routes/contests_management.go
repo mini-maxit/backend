@@ -38,7 +38,7 @@ type contestsManagementRouteImpl struct {
 
 // CreateContest godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Create a contest
 //	@Description	Create a new contest
 //	@Accept			json
@@ -49,7 +49,7 @@ type contestsManagementRouteImpl struct {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.IDResponse]
-//	@Router   /contests-management/contests [post]
+//	@Router			/contests-management/contests [post]
 func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -96,7 +96,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 
 // EditContest godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Edit a contest
 //	@Description	Edit contest details
 //	@Accept			json
@@ -109,7 +109,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[schemas.Contest]
-//	@Router   /contests-management/contests/{id} [put]
+//	@Router			/contests-management/contests/{id} [put]
 func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -169,7 +169,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 
 // DeleteContest godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Delete a contest
 //	@Description	Delete a contest by ID
 //	@Produce		json
@@ -180,7 +180,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router   /contests-management/contests/{id} [delete]
+//	@Router			/contests-management/contests/{id} [delete]
 func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -228,7 +228,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 
 // GetAssignableTasks godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Get available tasks for a contest
 //	@Description	Get all tasks that are NOT yet assigned to the specified contest (admin/teacher only)
 //
@@ -240,7 +240,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router   /contests-management/contests/{id}/tasks/assignable-tasks [get]
+//	@Router			/contests-management/contests/{id}/tasks/assignable-tasks [get]
 func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -287,7 +287,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 
 // AddTaskToContest godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Add a task to a contest
 //	@Description	Add an existing task to a specific contest
 //	@Accept			json
@@ -300,7 +300,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router   /contests-management/contests/{id}/tasks [post]
+//	@Router			/contests-management/contests/{id}/tasks [post]
 func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -359,7 +359,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 
 // GetRegistrationRequests godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Get registration requests for a contest
 //	@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
 //	@Produce		json
@@ -371,7 +371,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
-//	@Router   /contests-management/contests/{id}/registration-requests [get]
+//	@Router			/contests-management/contests/{id}/registration-requests [get]
 func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -483,20 +483,21 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 }
 
 // RejectRegistrationRequest godoc
-// @Tags   contests-management
+//
+//	@Tags			contests-management
 //
 //	@Summary		Reject a registration request
 //	@Description	Reject a pending registration request for a contest (only accessible by contest creator or admin)
 //
-// @Produce		json
-// @Param			id		path		int		true	"Contest ID"
-// @Param			user_id	path		int		true	"User ID"
-// @Failure		400		{object}	httputils.APIError
-// @Failure		403		{object}	httputils.APIError
-// @Failure		404		{object}	httputils.APIError
-// @Failure		405		{object}	httputils.APIError
-// @Failure		500		{object}	httputils.APIError
-// @Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			user_id	path		int	true	"User ID"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -551,7 +552,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 
 // GetContestTasks godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Get tasks for a contest
 //	@Description	Get all tasks associated with a specific contest
 //
@@ -563,7 +564,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router   /contests-management/contests/{id}/tasks [get]
+//	@Router			/contests-management/contests/{id}/tasks [get]
 func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -610,7 +611,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 
 // GetContestSubmissions godoc
 //
-//	@Tags   contests-management
+//	@Tags			contests-management
 //	@Summary		Get submissions for a contest
 //	@Description	Get all submissions for a specific contest. Only accessible by teachers (contest creators) and admins.
 //	@Accept			json
@@ -624,7 +625,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
-//	@Router   /contests-management/contests/{id}/submissions [get]
+//	@Router			/contests-management/contests/{id}/submissions [get]
 func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
