@@ -66,7 +66,7 @@ type teacherRouteImpl struct {
 
 // GetManageableContests godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Get contests treated by teacher
 //	@Destription	Get all contests created or owned by the authenticated teacher
 //	@Produce		json
@@ -76,7 +76,7 @@ type teacherRouteImpl struct {
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Contest]
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management/contests [get]
+//	@Router			/teacher/contests [get]
 func (tr *teacherRouteImpl) GetManageableContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -114,7 +114,7 @@ func (tr *teacherRouteImpl) GetManageableContests(w http.ResponseWriter, r *http
 
 // GetContestManagement godoc
 //
-//	@Tags			teacher
+//	@Tags		    contests-management
 //	@Summary		Get contest details
 //	@Destription	Get details of a specific contest created by teacher
 //	@Produce		json
@@ -125,7 +125,7 @@ func (tr *teacherRouteImpl) GetManageableContests(w http.ResponseWriter, r *http
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id} [get]
+//	@Router			/teacher/contests/{id} [get]
 func (tr *teacherRouteImpl) GetContestManagement(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -171,7 +171,7 @@ func (tr *teacherRouteImpl) GetContestManagement(w http.ResponseWriter, r *http.
 
 // CreateContest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		treate contest
 //	@Destription	Create a new contest
 //	@Accept			json
@@ -181,7 +181,7 @@ func (tr *teacherRouteImpl) GetContestManagement(w http.ResponseWriter, r *http.
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management [post]
+//	@Router			/teacher/contests [post]
 func (tr *teacherRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -228,7 +228,7 @@ func (tr *teacherRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 
 // EditContest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Edit contest
 //	@Destription	Edit an existing contest
 //	@Accept			json
@@ -241,7 +241,7 @@ func (tr *teacherRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id} [put]
+//	@Router			/teacher/contests/{id} [put]
 func (tr *teacherRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -301,7 +301,7 @@ func (tr *teacherRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 
 // DeleteContest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Delete contest
 //	@Destription	Delete a contest
 //	@Produce		json
@@ -312,7 +312,7 @@ func (tr *teacherRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) 
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id} [delete]
+//	@Router			/teacher/contests/{id} [delete]
 func (tr *teacherRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -360,7 +360,7 @@ func (tr *teacherRouteImpl) DeleteContest(w http.ResponseWriter, r *http.Request
 
 // GetContestSubmissions godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Get contest submissions
 //	@Destription	Get all submissions for a contest
 //	@Produce		json
@@ -430,7 +430,7 @@ func (tr *teacherRouteImpl) GetContestSubmissions(w http.ResponseWriter, r *http
 
 // GetContestTasks godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Get contest tasks
 //	@Destription	Get all tasks for a specific contest
 //	@Produce		json
@@ -441,7 +441,7 @@ func (tr *teacherRouteImpl) GetContestSubmissions(w http.ResponseWriter, r *http
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id}/tasks [get]
+//	@Router			/teacher/contests/{id}/tasks [get]
 func (tr *teacherRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -491,7 +491,7 @@ func (tr *teacherRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Reque
 
 // AddTaskToContest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Add task to contest
 //	@Destription	Add a task to a contest
 //	@Accept			json
@@ -504,7 +504,7 @@ func (tr *teacherRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Reque
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id}/tasks [post]
+//	@Router			/teacher/contests/{id}/tasks [post]
 func (tr *teacherRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -563,7 +563,7 @@ func (tr *teacherRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 
 // GetContestRegistrationRequests godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Get registration requests
 //	@Destription	Get all registration requests for a contest
 //	@Produce		json
@@ -574,7 +574,7 @@ func (tr *teacherRouteImpl) AddTaskToContest(w http.ResponseWriter, r *http.Requ
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id}/registration-requests [get]
+//	@Router			/teacher/contests/{id}/registration-requests [get]
 func (tr *teacherRouteImpl) GetContestRegistrationRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -635,7 +635,7 @@ func (tr *teacherRouteImpl) GetContestRegistrationRequests(w http.ResponseWriter
 
 // ApproveContestRegistrationRequest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Approve registration request
 //	@Destription	Approve a registration request for a contest
 //	@Produce		json
@@ -647,7 +647,7 @@ func (tr *teacherRouteImpl) GetContestRegistrationRequests(w http.ResponseWriter
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id}/registration-requests/{user_id}/approve [post]
+//	@Router			/teacher/contests/{id}/registration-requests/{user_id}/approve [post]
 func (tr *teacherRouteImpl) ApproveContestRegistrationRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -702,7 +702,7 @@ func (tr *teacherRouteImpl) ApproveContestRegistrationRequest(w http.ResponseWri
 
 // RejectContestRegistrationRequest godoc
 //
-//	@Tags			teacher
+//	@Tags			contests-management
 //	@Summary		Reject registration request
 //	@Destription	Reject a registration request for a contest
 //	@Produce		json
@@ -714,7 +714,7 @@ func (tr *teacherRouteImpl) ApproveContestRegistrationRequest(w http.ResponseWri
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/contests-management/{id}/registration-requests/{user_id}/reject [post]
+//	@Router			/teacher/contests/{id}/registration-requests/{user_id}/reject [post]
 func (tr *teacherRouteImpl) RejectContestRegistrationRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -769,7 +769,7 @@ func (tr *teacherRouteImpl) RejectContestRegistrationRequest(w http.ResponseWrit
 
 // GetTasksManagement godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Get tasks treated by teacher
 //	@Destription	Get all tasks created by the authenticated teacher
 //	@Produce		json
@@ -779,7 +779,7 @@ func (tr *teacherRouteImpl) RejectContestRegistrationRequest(w http.ResponseWrit
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Task]
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management [get]
+//	@Router			/teacher/tasks [get]
 func (tr *teacherRouteImpl) GetTasksManagement(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -814,7 +814,7 @@ func (tr *teacherRouteImpl) GetTasksManagement(w http.ResponseWriter, r *http.Re
 
 // GetTaskManagement godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Get task details
 //	@Destription	Get details of a specific task created by teacher
 //	@Produce		json
@@ -825,7 +825,7 @@ func (tr *teacherRouteImpl) GetTasksManagement(w http.ResponseWriter, r *http.Re
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id} [get]
+//	@Router			/teacher/tasks/{id} [get]
 func (tr *teacherRouteImpl) GetTaskManagement(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -875,7 +875,7 @@ func (tr *teacherRouteImpl) GetTaskManagement(w http.ResponseWriter, r *http.Req
 
 // CreateTask godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		treate task
 //	@Destription	Create a new task
 //	@Accept			multipart/form-data
@@ -885,7 +885,7 @@ func (tr *teacherRouteImpl) GetTaskManagement(w http.ResponseWriter, r *http.Req
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management [post]
+//	@Router			/teacher/tasks [post]
 func (tr *teacherRouteImpl) CreateTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -899,7 +899,7 @@ func (tr *teacherRouteImpl) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 // EditTask godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Edit task
 //	@Destription	Edit an existing task
 //	@Accept			multipart/form-data
@@ -912,7 +912,7 @@ func (tr *teacherRouteImpl) CreateTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id} [patch]
+//	@Router			/teacher/tasks/{id} [patch]
 func (tr *teacherRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -964,7 +964,7 @@ func (tr *teacherRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 
 // DeleteTask godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Delete task
 //	@Destription	Delete a task
 //	@Produce		json
@@ -975,7 +975,7 @@ func (tr *teacherRouteImpl) EditTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id} [delete]
+//	@Router			/teacher/tasks/{id} [delete]
 func (tr *teacherRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1025,7 +1025,7 @@ func (tr *teacherRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 // AssignTaskToUsers godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Assign task to users
 //	@Destription	Assign a task to specific users
 //	@Accept			json
@@ -1038,7 +1038,7 @@ func (tr *teacherRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/assign/users [post]
+//	@Router			/teacher/tasks/{id}/assign/users [post]
 func (tr *teacherRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1103,7 +1103,7 @@ func (tr *teacherRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Req
 
 // AssignTaskToGroups godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Assign task to groups
 //	@Destription	Assign a task to specific groups
 //	@Accept			json
@@ -1116,7 +1116,7 @@ func (tr *teacherRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Req
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/assign/groups [post]
+//	@Router			/teacher/tasks/{id}/assign/groups [post]
 func (tr *teacherRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1181,7 +1181,7 @@ func (tr *teacherRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Re
 
 // UnAssignTaskFromUsers godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Unassign task from users
 //	@Destription	Unassign a task from specific users
 //	@Accept			json
@@ -1194,7 +1194,7 @@ func (tr *teacherRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Re
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/unassign/users [post]
+//	@Router			/teacher/tasks/{id}/unassign/users [post]
 func (tr *teacherRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1256,7 +1256,7 @@ func (tr *teacherRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http
 
 // UnAssignTaskFromGroups godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Unassign task from groups
 //	@Destription	Unassign a task from specific groups
 //	@Accept			json
@@ -1269,7 +1269,7 @@ func (tr *teacherRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/unassign/groups [post]
+//	@Router			/teacher/tasks/{id}/unassign/groups [post]
 func (tr *teacherRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1331,7 +1331,7 @@ func (tr *teacherRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *htt
 
 // GetTaskLimits godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Get task limits
 //	@Destription	Get resource limits for a task
 //	@Produce		json
@@ -1342,7 +1342,7 @@ func (tr *teacherRouteImpl) UnAssignTaskFromGroups(w http.ResponseWriter, r *htt
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/limits [get]
+//	@Router			/teacher/tasks/{id}/limits [get]
 func (tr *teacherRouteImpl) GetTaskLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1387,7 +1387,7 @@ func (tr *teacherRouteImpl) GetTaskLimits(w http.ResponseWriter, r *http.Request
 
 // PutTaskLimits godoc
 //
-//	@Tags			teacher
+//	@Tags			tasks-management
 //	@Summary		Set task limits
 //	@Destription	Set resource limits for a task
 //	@Accept			json
@@ -1400,7 +1400,7 @@ func (tr *teacherRouteImpl) GetTaskLimits(w http.ResponseWriter, r *http.Request
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/tasks-management/{id}/limits [put]
+//	@Router			/teacher/tasks/{id}/limits [put]
 func (tr *teacherRouteImpl) PutTaskLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1460,7 +1460,7 @@ func (tr *teacherRouteImpl) PutTaskLimits(w http.ResponseWriter, r *http.Request
 
 // GetGroupsManagement godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Get groups managed by teacher
 //	@Destription	Get all groups created or managed by the authenticated teacher
 //	@Produce		json
@@ -1470,7 +1470,7 @@ func (tr *teacherRouteImpl) PutTaskLimits(w http.ResponseWriter, r *http.Request
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Group]
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/groups-management [get]
+//	@Router			/teacher/groups [get]
 func (tr *teacherRouteImpl) GetGroupsManagement(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1505,7 +1505,7 @@ func (tr *teacherRouteImpl) GetGroupsManagement(w http.ResponseWriter, r *http.R
 
 // GetGroupManagement godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Get group details
 //	@Destription	Get details of a specific group managed by teacher
 //	@Produce		json
@@ -1516,7 +1516,7 @@ func (tr *teacherRouteImpl) GetGroupsManagement(w http.ResponseWriter, r *http.R
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id} [get]
+//	@Router			/teacher/groups/{id} [get]
 func (tr *teacherRouteImpl) GetGroupManagement(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1566,7 +1566,7 @@ func (tr *teacherRouteImpl) GetGroupManagement(w http.ResponseWriter, r *http.Re
 
 // CreateGroup godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		treate group
 //	@Destription	Create a new group
 //	@Accept			json
@@ -1576,14 +1576,14 @@ func (tr *teacherRouteImpl) GetGroupManagement(w http.ResponseWriter, r *http.Re
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/groups-management [post]
+//	@Router			/teacher/groups [post]
 func (tr *teacherRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "treate group endpoint - implementation needed")
 }
 
 // EditGroup godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Edit group
 //	@Destription	Edit an existing group
 //	@Accept			json
@@ -1596,14 +1596,14 @@ func (tr *teacherRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) 
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id} [patch]
+//	@Router			/teacher/groups/{id} [patch]
 func (tr *teacherRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Edit group endpoint - implementation needed")
 }
 
 // AddUsersToGroup godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Add users to group
 //	@Destription	Add users to a group
 //	@Accept			json
@@ -1616,14 +1616,14 @@ func (tr *teacherRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id}/users [post]
+//	@Router			/teacher/groups/{id}/users [post]
 func (tr *teacherRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Add users to group endpoint - implementation needed")
 }
 
 // DeleteUsersFromGroup godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Delete users from group
 //	@Destription	Delete users from a group
 //	@Accept			json
@@ -1636,14 +1636,14 @@ func (tr *teacherRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Reque
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id}/users [delete]
+//	@Router			/teacher/groups/{id}/users [delete]
 func (tr *teacherRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Delete users from group endpoint - implementation needed")
 }
 
 // GetGroupUsers godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Get group users
 //	@Destription	Get all users in a group
 //	@Produce		json
@@ -1654,14 +1654,14 @@ func (tr *teacherRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id}/users [get]
+//	@Router			/teacher/groups/{id}/users [get]
 func (tr *teacherRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnError(w, http.StatusNotImplemented, "Get group users endpoint - implementation needed")
 }
 
 // GetGroupTasks godoc
 //
-//	@Tags			teacher
+//	@Tags			groups-management
 //	@Summary		Get group tasks
 //	@Destription	Get all tasks assigned to a group
 //	@Produce		json
@@ -1672,7 +1672,7 @@ func (tr *teacherRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Router			/teacher/groups-management/{id}/tasks [get]
+//	@Router			/teacher/groups/{id}/tasks [get]
 func (tr *teacherRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -1727,7 +1727,7 @@ func (tr *teacherRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request
 
 // GetAssignableTasksToContest godoc
 //
-//	@Tags			contest
+//	@Tags			contests-management
 //	@Summary		Get available tasks for a contest
 //	@Destription	Get all tasks that are NOT yet assigned to the specified contest (admin/teacher only)
 //
@@ -1739,7 +1739,7 @@ func (tr *teacherRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
-//	@Router			/contests/{id}/tasks/assignable-tasks [get]
+//	@Router			/teacher/contests/{id}/tasks/assignable-tasks [get]
 func (tr *teacherRouteImpl) GetAssignableTasksToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
