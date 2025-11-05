@@ -838,7 +838,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get global contests
       tags:
-      - global-contests
+      - contests
+  /contests-management/contests:
     post:
       consumes:
       - application/json
@@ -875,8 +876,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Create a contest
       tags:
-      - contest
-  /contests/{id}:
+      - contests-management
+  /contests-management/contests/{id}:
     delete:
       description: Delete a contest by ID
       parameters:
@@ -914,45 +915,7 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Delete a contest
       tags:
-      - contest
-    get:
-      description: Get contest details by ID
-      parameters:
-      - description: Contest ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-Contest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get a contest
-      tags:
-      - contest
+      - contests-management
     put:
       consumes:
       - application/json
@@ -998,52 +961,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Edit a contest
       tags:
-      - contest
-  /contests/{id}/register:
-    post:
-      description: Create a pending registration for a contest (requires contest creator
-        approval)
-      parameters:
-      - description: Contest ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Register for a contest
-      tags:
-      - contest
-  /contests/{id}/registration-requests:
+      - contests-management
+  /contests-management/contests/{id}/registration-requests:
     get:
       description: Get all pending registration requests for a specific contest (only
         accessible by contest creator or admin)
@@ -1087,8 +1006,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get registration requests for a contest
       tags:
-      - contest
-  /contests/{id}/submissions:
+      - contests-management
+  /contests-management/contests/{id}/submissions:
     get:
       consumes:
       - application/json
@@ -1137,8 +1056,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get submissions for a contest
       tags:
-      - contest
-  /contests/{id}/tasks:
+      - contests-management
+  /contests-management/contests/{id}/tasks:
     get:
       description: Get all tasks associated with a specific contest
       parameters:
@@ -1176,7 +1095,7 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get tasks for a contest
       tags:
-      - contest
+      - contests-management
     post:
       consumes:
       - application/json
@@ -1222,8 +1141,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Add a task to a contest
       tags:
-      - contest
-  /contests/{id}/tasks/assignable-tasks:
+      - contests-management
+  /contests-management/contests/{id}/tasks/assignable-tasks:
     get:
       description: Get all tasks that are NOT yet assigned to the specified contest
         (admin/teacher only)
@@ -1262,7 +1181,90 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get available tasks for a contest
       tags:
-      - contest
+      - contests-management
+  /contests/{id}:
+    get:
+      description: Get contest details by ID
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Contest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get a contest
+      tags:
+      - contests
+  /contests/{id}/register:
+    post:
+      description: Create a pending registration for a contest (requires contest creator
+        approval)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Register for a contest
+      tags:
+      - contests
   /contests/{id}/tasks/user-statistics:
     get:
       description: Get tasks associated with a specific contest including best score
@@ -1302,7 +1304,42 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Get tasks for a contest with submission statistics
       tags:
-      - contest
+      - contests
+  /contests/my:
+    get:
+      description: Get contests for a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-UserContestsWithStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contests for a user
+      tags:
+      - contests
   /groups/:
     get:
       description: Get all groups
@@ -1565,7 +1602,7 @@ paths:
       summary: Add users to a group
       tags:
       - group
-  /submissions/:
+  /submissions:
     get:
       description: Get submissions with optional filters by userId, contestId, and/or
         taskId. Students can only view their own submissions. Teachers can view submissions
@@ -1700,6 +1737,45 @@ paths:
       summary: Get all available languages
       tags:
       - submission
+  /submissions/my:
+    get:
+      description: If the user is a student, it fails with 403 Forbidden.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all submissions for a user
+      tags:
+      - submission
   /submissions/submit:
     post:
       consumes:
@@ -1808,6 +1884,10 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: Sort order
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -1830,46 +1910,7 @@ paths:
       summary: Get all submissions for a user
       tags:
       - submission
-  /submissions/users/{id}/short:
-    get:
-      description: If the user is a student, it fails with 403 Forbidden.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Limit the number of returned submissions
-        in: query
-        name: limit
-        type: integer
-      - description: Offset the returned submissions
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-Submission'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get all submissions for a user
-      tags:
-      - submission
-  /tasks/:
+  /tasks:
     get:
       description: Returns all tasks
       produces:
@@ -1879,13 +1920,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/APIResponse-Task'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get all tasks
+      summary: Get all globally available tasks
       tags:
       - task
+  /tasks-management/tasks/:
     post:
       consumes:
       - multipart/form-data
@@ -1922,8 +1968,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Upload a task
       tags:
-      - task
-  /tasks/{id}:
+      - tasks-management
+  /tasks-management/tasks/{id}:
     delete:
       description: Deletes a task by ID
       parameters:
@@ -1957,41 +2003,7 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Delete a task
       tags:
-      - task
-    get:
-      description: Returns a task by ID
-      parameters:
-      - description: Task ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-TaskDetailed'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get a task
-      tags:
-      - task
+      - tasks-management
     patch:
       description: Updates a task by ID
       parameters:
@@ -2033,8 +2045,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Update a task
       tags:
-      - task
-  /tasks/{id}/assign/groups:
+      - tasks-management
+  /tasks-management/tasks/{id}/assign/groups:
     post:
       description: Assigns a task to groups by task ID and group IDs
       parameters:
@@ -2076,8 +2088,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Assign a task to groups
       tags:
-      - task
-  /tasks/{id}/assign/users:
+      - tasks-management
+  /tasks-management/tasks/{id}/assign/users:
     post:
       description: Assigns a task to users by task ID and user IDs
       parameters:
@@ -2119,8 +2131,8 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Assign a task to users
       tags:
-      - task
-  /tasks/{id}/limits:
+      - tasks-management
+  /tasks-management/tasks/{id}/limits:
     get:
       description: Gets task limits by task ID
       parameters:
@@ -2150,7 +2162,7 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Gets task limits
       tags:
-      - task
+      - tasks-management
     put:
       description: Updates task limits by task ID
       parameters:
@@ -2186,9 +2198,9 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Updates task limits
       tags:
-      - task
-  /tasks/{id}/unassign/groups:
-    delete:
+      - tasks-management
+  /tasks-management/tasks/{id}/unassign/groups:
+    post:
       description: Unassigns a task from groups by task ID and group IDs
       parameters:
       - description: Task ID
@@ -2229,9 +2241,9 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Unassign a task from groups
       tags:
-      - task
-  /tasks/{id}/unassign/users:
-    delete:
+      - tasks-management
+  /tasks-management/tasks/{id}/unassign/users:
+    post:
       description: Unassigns a task from users by task ID and user IDs
       parameters:
       - description: Task ID
@@ -2272,12 +2284,50 @@ paths:
             $ref: '#/definitions/APIError'
       summary: Unassign a task from users
       tags:
-      - task
-  /tasks/groups/{id}:
+      - tasks-management
+  /tasks-management/tasks/created:
     get:
-      description: Returns all tasks for a group by ID
+      description: Gets all tasks created by the current user
       parameters:
-      - description: Group ID
+      - description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - description: Limit for pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Task'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all created tasks
+      tags:
+      - tasks-management
+  /tasks/{id}:
+    get:
+      description: Returns a task by ID
+      parameters:
+      - description: Task ID
         in: path
         name: id
         required: true
@@ -2288,7 +2338,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-TaskDetailed'
         "400":
           description: Bad Request
           schema:
@@ -2305,9 +2355,26 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get all tasks for a group
+      summary: Get a task
       tags:
       - task
+  /tasks/my:
+    get:
+      description: Returns all tasks assigned to the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Task'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get my assigned tasks
+      tags:
+      - tasks
   /users/:
     get:
       description: Get all users
@@ -2419,41 +2486,6 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Edit user
-      tags:
-      - user
-  /users/{id}/contests:
-    get:
-      description: Get contests for a user
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-UserContestsWithStats'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get contests for a user
       tags:
       - user
   /users/{id}/password:
