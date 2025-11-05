@@ -14,6 +14,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/initialization"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
@@ -63,38 +64,40 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	authMux := mux.NewRouter()
 	routes.RegisterAuthRoute(authMux, init.AuthRoute)
 
-	// Task routes
-	taskMux := mux.NewRouter()
-	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
-
-	// User routes
-	userMux := mux.NewRouter()
-	routes.RegisterUserRoutes(userMux, init.UserRoute)
-
-	// Submission routes
-	subbmissionMux := mux.NewRouter()
-	routes.RegisterSubmissionRoutes(subbmissionMux, init.SubmissionRoute)
-
-	// Group routes
-	groupMux := mux.NewRouter()
-	routes.RegisterGroupRoutes(groupMux, init.GroupRoute)
-
-	// Contest routes
-	contestMux := mux.NewRouter()
-	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
-
 	// Worker routes
 	workerMux := mux.NewRouter()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
 
+	// Role-specific routes
+	studentMux := mux.NewRouter()
+	routes.RegisterStudentRoutes(studentMux, init.StudentRoute)
+
+	teacherMux := mux.NewRouter()
+	routes.RegisterTeacherRoutes(teacherMux, init.TeacherRoute)
+
+	adminMux := mux.NewRouter()
+	routes.RegisterAdminRoutes(adminMux, init.AdminRoute)
+
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
-	secureMux.PathPrefix("/tasks/").Handler(http.StripPrefix("/tasks", taskMux))
-	secureMux.PathPrefix("/submissions/").Handler(http.StripPrefix("/submissions", subbmissionMux))
-	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))
-	secureMux.PathPrefix("/groups/").Handler(http.StripPrefix("/groups", groupMux))
-	secureMux.PathPrefix("/contests/").Handler(http.StripPrefix("/contests", contestMux))
 	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
+
+	// Role-based routes with role-specific middleware
+	secureMux.PathPrefix("/student/").Handler(
+		http.StripPrefix("/student",
+			middleware.RequireMinimalRole(studentMux, types.UserRoleStudent),
+		),
+	)
+	secureMux.PathPrefix("/teacher/").Handler(
+		http.StripPrefix("/teacher",
+			middleware.RequireMinimalRole(teacherMux, types.UserRoleTeacher),
+		),
+	)
+	secureMux.PathPrefix("/admin/").Handler(
+		http.StripPrefix("/admin",
+			middleware.RequireMinimalRole(adminMux, types.UserRoleAdmin),
+		),
+	)
 
 	// API routes
 	apiMux := mux.NewRouter()

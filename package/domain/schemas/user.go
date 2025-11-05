@@ -37,3 +37,7 @@ type UserChangePassword struct {
 	NewPassword        string `json:"newPassword" validate:"required,password,gte=8,lte=50"`
 	NewPasswordConfirm string `json:"newPasswordConfirm" validate:"required,eqfield=NewPassword,gte=8,lte=50"`
 }
+
+type UsersRequest struct {
+	UserIDs []int64 `json:"userIDs"`
+}

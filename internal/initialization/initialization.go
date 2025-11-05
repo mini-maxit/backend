@@ -26,13 +26,14 @@ type Initialization struct {
 	TaskService service.TaskService
 	JWTService  service.JWTService
 
-	AuthRoute       routes.AuthRoute
-	ContestRoute    routes.ContestRoute
-	GroupRoute      routes.GroupRoute
-	SubmissionRoute routes.SubmissionRoutes
-	TaskRoute       routes.TaskRoute
-	UserRoute       routes.UserRoute
-	WorkerRoute     routes.WorkerRoute
+	AuthRoute   routes.AuthRoute
+	WorkerRoute routes.WorkerRoute
+	UserRoute   routes.UserRoute
+
+	// Role-specific routes
+	StudentRoute routes.StudentRoute
+	TeacherRoute routes.TeacherRoute
+	AdminRoute   routes.AdminRoute
 
 	QueueListener queue.Listener
 
@@ -141,12 +142,13 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
-	contestRoute := routes.NewContestRoute(contestService, submissionService)
-	groupRoute := routes.NewGroupRoute(groupService)
-	submissionRoute := routes.NewSubmissionRoutes(submissionService, cfg.FileStorageURL, queueService, taskService)
-	taskRoute := routes.NewTaskRoute(cfg.FileStorageURL, taskService)
-	userRoute := routes.NewUserRoute(userService, contestService)
 	workerRoute := routes.NewWorkerRoute(workerService)
+	userRoute := routes.NewUserRoute(userService)
+
+	// Role-specific routes
+	studentRoute := routes.NewStudentRoute(contestService, submissionService, groupService, taskService, queueService)
+	teacherRoute := routes.NewTeacherRoute(contestService, taskService, groupService, submissionService)
+	adminRoute := routes.NewAdminRoute()
 
 	// Queue listener
 	queueListener, err := queue.NewListener(
@@ -172,13 +174,13 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		TaskService: taskService,
 		JWTService:  jwtService,
 
-		AuthRoute:       authRoute,
-		ContestRoute:    contestRoute,
-		GroupRoute:      groupRoute,
-		SubmissionRoute: submissionRoute,
-		TaskRoute:       taskRoute,
-		UserRoute:       userRoute,
-		WorkerRoute:     workerRoute,
+		AuthRoute:   authRoute,
+		WorkerRoute: workerRoute,
+		UserRoute:   userRoute,
+
+		StudentRoute: studentRoute,
+		TeacherRoute: teacherRoute,
+		AdminRoute:   adminRoute,
 
 		QueueListener: queueListener,
 	}

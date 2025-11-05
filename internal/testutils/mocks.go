@@ -46,9 +46,6 @@ func (db *MockDatabase) Validate() {
 func (db *MockDatabase) DB() *gorm.DB {
 	return &gorm.DB{}
 }
-func (db *MockDatabase) ResolveTableName(model interface{}) string {
-	return "mock_table"
-}
 
 func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -88,18 +88,18 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAll(tx, limit, offset, sort a
 }
 
 // GetAllByUser mocks base method.
-func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllByUser", tx, userID, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllByUser", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllByUser indicates an expected call of GetAllByUser.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUser(tx, userID, limit, offset, sort any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUser(tx, userID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllByUser), tx, userID, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllByUser), tx, userID, offset, limit, sort)
 }
 
 // GetAllByUserForContest mocks base method.
@@ -1083,18 +1083,18 @@ func (mr *MockTaskRepositoryMockRecorder) GetAllCreated(tx, userID, limit, offse
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupID int64, offset, limit int, sort string) ([]models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockTaskRepositoryMockRecorder) GetAllForGroup(tx, groupID, limit, offset, sort any) *gomock.Call {
+func (mr *MockTaskRepositoryMockRecorder) GetAllForGroup(tx, groupID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskRepository)(nil).GetAllForGroup), tx, groupID, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskRepository)(nil).GetAllForGroup), tx, groupID, offset, limit, sort)
 }
 
 // GetByTitle mocks base method.

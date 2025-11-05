@@ -41,7 +41,7 @@ type TaskService interface {
 		tx *gorm.DB,
 		currentUser schemas.User,
 		groupID int64,
-		queryParams map[string]any,
+		paginationParams schemas.PaginationParams,
 	) ([]schemas.Task, error)
 	// Get retrieves a detailed view of a specific task.
 	Get(tx *gorm.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
@@ -155,21 +155,18 @@ func (ts *taskService) GetAllForGroup(
 	tx *gorm.DB,
 	currentUser schemas.User,
 	groupID int64,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, myerrors.ErrNotAuthorized
 	}
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultTaskSort
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err
@@ -421,6 +418,9 @@ func (ts *taskService) UnassignFromGroups(tx *gorm.DB, currentUser schemas.User,
 
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrTaskNotFound
+		}
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
 	}

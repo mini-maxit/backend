@@ -566,7 +566,7 @@ func TestTaskGetAllForGroup(t *testing.T) {
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
-	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 	group := &models.Group{
 		ID:   int64(1),
 		Name: "Test Group",
@@ -577,11 +577,11 @@ func TestTaskGetAllForGroup(t *testing.T) {
 		tr.EXPECT().GetAllForGroup(
 			tx,
 			groupID,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			paginationParams.Offset,
+			paginationParams.Limit,
+			paginationParams.Sort,
 		).Return([]models.Task{}, nil).Times(1)
-		tasks, err := ts.GetAllForGroup(tx, adminUser, groupID, queryParams)
+		tasks, err := ts.GetAllForGroup(tx, adminUser, groupID, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -590,15 +590,15 @@ func TestTaskGetAllForGroup(t *testing.T) {
 		tr.EXPECT().GetAllForGroup(
 			tx,
 			group.ID,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			paginationParams.Offset,
+			paginationParams.Limit,
+			paginationParams.Sort,
 		).Return([]models.Task{
 			{
 				ID: taskID,
 			},
 		}, nil).Times(1)
-		tasks, err := ts.GetAllForGroup(tx, adminUser, group.ID, queryParams)
+		tasks, err := ts.GetAllForGroup(tx, adminUser, group.ID, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
@@ -607,7 +607,7 @@ func TestTaskGetAllForGroup(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
-		tasks, err := ts.GetAllForGroup(tx, studentUser, group.ID, queryParams)
+		tasks, err := ts.GetAllForGroup(tx, studentUser, group.ID, paginationParams)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
 	})

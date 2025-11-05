@@ -26,7 +26,7 @@ type TaskRepository interface {
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
 	GetAllCreated(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAllForGroup returns all tasks assigned to a group. The tasks are paginated.
-	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllForGroup(tx *gorm.DB, groupID int64, offset, limit int, sort string) ([]models.Task, error)
 	// GetAll returns all tasks. The tasks are paginated.
 	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
 	// Get returns a task by its ID.
@@ -216,7 +216,7 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 func (tr *taskRepository) GetAllForGroup(
 	tx *gorm.DB,
 	groupID int64,
-	limit, offset int,
+	offset, limit int,
 	sort string,
 ) ([]models.Task, error) {
 	var tasks []models.Task

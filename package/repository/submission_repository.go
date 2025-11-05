@@ -17,7 +17,7 @@ type SubmissionRepository interface {
 	// GetAll returns all submissions. The submissions are paginated.
 	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllByUser returns all submissions by a user. The submissions are paginated.
-	GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUser(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Submission, error)
 	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
 	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error)
 	// GetAllForTask returns all submissions for a task. The submissions are paginated.

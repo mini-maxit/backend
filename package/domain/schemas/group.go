@@ -27,3 +27,7 @@ type CreateGroup struct {
 type EditGroup struct {
 	Name *string `json:"name,omitempty" validate:"gte=3,lte=50"`
 }
+
+type GroupsRequest struct {
+	GroupIDs []int64 `json:"groupIDs"`
+}

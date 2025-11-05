@@ -41,3 +41,20 @@ func (ur *UserRole) Scan(value any) error {
 	*ur = role
 	return nil
 }
+
+func (ur *UserRole) Rank() int {
+	switch *ur {
+	case UserRoleStudent:
+		return 0
+	case UserRoleTeacher:
+		return 1
+	case UserRoleAdmin:
+		return 2
+	default:
+		panic("invalid role: '" + string(*ur) + "'")
+	}
+}
+
+func (ur *UserRole) HasAccess(requiredRole UserRole) bool {
+	return ur.Rank() >= requiredRole.Rank()
+}

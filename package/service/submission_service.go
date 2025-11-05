@@ -32,14 +32,14 @@ type SubmissionService interface {
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
 	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForUserShort retrieves a short version of all submissions for a specific user
 	// based on the current user's role and query parameters.
 	GetAllForUserShort(
 		tx *gorm.DB,
 		userID int64,
 		user schemas.User,
-		queryParams map[string]any,
+		paginationParams schemas.PaginationParams,
 	) ([]schemas.SubmissionShort, error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
@@ -246,16 +246,13 @@ func (ss *submissionService) GetAllForUser(
 	tx *gorm.DB,
 	userID int64,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultSortOrder
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultSortOrder
 	}
 
-	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
+	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		ss.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
@@ -291,9 +288,9 @@ func (ss *submissionService) GetAllForUserShort(
 	tx *gorm.DB,
 	userID int64,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.SubmissionShort, error) {
-	submissionModels, err := ss.GetAllForUser(tx, userID, currentUser, queryParams)
+	submissionModels, err := ss.GetAllForUser(tx, userID, currentUser, paginationParams)
 	if err != nil {
 		return nil, err
 	}

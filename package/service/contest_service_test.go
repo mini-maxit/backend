@@ -176,18 +176,13 @@ func TestContestService_GetPastContests(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
 	tx := &gorm.DB{}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "start_time:asc"}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
-		}
-
 		visible := true
 		contestsWithStats := []models.ContestWithStats{
 			{
@@ -201,9 +196,9 @@ func TestContestService_GetPastContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, nil).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time:asc").Return(contestsWithStats, nil).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, err := cs.GetPastContests(tx, currentUser, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
@@ -215,15 +210,10 @@ func TestContestService_GetPastContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
-		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time:asc").Return(nil, errors.New("db error")).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, err := cs.GetPastContests(tx, currentUser, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -240,16 +230,12 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr)
 	tx := &gorm.DB{}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "start_time:asc"}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
-		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
 		}
 
 		visible := true
@@ -265,9 +251,9 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, nil).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time:asc").Return(contestsWithStats, nil).Times(1)
 
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, err := cs.GetUpcomingContests(tx, currentUser, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
@@ -279,15 +265,9 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
-		}
+		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time:asc").Return(nil, errors.New("db error")).Times(1)
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)
-
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, err := cs.GetUpcomingContests(tx, currentUser, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
