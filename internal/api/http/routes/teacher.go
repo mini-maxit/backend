@@ -114,7 +114,7 @@ func (tr *teacherRouteImpl) GetManageableContests(w http.ResponseWriter, r *http
 
 // GetContestManagement godoc
 //
-//	@Tags		    contests-management
+//	@Tags			contests-management
 //	@Summary		Get contest details
 //	@Destription	Get details of a specific contest created by teacher
 //	@Produce		json
@@ -1030,8 +1030,8 @@ func (tr *teacherRouteImpl) DeleteTask(w http.ResponseWriter, r *http.Request) {
 //	@Destription	Assign a task to specific users
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Task ID"
-//	@Param			request	body		schemas.UserIDs		true	"User IDs"
+//	@Param			id		path		int				true	"Task ID"
+//	@Param			request	body		schemas.UserIDs	true	"User IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
@@ -1108,8 +1108,8 @@ func (tr *teacherRouteImpl) AssignTaskToUsers(w http.ResponseWriter, r *http.Req
 //	@Destription	Assign a task to specific groups
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Task ID"
-//	@Param			request	body		schemas.GroupsRequest true	"Group IDs"
+//	@Param			id		path		int						true	"Task ID"
+//	@Param			request	body		schemas.GroupsRequest	true	"Group IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
@@ -1186,8 +1186,8 @@ func (tr *teacherRouteImpl) AssignTaskToGroups(w http.ResponseWriter, r *http.Re
 //	@Destription	Unassign a task from specific users
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Task ID"
-//	@Param			request	body		schemas.UserIDs		true	"User IDs"
+//	@Param			id		path		int				true	"Task ID"
+//	@Param			request	body		schemas.UserIDs	true	"User IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
@@ -1261,7 +1261,7 @@ func (tr *teacherRouteImpl) UnAssignTaskFromUsers(w http.ResponseWriter, r *http
 //	@Destription	Unassign a task from specific groups
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Task ID"
+//	@Param			id		path		int						true	"Task ID"
 //	@Param			request	body		schemas.GroupsRequest	true	"Group IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
@@ -1608,8 +1608,8 @@ func (tr *teacherRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Destription	Add users to a group
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Group ID"
-//	@Param			request	body		schemas.UserIDs		true	"User IDs"
+//	@Param			id		path		int				true	"Group ID"
+//	@Param			request	body		schemas.UserIDs	true	"User IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
@@ -1628,8 +1628,8 @@ func (tr *teacherRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Reque
 //	@Destription	Delete users from a group
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		int					true	"Group ID"
-//	@Param			request	body		schemas.UserIDs		true	"User IDs"
+//	@Param			id		path		int				true	"Group ID"
+//	@Param			request	body		schemas.UserIDs	true	"User IDs"
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		401		{object}	httputils.APIError
