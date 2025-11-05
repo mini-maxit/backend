@@ -762,6 +762,7 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
+	mux.HandleFunc("/tasks/created", route.GetAllCreatedTasks)
 	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodDelete:
@@ -786,7 +787,6 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/tasks/created", route.GetAllCreatedTasks)
 }
 
 func isValidFileFormat(filename string) bool {
