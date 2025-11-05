@@ -56,7 +56,7 @@ type SumbissionImpl struct {
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
-//	@Router			/submissions/ [get]
+//	@Router			/submissions [get]
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")

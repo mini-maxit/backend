@@ -690,6 +690,20 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task limits updated successfully"))
 }
 
+// GetAllCreatedTasks godoc
+//
+//	@Tags			tasks-management
+//	@Summary		Get all created tasks
+//	@Description	Gets all tasks created by the current user
+//	@Produce		json
+//	@Param			offset	query		int		false	"Offset for pagination"
+//	@Param			limit	query		int		false	"Limit for pagination"
+//	@Param			sort	query		string	false	"Field to sort by"
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Task]
+//	@Router			/tasks-management/tasks/created [get]
 func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -740,7 +754,7 @@ func NewTasksManagementRoute(taskService service.TaskService) TasksManagementRou
 }
 
 func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			route.UploadTask(w, r)
@@ -748,7 +762,7 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodDelete:
 			route.DeleteTask(w, r)
@@ -758,11 +772,11 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/{id}/assign/users", route.AssignTaskToUsers)
-	mux.HandleFunc("/{id}/assign/groups", route.AssignTaskToGroups)
-	mux.HandleFunc("/{id}/unassign/users", route.UnAssignTaskFromUsers)
-	mux.HandleFunc("/{id}/unassign/groups", route.UnAssignTaskFromGroups)
-	mux.HandleFunc("/{id}/limits", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/tasks/{id}/assign/users", route.AssignTaskToUsers)
+	mux.HandleFunc("/tasks/{id}/assign/groups", route.AssignTaskToGroups)
+	mux.HandleFunc("/tasks/{id}/unassign/users", route.UnAssignTaskFromUsers)
+	mux.HandleFunc("/tasks/{id}/unassign/groups", route.UnAssignTaskFromGroups)
+	mux.HandleFunc("/tasks/{id}/limits", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			route.GetLimits(w, r)
@@ -772,7 +786,7 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/created", route.GetAllCreatedTasks)
+	mux.HandleFunc("/tasks/created", route.GetAllCreatedTasks)
 }
 
 func isValidFileFormat(filename string) bool {
