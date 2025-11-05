@@ -81,7 +81,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Warnf("Queue connection unavailable - backend will accept submissions but not send them for evaluation: %s", err.Error())
 	}
-	
+
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
@@ -184,11 +184,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	} else {
 		log.Info("Queue listener not started - queue connection unavailable")
 	}
-	
+
 	if cfg.Dump {
 		dump(db, log, authService, userRepository)
 	}
-	
+
 	init := &Initialization{
 		Cfg: cfg,
 		DB:  db,
@@ -209,21 +209,21 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 		QueueListener: queueListener,
 	}
-	
+
 	// Start background worker to retry pending submissions
 	if channel != nil {
 		go startPendingSubmissionsRetryWorker(init, log)
 	}
-	
+
 	return init
 }
 
 func startPendingSubmissionsRetryWorker(init *Initialization, log *zap.SugaredLogger) {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
-	
+
 	log.Info("Started background worker to retry pending submissions")
-	
+
 	for range ticker.C {
 		err := init.QueueService.RetryPendingSubmissions(init.DB.DB())
 		if err != nil {

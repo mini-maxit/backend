@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"strconv"
 	"sync"
 	"time"
@@ -57,9 +57,9 @@ type queueService struct {
 func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	if qs.channel == nil {
 		qs.logger.Warn("Queue channel is not available - message will not be published")
-		return fmt.Errorf("queue channel is not available")
+		return errors.New("queue channel is not available")
 	}
-	
+
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling message: %v", err.Error())
@@ -237,7 +237,7 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
 	if qs.channel == nil {
 		qs.logger.Debug("Queue channel not available - skipping retry of pending submissions")
-		return fmt.Errorf("queue channel not available")
+		return errors.New("queue channel not available")
 	}
 
 	// Get pending submissions (limit to 100 at a time to avoid overwhelming the queue)
@@ -286,10 +286,10 @@ func NewQueueService(
 	responseQueueName string,
 ) (QueueService, error) {
 	log := utils.NewNamedLogger("queue_service")
-	
+
 	var q amqp.Queue
 	var err error
-	
+
 	if channel != nil {
 		args := make(amqp.Table)
 		args["x-max-priority"] = 3
@@ -309,7 +309,7 @@ func NewQueueService(
 	} else {
 		log.Warn("Queue service initialized without connection - submissions will be accepted but not sent for evaluation")
 	}
-	
+
 	s := &queueService{
 		taskRepository:             taskRepository,
 		submissionRepository:       submissionRepository,
