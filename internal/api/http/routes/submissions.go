@@ -21,10 +21,11 @@ type SubmissionRoutes interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 	GetByID(w http.ResponseWriter, r *http.Request)
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
-	GetAllForUserShort(w http.ResponseWriter, r *http.Request)
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
 	GetAvailableLanguages(w http.ResponseWriter, r *http.Request)
+	GetMySubmissionsShort(w http.ResponseWriter, r *http.Request)
+	GetMySubmissions(w http.ResponseWriter, r *http.Request)
 
 	// Post requests
 	SubmitSolution(w http.ResponseWriter, r *http.Request)
@@ -56,7 +57,7 @@ type SumbissionImpl struct {
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
-//	@Router			/submissions/ [get]
+//	@Router			/submissions [get]
 func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -192,80 +193,16 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 // For admin it returns all submissions for specific user.
 //
 //	@Produce		json
-//	@Param			id		path		int	true	"User ID"
-//	@Param			limit	query		int	false	"Limit the number of returned submissions"
-//	@Param			offset	query		int	false	"Offset the returned submissions"
+//	@Param			id		path		int		true	"User ID"
+//	@Param			limit	query		int		false	"Limit the number of returned submissions"
+//	@Param			offset	query		int		false	"Offset the returned submissions"
+//	@Param			sort	query		string	false	"Sort order"
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Router			/submissions/users/{id} [get]
 func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	userIDStr := httputils.GetPathValue(r, "id")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-
-	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, queryParams)
-	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w,
-				http.StatusForbidden,
-				"Permission denied. Current user is not allowed to view submissions for this user.",
-			)
-		default:
-			s.logger.Errorw("Failed to get submissions for user", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
-		}
-		return
-	}
-
-	if submissions == nil {
-		submissions = []schemas.Submission{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
-}
-
-// GetAllForUserShort godoc
-//
-//	@Tags			submission
-//	@Summary		Get all submissions for a user
-//	@Description	If the user is a student, it fails with 403 Forbidden.
-//
-// For teacher it returns all submissions from this user for tasks owned by the teacher.
-// For admin it returns all submissions for specific user.
-//
-//	@Produce		json
-//	@Param			id		path		int	true	"User ID"
-//	@Param			limit	query		int	false	"Limit the number of returned submissions"
-//	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/users/{id}/short [get]
-func (s *SumbissionImpl) GetAllForUserShort(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -471,7 +408,7 @@ func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Re
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			taskID		formData	int		true	"Task ID"
-//	@Param			contestID	formData	int		false "Contest ID"
+//	@Param			contestID	formData	int		false	"Contest ID"
 //	@Param			solution	formData	file	true	"Solution file"
 //	@Param			languageID	formData	int		true	"Language ID"
 //	@Success		200			{object}	map[string]int64
@@ -593,6 +530,122 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	httputils.ReturnSuccess(w, http.StatusOK, map[string]int64{"submissionId": submissionID})
 }
 
+// GetMySubmissionsShort godoc
+//
+//	@Tags			submission
+//	@Summary		Get all submissions for a user
+//	@Description	If the user is a student, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions from this user for tasks owned by the teacher.
+// For admin it returns all submissions for specific user.
+//
+//	@Produce		json
+//	@Param			id		path		int	true	"User ID"
+//	@Param			limit	query		int	false	"Limit the number of returned submissions"
+//	@Param			offset	query		int	false	"Offset the returned submissions"
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/submissions/my [get]
+func (s *SumbissionImpl) GetMySubmissionsShort(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+
+	submissions, err := s.submissionService.GetAllForUserShort(tx, currentUser.ID, currentUser, queryParams)
+	if err != nil {
+		db.Rollback()
+		switch {
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w,
+				http.StatusForbidden,
+				"Permission denied. Current user is not allowed to view submissions for this user.",
+			)
+		default:
+			httputils.ReturnError(w,
+				http.StatusInternalServerError,
+				"Failed to get submissions. "+err.Error(),
+			)
+		}
+		return
+	}
+
+	if submissions == nil {
+		submissions = []schemas.SubmissionShort{}
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
+// GetMySubmissions godoc
+//
+//	@Tags			submission
+//	@Summary		Get all submissions for a user
+//	@Description	If the user is a student, it fails with 403 Forbidden.
+//
+// For teacher it returns all submissions from this user for tasks owned by the teacher.
+// For admin it returns all submissions for specific user.
+//
+//	@Produce		json
+//	@Param			id		path		int	true	"User ID"
+//	@Param			limit	query		int	false	"Limit the number of returned submissions"
+//	@Param			offset	query		int	false	"Offset the returned submissions"
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/submissions/my [get]
+func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		s.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+
+	submissions, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, queryParams)
+	if err != nil {
+		db.Rollback()
+		switch {
+		case errors.Is(err, myerrors.ErrPermissionDenied):
+			httputils.ReturnError(w,
+				http.StatusForbidden,
+				"Permission denied. Current user is not allowed to view submissions for this user.",
+			)
+		default:
+			httputils.ReturnError(w,
+				http.StatusInternalServerError,
+				"Failed to get submissions. "+err.Error(),
+			)
+		}
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
 // New Instance.
 func NewSubmissionRoutes(
 	submissionService service.SubmissionService,
@@ -616,12 +669,12 @@ func NewSubmissionRoutes(
 
 // RegisterSubmissionRoutes registers handlers for the submission routes.
 func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
-	mux.HandleFunc("/", route.GetAll)
-	mux.HandleFunc("/submit", route.SubmitSolution)
-	mux.HandleFunc("/languages", route.GetAvailableLanguages)
-	mux.HandleFunc("/{id}", route.GetByID)
-	mux.HandleFunc("/users/{id}", route.GetAllForUser)
-	mux.HandleFunc("/users/{id}/short", route.GetAllForUserShort)
-	mux.HandleFunc("/groups/{id}", route.GetAllForGroup)
-	mux.HandleFunc("/tasks/{id}", route.GetAllForTask)
+	mux.HandleFunc("/submissions", route.GetAll)
+	mux.HandleFunc("/submissions/submit", route.SubmitSolution)
+	mux.HandleFunc("/submissions/languages", route.GetAvailableLanguages)
+	mux.HandleFunc("/submissions/my", route.GetMySubmissions)
+	mux.HandleFunc("/submissions/users/{id}/short", route.GetAllForUser)
+	mux.HandleFunc("/submissions/groups/{id}", route.GetAllForGroup)
+	mux.HandleFunc("/submissions/tasks/{id}", route.GetAllForTask)
+	mux.HandleFunc("/submissions/{id}", route.GetByID)
 }

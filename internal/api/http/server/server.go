@@ -67,6 +67,9 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	taskMux := mux.NewRouter()
 	routes.RegisterTaskRoutes(taskMux, init.TaskRoute)
 
+	tasksManagementMux := mux.NewRouter()
+	routes.RegisterTasksManagementRoutes(tasksManagementMux, init.TaskManagementRoute)
+
 	// User routes
 	userMux := mux.NewRouter()
 	routes.RegisterUserRoutes(userMux, init.UserRoute)
@@ -83,16 +86,21 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	contestMux := mux.NewRouter()
 	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
 
+	contestManagementMux := mux.NewRouter()
+	routes.RegisterContestsManagementRoute(contestManagementMux, init.ContestManagementRoute)
+
 	// Worker routes
 	workerMux := mux.NewRouter()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
 
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
-	secureMux.PathPrefix("/tasks/").Handler(http.StripPrefix("/tasks", taskMux))
-	secureMux.PathPrefix("/submissions/").Handler(http.StripPrefix("/submissions", subbmissionMux))
+	secureMux.PathPrefix("/tasks-management/").Handler(http.StripPrefix("/tasks-management", tasksManagementMux))
+	secureMux.PathPrefix("/tasks").Handler(taskMux)
+	secureMux.PathPrefix("/submissions").Handler(subbmissionMux)
 	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))
 	secureMux.PathPrefix("/groups/").Handler(http.StripPrefix("/groups", groupMux))
+	secureMux.PathPrefix("/contests-management/").Handler(http.StripPrefix("/contests-management", contestManagementMux))
 	secureMux.PathPrefix("/contests").Handler(contestMux)
 	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
 

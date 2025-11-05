@@ -7,6 +7,12 @@ on:
   pull_request:
     types: [labeled, synchronize, opened, reopened]
 
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  id-token: write
+
 jobs:
   setup:
     runs-on: ubuntu-latest

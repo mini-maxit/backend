@@ -24,13 +24,11 @@ type UserRoute interface {
 	EditUser(w http.ResponseWriter, r *http.Request)
 	CreateUsers(w http.ResponseWriter, r *http.Request)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
-	GetUserContests(w http.ResponseWriter, r *http.Request)
 }
 
 type UserRouteImpl struct {
-	userService    service.UserService
-	contestService service.ContestService
-	logger         *zap.SugaredLogger
+	userService service.UserService
+	logger      *zap.SugaredLogger
 }
 
 // GetAllUsers godoc
@@ -328,65 +326,10 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, currentUser)
 }
 
-// GetUserContests godoc
-//
-//	@Tags			user
-//	@Summary		Get contests for a user
-//	@Description	Get contests for a user
-//	@Produce		json
-//	@Param			id	path		int	true	"User ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		404	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.UserContestsWithStats]
-//	@Router			/users/{id}/contests [get]
-func (u *UserRouteImpl) GetUserContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	userIDStr := httputils.GetPathValue(r, "id")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "UserID cannot be empty")
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	contests, err := u.contestService.GetUserContests(tx, userID)
-	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		u.logger.Errorw("Failed to get user contests", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
-}
-
-func NewUserRoute(userService service.UserService, contestService service.ContestService) UserRoute {
+func NewUserRoute(userService service.UserService) UserRoute {
 	route := &UserRouteImpl{
-		userService:    userService,
-		contestService: contestService,
-		logger:         utils.NewNamedLogger("users"),
+		userService: userService,
+		logger:      utils.NewNamedLogger("users"),
 	}
 	err := utils.ValidateStruct(*route)
 	if err != nil {
@@ -409,5 +352,4 @@ func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
 		}
 	})
 	mux.HandleFunc("/{id}/password", route.ChangePassword)
-	mux.HandleFunc("/{id}/contests", route.GetUserContests)
 }

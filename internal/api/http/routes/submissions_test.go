@@ -228,101 +228,6 @@ func TestGetByID(t *testing.T) {
 	})
 }
 
-func TestGetAllForUser(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	ss := mock_service.NewMockSubmissionService(ctrl)
-	ts := mock_service.NewMockTaskService(ctrl)
-	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
-	db := &testutils.MockDatabase{}
-
-	mux := mux.NewRouter()
-	mux.HandleFunc("/user/{id}", route.GetAllForUser)
-	handler := testutils.MockDatabaseMiddleware(mux, db)
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mockUser := schemas.User{
-			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
-		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
-		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]interface{}{})
-		handler.ServeHTTP(w, r.WithContext(ctx))
-	}))
-	defer server.Close()
-
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/user/1", nil)
-			require.NoError(t, err)
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err)
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
-
-	t.Run("Invalid user ID", func(t *testing.T) {
-		resp, err := http.Get(server.URL + "/user/invalid")
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Invalid user id")
-	})
-
-	t.Run("Permission denied", func(t *testing.T) {
-		ss.EXPECT().GetAllForUser(gomock.Any(), int64(2), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrPermissionDenied).Times(1)
-
-		resp, err := http.Get(server.URL + "/user/2")
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Permission denied")
-	})
-
-	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAllForUser(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
-
-		resp, err := http.Get(server.URL + "/user/1")
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
-	})
-
-	t.Run("Success", func(t *testing.T) {
-		submissions := []schemas.Submission{
-			{ID: 1, UserID: 1, Status: types.SubmissionStatusEvaluated},
-			{ID: 2, UserID: 1, Status: types.SubmissionStatusReceived},
-		}
-		ss.EXPECT().GetAllForUser(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(submissions, nil).Times(1)
-
-		resp, err := http.Get(server.URL + "/user/1")
-		require.NoError(t, err)
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		response := &httputils.APIResponse[[]schemas.Submission]{}
-		err = json.Unmarshal(bodyBytes, response)
-		require.NoError(t, err)
-		assert.Equal(t, submissions, response.Data)
-	})
-}
-
 func TestGetAllForUserShort(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -334,7 +239,7 @@ func TestGetAllForUserShort(t *testing.T) {
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
-	mux.HandleFunc("/user/{id}/short", route.GetAllForUserShort)
+	mux.HandleFunc("/user/{id}/short", route.GetAllForUser)
 	handler := testutils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
