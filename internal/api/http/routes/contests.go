@@ -335,6 +335,8 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
+	mux.HandleFunc("/contests/my", contestRoute.GetMyContests)
+
 	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
