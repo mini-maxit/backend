@@ -887,10 +887,6 @@ func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, task
 }
 
 func (cs *contestService) GetAllManageable(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Contest, error) {
-	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
-		return nil, err
-	}
-
 	var contests []models.Contest
 	var err error
 	switch currentUser.Role {

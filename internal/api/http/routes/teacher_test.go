@@ -25,7 +25,7 @@ import (
 
 type teacherRouteTest struct {
 	Route             routes.TeacherRoute
-	ContestSevice     *mock_service.MockContestService
+	ContestService    *mock_service.MockContestService
 	TaskService       *mock_service.MockTaskService
 	GroupService      *mock_service.MockGroupService
 	SubmissionService *mock_service.MockSubmissionService
@@ -45,7 +45,7 @@ func setupTeacherRoute(t *testing.T) (*teacherRouteTest, *gomock.Controller) {
 
 	return &teacherRouteTest{
 		Route:             route,
-		ContestSevice:     contestService,
+		ContestService:    contestService,
 		TaskService:       taskService,
 		GroupService:      groupService,
 		SubmissionService: submissionService,
@@ -105,7 +105,7 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		setup.ContestSevice.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotFound)
 
 		resp := doRequest(t, http.MethodPut, server.URL+path, bytes.NewBuffer(jsonBody))
 		defer resp.Body.Close()
@@ -123,7 +123,7 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		setup.ContestSevice.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, http.MethodPut, server.URL+path, bytes.NewBuffer(jsonBody))
 		defer resp.Body.Close()
@@ -149,7 +149,7 @@ func TestEditContest(t *testing.T) {
 			UpdatedAt:   time.Now(),
 		}
 
-		setup.ContestSevice.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
+		setup.ContestService.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
 
 		resp := doRequest(t, http.MethodPut, server.URL+path, bytes.NewBuffer(jsonBody))
 		defer resp.Body.Close()
@@ -186,7 +186,7 @@ func TestDeleteContest(t *testing.T) {
 	defer server.Close()
 
 	t.Run("Contest not found", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotFound)
 
 		resp := doRequest(t, http.MethodDelete, server.URL+path)
 		defer resp.Body.Close()
@@ -195,7 +195,7 @@ func TestDeleteContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, http.MethodDelete, server.URL+path)
 		defer resp.Body.Close()
@@ -204,7 +204,7 @@ func TestDeleteContest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		setup.ContestService.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 		resp := doRequest(t, http.MethodDelete, server.URL+path)
 		defer resp.Body.Close()
@@ -288,7 +288,7 @@ func TestCreateContest(t *testing.T) {
 		jsonBody, err := json.Marshal(body)
 		require.NoError(t, err)
 
-		setup.ContestSevice.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, server.URL+path, bytes.NewBuffer(jsonBody))
 		defer resp.Body.Close()
@@ -304,7 +304,7 @@ func TestCreateContest(t *testing.T) {
 		jsonBody, err := json.Marshal(body)
 		require.NoError(t, err)
 
-		setup.ContestSevice.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(1), nil)
+		setup.ContestService.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(1), nil)
 
 		resp := doRequest(t, server.URL+path, bytes.NewBuffer(jsonBody))
 		defer resp.Body.Close()
@@ -350,7 +350,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
 
 		resp := doRequest(t, server.URL+"/contests/999/registration-requests/2/approve")
 		defer resp.Body.Close()
@@ -359,7 +359,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(999)).Return(myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(999)).Return(myerrors.ErrNotFound)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/999/approve")
 		defer resp.Body.Close()
@@ -368,7 +368,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/approve")
 		defer resp.Body.Close()
@@ -377,7 +377,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("No pending registration", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/approve")
 		defer resp.Body.Close()
@@ -386,7 +386,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("User already participant", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrAlreadyParticipant)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrAlreadyParticipant)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/approve")
 		defer resp.Body.Close()
@@ -395,7 +395,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
+		setup.ContestService.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/approve")
 		defer resp.Body.Close()
@@ -448,7 +448,7 @@ func TestRejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
 
 		resp := doRequest(t, server.URL+"/contests/999/registration-requests/2/reject")
 		defer resp.Body.Close()
@@ -457,7 +457,7 @@ func TestRejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/reject")
 		defer resp.Body.Close()
@@ -466,7 +466,7 @@ func TestRejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("No pending registration", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
+		setup.ContestService.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/reject")
 		defer resp.Body.Close()
@@ -475,7 +475,7 @@ func TestRejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
+		setup.ContestService.EXPECT().RejectRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
 
 		resp := doRequest(t, server.URL+"/contests/1/registration-requests/2/reject")
 		defer resp.Body.Close()
@@ -530,7 +530,7 @@ func TestAddTaskToContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(999), gomock.Any()).Return(myerrors.ErrNotFound)
+		setup.ContestService.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(999), gomock.Any()).Return(myerrors.ErrNotFound)
 
 		resp := doRequest(t, server.URL+"/contests/999/tasks", strings.NewReader(body))
 		defer resp.Body.Close()
@@ -539,7 +539,7 @@ func TestAddTaskToContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(myerrors.ErrNotAuthorized)
+		setup.ContestService.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(myerrors.ErrNotAuthorized)
 
 		resp := doRequest(t, server.URL+"/contests/1/tasks", strings.NewReader(body))
 		defer resp.Body.Close()
@@ -548,7 +548,7 @@ func TestAddTaskToContest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		setup.ContestSevice.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil)
+		setup.ContestService.EXPECT().AddTaskToContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil)
 
 		resp := doRequest(t, server.URL+"/contests/1/tasks", strings.NewReader(body))
 		defer resp.Body.Close()
