@@ -87,7 +87,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	routes.RegisterContestRoutes(contestMux, init.ContestRoute)
 
 	contestManagementMux := mux.NewRouter()
-	routes.RegistertContestsManagementRoute(contestManagementMux, init.ContestManagementRoute)
+	routes.RegisterContestsManagementRoute(contestManagementMux, init.ContestManagementRoute)
 
 	// Worker routes
 	workerMux := mux.NewRouter()

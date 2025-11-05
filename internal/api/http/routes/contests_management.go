@@ -679,7 +679,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
-func RegistertContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
+func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
@@ -730,7 +730,7 @@ func RegistertContestsManagementRoute(mux *mux.Router, route ContestsManagementR
 	})
 
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
-	mux.HandleFunc("/contets/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
+	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
 }
 
 func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {

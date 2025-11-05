@@ -553,13 +553,6 @@ func (s *SumbissionImpl) GetMySubmissionsShort(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	userIDStr := httputils.GetPathValue(r, "id")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user id. "+err.Error())
-		return
-	}
-
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -571,7 +564,7 @@ func (s *SumbissionImpl) GetMySubmissionsShort(w http.ResponseWriter, r *http.Re
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForUserShort(tx, userID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForUserShort(tx, currentUser.ID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		switch {
