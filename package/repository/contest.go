@@ -475,6 +475,7 @@ func (cr *contestRepository) GetContestsCreatedByUserWithStats(tx *gorm.DB, user
 
 	// Build query to get contests created by the user with statistics
 	// Similar to GetContestsForUserWithStats but for contests created by user
+	// Note: solved_count is set to 0 because creators are not participants and don't solve tasks
 	query := tx.Model(&models.Contest{}).
 		Select(`contests.*,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,

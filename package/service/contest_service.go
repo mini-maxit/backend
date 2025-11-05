@@ -502,13 +502,13 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 		}
 
 		// Merge created contests with participated contests, avoiding duplicates
-		contestMap := make(map[int64]bool)
+		contestMap := make(map[int64]struct{})
 		for _, contest := range contestsWithStats {
-			contestMap[contest.ID] = true
+			contestMap[contest.ID] = struct{}{}
 		}
 
 		for _, contest := range createdContests {
-			if !contestMap[contest.ID] {
+			if _, exists := contestMap[contest.ID]; !exists {
 				contestsWithStats = append(contestsWithStats, contest)
 			}
 		}
