@@ -29,8 +29,7 @@ func TestGetAllUsers(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewUserRoute(us, cs)
+	route := routes.NewUserRoute(us)
 	db := &testutils.MockDatabase{}
 
 	t.Run("Accept only GET", func(t *testing.T) {
@@ -181,8 +180,7 @@ func TestGetUserByID(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewUserRoute(us, cs)
+	route := routes.NewUserRoute(us)
 	db := &testutils.MockDatabase{}
 
 	t.Run("Accept only GET", func(t *testing.T) {
@@ -305,8 +303,7 @@ func TestEditUser(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewUserRoute(us, cs)
+	route := routes.NewUserRoute(us)
 	db := &testutils.MockDatabase{}
 
 	currentUser := schemas.User{
@@ -508,8 +505,7 @@ func TestChangePassword(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewUserRoute(us, cs)
+	route := routes.NewUserRoute(us)
 	db := &testutils.MockDatabase{}
 
 	currentUser := schemas.User{
@@ -805,8 +801,7 @@ func TestGetMe(t *testing.T) {
 	defer ctrl.Finish()
 
 	us := mock_service.NewMockUserService(ctrl)
-	cs := mock_service.NewMockContestService(ctrl)
-	route := routes.NewUserRoute(us, cs)
+	route := routes.NewUserRoute(us)
 
 	currentUser := schemas.User{
 		ID:       1,

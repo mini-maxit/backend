@@ -18,6 +18,7 @@ import (
 
 type ContestRoute interface {
 	GetContest(w http.ResponseWriter, r *http.Request)
+	GetMyContests(w http.ResponseWriter, r *http.Request)
 	GetContests(w http.ResponseWriter, r *http.Request)
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
@@ -279,6 +280,51 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
+
+// GetMyContests godoc
+//
+//	@Tags			contests
+//	@Summary		Get contests for a user
+//	@Description	Get contests for a user
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.UserContestsWithStats]
+//	@Router			/contests/my [get]
+func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	contests, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrUserNotFound) {
+			httputils.ReturnError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		cr.logger.Errorw("Failed to get user contests", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, contests)
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
