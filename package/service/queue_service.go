@@ -17,7 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const publishTimeoutSeconds = 5
+const (
+	publishTimeoutSeconds        = 5
+	pendingSubmissionsBatchLimit = 100
+)
 
 type QueueService interface {
 	// PublishTask publishes a task to the queue
@@ -240,8 +243,8 @@ func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
 		return errors.New("queue channel not available")
 	}
 
-	// Get pending submissions (limit to 100 at a time to avoid overwhelming the queue)
-	pendingSubmissions, err := qs.submissionRepository.GetPendingSubmissions(db, 100)
+	// Get pending submissions (limit to avoid overwhelming the queue)
+	pendingSubmissions, err := qs.submissionRepository.GetPendingSubmissions(db, pendingSubmissionsBatchLimit)
 	if err != nil {
 		qs.logger.Errorf("Error getting pending submissions: %v", err.Error())
 		return err
@@ -262,6 +265,8 @@ func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
 			continue
 		}
 
+		// Note: db is a non-transaction connection, so each PublishSubmission call
+		// will update the submission status independently without transaction conflicts
 		err := qs.PublishSubmission(db, submission.ID, submission.Result.ID)
 		if err != nil {
 			qs.logger.Warnf("Failed to queue submission %d: %v", submission.ID, err)

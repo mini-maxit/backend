@@ -18,7 +18,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const numTries = 10
+const (
+	numTries                      = 10
+	pendingSubmissionsRetryPeriod = 30 * time.Second
+)
 
 type Initialization struct {
 	Cfg *config.Config
@@ -219,10 +222,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 }
 
 func startPendingSubmissionsRetryWorker(init *Initialization, log *zap.SugaredLogger) {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(pendingSubmissionsRetryPeriod)
 	defer ticker.Stop()
 
-	log.Info("Started background worker to retry pending submissions")
+	log.Infof("Started background worker to retry pending submissions every %v", pendingSubmissionsRetryPeriod)
 
 	for range ticker.C {
 		err := init.QueueService.RetryPendingSubmissions(init.DB.DB())
