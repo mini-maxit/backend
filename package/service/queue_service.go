@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -29,6 +30,8 @@ type QueueService interface {
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
 	UpdateWorkerStatus(statusResponse schemas.StatusResponsePayload) error
+	// RetryPendingSubmissions attempts to queue submissions that are in "received" status
+	RetryPendingSubmissions(db *gorm.DB) error
 	StatusMux() *sync.Mutex
 	StatusCond() *sync.Cond
 	LastWorkerStatus() schemas.WorkerStatus
@@ -52,6 +55,11 @@ type queueService struct {
 }
 
 func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
+	if qs.channel == nil {
+		qs.logger.Warn("Queue channel is not available - message will not be published")
+		return fmt.Errorf("queue channel is not available")
+	}
+	
 	msgBytes, err := json.Marshal(msq)
 	if err != nil {
 		qs.logger.Errorf("Error marshalling message: %v", err.Error())
@@ -144,16 +152,10 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 	}
 	err = qs.publishMessage(msq)
 	if err != nil {
-		err2 := qs.submissionRepository.MarkFailed(tx, submissionID, err.Error())
-		if err2 != nil {
-			qs.logger.Errorf("Error marking submission failed: %v. When error occured publishing message: %s",
-				err2.Error(),
-				err.Error(),
-			)
-			return err
-		}
-		qs.logger.Errorf("Error publishing message: %v", err.Error())
-		return err
+		// Don't fail the submission - just keep it in "received" status
+		// It will be picked up later when queue becomes available
+		qs.logger.Warnf("Queue unavailable - submission %d will be queued later: %v", submissionID, err.Error())
+		return nil
 	}
 	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
 	if err != nil {
@@ -232,6 +234,47 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 	return qs.statusMux
 }
 
+func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
+	if qs.channel == nil {
+		qs.logger.Debug("Queue channel not available - skipping retry of pending submissions")
+		return fmt.Errorf("queue channel not available")
+	}
+
+	// Get pending submissions (limit to 100 at a time to avoid overwhelming the queue)
+	pendingSubmissions, err := qs.submissionRepository.GetPendingSubmissions(db, 100)
+	if err != nil {
+		qs.logger.Errorf("Error getting pending submissions: %v", err.Error())
+		return err
+	}
+
+	if len(pendingSubmissions) == 0 {
+		qs.logger.Debug("No pending submissions to retry")
+		return nil
+	}
+
+	qs.logger.Infof("Found %d pending submissions to queue", len(pendingSubmissions))
+
+	successCount := 0
+	for _, submission := range pendingSubmissions {
+		// Get the submission result ID
+		if submission.Result == nil {
+			qs.logger.Warnf("Submission %d has no result - skipping", submission.ID)
+			continue
+		}
+
+		err := qs.PublishSubmission(db, submission.ID, submission.Result.ID)
+		if err != nil {
+			qs.logger.Warnf("Failed to queue submission %d: %v", submission.ID, err)
+			// Continue with other submissions even if one fails
+			continue
+		}
+		successCount++
+	}
+
+	qs.logger.Infof("Successfully queued %d out of %d pending submissions", successCount, len(pendingSubmissions))
+	return nil
+}
+
 func NewQueueService(
 	taskRepository repository.TaskRepository,
 	submissionRepository repository.SubmissionRepository,
@@ -242,21 +285,31 @@ func NewQueueService(
 	queueName string,
 	responseQueueName string,
 ) (QueueService, error) {
-	args := make(amqp.Table)
-	args["x-max-priority"] = 3
-
-	q, err := channel.QueueDeclare(
-		queueName, // name of the queue
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		args,      // arguments
-	)
-	if err != nil {
-		return nil, err
-	}
 	log := utils.NewNamedLogger("queue_service")
+	
+	var q amqp.Queue
+	var err error
+	
+	if channel != nil {
+		args := make(amqp.Table)
+		args["x-max-priority"] = 3
+
+		q, err = channel.QueueDeclare(
+			queueName, // name of the queue
+			true,      // durable
+			false,     // delete when unused
+			false,     // exclusive
+			false,     // no-wait
+			args,      // arguments
+		)
+		if err != nil {
+			return nil, err
+		}
+		log.Info("Queue service initialized with active connection")
+	} else {
+		log.Warn("Queue service initialized without connection - submissions will be accepted but not sent for evaluation")
+	}
+	
 	s := &queueService{
 		taskRepository:             taskRepository,
 		submissionRepository:       submissionRepository,

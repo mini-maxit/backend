@@ -15,6 +15,7 @@ import (
 	"github.com/mini-maxit/backend/package/utils"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
 )
 
 const numTries = 10
@@ -23,8 +24,9 @@ type Initialization struct {
 	Cfg *config.Config
 	DB  database.Database
 
-	TaskService service.TaskService
-	JWTService  service.JWTService
+	TaskService  service.TaskService
+	JWTService   service.JWTService
+	QueueService service.QueueService
 
 	AuthRoute              routes.AuthRoute
 	ContestRoute           routes.ContestRoute
@@ -41,7 +43,7 @@ type Initialization struct {
 	Dump func(w http.ResponseWriter, r *http.Request)
 }
 
-func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
+func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel, error) {
 	log := utils.NewNamedLogger("connect_to_broker")
 
 	var err error
@@ -54,23 +56,32 @@ func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
 			time.Sleep(2 * time.Second * time.Duration(v))
 			continue
 		}
+		break
 	}
-	log.Info("Connected to RabbitMQ")
 
 	if err != nil {
-		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
+		log.Warnf("Failed to connect to RabbitMQ after %d retries: %s", numTries, err.Error())
+		return nil, nil, err
 	}
+
+	log.Info("Connected to RabbitMQ")
 	channel, err := conn.Channel()
 	if err != nil {
-		log.Panicf("Failed to create channel: %s", err.Error())
+		log.Errorf("Failed to create channel: %s", err.Error())
+		conn.Close()
+		return nil, nil, err
 	}
 
-	return conn, channel
+	return conn, channel, nil
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
 	log := utils.NewNamedLogger("initialization")
-	conn, channel := connectToBroker(cfg)
+	conn, channel, err := connectToBroker(cfg)
+	if err != nil {
+		log.Warnf("Queue connection unavailable - backend will accept submissions but not send them for evaluation: %s", err.Error())
+	}
+	
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
@@ -115,9 +126,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create queue service: %s", err.Error())
 	}
-	err = queueService.PublishHandshake()
-	if err != nil {
-		log.Panicf("Failed to publish handshake: %s", err.Error())
+	if channel != nil {
+		err = queueService.PublishHandshake()
+		if err != nil {
+			log.Warnf("Failed to publish handshake - queue may not be ready: %s", err.Error())
+		}
 	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
@@ -153,28 +166,36 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	workerRoute := routes.NewWorkerRoute(workerService)
 
 	// Queue listener
-	queueListener, err := queue.NewListener(
-		conn,
-		channel,
-		db,
-		taskService,
-		queueService,
-		submissionService,
-		langService,
-		cfg.Broker.ResponseQueueName,
-	)
-	if err != nil {
-		log.Panicf("Failed to create queue listener: %s", err.Error())
+	var queueListener queue.Listener
+	if channel != nil {
+		queueListener, err = queue.NewListener(
+			conn,
+			channel,
+			db,
+			taskService,
+			queueService,
+			submissionService,
+			langService,
+			cfg.Broker.ResponseQueueName,
+		)
+		if err != nil {
+			log.Warnf("Failed to create queue listener - responses will not be processed: %s", err.Error())
+		}
+	} else {
+		log.Info("Queue listener not started - queue connection unavailable")
 	}
+	
 	if cfg.Dump {
 		dump(db, log, authService, userRepository)
 	}
-	return &Initialization{
+	
+	init := &Initialization{
 		Cfg: cfg,
 		DB:  db,
 
-		TaskService: taskService,
-		JWTService:  jwtService,
+		TaskService:  taskService,
+		JWTService:   jwtService,
+		QueueService: queueService,
 
 		AuthRoute:              authRoute,
 		ContestRoute:           contestRoute,
@@ -187,5 +208,26 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		WorkerRoute:            workerRoute,
 
 		QueueListener: queueListener,
+	}
+	
+	// Start background worker to retry pending submissions
+	if channel != nil {
+		go startPendingSubmissionsRetryWorker(init, log)
+	}
+	
+	return init
+}
+
+func startPendingSubmissionsRetryWorker(init *Initialization, log *zap.SugaredLogger) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	
+	log.Info("Started background worker to retry pending submissions")
+	
+	for range ticker.C {
+		err := init.QueueService.RetryPendingSubmissions(init.DB.DB())
+		if err != nil {
+			log.Debugf("Error retrying pending submissions: %v", err.Error())
+		}
 	}
 }

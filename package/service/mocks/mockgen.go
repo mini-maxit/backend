@@ -1421,6 +1421,20 @@ func (mr *MockQueueServiceMockRecorder) PublishWorkerStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWorkerStatus", reflect.TypeOf((*MockQueueService)(nil).PublishWorkerStatus))
 }
 
+// RetryPendingSubmissions mocks base method.
+func (m *MockQueueService) RetryPendingSubmissions(db *gorm.DB) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetryPendingSubmissions", db)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RetryPendingSubmissions indicates an expected call of RetryPendingSubmissions.
+func (mr *MockQueueServiceMockRecorder) RetryPendingSubmissions(db any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryPendingSubmissions", reflect.TypeOf((*MockQueueService)(nil).RetryPendingSubmissions), db)
+}
+
 // StatusCond mocks base method.
 func (m *MockQueueService) StatusCond() *sync.Cond {
 	m.ctrl.T.Helper()

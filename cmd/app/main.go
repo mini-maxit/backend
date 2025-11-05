@@ -27,26 +27,34 @@ func main() {
 	init := initialization.NewInitialization(cfg)
 
 	queueListener := init.QueueListener
-	log.Info("Starting queue listener...")
-	err := queueListener.Start()
-	if err != nil {
-		log.Errorf("failed to start queue listener: %v", err.Error())
-		os.Exit(1)
+	if queueListener != nil {
+		log.Info("Starting queue listener...")
+		err := queueListener.Start()
+		if err != nil {
+			log.Errorf("failed to start queue listener: %v", err.Error())
+			os.Exit(1)
+		}
+	} else {
+		log.Info("Queue listener not available - submissions will be accepted but not evaluated")
 	}
 
 	server := server.NewServer(init, log)
-	err = server.Start()
+	err := server.Start()
 	if err != nil {
-		err2 := queueListener.Shutdown()
-		if err2 != nil {
-			log.Errorf("failed to shutdown queue listener: %v", err2.Error())
+		if queueListener != nil {
+			err2 := queueListener.Shutdown()
+			if err2 != nil {
+				log.Errorf("failed to shutdown queue listener: %v", err2.Error())
+			}
 		}
 		log.Errorf("failed to start server: %v", err.Error())
 		os.Exit(1)
 	}
 
-	err = queueListener.Shutdown()
-	if err != nil {
-		log.Errorf("failed to shutdown queue listener: %v", err.Error())
+	if queueListener != nil {
+		err = queueListener.Shutdown()
+		if err != nil {
+			log.Errorf("failed to shutdown queue listener: %v", err.Error())
+		}
 	}
 }

@@ -61,6 +61,8 @@ type SubmissionRepository interface {
 	MarkFailed(db *gorm.DB, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
 	MarkProcessing(tx *gorm.DB, submissionID int64) error
+	// GetPendingSubmissions returns submissions that are in "received" status (not yet sent for evaluation).
+	GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error)
 }
 
 type submissionRepository struct{}
@@ -326,6 +328,31 @@ func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionID int64, erro
 		CheckedAt:     time.Now(),
 	}).Error
 	return err
+}
+
+func (us *submissionRepository) GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error) {
+	submissions := []models.Submission{}
+	err := tx.Model(&models.Submission{}).
+		Where("status = ?", types.SubmissionStatusReceived).
+		Order("submitted_at ASC").
+		Limit(limit).
+		Preload("Language").
+		Preload("Task").
+		Preload("User").
+		Preload("Result").
+		Preload("Result.TestResults").
+		Preload("Result.TestResults.TestCase").
+		Preload("Result.TestResults.TestCase.InputFile").
+		Preload("Result.TestResults.TestCase.OutputFile").
+		Preload("Result.TestResults.StdoutFile").
+		Preload("Result.TestResults.StderrFile").
+		Preload("Result.TestResults.DiffFile").
+		Preload("File").
+		Find(&submissions).Error
+	if err != nil {
+		return nil, err
+	}
+	return submissions, nil
 }
 
 func (us *submissionRepository) GetAllForTaskByUser(
