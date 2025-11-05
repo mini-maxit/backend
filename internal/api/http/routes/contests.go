@@ -22,6 +22,7 @@ type ContestRoute interface {
 	GetContests(w http.ResponseWriter, r *http.Request)
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
+	GetContestTask(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -325,6 +326,77 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 	httputils.ReturnSuccess(w, http.StatusOK, contests)
 }
 
+// GetContestTask godoc
+// @Tags			contests
+// @Summary		Get a specific task from a contest
+// @Description	Get detailed information about a specific task within a contest
+// @Produce		json
+// @Param			id		path		int	true	"Contest ID"
+// @Param			task_id	path		int	true	"Task ID"
+// @Failure		400	{object}	httputils.APIError
+// @Failure		403	{object}	httputils.APIError
+// @Failure		404	{object}	httputils.APIError
+// @Failure		405	{object}	httputils.APIError
+// @Failure		500	{object}	httputils.APIError
+// @Success		200	{object}	httputils.APIResponse[schemas.TaskDetailed]
+// @Router			/contests/{id}/tasks/{task_id} [get]
+func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+	taskStr := httputils.GetPathValue(r, "task_id")
+	if taskStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	task, err := cr.contestService.GetContestTask(tx, &currentUser, contestID, taskID)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		switch {
+		case errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrTaskNotInContest):
+			status = http.StatusNotFound
+		case errors.Is(err, myerrors.ErrNotAuthorized):
+			status = http.StatusForbidden
+		default:
+			cr.logger.Errorw("Failed to get contest task", "error", err)
+		}
+
+		httputils.ReturnError(w, status, "Failed to get contest task")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, task)
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -347,6 +419,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	})
 
 	mux.HandleFunc("/contests/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
+	mux.HandleFunc("/contests/{id}/tasks/{task_id}", contestRoute.GetContestTask)
 
 	mux.HandleFunc("/contests/{id}/register", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

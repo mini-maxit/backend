@@ -625,15 +625,15 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
-	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
 	t.Run("No tasks", func(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
 			tx,
 			adminUser.ID,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			queryParams.Offset,
+			queryParams.Limit,
+			queryParams.Sort,
 		).Return([]models.Task{}, nil).Times(1)
 		tasks, err := ts.GetAllCreated(tx, adminUser, queryParams)
 		require.NoError(t, err)
@@ -648,9 +648,9 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
 			tx,
 			adminUser.ID,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			queryParams.Offset,
+			queryParams.Limit,
+			queryParams.Sort,
 		).Return([]models.Task{
 			{
 				ID:        taskID,
@@ -675,9 +675,9 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
 			tx,
 			teacherUser.ID,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			queryParams.Offset,
+			queryParams.Limit,
+			queryParams.Sort,
 		).Return([]models.Task{
 			{
 				ID:        taskID,
@@ -702,8 +702,9 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
 			tx,
 			teacherUser.ID,
-			queryParams["limit"],
-			queryParams["offset"], queryParams["sort"],
+			queryParams.Offset,
+			queryParams.Limit,
+			queryParams.Sort,
 		).Return([]models.Task{
 			{
 				ID:        taskID,

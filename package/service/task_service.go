@@ -35,7 +35,7 @@ type TaskService interface {
 	// GetAllAssigned retrieves all tasks assigned to the current user.
 	GetAllAssigned(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
-	GetAllCreated(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllForGroup retrieves all tasks for a specific group.
 	GetAllForGroup(
 		tx *gorm.DB,
@@ -261,7 +261,7 @@ func (ts *taskService) GetAllAssigned(
 func (ts *taskService) GetAllCreated(
 	tx *gorm.DB,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
@@ -269,13 +269,10 @@ func (ts *taskService) GetAllCreated(
 		return nil, err
 	}
 
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = "created_at desc"
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
 	}
-	tasks, err := ts.taskRepository.GetAllCreated(tx, currentUser.ID, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllCreated(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all created tasks: %v", err.Error())
 		return nil, err

@@ -11,6 +11,7 @@ import (
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
+	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -174,7 +175,8 @@ func TestContestService_GetPastContests(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr)
+	ts := mock_service.NewMockTaskService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -238,7 +240,8 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr)
+	ts := mock_service.NewMockTaskService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -302,7 +305,8 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr)
+	ts := mock_service.NewMockTaskService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
@@ -669,7 +673,8 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr)
+	ts := mock_service.NewMockTaskService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
@@ -936,7 +941,8 @@ func TestContestService_Get(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr)
+	ts := mock_service.NewMockTaskService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {

@@ -28,6 +28,7 @@ type ContestsManagementRoute interface {
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
+	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -679,6 +680,53 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
+// GetCreatedContests godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get contests created by the current user
+//	@Description	Get all contests created by the currently authenticated user
+//	@Produce		json
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.Contest]
+//	@Router			/contests-management/contests/created [get]
+func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	contests, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrNotAuthorized) {
+			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to get created contests", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to get created contests")
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, contests)
+}
+
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -688,6 +736,8 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
+
+	mux.HandleFunc("/contests/created", route.GetCreatedContests)
 
 	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

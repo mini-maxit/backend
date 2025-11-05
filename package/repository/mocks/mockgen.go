@@ -1068,18 +1068,18 @@ func (mr *MockTaskRepositoryMockRecorder) GetAllAssigned(tx, userID, limit, offs
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllCreated", tx, userID, limit, offset, sort)
+	ret := m.ctrl.Call(m, "GetAllCreated", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllCreated indicates an expected call of GetAllCreated.
-func (mr *MockTaskRepositoryMockRecorder) GetAllCreated(tx, userID, limit, offset, sort any) *gomock.Call {
+func (mr *MockTaskRepositoryMockRecorder) GetAllCreated(tx, userID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskRepository)(nil).GetAllCreated), tx, userID, limit, offset, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskRepository)(nil).GetAllCreated), tx, userID, offset, limit, sort)
 }
 
 // GetAllForGroup mocks base method.

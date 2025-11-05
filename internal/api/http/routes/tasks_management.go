@@ -719,9 +719,10 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllCreated(tx, currentUser, queryParams)
+	task, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

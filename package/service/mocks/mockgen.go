@@ -145,6 +145,36 @@ func (mr *MockContestServiceMockRecorder) GetAssignableTasks(tx, currentUser, co
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestService)(nil).GetAssignableTasks), tx, currentUser, contestID)
 }
 
+// GetContestTask mocks base method.
+func (m *MockContestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestTask", tx, currentUser, contestID, taskID)
+	ret0, _ := ret[0].(*schemas.TaskDetailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestTask indicates an expected call of GetContestTask.
+func (mr *MockContestServiceMockRecorder) GetContestTask(tx, currentUser, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTask", reflect.TypeOf((*MockContestService)(nil).GetContestTask), tx, currentUser, contestID, taskID)
+}
+
+// GetContestsCreatedByUser mocks base method.
+func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestsCreatedByUser", tx, userID, paginationParams)
+	ret0, _ := ret[0].([]schemas.Contest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestsCreatedByUser indicates an expected call of GetContestsCreatedByUser.
+func (mr *MockContestServiceMockRecorder) GetContestsCreatedByUser(tx, userID, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsCreatedByUser", reflect.TypeOf((*MockContestService)(nil).GetContestsCreatedByUser), tx, userID, paginationParams)
+}
+
 // GetOngoingContests mocks base method.
 func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
@@ -573,18 +603,18 @@ func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, queryPara
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllCreated", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetAllCreated", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllCreated indicates an expected call of GetAllCreated.
-func (mr *MockTaskServiceMockRecorder) GetAllCreated(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) GetAllCreated(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskService)(nil).GetAllCreated), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskService)(nil).GetAllCreated), tx, currentUser, paginationParams)
 }
 
 // GetAllForGroup mocks base method.

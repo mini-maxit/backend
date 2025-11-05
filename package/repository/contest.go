@@ -254,7 +254,7 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int
 		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
 		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
 		Where(`(
-			(start_at IS NULL OR start_at <= NOW() AND (end_at IS NULL OR end_at > NOW()))
+			(start_at IS NULL OR start_at <= NOW()) AND (end_at IS NULL OR end_at > NOW())
 		)`)
 
 	// Apply pagination and sorting

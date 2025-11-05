@@ -52,6 +52,9 @@ type ContestService interface {
 	// ValidateContestSubmission validates if a user can submit a solution for a task in a contest
 	// Returns an error if submission is not allowed (contest/task not open, user not participant, etc.)
 	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
+
+	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error)
+	GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -61,6 +64,8 @@ type contestService struct {
 	taskRepository       repository.TaskRepository
 	userRepository       repository.UserRepository
 	submissionRepository repository.SubmissionRepository
+
+	taskService TaskService
 
 	logger *zap.SugaredLogger
 }
@@ -884,12 +889,58 @@ func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, task
 	return nil
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository) ContestService {
+func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
+	}
+
+	contests, err := cs.contestRepository.GetAllForCreator(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.Contest, len(contests))
+	for i, contest := range contests {
+		result[i] = *ContestToSchema(&contest)
+	}
+	return result, nil
+}
+
+func (cs *contestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error) {
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+	if !cs.isContestVisibleToUser(tx, contest, currentUser) {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	_, err = cs.contestRepository.GetContestTask(tx, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	task, err := cs.taskService.Get(tx, *currentUser, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, taskService TaskService) ContestService {
 	return &contestService{
 		contestRepository:    contestRepository,
 		taskRepository:       taskRepository,
 		userRepository:       userRepository,
 		submissionRepository: submissionRepository,
+		taskService:          taskService,
 		logger:               utils.NewNamedLogger("contest_service"),
 	}
 }

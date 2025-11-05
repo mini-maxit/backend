@@ -24,7 +24,7 @@ type TaskRepository interface {
 	// GetAllAssigned returns all tasks assigned to a user, either directly or through a group. The tasks are paginated.
 	GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
-	GetAllCreated(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, error)
 	// GetAllForGroup returns all tasks assigned to a group. The tasks are paginated.
 	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAll returns all tasks. The tasks are paginated.
@@ -150,7 +150,7 @@ func (tr *taskRepository) UnassignFromGroup(tx *gorm.DB, taskID, groupID int64) 
 func (tr *taskRepository) GetAllCreated(
 	tx *gorm.DB,
 	userID int64,
-	limit, offset int,
+	offset, limit int,
 	sort string,
 ) ([]models.Task, error) {
 	var tasks []models.Task
@@ -160,7 +160,7 @@ func (tr *taskRepository) GetAllCreated(
 	}
 
 	err = tx.Model(&models.Task{}).
-		Where("created_by_id = ? AND deleted_at IS NULL", userID).
+		Where("created_by = ?", userID).
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
