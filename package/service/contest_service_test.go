@@ -182,10 +182,10 @@ func TestContestService_GetPastContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
+		queryParams := schemas.PaginationParams{
+			Limit:  10,
+			Offset: 0,
+			Sort:   "start_time",
 		}
 
 		visible := true
@@ -215,10 +215,10 @@ func TestContestService_GetPastContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
+		queryParams := schemas.PaginationParams{
+			Limit:  10,
+			Offset: 0,
+			Sort:   "start_time",
 		}
 
 		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)
@@ -246,10 +246,10 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
+		queryParams := schemas.PaginationParams{
+			Limit:  10,
+			Offset: 0,
+			Sort:   "start_time",
 		}
 
 		visible := true
@@ -279,10 +279,10 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
-		queryParams := map[string]any{
-			"limit":  10,
-			"offset": 0,
-			"sort":   "start_time",
+		queryParams := schemas.PaginationParams{
+			Limit:  10,
+			Offset: 0,
+			Sort:   "start_time",
 		}
 
 		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)

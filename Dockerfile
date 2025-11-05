@@ -20,5 +20,6 @@ RUN apk add --no-cache curl && \
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/atlas.hcl .
 COPY --from=builder /app/backend.o .
+COPY --from=builder /app/docs ./docs
 
 CMD ["./backend.o"]

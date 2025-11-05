@@ -20,11 +20,11 @@ type ContestService interface {
 	// Get retrieves a contest by ID
 	Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error)
 	// GetOngoingContests retrieves contests that are currently running
-	GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error)
 	// GetPastContests retrieves contests that have ended
-	GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error)
 	// GetUpcomingContests retrieves contests that haven't started yet
-	GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error)
+	GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
 	// Delete removes a contest
@@ -125,15 +125,12 @@ func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID i
 	return ContestToSchema(contest), nil
 }
 
-func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultContestSort
+func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
 	}
 
-	contestsWithStats, err := cs.contestRepository.GetOngoingContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	contestsWithStats, err := cs.contestRepository.GetOngoingContestsWithStats(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return nil, err
 	}
@@ -153,15 +150,12 @@ func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.Us
 	return result, nil
 }
 
-func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultContestSort
+func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
 	}
 
-	contestsWithStats, err := cs.contestRepository.GetPastContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	contestsWithStats, err := cs.contestRepository.GetPastContestsWithStats(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return nil, err
 	}
@@ -181,15 +175,12 @@ func (cs *contestService) GetPastContests(tx *gorm.DB, currentUser schemas.User,
 	return result, nil
 }
 
-func (cs *contestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultContestSort
+func (cs *contestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
 	}
 
-	contestsWithStats, err := cs.contestRepository.GetUpcomingContestsWithStats(tx, currentUser.ID, offset, limit, sort)
+	contestsWithStats, err := cs.contestRepository.GetUpcomingContestsWithStats(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return nil, err
 	}

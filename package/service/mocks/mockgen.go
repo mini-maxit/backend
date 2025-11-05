@@ -146,33 +146,33 @@ func (mr *MockContestServiceMockRecorder) GetAssignableTasks(tx, currentUser, co
 }
 
 // GetOngoingContests mocks base method.
-func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOngoingContests indicates an expected call of GetOngoingContests.
-func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOngoingContests", reflect.TypeOf((*MockContestService)(nil).GetOngoingContests), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOngoingContests", reflect.TypeOf((*MockContestService)(nil).GetOngoingContests), tx, currentUser, paginationParams)
 }
 
 // GetPastContests mocks base method.
-func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPastContests indicates an expected call of GetPastContests.
-func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastContests", reflect.TypeOf((*MockContestService)(nil).GetPastContests), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastContests", reflect.TypeOf((*MockContestService)(nil).GetPastContests), tx, currentUser, paginationParams)
 }
 
 // GetRegistrationRequests mocks base method.
@@ -221,18 +221,18 @@ func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, co
 }
 
 // GetUpcomingContests mocks base method.
-func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUpcomingContests indicates an expected call of GetUpcomingContests.
-func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContests", reflect.TypeOf((*MockContestService)(nil).GetUpcomingContests), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContests", reflect.TypeOf((*MockContestService)(nil).GetUpcomingContests), tx, currentUser, paginationParams)
 }
 
 // GetUserContests mocks base method.

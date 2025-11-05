@@ -21,9 +21,7 @@ import (
 type ContestRoute interface {
 	CreateContest(w http.ResponseWriter, r *http.Request)
 	GetContest(w http.ResponseWriter, r *http.Request)
-	GetOngoingContests(w http.ResponseWriter, r *http.Request)
-	GetPastContests(w http.ResponseWriter, r *http.Request)
-	GetUpcomingContests(w http.ResponseWriter, r *http.Request)
+	GetContests(w http.ResponseWriter, r *http.Request)
 	EditContest(w http.ResponseWriter, r *http.Request)
 	DeleteContest(w http.ResponseWriter, r *http.Request)
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
@@ -56,7 +54,7 @@ type ContestRouteImpl struct {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.IDResponse]
-//	@Router			/contests/ [post]
+//	@Router			/contests [post]
 func (cr *ContestRouteImpl) CreateContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -159,19 +157,21 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, contest)
 }
 
-// GetOngoingContests godoc
+// GetContests godoc
 //
-//	@Tags			contest
-//	@Summary		Get ongoing contests
-//	@Description	Get contests that are currently running with pagination
+//	@Tags			global-contests
+//	@Summary		Get global contests
+//	@Description	Get global contests accessible to the (ongoing, upcoming, past)
 //	@Produce		json
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contests/ongoing [get]
-func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Request) {
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Param			status	query		string	true	"Contest status"	Enums(ongoing, upcoming, past)
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.AvailableContest]
+//	@Failure		401		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests [get]
+func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -187,115 +187,34 @@ func (cr *ContestRouteImpl) GetOngoingContests(w http.ResponseWriter, r *http.Re
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	contests, err := cr.contestService.GetOngoingContests(tx, currentUser, queryParams)
+	status, ok := queryParams["status"]
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Status query parameter is required")
+		return
+	}
+	statusStr, ok := status.(string)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Status query parameter must be a string")
+		return
+	}
+	var contests []schemas.AvailableContest
+	switch statusStr {
+	case "ongoing":
+		contests, err = cr.contestService.GetOngoingContests(tx, currentUser, paginationParams)
+	case "upcoming":
+		contests, err = cr.contestService.GetUpcomingContests(tx, currentUser, paginationParams)
+	case "past":
+		contests, err = cr.contestService.GetPastContests(tx, currentUser, paginationParams)
+	default:
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status query parameter")
+		return
+	}
 	if err != nil {
 		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to list ongoing contests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Contest listing failed")
-		return
-	}
-
-	if contests == nil {
-		contests = []schemas.AvailableContest{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
-}
-
-// GetPastContests godoc
-//
-//	@Tags			contest
-//	@Summary		Get past contests
-//	@Description	Get contests that have ended with pagination
-//	@Produce		json
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contests/past [get]
-func (cr *ContestRouteImpl) GetPastContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	contests, err := cr.contestService.GetPastContests(tx, currentUser, queryParams)
-	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to list past contests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Contest listing failed")
-		return
-	}
-
-	if contests == nil {
-		contests = []schemas.AvailableContest{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
-}
-
-// GetUpcomingContests godoc
-//
-//	@Tags			contest
-//	@Summary		Get upcoming contests
-//	@Description	Get contests that haven't started yet with pagination
-//	@Produce		json
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.AvailableContest]
-//	@Router			/contests/upcoming [get]
-func (cr *ContestRouteImpl) GetUpcomingContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	contests, err := cr.contestService.GetUpcomingContests(tx, currentUser, queryParams)
-	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to list upcoming contests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Contest listing failed")
+		cr.logger.Errorw("Failed to get contests", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
 		return
 	}
 
@@ -946,8 +865,10 @@ func (cr *ContestRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *
 }
 
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
+		case http.MethodGet:
+			contestRoute.GetContests(w, r)
 		case http.MethodPost:
 			contestRoute.CreateContest(w, r)
 		default:
@@ -955,34 +876,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/ongoing", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			contestRoute.GetOngoingContests(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/past", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			contestRoute.GetPastContests(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/upcoming", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			contestRoute.GetUpcomingContests(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			contestRoute.GetContest(w, r)
@@ -995,9 +889,9 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
-	mux.HandleFunc("/{id}/tasks/assignable-tasks", contestRoute.GetAssignableTasks)
-	mux.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
+	mux.HandleFunc("/contests/{id}/tasks/assignable-tasks", contestRoute.GetAssignableTasks)
+	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			contestRoute.GetContestTasks(w, r)
@@ -1006,7 +900,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/register", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}/register", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			contestRoute.RegisterForContest(w, r)
@@ -1015,7 +909,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			contestRoute.GetRegistrationRequests(w, r)
@@ -1024,10 +918,10 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/registration-requests/{user_id}/approve", contestRoute.ApproveRegistrationRequest)
-	mux.HandleFunc("/{id}/registration-requests/{user_id}/reject", contestRoute.RejectRegistrationRequest)
+	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", contestRoute.ApproveRegistrationRequest)
+	mux.HandleFunc("/contets/{id}/registration-requests/{user_id}/reject", contestRoute.RejectRegistrationRequest)
 
-	mux.HandleFunc("/{id}/submissions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}/submissions", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			contestRoute.GetContestSubmissions(w, r)

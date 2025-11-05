@@ -661,7 +661,7 @@ func TestGetOngoingContests(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetOngoingContests), db)
+	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetContests), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
@@ -673,6 +673,7 @@ func TestGetOngoingContests(t *testing.T) {
 			"limit":  10,
 			"offset": 0,
 			"sort":   "",
+			"status": "ongoing",
 		})
 		ctx = context.WithValue(ctx, httputils.UserKey, schemas.User{ID: 1})
 		handler.ServeHTTP(w, r.WithContext(ctx))
