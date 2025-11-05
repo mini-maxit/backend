@@ -1588,6 +1588,21 @@ func (mr *MockContestRepositoryMockRecorder) GetContestTask(tx, contestID, taskI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTask", reflect.TypeOf((*MockContestRepository)(nil).GetContestTask), tx, contestID, taskID)
 }
 
+// GetContestsCreatedByUserWithStats mocks base method.
+func (m *MockContestRepository) GetContestsCreatedByUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestsCreatedByUserWithStats", tx, userID)
+	ret0, _ := ret[0].([]models.ParticipantContestStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestsCreatedByUserWithStats indicates an expected call of GetContestsCreatedByUserWithStats.
+func (mr *MockContestRepositoryMockRecorder) GetContestsCreatedByUserWithStats(tx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsCreatedByUserWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetContestsCreatedByUserWithStats), tx, userID)
+}
+
 // GetContestsForUserWithStats mocks base method.
 func (m *MockContestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
 	m.ctrl.T.Helper()

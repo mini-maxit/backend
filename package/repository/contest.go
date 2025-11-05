@@ -48,6 +48,8 @@ type ContestRepository interface {
 	GetAssignableTasks(tx *gorm.DB, contestID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
+	// GetContestsCreatedByUserWithStats retrieves contests with stats created by a user
+	GetContestsCreatedByUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
@@ -459,6 +461,42 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE cpg.contest_id = contests.id AND ug.user_id = ?
 		)`, database.ResolveTableName(tx, &models.ContestParticipant{}), database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID, userID)
+
+	err := query.Find(&contests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return contests, nil
+}
+
+func (cr *contestRepository) GetContestsCreatedByUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
+	var contests []models.ParticipantContestStats
+
+	// Build query to get contests created by the user with statistics
+	// Similar to GetContestsForUserWithStats but for contests created by user
+	query := tx.Model(&models.Contest{}).
+		Select(`contests.*,
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+			COALESCE(contest_task_count.count, 0) as task_count,
+			0 as solved_count`).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Where("contests.created_by = ?", userID)
 
 	err := query.Find(&contests).Error
 	if err != nil {

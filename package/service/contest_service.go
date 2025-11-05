@@ -488,9 +488,30 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 		return schemas.UserContestsWithStats{}, err
 	}
 
+	// Get contests where user is a participant
 	contestsWithStats, err := cs.contestRepository.GetContestsForUserWithStats(tx, user.ID)
 	if err != nil {
 		return schemas.UserContestsWithStats{}, err
+	}
+
+	// If user is a teacher, also include contests they created
+	if user.Role == types.UserRoleTeacher {
+		createdContests, err := cs.contestRepository.GetContestsCreatedByUserWithStats(tx, user.ID)
+		if err != nil {
+			return schemas.UserContestsWithStats{}, err
+		}
+		
+		// Merge created contests with participated contests, avoiding duplicates
+		contestMap := make(map[int64]bool)
+		for _, contest := range contestsWithStats {
+			contestMap[contest.ID] = true
+		}
+		
+		for _, contest := range createdContests {
+			if !contestMap[contest.ID] {
+				contestsWithStats = append(contestsWithStats, contest)
+			}
+		}
 	}
 
 	ongoing := make([]schemas.ContestWithStats, 0)
