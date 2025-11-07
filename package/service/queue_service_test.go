@@ -22,18 +22,15 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	submissionResultRepository := mock_repository.NewMockSubmissionResultRepository(ctrl)
 	queueMessageRepository := mock_repository.NewMockQueueMessageRepository(ctrl)
 
-	// Create queue service without channel (simulating queue unavailable)
-	queueService, err := service.NewQueueService(
+	// Create queue service without connection
+	queueService := service.NewQueueService(
 		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
-		nil, // no connection
-		nil, // no channel
 		"test_queue",
 		"test_response_queue",
 	)
-	require.NoError(t, err)
 	assert.NotNil(t, queueService)
 
 	// Mock submission data
@@ -71,7 +68,7 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	submissionResultRepository.EXPECT().Get(db, int64(1)).Return(submissionResult, nil)
 
 	// Call PublishSubmission - should not fail even without queue channel
-	err = queueService.PublishSubmission(db, 1, 1)
+	err := queueService.PublishSubmission(db, 1, 1)
 	assert.NoError(t, err, "PublishSubmission should not fail when queue is unavailable")
 }
 
@@ -84,24 +81,21 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	submissionResultRepository := mock_repository.NewMockSubmissionResultRepository(ctrl)
 	queueMessageRepository := mock_repository.NewMockQueueMessageRepository(ctrl)
 
-	// Create queue service without channel (simulating queue unavailable)
-	queueService, err := service.NewQueueService(
+	// Create queue service without connection
+	queueService := service.NewQueueService(
 		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
-		nil, // no connection
-		nil, // no channel
 		"test_queue",
 		"test_response_queue",
 	)
-	require.NoError(t, err)
 	assert.NotNil(t, queueService)
 
 	db := &gorm.DB{}
 
 	// Call RetryPendingSubmissions - should return error but not panic
-	err = queueService.RetryPendingSubmissions(db)
+	err := queueService.RetryPendingSubmissions(db)
 	require.Error(t, err, "RetryPendingSubmissions should return error when queue is unavailable")
 	assert.Contains(t, err.Error(), "queue channel not available")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -37,10 +38,8 @@ type QueueService interface {
 	RetryPendingSubmissions(db *gorm.DB) error
 	// IsConnected returns true if queue is connected and ready
 	IsConnected() bool
-	// Reconnect attempts to reconnect to the queue and returns error if fails
-	Reconnect() error
-	// SetConnectionNotifyCallback sets a callback to be called when connection status changes
-	SetConnectionNotifyCallback(callback func(connected bool))
+	// SetConnection updates the connection used by the service
+	SetConnection(conn *amqp.Connection, channel *amqp.Channel) error
 	StatusMux() *sync.Mutex
 	StatusCond() *sync.Cond
 	LastWorkerStatus() schemas.WorkerStatus
@@ -52,24 +51,28 @@ type queueService struct {
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
 	queueRepository            repository.QueueMessageRepository
-	channel                    *amqp.Channel
-	conn                       *amqp.Connection
-	queue                      amqp.Queue
 	queueName                  string
 	responseQueueName          string
+
+	connMux sync.RWMutex
+	channel *amqp.Channel
+	conn    *amqp.Connection
+	queue   amqp.Queue
 
 	statusMux        *sync.Mutex
 	statusCond       *sync.Cond
 	lastWorkerStatus schemas.WorkerStatus
 
-	connectionMux      *sync.RWMutex
-	connectionCallback func(connected bool)
-
 	logger *zap.SugaredLogger
 }
 
 func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
-	if qs.channel == nil {
+	qs.connMux.RLock()
+	channel := qs.channel
+	queueName := qs.queue.Name
+	qs.connMux.RUnlock()
+
+	if channel == nil || channel.IsClosed() {
 		qs.logger.Warn("Queue channel is not available - message will not be published")
 		return errors.New("queue channel is not available")
 	}
@@ -83,7 +86,7 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 	ctx, cancel := context.WithTimeout(context.Background(), publishTimeoutSeconds*time.Second)
 	defer cancel()
 
-	err = qs.channel.PublishWithContext(ctx, "", qs.queue.Name, false, false, amqp.Publishing{
+	err = channel.PublishWithContext(ctx, "", queueName, false, false, amqp.Publishing{
 		ContentType: "application/json",
 		Body:        msgBytes,
 		ReplyTo:     qs.responseQueueName,
@@ -296,74 +299,86 @@ func NewQueueService(
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
 	queueMessageRepository repository.QueueMessageRepository,
-	conn *amqp.Connection,
-	channel *amqp.Channel,
 	queueName string,
 	responseQueueName string,
-) (QueueService, error) {
+) QueueService {
 	log := utils.NewNamedLogger("queue_service")
-
-	var q amqp.Queue
-	var err error
-
-	if channel != nil {
-		args := make(amqp.Table)
-		args["x-max-priority"] = 3
-
-		q, err = channel.QueueDeclare(
-			queueName, // name of the queue
-			true,      // durable
-			false,     // delete when unused
-			false,     // exclusive
-			false,     // no-wait
-			args,      // arguments
-		)
-		if err != nil {
-			return nil, err
-		}
-		log.Info("Queue service initialized with active connection")
-	} else {
-		log.Warn("Queue service initialized without connection - submissions will be accepted but not sent for evaluation")
-	}
+	log.Info("Queue service initialized - connection will be established by queue listener")
 
 	s := &queueService{
 		taskRepository:             taskRepository,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
 		queueRepository:            queueMessageRepository,
-		queue:                      q,
 		queueName:                  queueName,
-		channel:                    channel,
-		conn:                       conn,
 		responseQueueName:          responseQueueName,
 
 		statusMux:        &sync.Mutex{},
 		lastWorkerStatus: schemas.WorkerStatus{},
-		connectionMux:    &sync.RWMutex{},
 		logger:           log,
 	}
 	s.statusCond = sync.NewCond(s.statusMux)
-	return s, nil
+	return s
+}
+
+func (qs *queueService) SetConnection(conn *amqp.Connection, channel *amqp.Channel) error {
+	qs.connMux.Lock()
+	defer qs.connMux.Unlock()
+
+	if channel != nil {
+		// Declare the worker queue for publishing submissions
+		args := make(amqp.Table)
+		args["x-max-priority"] = 3
+
+		q, err := channel.QueueDeclare(
+			qs.queueName,
+			true,  // durable
+			false, // delete when unused
+			false, // exclusive
+			false, // no-wait
+			args,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to declare queue: %w", err)
+		}
+
+		qs.queue = q
+		qs.channel = channel
+		qs.conn = conn
+		qs.logger.Info("Queue service connection established")
+
+		// Try to publish handshake
+		go func() {
+			if err := qs.PublishHandshake(); err != nil {
+				qs.logger.Warnf("Failed to publish handshake: %v", err)
+			}
+		}()
+	} else {
+		qs.channel = nil
+		qs.conn = nil
+		qs.queue = amqp.Queue{}
+		qs.logger.Warn("Queue service connection cleared")
+	}
+
+	return nil
 }
 
 func (qs *queueService) IsConnected() bool {
-	qs.connectionMux.RLock()
-	defer qs.connectionMux.RUnlock()
+	qs.connMux.RLock()
+	defer qs.connMux.RUnlock()
 	return qs.channel != nil && !qs.channel.IsClosed()
 }
 
 func (qs *queueService) SetConnectionNotifyCallback(callback func(connected bool)) {
-	qs.connectionMux.Lock()
-	defer qs.connectionMux.Unlock()
-	qs.connectionCallback = callback
+	// Deprecated - connection management now handled by queue listener
 }
 
 func (qs *queueService) Reconnect() error {
-	qs.connectionMux.Lock()
-	defer qs.connectionMux.Unlock()
+	qs.connMux.RLock()
+	defer qs.connMux.RUnlock()
 
 	if qs.channel == nil || qs.channel.IsClosed() {
-		return errors.New("queue is not connected - automatic reconnection is in progress")
+		return errors.New("queue is not connected - automatic reconnection is handled by queue listener")
 	}
 
 	qs.logger.Info("Queue is connected - ready to process pending submissions")

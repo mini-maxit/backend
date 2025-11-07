@@ -2,9 +2,14 @@ package queue
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"runtime/debug"
 	"strconv"
+	"sync"
+	"time"
 
+	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
@@ -17,8 +22,10 @@ import (
 type Listener interface {
 	// Start starts the queue listener
 	Start() error
-	listen() error
+	// Shutdown stops the queue listener
 	Shutdown() error
+	// IsConnected returns true if the listener is connected to the queue
+	IsConnected() bool
 }
 
 const (
@@ -33,6 +40,12 @@ const MessageTypeStatus = "status"
 
 const MaxQueuePriority = 3
 
+const (
+	numConnectTries     = 10
+	reconnectBackoff    = 1 * time.Second
+	maxReconnectBackoff = 60 * time.Second
+)
+
 type listener struct {
 	// Service that handles task-related operations
 	database          database.Database
@@ -40,41 +53,31 @@ type listener struct {
 	queueService      service.QueueService
 	submissionService service.SubmissionService
 	languageService   service.LanguageService
+
+	// Broker configuration
+	brokerConfig config.BrokerConfig
+
 	// RabbitMQ connection and channel
+	connMux sync.RWMutex
 	conn    *amqp.Connection
 	channel *amqp.Channel
-	done    chan error
-	// Queue name
-	queueName string
+
+	// Control channels
+	done     chan struct{}
+	shutdown chan struct{}
+
 	// Logger
 	logger *zap.SugaredLogger
 }
 
 func NewListener(
-	conn *amqp.Connection,
-	channel *amqp.Channel,
 	db database.Database,
 	taskService service.TaskService,
 	queueService service.QueueService,
 	submissionService service.SubmissionService,
 	langService service.LanguageService,
-	queueName string,
-) (Listener, error) {
-	// Declare the queue
-	args := make(amqp.Table)
-	args["x-max-priority"] = MaxQueuePriority
-	_, err := channel.QueueDeclare(
-		queueName, // name of the queue
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		args,      // arguments
-	)
-	if err != nil {
-		return nil, err
-	}
-
+	brokerConfig config.BrokerConfig,
+) Listener {
 	log := utils.NewNamedLogger("queue_listener")
 
 	return &listener{
@@ -83,63 +86,241 @@ func NewListener(
 		queueService:      queueService,
 		submissionService: submissionService,
 		languageService:   langService,
-		conn:              conn,
-		channel:           channel,
-		done:              make(chan error),
-		queueName:         queueName,
+		brokerConfig:      brokerConfig,
+		done:              make(chan struct{}),
+		shutdown:          make(chan struct{}),
 		logger:            log,
-	}, nil
+	}
+}
+
+func (ql *listener) IsConnected() bool {
+	ql.connMux.RLock()
+	defer ql.connMux.RUnlock()
+	return ql.channel != nil && !ql.channel.IsClosed()
 }
 
 func (ql *listener) Start() error {
-	// Start the queue listener with a cancelable context
-	if err := ql.listen(); err != nil {
-		ql.logger.Error("Error listening to queue:", err.Error())
+	ql.logger.Info("Starting queue listener...")
+
+	// Try initial connection
+	if err := ql.connect(); err != nil {
+		ql.logger.Warnf("Initial connection failed: %v. Will retry in background...", err)
 	}
+
+	// Start background goroutine to manage connection
+	go ql.run()
 
 	return nil
 }
 
 func (ql *listener) Shutdown() error {
 	ql.logger.Info("Shutting down the queue listener...")
-	if err := ql.channel.Close(); err != nil {
-		ql.logger.Errorf("Failed to close the channel: %s", err.Error())
+	close(ql.shutdown)
+	<-ql.done
+
+	ql.connMux.Lock()
+	defer ql.connMux.Unlock()
+
+	if ql.channel != nil {
+		if err := ql.channel.Close(); err != nil {
+			ql.logger.Errorf("Failed to close the channel: %s", err.Error())
+		}
 	}
-	if err := ql.conn.Close(); err != nil {
-		ql.logger.Errorf("Failed to close the connection: %s", err.Error())
+	if ql.conn != nil {
+		if err := ql.conn.Close(); err != nil {
+			ql.logger.Errorf("Failed to close the connection: %s", err.Error())
+		}
 	}
-	return <-ql.done
+
+	ql.logger.Info("Queue listener shut down successfully")
+	return nil
+}
+
+// connect establishes connection to RabbitMQ
+func (ql *listener) connect() error {
+	ql.connMux.Lock()
+	defer ql.connMux.Unlock()
+
+	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/",
+		ql.brokerConfig.User,
+		ql.brokerConfig.Password,
+		ql.brokerConfig.Host,
+		ql.brokerConfig.Port,
+	)
+
+	var err error
+	var conn *amqp.Connection
+
+	// Try to connect with retries
+	for i := range numConnectTries {
+		conn, err = amqp.Dial(brokerURL)
+		if err == nil {
+			break
+		}
+		if i < numConnectTries-1 {
+			time.Sleep(time.Duration(i+1) * time.Second)
+		}
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to connect after %d tries: %w", numConnectTries, err)
+	}
+
+	channel, err := conn.Channel()
+	if err != nil {
+		conn.Close()
+		return fmt.Errorf("failed to create channel: %w", err)
+	}
+
+	// Declare the response queue
+	args := make(amqp.Table)
+	args["x-max-priority"] = MaxQueuePriority
+	_, err = channel.QueueDeclare(
+		ql.brokerConfig.ResponseQueueName,
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		args,
+	)
+	if err != nil {
+		channel.Close()
+		conn.Close()
+		return fmt.Errorf("failed to declare queue: %w", err)
+	}
+
+	ql.conn = conn
+	ql.channel = channel
+
+	// Notify queue service of new connection
+	if err := ql.queueService.SetConnection(conn, channel); err != nil {
+		ql.logger.Warnf("Failed to set queue service connection: %v", err)
+		channel.Close()
+		conn.Close()
+		ql.conn = nil
+		ql.channel = nil
+		return fmt.Errorf("failed to set queue service connection: %w", err)
+	}
+
+	ql.logger.Info("Successfully connected to RabbitMQ")
+	return nil
+}
+
+// run manages the connection lifecycle
+func (ql *listener) run() {
+	defer close(ql.done)
+
+	for {
+		select {
+		case <-ql.shutdown:
+			ql.logger.Info("Shutdown signal received")
+			return
+		default:
+		}
+
+		// Check if we're connected
+		if !ql.IsConnected() {
+			ql.logger.Info("Not connected, attempting to connect...")
+			if err := ql.connect(); err != nil {
+				ql.logger.Warnf("Connection failed: %v. Retrying in %v...", err, reconnectBackoff)
+				time.Sleep(reconnectBackoff)
+				continue
+			}
+		}
+
+		// Start listening
+		if err := ql.listen(); err != nil {
+			ql.logger.Warnf("Listening failed: %v. Will reconnect...", err)
+			ql.closeConnection()
+
+			// Wait before reconnecting
+			select {
+			case <-ql.shutdown:
+				return
+			case <-time.After(reconnectBackoff):
+				// Reconnect after backoff
+			}
+		}
+	}
+}
+
+// closeConnection safely closes the current connection
+func (ql *listener) closeConnection() {
+	ql.connMux.Lock()
+	defer ql.connMux.Unlock()
+
+	// Notify queue service that connection is being closed
+	_ = ql.queueService.SetConnection(nil, nil)
+
+	if ql.channel != nil {
+		_ = ql.channel.Close()
+		ql.channel = nil
+	}
+	if ql.conn != nil {
+		_ = ql.conn.Close()
+		ql.conn = nil
+	}
 }
 
 func (ql *listener) listen() error {
-	// Start consuming messages from the queue
-	msgs, err := ql.channel.Consume(
-		ql.queueName, // queue name
-		"",           // consumer
-		false,        // auto-ack -> set to false to use manual ack/nack
-		false,        // exclusive
-		false,        // no-local
-		false,        // no-wait
-		nil,          // args
-	)
-	if err != nil {
-		return err
+	ql.connMux.RLock()
+	channel := ql.channel
+	queueName := ql.brokerConfig.ResponseQueueName
+	ql.connMux.RUnlock()
+
+	if channel == nil {
+		return errors.New("channel is nil")
 	}
 
-	// Process messages in a goroutine
-	go func() {
-		defer func() {
-			ql.logger.Info("Closing the message listener...")
-			ql.done <- nil
-		}()
-		ql.logger.Info("Starting the message listener...")
-		for msg := range msgs {
-			// Call the processMessage function with each message
+	// Start consuming messages from the queue
+	msgs, err := channel.Consume(
+		queueName, // queue name
+		"",        // consumer
+		false,     // auto-ack -> set to false to use manual ack/nack
+		false,     // exclusive
+		false,     // no-local
+		false,     // no-wait
+		nil,       // args
+	)
+	if err != nil {
+		return fmt.Errorf("failed to start consuming: %w", err)
+	}
+
+	// Monitor connection close
+	ql.connMux.RLock()
+	conn := ql.conn
+	ql.connMux.RUnlock()
+
+	connCloseChan := make(chan *amqp.Error, 1)
+	chanCloseChan := make(chan *amqp.Error, 1)
+
+	conn.NotifyClose(connCloseChan)
+	channel.NotifyClose(chanCloseChan)
+
+	ql.logger.Info("Started listening for messages...")
+
+	// Process messages
+	for {
+		select {
+		case <-ql.shutdown:
+			return nil
+		case err := <-connCloseChan:
+			if err != nil {
+				return fmt.Errorf("connection closed: %w", err)
+			}
+			return errors.New("connection closed")
+		case err := <-chanCloseChan:
+			if err != nil {
+				return fmt.Errorf("channel closed: %w", err)
+			}
+			return errors.New("channel closed")
+		case msg, ok := <-msgs:
+			if !ok {
+				return errors.New("message channel closed")
+			}
 			ql.processMessage(msg)
 		}
-	}()
-
-	return nil
+	}
 }
 
 // TODO Implement better requeue mechanism, to try for a few times before dropping the message and marking as dropped.

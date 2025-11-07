@@ -1,9 +1,7 @@
 package initialization
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/api/queue"
@@ -13,12 +11,7 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
-
-	amqp "github.com/rabbitmq/amqp091-go"
-	"go.uber.org/zap"
 )
-
-const numTries = 10
 
 type Initialization struct {
 	Cfg *config.Config
@@ -40,49 +33,11 @@ type Initialization struct {
 
 	QueueListener queue.Listener
 
-	BrokerConfig *config.BrokerConfig
-
 	Dump func(w http.ResponseWriter, r *http.Request)
-}
-
-func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel, error) {
-	log := utils.NewNamedLogger("connect_to_broker")
-
-	var err error
-	var conn *amqp.Connection
-	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Broker.User, cfg.Broker.Password, cfg.Broker.Host, cfg.Broker.Port)
-	for v := range numTries {
-		conn, err = amqp.Dial(brokerURL)
-		if err != nil {
-			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
-			time.Sleep(2 * time.Second * time.Duration(v))
-			continue
-		}
-		break
-	}
-
-	if err != nil {
-		log.Warnf("Failed to connect to RabbitMQ after %d retries: %s", numTries, err.Error())
-		return nil, nil, err
-	}
-
-	log.Info("Connected to RabbitMQ")
-	channel, err := conn.Channel()
-	if err != nil {
-		log.Errorf("Failed to create channel: %s", err.Error())
-		conn.Close()
-		return nil, nil, err
-	}
-
-	return conn, channel, nil
 }
 
 func NewInitialization(cfg *config.Config) *Initialization {
 	log := utils.NewNamedLogger("initialization")
-	conn, channel, err := connectToBroker(cfg)
-	if err != nil {
-		log.Warnf("Queue connection unavailable - backend will accept submissions but not send them for evaluation: %s", err.Error())
-	}
 
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
@@ -116,24 +71,14 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		userRepository,
 		groupRepository,
 	)
-	queueService, err := service.NewQueueService(taskRepository,
+	queueService := service.NewQueueService(
+		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueRepository,
-		conn,
-		channel,
 		cfg.Broker.QueueName,
 		cfg.Broker.ResponseQueueName,
 	)
-	if err != nil {
-		log.Panicf("Failed to create queue service: %s", err.Error())
-	}
-	if channel != nil {
-		err = queueService.PublishHandshake()
-		if err != nil {
-			log.Warnf("Failed to publish handshake - queue may not be ready: %s", err.Error())
-		}
-	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
 	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, taskService)
@@ -167,31 +112,21 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
-	// Queue listener
-	var queueListener queue.Listener
-	if channel != nil {
-		queueListener, err = queue.NewListener(
-			conn,
-			channel,
-			db,
-			taskService,
-			queueService,
-			submissionService,
-			langService,
-			cfg.Broker.ResponseQueueName,
-		)
-		if err != nil {
-			log.Warnf("Failed to create queue listener - responses will not be processed: %s", err.Error())
-		}
-	} else {
-		log.Info("Queue listener not started - queue connection unavailable")
-	}
+	// Queue listener - always created, manages its own connection internally
+	queueListener := queue.NewListener(
+		db,
+		taskService,
+		queueService,
+		submissionService,
+		langService,
+		cfg.Broker,
+	)
 
 	if cfg.Dump {
 		dump(db, log, authService, userRepository)
 	}
 
-	init := &Initialization{
+	return &Initialization{
 		Cfg: cfg,
 		DB:  db,
 
@@ -210,74 +145,5 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		WorkerRoute:            workerRoute,
 
 		QueueListener: queueListener,
-		BrokerConfig:  &cfg.Broker,
-	}
-
-	// Setup connection monitoring for automatic reconnection
-	if conn != nil && channel != nil {
-		go monitorQueueConnection(init, conn, channel, log)
-	}
-
-	return init
-}
-
-// monitorQueueConnection monitors the RabbitMQ connection and automatically reconnects on failure
-func monitorQueueConnection(init *Initialization, conn *amqp.Connection, channel *amqp.Channel, log *zap.SugaredLogger) {
-	connCloseChan := make(chan *amqp.Error)
-	conn.NotifyClose(connCloseChan)
-
-	chanCloseChan := make(chan *amqp.Error)
-	channel.NotifyClose(chanCloseChan)
-
-	log.Info("Started queue connection monitor")
-
-	for {
-		select {
-		case err := <-connCloseChan:
-			if err != nil {
-				log.Warnf("Queue connection closed: %v", err)
-				attemptReconnection(init, log)
-			}
-			return
-		case err := <-chanCloseChan:
-			if err != nil {
-				log.Warnf("Queue channel closed: %v", err)
-				attemptReconnection(init, log)
-			}
-			return
-		}
-	}
-}
-
-// attemptReconnection tries to reconnect to the queue with exponential backoff
-func attemptReconnection(init *Initialization, log *zap.SugaredLogger) {
-	backoff := 1 * time.Second
-	maxBackoff := 60 * time.Second
-
-	for {
-		log.Infof("Attempting to reconnect to queue (backoff: %v)...", backoff)
-
-		conn, channel, err := connectToBroker(init.Cfg)
-		if err == nil && conn != nil && channel != nil {
-			log.Info("Successfully reconnected to queue")
-
-			// Update queue service with new connection
-			// This requires implementing an Update method in QueueService
-			// For now, we'll just log success and the admin can manually trigger retry
-			log.Info("Queue reconnected - use admin endpoint to process pending submissions")
-
-			// Restart connection monitoring
-			go monitorQueueConnection(init, conn, channel, log)
-			return
-		}
-
-		log.Warnf("Reconnection failed: %v. Retrying in %v...", err, backoff)
-		time.Sleep(backoff)
-
-		// Exponential backoff with max limit
-		backoff *= 2
-		if backoff > maxBackoff {
-			backoff = maxBackoff
-		}
 	}
 }

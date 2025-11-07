@@ -15,6 +15,7 @@ import (
 
 	schemas "github.com/mini-maxit/backend/package/domain/schemas"
 	types "github.com/mini-maxit/backend/package/domain/types"
+	amqp091 "github.com/rabbitmq/amqp091-go"
 	gomock "go.uber.org/mock/gomock"
 	gorm "gorm.io/gorm"
 )
@@ -1435,20 +1436,6 @@ func (mr *MockQueueServiceMockRecorder) PublishWorkerStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishWorkerStatus", reflect.TypeOf((*MockQueueService)(nil).PublishWorkerStatus))
 }
 
-// Reconnect mocks base method.
-func (m *MockQueueService) Reconnect() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Reconnect")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Reconnect indicates an expected call of Reconnect.
-func (mr *MockQueueServiceMockRecorder) Reconnect() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconnect", reflect.TypeOf((*MockQueueService)(nil).Reconnect))
-}
-
 // RetryPendingSubmissions mocks base method.
 func (m *MockQueueService) RetryPendingSubmissions(db *gorm.DB) error {
 	m.ctrl.T.Helper()
@@ -1463,16 +1450,18 @@ func (mr *MockQueueServiceMockRecorder) RetryPendingSubmissions(db any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryPendingSubmissions", reflect.TypeOf((*MockQueueService)(nil).RetryPendingSubmissions), db)
 }
 
-// SetConnectionNotifyCallback mocks base method.
-func (m *MockQueueService) SetConnectionNotifyCallback(callback func(bool)) {
+// SetConnection mocks base method.
+func (m *MockQueueService) SetConnection(conn *amqp091.Connection, channel *amqp091.Channel) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetConnectionNotifyCallback", callback)
+	ret := m.ctrl.Call(m, "SetConnection", conn, channel)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SetConnectionNotifyCallback indicates an expected call of SetConnectionNotifyCallback.
-func (mr *MockQueueServiceMockRecorder) SetConnectionNotifyCallback(callback any) *gomock.Call {
+// SetConnection indicates an expected call of SetConnection.
+func (mr *MockQueueServiceMockRecorder) SetConnection(conn, channel any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnectionNotifyCallback", reflect.TypeOf((*MockQueueService)(nil).SetConnectionNotifyCallback), callback)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnection", reflect.TypeOf((*MockQueueService)(nil).SetConnection), conn, channel)
 }
 
 // StatusCond mocks base method.
