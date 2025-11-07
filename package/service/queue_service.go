@@ -346,13 +346,9 @@ func (qs *queueService) SetConnection(conn *amqp.Connection, channel *amqp.Chann
 		qs.channel = channel
 		qs.conn = conn
 		qs.logger.Info("Queue service connection established")
-
-		// Try to publish handshake
-		go func() {
-			if err := qs.PublishHandshake(); err != nil {
-				qs.logger.Warnf("Failed to publish handshake: %v", err)
-			}
-		}()
+		if err := qs.PublishHandshake(); err != nil {
+			qs.logger.Warnf("Failed to publish handshake: %v", err)
+		}
 	} else {
 		qs.channel = nil
 		qs.conn = nil
@@ -367,20 +363,4 @@ func (qs *queueService) IsConnected() bool {
 	qs.connMux.RLock()
 	defer qs.connMux.RUnlock()
 	return qs.channel != nil && !qs.channel.IsClosed()
-}
-
-func (qs *queueService) SetConnectionNotifyCallback(callback func(connected bool)) {
-	// Deprecated - connection management now handled by queue listener
-}
-
-func (qs *queueService) Reconnect() error {
-	qs.connMux.RLock()
-	defer qs.connMux.RUnlock()
-
-	if qs.channel == nil || qs.channel.IsClosed() {
-		return errors.New("queue is not connected - automatic reconnection is handled by queue listener")
-	}
-
-	qs.logger.Info("Queue is connected - ready to process pending submissions")
-	return nil
 }

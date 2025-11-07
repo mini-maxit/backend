@@ -41,9 +41,8 @@ const MessageTypeStatus = "status"
 const MaxQueuePriority = 3
 
 const (
-	numConnectTries     = 10
-	reconnectBackoff    = 1 * time.Second
-	maxReconnectBackoff = 60 * time.Second
+	numConnectTries  = 10
+	reconnectBackoff = 1 * time.Second
 )
 
 type listener struct {
@@ -158,7 +157,7 @@ func (ql *listener) connect() error {
 			break
 		}
 		if i < numConnectTries-1 {
-			time.Sleep(time.Duration(i+1) * time.Second)
+			time.Sleep(time.Duration(i+1) * 2 * time.Second)
 		}
 	}
 
