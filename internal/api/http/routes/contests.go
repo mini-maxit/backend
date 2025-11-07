@@ -150,10 +150,6 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if contests == nil {
-		contests = []schemas.AvailableContest{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, contests)
 }
 

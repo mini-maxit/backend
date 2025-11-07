@@ -24,7 +24,6 @@ type SubmissionRoutes interface {
 	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
 	GetAvailableLanguages(w http.ResponseWriter, r *http.Request)
-	GetMySubmissionsShort(w http.ResponseWriter, r *http.Request)
 	GetMySubmissions(w http.ResponseWriter, r *http.Request)
 
 	// Post requests
@@ -126,10 +125,6 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if submissions == nil {
-		submissions = []schemas.Submission{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
@@ -226,7 +221,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 
-	submissions, err := s.submissionService.GetAllForUserShort(tx, userID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, queryParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -242,10 +237,6 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 			)
 		}
 		return
-	}
-
-	if submissions == nil {
-		submissions = []schemas.SubmissionShort{}
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
@@ -302,10 +293,6 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if submissions == nil {
-		submissions = []schemas.Submission{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
@@ -358,10 +345,6 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		s.logger.Errorw("Failed to get submissions for task", "error", err)
 		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
 		return
-	}
-
-	if submissions == nil {
-		submissions = []schemas.Submission{}
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
@@ -530,66 +513,6 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	httputils.ReturnSuccess(w, http.StatusOK, map[string]int64{"submissionId": submissionID})
 }
 
-// GetMySubmissionsShort godoc
-//
-//	@Tags			submission
-//	@Summary		Get all submissions for a user
-//	@Description	If the user is a student, it fails with 403 Forbidden.
-//
-// For teacher it returns all submissions from this user for tasks owned by the teacher.
-// For admin it returns all submissions for specific user.
-//
-//	@Produce		json
-//	@Param			id		path		int	true	"User ID"
-//	@Param			limit	query		int	false	"Limit the number of returned submissions"
-//	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/my [get]
-func (s *SumbissionImpl) GetMySubmissionsShort(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-
-	submissions, err := s.submissionService.GetAllForUserShort(tx, currentUser.ID, currentUser, queryParams)
-	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w,
-				http.StatusForbidden,
-				"Permission denied. Current user is not allowed to view submissions for this user.",
-			)
-		default:
-			httputils.ReturnError(w,
-				http.StatusInternalServerError,
-				"Failed to get submissions. "+err.Error(),
-			)
-		}
-		return
-	}
-
-	if submissions == nil {
-		submissions = []schemas.SubmissionShort{}
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
-}
-
 // GetMySubmissions godoc
 //
 //	@Tags			submission
@@ -673,7 +596,7 @@ func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/submissions/submit", route.SubmitSolution)
 	mux.HandleFunc("/submissions/languages", route.GetAvailableLanguages)
 	mux.HandleFunc("/submissions/my", route.GetMySubmissions)
-	mux.HandleFunc("/submissions/users/{id}/short", route.GetAllForUser)
+	mux.HandleFunc("/submissions/users/{id}", route.GetAllForUser)
 	mux.HandleFunc("/submissions/groups/{id}", route.GetAllForGroup)
 	mux.HandleFunc("/submissions/tasks/{id}", route.GetAllForTask)
 	mux.HandleFunc("/submissions/{id}", route.GetByID)

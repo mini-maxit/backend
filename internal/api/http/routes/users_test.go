@@ -170,7 +170,7 @@ func TestGetAllUsers(t *testing.T) {
 		response := &httputils.APIResponse[[]schemas.User]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.Equal(t, []schemas.User{}, response.Data)
+		assert.Empty(t, response.Data)
 	})
 }
 

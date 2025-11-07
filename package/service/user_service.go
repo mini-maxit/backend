@@ -63,9 +63,9 @@ func (us *userService) GetAll(tx *gorm.DB, queryParams map[string]any) ([]schema
 		return nil, err
 	}
 
-	var users []schemas.User
-	for _, userModel := range userModels {
-		users = append(users, *UserToSchema(&userModel))
+	users := make([]schemas.User, len(userModels))
+	for i, userModel := range userModels {
+		users[i] = *UserToSchema(&userModel)
 	}
 
 	return users, nil

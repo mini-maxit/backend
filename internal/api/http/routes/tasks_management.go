@@ -735,10 +735,6 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if task == nil {
-		task = []schemas.Task{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 

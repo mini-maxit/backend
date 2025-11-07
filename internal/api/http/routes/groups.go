@@ -203,10 +203,6 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if groups == nil {
-		groups = []schemas.Group{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, groups)
 }
 

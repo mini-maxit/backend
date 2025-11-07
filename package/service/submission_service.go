@@ -33,14 +33,6 @@ type SubmissionService interface {
 	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
 	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
-	// GetAllForUserShort retrieves a short version of all submissions for a specific user
-	// based on the current user's role and query parameters.
-	GetAllForUserShort(
-		tx *gorm.DB,
-		userID int64,
-		user schemas.User,
-		queryParams map[string]any,
-	) ([]schemas.SubmissionShort, error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
@@ -208,9 +200,9 @@ func (ss *submissionService) getUnfilteredSubmissions(
 }
 
 func (ss *submissionService) modelsToSchemas(submissionModels []models.Submission) []schemas.Submission {
-	var result []schemas.Submission
-	for _, submissionModel := range submissionModels {
-		result = append(result, *ss.modelToSchema(&submissionModel))
+	result := make([]schemas.Submission, len(submissionModels))
+	for i, submissionModel := range submissionModels {
+		result[i] = *ss.modelToSchema(&submissionModel)
 	}
 	return result
 }
@@ -279,41 +271,9 @@ func (ss *submissionService) GetAllForUser(
 		}
 	}
 
-	var result []schemas.Submission
-	for _, submission := range submissionModels {
-		result = append(result, *ss.modelToSchema(&submission))
-	}
-
-	return result, nil
-}
-
-func (ss *submissionService) GetAllForUserShort(
-	tx *gorm.DB,
-	userID int64,
-	currentUser schemas.User,
-	queryParams map[string]any,
-) ([]schemas.SubmissionShort, error) {
-	submissionModels, err := ss.GetAllForUser(tx, userID, currentUser, queryParams)
-	if err != nil {
-		return nil, err
-	}
-	result := []schemas.SubmissionShort{}
-	for _, submission := range submissionModels {
-		passed := true
-		count := len(submission.Result.TestResults)
-		for _, testResult := range submission.Result.TestResults {
-			if !testResult.Passed {
-				passed = false
-				count--
-			}
-		}
-		result = append(result, schemas.SubmissionShort{
-			ID:            submission.ID,
-			TaskID:        submission.TaskID,
-			UserID:        submission.UserID,
-			Passed:        passed,
-			HowManyPassed: int64(count),
-		})
+	result := make([]schemas.Submission, len(submissionModels))
+	for i, submission := range submissionModels {
+		result[i] = *ss.modelToSchema(&submission)
 	}
 
 	return result, nil
@@ -360,9 +320,9 @@ func (ss *submissionService) GetAllForGroup(
 		return nil, err
 	}
 
-	var result []schemas.Submission
-	for _, submissionModel := range submissionModels {
-		result = append(result, *ss.modelToSchema(&submissionModel))
+	result := make([]schemas.Submission, len(submissionModels))
+	for i, submissionModel := range submissionModels {
+		result[i] = *ss.modelToSchema(&submissionModel)
 	}
 
 	return result, nil
@@ -411,9 +371,9 @@ func (ss *submissionService) GetAllForTask(
 		return nil, err
 	}
 
-	result := []schemas.Submission{}
-	for _, submission := range submissionModel {
-		result = append(result, *ss.modelToSchema(&submission))
+	result := make([]schemas.Submission, len(submissionModel))
+	for i, submission := range submissionModel {
+		result[i] = *ss.modelToSchema(&submission)
 	}
 
 	return result, nil
@@ -593,7 +553,9 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 		ss.logger.Errorf("Error getting all languages: %v", err.Error())
 		return nil, err
 	}
-
+	if languages == nil {
+		languages = []schemas.LanguageConfig{}
+	}
 	return languages, nil
 }
 

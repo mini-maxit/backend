@@ -72,10 +72,6 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if task == nil {
-		task = []schemas.Task{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
@@ -116,10 +112,6 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		}
 		httputils.ReturnError(w, status, "Task service temporarily unavailable")
 		return
-	}
-
-	if task == nil {
-		task = []schemas.Task{}
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, task)

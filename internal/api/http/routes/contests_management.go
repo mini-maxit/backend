@@ -424,10 +424,6 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		return
 	}
 
-	if requests == nil {
-		requests = []schemas.RegistrationRequest{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, requests)
 }
 

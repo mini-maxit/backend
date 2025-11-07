@@ -67,10 +67,6 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if users == nil {
-		users = []schemas.User{}
-	}
-
 	httputils.ReturnSuccess(w, http.StatusOK, users)
 }
 

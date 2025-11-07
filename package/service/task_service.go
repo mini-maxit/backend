@@ -123,11 +123,6 @@ func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, err
 }
 
 func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
-	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
-	// if err != nil {
-	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
-	// 	return nil, err
-	// }
 	limit := queryParams["limit"].(int)
 	offset := queryParams["offset"].(int)
 	sort := queryParams["sort"].(string)
@@ -143,9 +138,9 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, queryParams map[strin
 	}
 
 	// Convert the models to schemas
-	var result []schemas.Task
-	for _, task := range tasks {
-		result = append(result, *TaskToSchema(&task))
+	result := make([]schemas.Task, len(tasks))
+	for i, task := range tasks {
+		result[i] = *TaskToSchema(&task)
 	}
 
 	return result, nil
@@ -249,10 +244,9 @@ func (ts *taskService) GetAllAssigned(
 		return nil, err
 	}
 
-	var result []schemas.Task
-
-	for task := range tasks {
-		result = append(result, *TaskToSchema(&tasks[task]))
+	result := make([]schemas.Task, len(tasks))
+	for i, task := range tasks {
+		result[i] = *TaskToSchema(&task)
 	}
 
 	return result, nil
@@ -278,10 +272,9 @@ func (ts *taskService) GetAllCreated(
 		return nil, err
 	}
 
-	var result []schemas.Task
-
-	for task := range tasks {
-		result = append(result, *TaskToSchema(&tasks[task]))
+	result := make([]schemas.Task, len(tasks))
+	for i, task := range tasks {
+		result[i] = *TaskToSchema(&task)
 	}
 
 	return result, nil
