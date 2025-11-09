@@ -3,23 +3,27 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-const publishTimeoutSeconds = 5
+const (
+	publishTimeoutSeconds        = 5
+	pendingSubmissionsBatchLimit = 100
+)
 
 type QueueService interface {
-	// PublishTask publishes a task to the queue
+	// GetSubmissionID returns the submission ID for a message ID
 	GetSubmissionID(tx *gorm.DB, messageID string) (int64, error)
 	// PublishHandshake publishes a handshake message to the queue
 	PublishHandshake() error
@@ -29,8 +33,15 @@ type QueueService interface {
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
 	UpdateWorkerStatus(statusResponse schemas.StatusResponsePayload) error
+	// RetryPendingSubmissions attempts to queue submissions that are in "received" status
+	RetryPendingSubmissions(db *gorm.DB) error
+	// IsConnected returns true if queue is connected and ready
+	IsConnected() bool
+	// StatusMux returns the status mutex
 	StatusMux() *sync.Mutex
+	// StatusCond returns the status condition variable
 	StatusCond() *sync.Cond
+	// LastWorkerStatus returns the last known worker status
 	LastWorkerStatus() schemas.WorkerStatus
 }
 
@@ -40,9 +51,11 @@ type queueService struct {
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
 	queueRepository            repository.QueueMessageRepository
-	channel                    *amqp.Channel
-	queue                      amqp.Queue
-	responseQueueName          string
+
+	// Queue client for publishing
+	queueClient       queue.Publisher
+	queueName         string
+	responseQueueName string
 
 	statusMux        *sync.Mutex
 	statusCond       *sync.Cond
@@ -51,23 +64,52 @@ type queueService struct {
 	logger *zap.SugaredLogger
 }
 
-func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
-	msgBytes, err := json.Marshal(msq)
+func NewQueueService(
+	taskRepository repository.TaskRepository,
+	submissionRepository repository.SubmissionRepository,
+	submissionResultRepository repository.SubmissionResultRepository,
+	queueMessageRepository repository.QueueMessageRepository,
+	queueClient queue.Publisher,
+	queueName string,
+	responseQueueName string,
+) QueueService {
+	log := utils.NewNamedLogger("queue_service")
+	log.Info("Queue service initialized")
+
+	s := &queueService{
+		taskRepository:             taskRepository,
+		submissionRepository:       submissionRepository,
+		submissionResultRepository: submissionResultRepository,
+		queueRepository:            queueMessageRepository,
+		queueClient:                queueClient,
+		queueName:                  queueName,
+		responseQueueName:          responseQueueName,
+		statusMux:                  &sync.Mutex{},
+		lastWorkerStatus:           schemas.WorkerStatus{},
+		logger:                     log,
+	}
+	s.statusCond = sync.NewCond(s.statusMux)
+	return s
+}
+
+func (qs *queueService) publishMessage(msg schemas.QueueMessage) error {
+	if !qs.queueClient.IsConnected() {
+		qs.logger.Warn("Queue is not connected - message will not be published")
+		return errors.New("queue is not connected")
+	}
+
+	msgBytes, err := json.Marshal(msg)
 	if err != nil {
-		qs.logger.Errorf("Error marshalling message: %v", err.Error())
+		qs.logger.Errorf("Error marshalling message: %v", err)
 		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), publishTimeoutSeconds*time.Second)
 	defer cancel()
 
-	err = qs.channel.PublishWithContext(ctx, "", qs.queue.Name, false, false, amqp.Publishing{
-		ContentType: "application/json",
-		Body:        msgBytes,
-		ReplyTo:     qs.responseQueueName,
-	})
+	err = qs.queueClient.Publish(ctx, qs.queueName, qs.responseQueueName, msgBytes)
 	if err != nil {
-		qs.logger.Errorf("Error publishing message: %v", err.Error())
+		qs.logger.Errorf("Error publishing message: %v", err)
 		return err
 	}
 
@@ -78,15 +120,16 @@ func (qs *queueService) publishMessage(msq schemas.QueueMessage) error {
 func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error {
 	submission, err := qs.submissionRepository.Get(tx, submissionID)
 	if err != nil {
-		qs.logger.Errorf("Error getting submission: %v", err.Error())
+		qs.logger.Errorf("Error getting submission: %v", err)
 		return err
 	}
 
 	submissionResult, err := qs.submissionResultRepository.Get(tx, submissionResultID)
 	if err != nil {
-		qs.logger.Errorf("Error getting submission result: %v", err.Error())
+		qs.logger.Errorf("Error getting submission result: %v", err)
 		return err
 	}
+
 	testCases := make([]schemas.QTestCase, 0, len(submissionResult.TestResults))
 	for _, tr := range submissionResult.TestResults {
 		testCases = append(testCases, schemas.QTestCase{
@@ -120,6 +163,7 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 			MemoryLimitKB: tr.TestCase.MemoryLimit,
 		})
 	}
+
 	payload := schemas.TaskQueueMessage{
 		Order:           submission.Order,
 		LanguageType:    submission.Language.Type,
@@ -131,36 +175,36 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 		},
 		TestCases: testCases,
 	}
+
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
-		qs.logger.Errorf("Error marshalling payload: %v", err.Error())
+		qs.logger.Errorf("Error marshalling payload: %v", err)
 		return err
 	}
 
-	msq := schemas.QueueMessage{
+	msg := schemas.QueueMessage{
 		MessageID: strconv.FormatInt(submissionID, 10),
 		Type:      schemas.MessageTypeTask,
 		Payload:   payloadJSON,
 	}
-	err = qs.publishMessage(msq)
-	if err != nil {
-		err2 := qs.submissionRepository.MarkFailed(tx, submissionID, err.Error())
-		if err2 != nil {
-			qs.logger.Errorf("Error marking submission failed: %v. When error occured publishing message: %s",
-				err2.Error(),
-				err.Error(),
-			)
-			return err
+
+	go func() {
+		err := qs.publishMessage(msg)
+		if err != nil {
+			// Don't fail the submission - just keep it in "received" status
+			// It will be picked up later when queue becomes available
+			qs.logger.Warnf("Queue unavailable - submission %d will be queued later: %v", submissionID, err)
+			return
 		}
-		qs.logger.Errorf("Error publishing message: %v", err.Error())
-		return err
-	}
-	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
-	if err != nil {
-		qs.logger.Errorf("Error marking submission processing: %v", err.Error())
-		return err
-	}
-	qs.logger.Info("Submission published")
+
+		err = qs.submissionRepository.MarkProcessing(tx, submissionID)
+		if err != nil {
+			qs.logger.Errorf("Error marking submission processing: %v", err)
+			return
+		}
+		qs.logger.Info("Submission published")
+	}()
+
 	return nil
 }
 
@@ -169,19 +213,18 @@ func (qs *queueService) GetSubmissionID(tx *gorm.DB, messageID string) (int64, e
 	if err != nil {
 		return 0, err
 	}
-
 	return queueMessage.SubmissionID, nil
 }
 
 func (qs *queueService) PublishHandshake() error {
-	msq := schemas.QueueMessage{
+	msg := schemas.QueueMessage{
 		MessageID: uuid.New().String(),
 		Type:      schemas.MessageTypeHandshake,
 		Payload:   nil,
 	}
-	err := qs.publishMessage(msq)
+	err := qs.publishMessage(msg)
 	if err != nil {
-		qs.logger.Errorf("Error publishing message: %v", err.Error())
+		qs.logger.Errorf("Error publishing handshake: %v", err)
 		return err
 	}
 	qs.logger.Info("Handshake published")
@@ -189,34 +232,32 @@ func (qs *queueService) PublishHandshake() error {
 }
 
 func (qs *queueService) PublishWorkerStatus() error {
-	msq := schemas.QueueMessage{
+	msg := schemas.QueueMessage{
 		MessageID: uuid.New().String(),
 		Type:      schemas.MessageTypeStatus,
 		Payload:   nil,
 	}
-	err := qs.publishMessage(msq)
+	err := qs.publishMessage(msg)
 	if err != nil {
-		qs.logger.Errorf("Error publishing message: %v", err.Error())
+		qs.logger.Errorf("Error publishing worker status: %v", err)
 		return err
 	}
 	qs.logger.Info("Worker status published")
 	return nil
 }
 
-func (qs *queueService) UpdateWorkerStatus(recievedStatus schemas.StatusResponsePayload) error {
+func (qs *queueService) UpdateWorkerStatus(receivedStatus schemas.StatusResponsePayload) error {
 	qs.statusMux.Lock()
 	defer qs.statusMux.Unlock()
 
-	lastStatus := schemas.WorkerStatus{
-		BusyWorkers:  recievedStatus.BusyWorkers,
-		TotalWorkers: recievedStatus.TotalWorkers,
-		WorkerStatus: recievedStatus.WorkerStatus,
+	qs.lastWorkerStatus = schemas.WorkerStatus{
+		BusyWorkers:  receivedStatus.BusyWorkers,
+		TotalWorkers: receivedStatus.TotalWorkers,
+		WorkerStatus: receivedStatus.WorkerStatus,
 		StatusTime:   time.Now(),
 	}
-	qs.lastWorkerStatus = lastStatus // Update the last worker status
 
-	qs.statusCond.Broadcast() // Notify any waiting goroutines that the status has changed
-
+	qs.statusCond.Broadcast()
 	return nil
 }
 
@@ -232,44 +273,46 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 	return qs.statusMux
 }
 
-func NewQueueService(
-	taskRepository repository.TaskRepository,
-	submissionRepository repository.SubmissionRepository,
-	submissionResultRepository repository.SubmissionResultRepository,
-	queueMessageRepository repository.QueueMessageRepository,
-	_ *amqp.Connection, // TODO: review if this is needed
-	channel *amqp.Channel,
-	queueName string,
-	responseQueueName string,
-) (QueueService, error) {
-	args := make(amqp.Table)
-	args["x-max-priority"] = 3
+func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
+	if !qs.queueClient.IsConnected() {
+		qs.logger.Debug("Queue not connected - skipping retry of pending submissions")
+		return errors.New("queue not connected")
+	}
 
-	q, err := channel.QueueDeclare(
-		queueName, // name of the queue
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		args,      // arguments
-	)
+	pendingSubmissions, err := qs.submissionRepository.GetPendingSubmissions(db, pendingSubmissionsBatchLimit)
 	if err != nil {
-		return nil, err
+		qs.logger.Errorf("Error getting pending submissions: %v", err)
+		return err
 	}
-	log := utils.NewNamedLogger("queue_service")
-	s := &queueService{
-		taskRepository:             taskRepository,
-		submissionRepository:       submissionRepository,
-		submissionResultRepository: submissionResultRepository,
-		queueRepository:            queueMessageRepository,
-		queue:                      q,
-		channel:                    channel,
-		responseQueueName:          responseQueueName,
 
-		statusMux:        &sync.Mutex{},
-		lastWorkerStatus: schemas.WorkerStatus{},
-		logger:           log,
+	if len(pendingSubmissions) == 0 {
+		qs.logger.Debug("No pending submissions to retry")
+		return nil
 	}
-	s.statusCond = sync.NewCond(s.statusMux)
-	return s, nil
+
+	qs.logger.Infof("Found %d pending submissions to queue", len(pendingSubmissions))
+
+	successCount := 0
+	for _, submission := range pendingSubmissions {
+		if submission.Result == nil {
+			qs.logger.Warnf("Submission %d has no result - skipping", submission.ID)
+			continue
+		}
+
+		// Note: db is a non-transaction connection, so each PublishSubmission call
+		// will update the submission status independently without transaction conflicts
+		err := qs.PublishSubmission(db, submission.ID, submission.Result.ID)
+		if err != nil {
+			qs.logger.Warnf("Failed to queue submission %d: %v", submission.ID, err)
+			continue
+		}
+		successCount++
+	}
+
+	qs.logger.Infof("Successfully queued %d out of %d pending submissions", successCount, len(pendingSubmissions))
+	return nil
+}
+
+func (qs *queueService) IsConnected() bool {
+	return qs.queueClient.IsConnected()
 }

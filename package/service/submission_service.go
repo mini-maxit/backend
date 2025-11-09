@@ -693,7 +693,6 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 		ss.logger.Errorf("Error getting input outputs: %v", err.Error())
 		return -1, err
 	}
-	ss.logger.Info("Got input outputs: ", inputOutputs)
 
 	for _, inputOutput := range inputOutputs {
 		stdoutFile := ss.filestorage.GetTestResultStdoutPath(submission.TaskID, submission.UserID, submission.Order, inputOutput.Order)
@@ -750,7 +749,6 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			ss.logger.Errorf("Error creating test result: %v", err.Error())
 			return -1, err
 		}
-		ss.logger.Info("Created testResult", testResult)
 	}
 	return submissionResultID, nil
 }

@@ -1,30 +1,27 @@
 package initialization
 
 import (
-	"fmt"
+	"context"
 	"net/http"
-	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/api/queue"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/filestorage"
+	pkgqueue "github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-const numTries = 10
 
 type Initialization struct {
 	Cfg *config.Config
 	DB  database.Database
 
-	TaskService service.TaskService
-	JWTService  service.JWTService
+	TaskService  service.TaskService
+	JWTService   service.JWTService
+	QueueService service.QueueService
 
 	AuthRoute              routes.AuthRoute
 	ContestRoute           routes.ContestRoute
@@ -41,36 +38,9 @@ type Initialization struct {
 	Dump func(w http.ResponseWriter, r *http.Request)
 }
 
-func connectToBroker(cfg *config.Config) (*amqp.Connection, *amqp.Channel) {
-	log := utils.NewNamedLogger("connect_to_broker")
-
-	var err error
-	var conn *amqp.Connection
-	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Broker.User, cfg.Broker.Password, cfg.Broker.Host, cfg.Broker.Port)
-	for v := range numTries {
-		conn, err = amqp.Dial(brokerURL)
-		if err != nil {
-			log.Warnf("Failed to connect to RabbitMQ: %s", err.Error())
-			time.Sleep(2 * time.Second * time.Duration(v))
-			continue
-		}
-	}
-	log.Info("Connected to RabbitMQ")
-
-	if err != nil {
-		log.Panicf("Failed to connect to RabbitMQ: %s", err.Error())
-	}
-	channel, err := conn.Channel()
-	if err != nil {
-		log.Panicf("Failed to create channel: %s", err.Error())
-	}
-
-	return conn, channel
-}
-
 func NewInitialization(cfg *config.Config) *Initialization {
 	log := utils.NewNamedLogger("initialization")
-	conn, channel := connectToBroker(cfg)
+
 	db, err := database.NewPostgresDB(cfg)
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err.Error())
@@ -103,22 +73,34 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		userRepository,
 		groupRepository,
 	)
-	queueService, err := service.NewQueueService(taskRepository,
+
+	// Create queue client (shared by both service and listener)
+	queueClient := pkgqueue.NewClient(
+		pkgqueue.Config{
+			Host:              cfg.Broker.Host,
+			Port:              cfg.Broker.Port,
+			User:              cfg.Broker.User,
+			Password:          cfg.Broker.Password,
+			WorkerQueueName:   cfg.Broker.QueueName,
+			ResponseQueueName: cfg.Broker.ResponseQueueName,
+		},
+		utils.NewNamedLogger("queue_client"),
+	)
+
+	// Start queue client
+	if err := queueClient.Start(context.Background()); err != nil {
+		log.Warnf("Failed to start queue client: %v", err)
+	}
+
+	queueService := service.NewQueueService(
+		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueRepository,
-		conn,
-		channel,
+		queueClient,
 		cfg.Broker.QueueName,
 		cfg.Broker.ResponseQueueName,
 	)
-	if err != nil {
-		log.Panicf("Failed to create queue service: %s", err.Error())
-	}
-	err = queueService.PublishHandshake()
-	if err != nil {
-		log.Panicf("Failed to publish handshake: %s", err.Error())
-	}
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
 	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, taskService)
@@ -139,7 +121,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		userService,
 		queueService,
 	)
-	workerService := service.NewWorkerService(queueService)
+	workerService := service.NewWorkerService(queueService, submissionRepository, db.DB())
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
@@ -152,29 +134,28 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
-	// Queue listener
-	queueListener, err := queue.NewListener(
-		conn,
-		channel,
+	// Queue listener - uses the same queue client as queue service
+	queueListener := queue.NewListener(
 		db,
 		taskService,
 		queueService,
 		submissionService,
 		langService,
+		queueClient,
 		cfg.Broker.ResponseQueueName,
 	)
-	if err != nil {
-		log.Panicf("Failed to create queue listener: %s", err.Error())
-	}
+
 	if cfg.Dump {
 		dump(db, log, authService, userRepository)
 	}
+
 	return &Initialization{
 		Cfg: cfg,
 		DB:  db,
 
-		TaskService: taskService,
-		JWTService:  jwtService,
+		TaskService:  taskService,
+		JWTService:   jwtService,
+		QueueService: queueService,
 
 		AuthRoute:              authRoute,
 		ContestRoute:           contestRoute,

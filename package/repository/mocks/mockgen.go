@@ -327,6 +327,21 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetLatestForTaskByUser(tx, taskI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetLatestForTaskByUser), tx, taskID, userID)
 }
 
+// GetPendingSubmissions mocks base method.
+func (m *MockSubmissionRepository) GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPendingSubmissions", tx, limit)
+	ret0, _ := ret[0].([]models.Submission)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPendingSubmissions indicates an expected call of GetPendingSubmissions.
+func (mr *MockSubmissionRepositoryMockRecorder) GetPendingSubmissions(tx, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSubmissions", reflect.TypeOf((*MockSubmissionRepository)(nil).GetPendingSubmissions), tx, limit)
+}
+
 // MarkEvaluated mocks base method.
 func (m *MockSubmissionRepository) MarkEvaluated(tx *gorm.DB, submissionID int64) error {
 	m.ctrl.T.Helper()
