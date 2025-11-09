@@ -30,6 +30,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-CreatedContest:
+    properties:
+      data:
+        $ref: '#/definitions/CreatedContest'
+      ok:
+        type: boolean
+    type: object
   APIResponse-Group:
     properties:
       data:
@@ -138,11 +145,11 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-array_Contest:
+  APIResponse-array_CreatedContest:
     properties:
       data:
         items:
-          $ref: '#/definitions/Contest'
+          $ref: '#/definitions/CreatedContest'
         type: array
       ok:
         type: boolean
@@ -311,6 +318,38 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  CreatedContest:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      isRegistrationOpen:
+        type: boolean
+      isSubmissionOpen:
+        type: boolean
+      isVisible:
+        type: boolean
+      name:
+        type: string
+      participantCount:
+        type: integer
+      startAt:
+        type: string
+      status:
+        description: '"upcoming", "ongoing", "past"'
+        type: string
+      taskCount:
+        type: integer
+      updatedAt:
+        type: string
     type: object
   EditContest:
     properties:
@@ -970,7 +1009,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Contest'
+            $ref: '#/definitions/APIResponse-CreatedContest'
         "400":
           description: Bad Request
           schema:
@@ -1236,7 +1275,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Contest'
+            $ref: '#/definitions/APIResponse-array_CreatedContest'
         "400":
           description: Bad Request
           schema:
