@@ -66,7 +66,6 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
 	response, err := tr.taskService.GetMyLiveTasks(tx, currentUser, paginationParams)
 	if err != nil {
