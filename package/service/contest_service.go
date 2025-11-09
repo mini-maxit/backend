@@ -253,12 +253,12 @@ func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID 
 
 	cs.updateModel(model, editInfo)
 
-	newModel, err := cs.contestRepository.Edit(tx, contestID, model)
+	newModel, err := cs.contestRepository.EditWithStats(tx, contestID, model)
 	if err != nil {
 		return nil, err
 	}
 
-	return ContestToCreatedContest(newModel), nil
+	return ContestWithStatsToCreatedContest(newModel), nil
 }
 
 func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
@@ -618,6 +618,27 @@ func ContestToCreatedContest(model *models.Contest) *schemas.CreatedContest {
 	}
 }
 
+func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {
+	return &schemas.CreatedContest{
+		Contest: schemas.Contest{
+			ID:               model.ID,
+			Name:             model.Name,
+			Description:      model.Description,
+			CreatedBy:        model.CreatedBy,
+			StartAt:          model.StartAt,
+			EndAt:            model.EndAt,
+			CreatedAt:        model.CreatedAt,
+			UpdatedAt:        model.UpdatedAt,
+			ParticipantCount: model.ParticipantCount,
+			TaskCount:        model.TaskCount,
+			Status:           getContestStatus(model.StartAt, model.EndAt),
+		},
+		IsRegistrationOpen: model.IsRegistrationOpen,
+		IsSubmissionOpen:   model.IsSubmissionOpen,
+		IsVisible:          model.IsVisible,
+	}
+}
+
 func ContestWithStatsToAvailableContest(model *models.ContestWithStats) *schemas.AvailableContest {
 	registrationStatus := "registrationClosed"
 
@@ -915,14 +936,14 @@ func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, pa
 		paginationParams.Sort = defaultContestSort
 	}
 
-	contests, err := cs.contestRepository.GetAllForCreator(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	contests, err := cs.contestRepository.GetAllForCreatorWithStats(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make([]schemas.CreatedContest, len(contests))
 	for i, contest := range contests {
-		result[i] = *ContestToCreatedContest(&contest)
+		result[i] = *ContestWithStatsToCreatedContest(&contest)
 	}
 	return result, nil
 }

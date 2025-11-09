@@ -290,13 +290,23 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		contest := &schemas.Contest{
-			ID:          1,
-			Name:        "Updated Contest",
-			Description: "Test Description",
-			CreatedBy:   1,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+		isVisible := true
+		isRegistrationOpen := true
+		isSubmissionOpen := true
+		contest := &schemas.CreatedContest{
+			Contest: schemas.Contest{
+				ID:               1,
+				Name:             "Updated Contest",
+				Description:      "Test Description",
+				CreatedBy:        1,
+				CreatedAt:        time.Now(),
+				UpdatedAt:        time.Now(),
+				ParticipantCount: 5,
+				TaskCount:        3,
+			},
+			IsVisible:          &isVisible,
+			IsRegistrationOpen: &isRegistrationOpen,
+			IsSubmissionOpen:   &isSubmissionOpen,
 		}
 
 		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
