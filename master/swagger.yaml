@@ -51,6 +51,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-QueueStatus:
+    properties:
+      data:
+        $ref: '#/definitions/QueueStatus'
+      ok:
+        type: boolean
+    type: object
   APIResponse-RegistrationRequest:
     properties:
       data:
@@ -164,6 +171,13 @@ definitions:
         items:
           $ref: '#/definitions/User'
         type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-string:
+    properties:
+      data:
+        type: string
       ok:
         type: boolean
     type: object
@@ -373,6 +387,15 @@ definitions:
         items:
           $ref: '#/definitions/PutTestCase'
         type: array
+    type: object
+  QueueStatus:
+    properties:
+      connected:
+        type: boolean
+      lastChecked:
+        type: string
+      pendingSubmissions:
+        type: integer
     type: object
   RegistrationRequest:
     properties:
@@ -2637,6 +2660,50 @@ paths:
       summary: Get current user
       tags:
       - user
+  /workers/queue/reconnect:
+    post:
+      description: Triggers queue reconnection and processes pending submissions (admin
+        only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            $ref: '#/definitions/APIResponse-string'
+        "401":
+          description: Not authorized - requires admin role
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Reconnect to queue
+      tags:
+      - worker
+  /workers/queue/status:
+    get:
+      description: Returns the current status of the queue connection and pending
+        submissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-QueueStatus'
+        "401":
+          description: Not authorized - requires admin role
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get queue status
+      tags:
+      - worker
   /workers/status:
     get:
       description: Returns the current status of all worker nodes
