@@ -1,6 +1,7 @@
 package initialization
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/mini-maxit/backend/internal/api/http/routes"
@@ -8,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/filestorage"
+	pkgqueue "github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -71,11 +73,31 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		userRepository,
 		groupRepository,
 	)
+
+	// Create queue client (shared by both service and listener)
+	queueClient := pkgqueue.NewClient(
+		pkgqueue.Config{
+			Host:              cfg.Broker.Host,
+			Port:              cfg.Broker.Port,
+			User:              cfg.Broker.User,
+			Password:          cfg.Broker.Password,
+			WorkerQueueName:   cfg.Broker.QueueName,
+			ResponseQueueName: cfg.Broker.ResponseQueueName,
+		},
+		utils.NewNamedLogger("queue_client"),
+	)
+
+	// Start queue client
+	if err := queueClient.Start(context.Background()); err != nil {
+		log.Warnf("Failed to start queue client: %v", err)
+	}
+
 	queueService := service.NewQueueService(
 		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueRepository,
+		queueClient,
 		cfg.Broker.QueueName,
 		cfg.Broker.ResponseQueueName,
 	)
@@ -112,14 +134,15 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
-	// Queue listener - always created, manages its own connection internally
+	// Queue listener - uses the same queue client as queue service
 	queueListener := queue.NewListener(
 		db,
 		taskService,
 		queueService,
 		submissionService,
 		langService,
-		cfg.Broker,
+		queueClient,
+		cfg.Broker.ResponseQueueName,
 	)
 
 	if cfg.Dump {

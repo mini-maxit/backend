@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -13,6 +14,22 @@ import (
 	"gorm.io/gorm"
 )
 
+// mockQueuePublisher is a simple mock implementation of queue.Publisher
+type mockQueuePublisher struct {
+	connected     bool
+	publishCalled bool
+	publishError  error
+}
+
+func (m *mockQueuePublisher) Publish(ctx context.Context, queueName string, replyTo string, body []byte) error {
+	m.publishCalled = true
+	return m.publishError
+}
+
+func (m *mockQueuePublisher) IsConnected() bool {
+	return m.connected
+}
+
 func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -22,12 +39,18 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	submissionResultRepository := mock_repository.NewMockSubmissionResultRepository(ctrl)
 	queueMessageRepository := mock_repository.NewMockQueueMessageRepository(ctrl)
 
-	// Create queue service without connection
+	// Create mock queue client that is not connected
+	mockQueueClient := &mockQueuePublisher{
+		connected: false,
+	}
+
+	// Create queue service
 	queueService := service.NewQueueService(
 		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
+		mockQueueClient,
 		"test_queue",
 		"test_response_queue",
 	)
@@ -67,9 +90,10 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	submissionRepository.EXPECT().Get(db, int64(1)).Return(submission, nil)
 	submissionResultRepository.EXPECT().Get(db, int64(1)).Return(submissionResult, nil)
 
-	// Call PublishSubmission - should not fail even without queue channel
+	// Call PublishSubmission - should not fail even without queue connection
 	err := queueService.PublishSubmission(db, 1, 1)
-	assert.NoError(t, err, "PublishSubmission should not fail when queue is unavailable")
+	require.NoError(t, err, "PublishSubmission should not fail when queue is unavailable")
+	assert.False(t, mockQueueClient.publishCalled, "Publish should not be called when queue is not connected")
 }
 
 func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
@@ -81,12 +105,18 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	submissionResultRepository := mock_repository.NewMockSubmissionResultRepository(ctrl)
 	queueMessageRepository := mock_repository.NewMockQueueMessageRepository(ctrl)
 
-	// Create queue service without connection
+	// Create mock queue client that is not connected
+	mockQueueClient := &mockQueuePublisher{
+		connected: false,
+	}
+
+	// Create queue service
 	queueService := service.NewQueueService(
 		taskRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
+		mockQueueClient,
 		"test_queue",
 		"test_response_queue",
 	)
@@ -97,5 +127,5 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	// Call RetryPendingSubmissions - should return error but not panic
 	err := queueService.RetryPendingSubmissions(db)
 	require.Error(t, err, "RetryPendingSubmissions should return error when queue is unavailable")
-	assert.Contains(t, err.Error(), "queue channel not available")
+	assert.Contains(t, err.Error(), "queue not connected")
 }
