@@ -47,7 +47,7 @@ type groupsRequest struct {
 //	@Param			limit	query		int	false	"Number of results to return (default: 100)"
 //	@Param			offset	query		int	false	"Number of results to skip (default: 0)"
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[schemas.MyTasksResponse]
+//	@Success		200	{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Task]]
 //	@Router			/tasks/my [get]
 func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -86,7 +86,7 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Failure		500	{object}	httputils.APIError
 //	@Failure		403	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
+//	@Success		200	{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Task]]
 //	@Router			/tasks [get]
 func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -118,7 +118,8 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, task)
+	response := schemas.NewPaginatedResponse(task, paginationParams.Offset, paginationParams.Limit, int(10)) // todo: total count
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 // GetTask godoc

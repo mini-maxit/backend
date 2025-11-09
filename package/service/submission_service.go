@@ -90,6 +90,8 @@ func (ss *submissionService) GetAll(
 		return nil, err
 	}
 
+	// Note: We don't return totalCount here since this endpoint uses complex filtering
+	// and the totalCount would need more complex calculation
 	return ss.modelsToSchemas(submissionModels), nil
 }
 

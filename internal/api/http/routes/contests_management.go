@@ -621,7 +621,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
 //	@Router			/contests-management/contests/{id}/submissions [get]
 func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -674,7 +674,8 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // todo: fix
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 // GetCreatedContests godoc

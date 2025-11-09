@@ -191,7 +191,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			sort	query		string	false	"Sort order"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -239,7 +239,8 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // TODO: total count
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 // GetAllForUser godoc
@@ -310,7 +311,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Param			id		path		int	true	"Task ID"
 //	@Param			limit	query		int	false	"Limit the number of returned submissions"
 //	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -349,7 +350,8 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // todo: total count
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 // GetAvailableLanguages godoc
@@ -528,7 +530,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 //	@Param			id		path		int	true	"User ID"
 //	@Param			limit	query		int	false	"Limit the number of returned submissions"
 //	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -569,7 +571,8 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // TODO: total count
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 // New Instance.
