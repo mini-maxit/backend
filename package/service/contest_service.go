@@ -597,27 +597,6 @@ func ContestToSchema(model *models.Contest) *schemas.Contest {
 	}
 }
 
-func ContestToCreatedContest(model *models.Contest) *schemas.CreatedContest {
-	return &schemas.CreatedContest{
-		Contest: schemas.Contest{
-			ID:               model.ID,
-			Name:             model.Name,
-			Description:      model.Description,
-			CreatedBy:        model.CreatedBy,
-			StartAt:          model.StartAt,
-			EndAt:            model.EndAt,
-			CreatedAt:        model.CreatedAt,
-			UpdatedAt:        model.UpdatedAt,
-			ParticipantCount: 0,
-			TaskCount:        0,
-			Status:           getContestStatus(model.StartAt, model.EndAt),
-		},
-		IsRegistrationOpen: model.IsRegistrationOpen,
-		IsSubmissionOpen:   model.IsSubmissionOpen,
-		IsVisible:          model.IsVisible,
-	}
-}
-
 func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {
 	return &schemas.CreatedContest{
 		Contest: schemas.Contest{
