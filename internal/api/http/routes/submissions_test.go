@@ -33,7 +33,7 @@ func TestGetAll(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAll), db)
 
@@ -140,7 +140,7 @@ func TestGetByID(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -235,7 +235,7 @@ func TestGetAllForGroup(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -318,7 +318,7 @@ func TestGetAllForTask(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 
 	mux := mux.NewRouter()
@@ -401,7 +401,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAvailableLanguages), db)
 
@@ -459,7 +459,7 @@ func TestSubmitSolution(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	qs := mock_service.NewMockQueueService(ctrl)
-	route := routes.NewSubmissionRoutes(ss, "http://filestorage", qs, ts)
+	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
 	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.SubmitSolution), db)
 

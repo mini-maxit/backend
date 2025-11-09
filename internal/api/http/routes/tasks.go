@@ -62,9 +62,10 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, err := tr.taskService.GetAllAssigned(tx, currentUser, queryParams)
+	task, err := tr.taskService.GetAllAssigned(tx, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		tr.logger.Errorw("Failed to get assigned tasks", "error", err)
@@ -101,7 +102,8 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	task, err := tr.taskService.GetAll(tx, currentUser, queryParams)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+	task, err := tr.taskService.GetAll(tx, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

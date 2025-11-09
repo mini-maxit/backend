@@ -90,11 +90,11 @@ func TestGetAllGroup(t *testing.T) {
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	gs := service.NewGroupService(gr, ur, service.NewUserService(ur))
 
-	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 	t.Run("No groups", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]models.Group{}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, queryParams)
+		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, groups)
 	})
@@ -108,14 +108,14 @@ func TestGetAllGroup(t *testing.T) {
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, queryParams)
+		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, groups)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
-		groups, err := gs.GetAll(tx, *currentUser, queryParams)
+		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Nil(t, groups)
 	})
@@ -135,7 +135,7 @@ func TestGetAllGroup(t *testing.T) {
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, queryParams)
+		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotNil(t, groups)
 	})

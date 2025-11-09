@@ -26,13 +26,13 @@ type SubmissionService interface {
 	// GetAll retrieves all submissions based on the user's role and query parameters.
 	GetAll(tx *gorm.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForGroup retrieves all submissions for a specific group based on the user's role and query parameters.
-	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
-	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
-	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error)
+	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
@@ -238,16 +238,13 @@ func (ss *submissionService) GetAllForUser(
 	tx *gorm.DB,
 	userID int64,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultSortOrder
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultSortOrder
 	}
 
-	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
+	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ss.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
@@ -283,22 +280,19 @@ func (ss *submissionService) GetAllForGroup(
 	tx *gorm.DB,
 	groupID int64,
 	user schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, error) {
 	var err error
 	submissionModels := []models.Submission{}
 
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultSortOrder
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultSortOrder
 	}
 
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
+		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
 		return nil, myerrors.ErrPermissionDenied
@@ -312,7 +306,7 @@ func (ss *submissionService) GetAllForGroup(
 		if group.CreatedBy != user.ID {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
+		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
@@ -332,21 +326,18 @@ func (ss *submissionService) GetAllForTask(
 	tx *gorm.DB,
 	taskID int64,
 	user schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, error) {
 	var err error
 	submissionModel := []models.Submission{}
 
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultSortOrder
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultSortOrder
 	}
 
 	switch user.Role {
 	case types.UserRoleAdmin:
-		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, limit, offset, sort)
+		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		task, er := ss.taskService.Get(tx, user, taskID)
 		if er != nil {
@@ -355,7 +346,7 @@ func (ss *submissionService) GetAllForTask(
 		if task.CreatedBy != user.ID {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, limit, offset, sort)
+		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		isAssigned, er := ss.taskRepository.IsAssignedToUser(tx, taskID, user.ID)
 		if er != nil {
@@ -364,7 +355,7 @@ func (ss *submissionService) GetAllForTask(
 		if !isAssigned {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModel, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, limit, offset, sort)
+		submissionModel, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
@@ -383,22 +374,19 @@ func (ss *submissionService) GetAllForContest(
 	tx *gorm.DB,
 	contestID int64,
 	user schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, error) {
 	var err error
 	submissionModels := []models.Submission{}
 
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultSortOrder
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultSortOrder
 	}
 
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions for the contest
-		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, limit, offset, sort)
+		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
 		contest, er := ss.contestService.Get(tx, user, contestID)
@@ -409,7 +397,7 @@ func (ss *submissionService) GetAllForContest(
 		if contest.CreatedBy != user.ID {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, limit, offset, sort)
+		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Students are not allowed to view all submissions for a contest
 		return nil, myerrors.ErrPermissionDenied

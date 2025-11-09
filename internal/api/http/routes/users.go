@@ -59,7 +59,8 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	users, err := u.userService.GetAll(tx, queryParams)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+	users, err := u.userService.GetAll(tx, paginationParams)
 	if err != nil {
 		db.Rollback()
 		u.logger.Errorw("Failed to get users", "error", err)

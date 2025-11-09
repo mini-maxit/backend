@@ -31,9 +31,9 @@ type TaskService interface {
 	// Edit edits an existing task.
 	Edit(tx *gorm.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error
 	// GetAll retrieves all tasks based on query parameters.
-	GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllAssigned retrieves all tasks assigned to the current user.
-	GetAllAssigned(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error)
+	GetAllAssigned(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
 	GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllForGroup retrieves all tasks for a specific group.
@@ -41,7 +41,7 @@ type TaskService interface {
 		tx *gorm.DB,
 		currentUser schemas.User,
 		groupID int64,
-		queryParams map[string]any,
+		paginationParams schemas.PaginationParams,
 	) ([]schemas.Task, error)
 	// Get retrieves a detailed view of a specific task.
 	Get(tx *gorm.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
@@ -122,16 +122,18 @@ func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, err
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultTaskSort
+func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
+	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
+	// if err != nil {
+	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
+	// 	return nil, err
+	// }
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAll(tx, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -150,21 +152,18 @@ func (ts *taskService) GetAllForGroup(
 	tx *gorm.DB,
 	currentUser schemas.User,
 	groupID int64,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Task, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, myerrors.ErrNotAuthorized
 	}
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultTaskSort
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupID, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Error("Error getting all tasks for group")
 		return nil, err
@@ -229,16 +228,13 @@ func (ts *taskService) Get(tx *gorm.DB, _ schemas.User, taskID int64) (*schemas.
 func (ts *taskService) GetAllAssigned(
 	tx *gorm.DB,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Task, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultTaskSort
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
 	}
 
-	tasks, err := ts.taskRepository.GetAllAssigned(tx, currentUser.ID, limit, offset, sort)
+	tasks, err := ts.taskRepository.GetAllAssigned(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all assigned tasks: %v", err.Error())
 		return nil, err

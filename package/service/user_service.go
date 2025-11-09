@@ -24,7 +24,7 @@ type UserService interface {
 	// Edit updates the information of a user.
 	Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
 	// GetAll retrieves all users based on the provided query parameters.
-	GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error)
+	GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error)
 	// GetByEmail retrieves a user by their email.
 	GetByEmail(tx *gorm.DB, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
@@ -49,15 +49,12 @@ func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, err
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error) {
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = "role:desc"
+func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = "role:desc"
 	}
 
-	userModels, err := us.userRepository.GetAll(tx, limit, offset, sort)
+	userModels, err := us.userRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return nil, err

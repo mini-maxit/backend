@@ -368,11 +368,12 @@ func TestGetAllGroup(t *testing.T) {
 			Email: "test@example.com",
 		}
 
+		// Simulate query params middleware - convert strings to ints
+		query := r.URL.Query()
+		queryParams, _ := httputils.GetQueryParams(&query)
+
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
-		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]interface{}{
-			"limit":  "2",
-			"offset": "0",
-		})
+		ctx = context.WithValue(ctx, httputils.QueryParamsKey, queryParams)
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	}))
 	defer server.Close()
@@ -431,9 +432,9 @@ func TestGetAllGroup(t *testing.T) {
 
 	t.Run("Limit and offset query params", func(t *testing.T) {
 		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, queryParams map[string]interface{}) ([]schemas.Group, error) {
-				assert.Equal(t, "2", queryParams["limit"])
-				assert.Equal(t, "0", queryParams["offset"])
+			func(tx *gorm.DB, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error) {
+				assert.Equal(t, 2, paginationParams.Limit)
+				assert.Equal(t, 0, paginationParams.Offset)
 				return []schemas.Group{}, nil
 			}).Times(1)
 		resp, err := http.Get(server.URL + "/?limit=2&offset=0")

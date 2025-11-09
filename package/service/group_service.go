@@ -26,7 +26,7 @@ type GroupService interface {
 	// Get retrieves detailed information about a group by its ID.
 	Get(tx *gorm.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
 	// GetAll retrieves all groups based on query parameters.
-	GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error)
+	GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error)
 	// GetTasks retrieves all tasks associated with a group.
 	GetTasks(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error)
 	// GetUsers retrieves all users associated with a group.
@@ -131,29 +131,26 @@ func (gs *groupService) Edit(
 func (gs *groupService) GetAll(
 	tx *gorm.DB,
 	currentUser schemas.User,
-	queryParams map[string]any,
+	paginationParams schemas.PaginationParams,
 ) ([]schemas.Group, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	limit := queryParams["limit"].(int)
-	offset := queryParams["offset"].(int)
-	sort := queryParams["sort"].(string)
-	if sort == "" {
-		sort = defaultGroupSort
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultGroupSort
 	}
 	var groups []models.Group
 
 	switch currentUser.Role {
 	case types.UserRoleAdmin:
-		groups, err = gs.groupRepository.GetAll(tx, offset, limit, sort)
+		groups, err = gs.groupRepository.GetAll(tx, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 		if err != nil {
 			return nil, err
 		}
 	case types.UserRoleTeacher:
-		groups, err = gs.groupRepository.GetAllForTeacher(tx, currentUser.ID, offset, limit, sort)
+		groups, err = gs.groupRepository.GetAllForTeacher(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 		if err != nil {
 			return nil, err
 		}
