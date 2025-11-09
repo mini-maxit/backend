@@ -636,10 +636,11 @@ func TestGetAllCreatedTasks(t *testing.T) {
 			queryParams.Offset,
 			queryParams.Limit,
 			queryParams.Sort,
-		).Return([]models.Task{}, nil).Times(1)
-		tasks, err := ts.GetAllCreated(tx, adminUser, queryParams)
+		).Return([]models.Task{}, int64(0), nil).Times(1)
+		tasks, totalCount, err := ts.GetAllCreated(tx, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
+		assert.Equal(t, int64(0), totalCount)
 	})
 
 	t.Run("Success with admin", func(t *testing.T) {
@@ -659,13 +660,14 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				Title:     task.Title,
 				CreatedBy: task.CreatedBy,
 			},
-		}, nil).Times(1)
-		tasks, err := ts.GetAllCreated(tx, adminUser, queryParams)
+		}, int64(1), nil).Times(1)
+		tasks, totalCount, err := ts.GetAllCreated(tx, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+		assert.Equal(t, int64(1), totalCount)
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
@@ -686,13 +688,14 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				Title:     task.Title,
 				CreatedBy: task.CreatedBy,
 			},
-		}, nil).Times(1)
-		tasks, err := ts.GetAllCreated(tx, teacherUser, queryParams)
+		}, int64(1), nil).Times(1)
+		tasks, totalCount, err := ts.GetAllCreated(tx, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+		assert.Equal(t, int64(1), totalCount)
 	})
 
 	t.Run("Different teachers", func(t *testing.T) {
@@ -713,20 +716,22 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				Title:     task.Title,
 				CreatedBy: task.CreatedBy,
 			},
-		}, nil).Times(1)
-		tasks, err := ts.GetAllCreated(tx, teacherUser, queryParams)
+		}, int64(1), nil).Times(1)
+		tasks, totalCount, err := ts.GetAllCreated(tx, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, tasks)
 		assert.Len(t, tasks, 1)
 		assert.Equal(t, task.Title, tasks[0].Title)
 		assert.Equal(t, task.CreatedBy, tasks[0].CreatedBy)
+		assert.Equal(t, int64(1), totalCount)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
-		tasks, err := ts.GetAllCreated(tx, studentUser, queryParams)
+		tasks, totalCount, err := ts.GetAllCreated(tx, studentUser, queryParams)
 		require.ErrorIs(t, err, errors.ErrNotAuthorized)
 		assert.Empty(t, tasks)
+		assert.Equal(t, int64(0), totalCount)
 	})
 }
 

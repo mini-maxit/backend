@@ -681,7 +681,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 //
 //	@Tags			contests-management
 //	@Summary		Get contests created by the current user
-//	@Description	Get all contests created by the currently authenticated user
+//	@Description	Get all contests created by the currently authenticated user with pagination metadata
 //	@Produce		json
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
@@ -689,7 +689,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.CreatedContest]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.CreeatedContest]]
 //	@Router			/contests-management/contests/created [get]
 func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -709,7 +709,7 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-	contests, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
+	contests, totalCount, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -721,7 +721,8 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 		httputils.ReturnError(w, status, "Failed to get created contests")
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
+	response := schemas.NewPaginatedResponse(contests, paginationParams.Offset, paginationParams.Limit, int(totalCount))
+	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {

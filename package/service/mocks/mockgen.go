@@ -161,12 +161,13 @@ func (mr *MockContestServiceMockRecorder) GetContestTask(tx, currentUser, contes
 }
 
 // GetContestsCreatedByUser mocks base method.
-func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.CreatedContest, error) {
+func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.CreatedContest, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContestsCreatedByUser", tx, userID, paginationParams)
 	ret0, _ := ret[0].([]schemas.CreatedContest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetContestsCreatedByUser indicates an expected call of GetContestsCreatedByUser.
@@ -176,12 +177,13 @@ func (mr *MockContestServiceMockRecorder) GetContestsCreatedByUser(tx, userID, p
 }
 
 // GetOngoingContests mocks base method.
-func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetOngoingContests indicates an expected call of GetOngoingContests.
@@ -191,12 +193,13 @@ func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, pa
 }
 
 // GetPastContests mocks base method.
-func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetPastContests indicates an expected call of GetPastContests.
@@ -251,12 +254,13 @@ func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, co
 }
 
 // GetUpcomingContests mocks base method.
-func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error) {
+func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.AvailableContest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetUpcomingContests indicates an expected call of GetUpcomingContests.
@@ -603,12 +607,13 @@ func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, paginatio
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllCreated", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllCreated indicates an expected call of GetAllCreated.

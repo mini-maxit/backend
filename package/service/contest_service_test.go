@@ -203,13 +203,14 @@ func TestContestService_GetPastContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, nil).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, totalCount, err := cs.GetPastContests(tx, currentUser, queryParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].ID)
+		assert.Equal(t, int64(1), totalCount)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
@@ -223,11 +224,12 @@ func TestContestService_GetPastContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.New("db error")).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, totalCount, err := cs.GetPastContests(tx, currentUser, queryParams)
 
 		require.Error(t, err)
+		assert.Equal(t, int64(0), totalCount)
 		assert.Nil(t, result)
 	})
 }
@@ -268,13 +270,14 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, nil).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
 
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, totalCount, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].ID)
+		assert.Equal(t, int64(1), totalCount)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
@@ -288,12 +291,13 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.New("db error")).Times(1)
 
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, totalCount, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
+		assert.Equal(t, int64(0), totalCount)
 	})
 }
 

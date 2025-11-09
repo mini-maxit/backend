@@ -1083,12 +1083,13 @@ func (mr *MockTaskRepositoryMockRecorder) GetAllAssigned(tx, userID, limit, offs
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllCreated", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllCreated indicates an expected call of GetAllCreated.
@@ -1589,12 +1590,13 @@ func (mr *MockContestRepositoryMockRecorder) GetAll(tx, offset, limit, sort any)
 }
 
 // GetAllForCreator mocks base method.
-func (m *MockContestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset, limit int, sort string) ([]models.Contest, error) {
+func (m *MockContestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset, limit int, sort string) ([]models.Contest, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForCreator", tx, creatorID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.Contest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForCreator indicates an expected call of GetAllForCreator.
@@ -1679,12 +1681,13 @@ func (mr *MockContestRepositoryMockRecorder) GetContestsForUserWithStats(tx, use
 }
 
 // GetOngoingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, error) {
+func (m *MockContestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOngoingContestsWithStats", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetOngoingContestsWithStats indicates an expected call of GetOngoingContestsWithStats.
@@ -1694,12 +1697,13 @@ func (mr *MockContestRepositoryMockRecorder) GetOngoingContestsWithStats(tx, use
 }
 
 // GetPastContestsWithStats mocks base method.
-func (m *MockContestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, error) {
+func (m *MockContestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastContestsWithStats", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetPastContestsWithStats indicates an expected call of GetPastContestsWithStats.
@@ -1769,12 +1773,13 @@ func (mr *MockContestRepositoryMockRecorder) GetTasksForContestWithStats(tx, con
 }
 
 // GetUpcomingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, error) {
+func (m *MockContestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUpcomingContestsWithStats", tx, userID, offset, limit, sort)
 	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetUpcomingContestsWithStats indicates an expected call of GetUpcomingContestsWithStats.
