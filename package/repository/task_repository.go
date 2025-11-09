@@ -22,13 +22,13 @@ type TaskRepository interface {
 	// Edit edits a task, by setting the fields of the task to the fields of the function argument.
 	Edit(tx *gorm.DB, taskID int64, task *models.Task) error
 	// GetAllAssigned returns all tasks assigned to a user, either directly or through a group. The tasks are paginated.
-	GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error)
+	GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, int64, error)
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
 	GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
 	// GetAllForGroup returns all tasks assigned to a group. The tasks are paginated.
 	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error)
 	// GetAll returns all tasks. The tasks are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error)
+	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, int64, error)
 	// Get returns a task by its ID.
 	Get(tx *gorm.DB, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
@@ -85,14 +85,28 @@ func (tr *taskRepository) GetAllAssigned(
 	userID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Task, error) {
+) ([]models.Task, int64, error) {
 	var tasks []models.Task
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	var totalCount int64
+
+	// Get total count first
+	countQuery := tx.Model(&models.Task{}).
+		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
+		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
+		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Where("(task_users.user_id = ? OR user_groups.user_id = ?) AND tasks.deleted_at IS NULL", userID, userID).
+		Distinct()
+	err := countQuery.Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Task{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Task{}).
 		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
 		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
 		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
@@ -101,9 +115,9 @@ func (tr *taskRepository) GetAllAssigned(
 		Find(&tasks).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return tasks, nil
+	return tasks, totalCount, nil
 }
 
 func (tr *taskRepository) AssignToUser(tx *gorm.DB, taskID, userID int64) error {
@@ -215,17 +229,25 @@ func (tr *taskRepository) IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) 
 	return count > 0, nil
 }
 
-func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, int64, error) {
 	tasks := []models.Task{}
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	var totalCount int64
+
+	// Get total count first
+	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL").Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	err = tx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
+
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return tasks, nil
+	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return tasks, totalCount, nil
 }
 
 func (tr *taskRepository) GetAllForGroup(

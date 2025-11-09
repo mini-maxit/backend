@@ -73,12 +73,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) Get(tx, submissionID any) *gomoc
 }
 
 // GetAll mocks base method.
-func (m *MockSubmissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAll indicates an expected call of GetAll.
@@ -88,12 +89,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAll(tx, limit, offset, sort a
 }
 
 // GetAllByUser mocks base method.
-func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllByUser", tx, userID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllByUser indicates an expected call of GetAllByUser.
@@ -208,12 +210,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUserForTeacher(tx, userI
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionRepository) GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForContest indicates an expected call of GetAllForContest.
@@ -223,12 +226,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllForContest(tx, contestID, 
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockSubmissionRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
@@ -238,12 +242,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllForGroup(tx, groupID, limi
 }
 
 // GetAllForTask mocks base method.
-func (m *MockSubmissionRepository) GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForTask indicates an expected call of GetAllForTask.
@@ -253,12 +258,13 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTask(tx, taskID, limit,
 }
 
 // GetAllForTaskByUser mocks base method.
-func (m *MockSubmissionRepository) GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error) {
+func (m *MockSubmissionRepository) GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForTaskByUser", tx, taskID, userID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForTaskByUser indicates an expected call of GetAllForTaskByUser.
@@ -1053,12 +1059,13 @@ func (mr *MockTaskRepositoryMockRecorder) Get(tx, taskID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAll indicates an expected call of GetAll.
@@ -1068,12 +1075,13 @@ func (mr *MockTaskRepositoryMockRecorder) GetAll(tx, limit, offset, sort any) *g
 }
 
 // GetAllAssigned mocks base method.
-func (m *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, error) {
+func (m *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllAssigned", tx, userID, limit, offset, sort)
 	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllAssigned indicates an expected call of GetAllAssigned.

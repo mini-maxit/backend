@@ -1078,12 +1078,13 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, use
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockSubmissionService) GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
@@ -1108,12 +1109,13 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForTask(tx, taskID, user, pag
 }
 
 // GetAllForUser mocks base method.
-func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForUser", tx, userID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAllForUser indicates an expected call of GetAllForUser.

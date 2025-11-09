@@ -137,7 +137,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, paginationParams sche
 	}
 
 	// Get all tasks
-	tasks, err := ts.taskRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	tasks, _, err := ts.taskRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -238,7 +238,7 @@ func (ts *taskService) GetAllAssigned(
 		paginationParams.Sort = defaultTaskSort
 	}
 
-	tasks, err := ts.taskRepository.GetAllAssigned(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	tasks, _, err := ts.taskRepository.GetAllAssigned(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all assigned tasks: %v", err.Error())
 		return nil, err

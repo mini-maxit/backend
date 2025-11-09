@@ -26,13 +26,13 @@ type SubmissionService interface {
 	// GetAll retrieves all submissions based on the user's role and query parameters.
 	GetAll(tx *gorm.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForGroup retrieves all submissions for a specific group based on the user's role and query parameters.
-	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, int64, error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
 	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
 	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error)
+	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, int64, error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
@@ -167,7 +167,11 @@ func (ss *submissionService) fetchSubmissionsByFilters(
 	} else if taskID != nil {
 		return ss.submissionRepository.GetAllByUserForTask(tx, userID, *taskID, limit, offset, sort)
 	}
-	return ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
+	models, _, err := ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+	return models, nil
 }
 
 func (ss *submissionService) getUnfilteredSubmissions(
@@ -184,9 +188,9 @@ func (ss *submissionService) getUnfilteredSubmissions(
 
 	switch user.Role {
 	case types.UserRoleAdmin:
-		submissionModels, err = ss.submissionRepository.GetAll(tx, limit, offset, sort)
+		submissionModels, _, err = ss.submissionRepository.GetAll(tx, limit, offset, sort)
 	case types.UserRoleStudent:
-		submissionModels, err = ss.submissionRepository.GetAllByUser(tx, user.ID, limit, offset, sort)
+		submissionModels, _, err = ss.submissionRepository.GetAllByUser(tx, user.ID, limit, offset, sort)
 	case types.UserRoleTeacher:
 		submissionModels, err = ss.submissionRepository.GetAllForTeacher(tx, user.ID, limit, offset, sort)
 	}
@@ -239,15 +243,15 @@ func (ss *submissionService) GetAllForUser(
 	userID int64,
 	currentUser schemas.User,
 	paginationParams schemas.PaginationParams,
-) ([]schemas.Submission, error) {
+) ([]schemas.Submission, int64, error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = defaultSortOrder
 	}
 
-	submissionModels, err := ss.submissionRepository.GetAllByUser(tx, userID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	submissionModels, totalCount, err := ss.submissionRepository.GetAllByUser(tx, userID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ss.logger.Errorf("Error getting all submissions for user: %v", err.Error())
-		return nil, err
+		return nil, 0, err
 	}
 
 	switch currentUser.Role {
@@ -257,7 +261,7 @@ func (ss *submissionService) GetAllForUser(
 		// Student is only allowed to view their own submissions
 		if userID != currentUser.ID {
 			ss.logger.Errorf("User %v is not allowed to view submissions", currentUser.ID)
-			return nil, myerrors.ErrPermissionDenied
+			return nil, 0, myerrors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
@@ -273,7 +277,7 @@ func (ss *submissionService) GetAllForUser(
 		result[i] = *ss.modelToSchema(&submission)
 	}
 
-	return result, nil
+	return result, totalCount, nil
 }
 
 func (ss *submissionService) GetAllForGroup(
@@ -281,8 +285,9 @@ func (ss *submissionService) GetAllForGroup(
 	groupID int64,
 	user schemas.User,
 	paginationParams schemas.PaginationParams,
-) ([]schemas.Submission, error) {
+) ([]schemas.Submission, int64, error) {
 	var err error
+	var totalCount int64
 	submissionModels := []models.Submission{}
 
 	if paginationParams.Sort == "" {
@@ -292,26 +297,26 @@ func (ss *submissionService) GetAllForGroup(
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
-		return nil, myerrors.ErrPermissionDenied
+		return nil, 0, myerrors.ErrPermissionDenied
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
 		group, er := ss.groupRepository.Get(tx, groupID)
 		if er != nil {
 			ss.logger.Errorf("Error getting group: %v", er.Error())
-			return nil, er
+			return nil, 0, er
 		}
 		if group.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
+			return nil, 0, myerrors.ErrPermissionDenied
 		}
-		submissionModels, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
 		ss.logger.Errorf("Error getting all submissions for group: %v", err.Error())
-		return nil, err
+		return nil, 0, err
 	}
 
 	result := make([]schemas.Submission, len(submissionModels))
@@ -319,7 +324,7 @@ func (ss *submissionService) GetAllForGroup(
 		result[i] = *ss.modelToSchema(&submissionModel)
 	}
 
-	return result, nil
+	return result, totalCount, nil
 }
 
 func (ss *submissionService) GetAllForTask(
@@ -337,7 +342,7 @@ func (ss *submissionService) GetAllForTask(
 
 	switch user.Role {
 	case types.UserRoleAdmin:
-		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, _, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		task, er := ss.taskService.Get(tx, user, taskID)
 		if er != nil {
@@ -346,7 +351,7 @@ func (ss *submissionService) GetAllForTask(
 		if task.CreatedBy != user.ID {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModel, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, _, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		isAssigned, er := ss.taskRepository.IsAssignedToUser(tx, taskID, user.ID)
 		if er != nil {
@@ -355,7 +360,7 @@ func (ss *submissionService) GetAllForTask(
 		if !isAssigned {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModel, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, _, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
@@ -386,7 +391,7 @@ func (ss *submissionService) GetAllForContest(
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions for the contest
-		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, _, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
 		contest, er := ss.contestService.Get(tx, user, contestID)
@@ -397,7 +402,7 @@ func (ss *submissionService) GetAllForContest(
 		if contest.CreatedBy != user.ID {
 			return nil, myerrors.ErrPermissionDenied
 		}
-		submissionModels, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, _, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Students are not allowed to view all submissions for a contest
 		return nil, myerrors.ErrPermissionDenied

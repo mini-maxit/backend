@@ -426,7 +426,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, submissions, 2)
@@ -447,7 +447,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, submissions, 2)
@@ -461,7 +461,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)
@@ -472,7 +472,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)
@@ -482,7 +482,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)
@@ -496,7 +496,7 @@ func TestSubmissionGetAllForGroup(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)
@@ -520,7 +520,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, submissions, 2)
@@ -538,7 +538,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, submissions, 1)
@@ -554,7 +554,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)
@@ -573,7 +573,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Len(t, submissions, 2)
@@ -591,7 +591,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "teacher", ID: 2}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
 		assert.Empty(t, submissions)
@@ -605,7 +605,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "admin"}
 
-		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
+		submissions, _, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.Error(t, err)
 		assert.Nil(t, submissions)

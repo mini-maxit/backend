@@ -221,7 +221,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
+	submissions, _, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -286,7 +286,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, paginationParams)
+	submissions, _, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submissions for group", "error", err)
@@ -551,7 +551,7 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
+	submissions, _, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
