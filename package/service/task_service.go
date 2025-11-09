@@ -49,6 +49,8 @@ type TaskService interface {
 	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	// GetLimits retrieves limits associated with each input/output
 	GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error)
+	// GetMyLiveTasks retrieves live assigned tasks grouped by contests and non-contest tasks with submission statistics.
+	GetMyLiveTasks(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error)
 	// ParseTestCase parses the input and output files from an archive.
 	ParseTestCase(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
@@ -64,12 +66,14 @@ type TaskService interface {
 const defaultTaskSort = "created_at:desc"
 
 type taskService struct {
-	filestorage        filestorage.FileStorageService
-	fileRepository     repository.File
-	groupRepository    repository.GroupRepository
-	testCaseRepository repository.TestCaseRepository
-	taskRepository     repository.TaskRepository
-	userRepository     repository.UserRepository
+	filestorage          filestorage.FileStorageService
+	fileRepository       repository.File
+	groupRepository      repository.GroupRepository
+	testCaseRepository   repository.TestCaseRepository
+	taskRepository       repository.TaskRepository
+	userRepository       repository.UserRepository
+	submissionRepository repository.SubmissionRepository
+	contestRepository    repository.ContestRepository
 
 	logger *zap.SugaredLogger
 }
@@ -772,6 +776,106 @@ func TestCaseToSchema(model *models.TestCase) *schemas.TestCase {
 	}
 }
 
+func (ts *taskService) GetMyLiveTasks(
+	tx *gorm.DB,
+	currentUser schemas.User,
+	paginationParams schemas.PaginationParams,
+) (*schemas.MyTasksResponse, error) {
+
+	// Get live tasks in contests
+	contestTasksMap, err := ts.taskRepository.GetLiveAssignedTasksGroupedByContest(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset)
+	if err != nil {
+		ts.logger.Errorf("Error getting live assigned tasks in contests: %v", err.Error())
+		return nil, err
+	}
+
+	// Get live tasks not in contests
+	nonContestTasks, err := ts.taskRepository.GetLiveAssignedNonContestTasks(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset)
+	if err != nil {
+		ts.logger.Errorf("Error getting live assigned non-contest tasks: %v", err.Error())
+		return nil, err
+	}
+
+	// Build response structure
+	response := &schemas.MyTasksResponse{
+		Contests:        []schemas.ContestWithTasks{},
+		NonContestTasks: []schemas.TaskWithAttempts{},
+	}
+
+	// Process contest tasks
+	for contestID, tasks := range contestTasksMap {
+		contest, err := ts.contestRepository.Get(tx, contestID)
+		if err != nil {
+			ts.logger.Errorf("Error getting contest: %v", err.Error())
+			continue
+		}
+
+		contestWithTasks := schemas.ContestWithTasks{
+			ContestID:   contest.ID,
+			ContestName: contest.Name,
+			StartAt:     contest.StartAt,
+			EndAt:       contest.EndAt,
+			Tasks:       []schemas.TaskWithAttempts{},
+		}
+
+		for _, task := range tasks {
+			taskWithAttempts, err := ts.enrichTaskWithAttempts(tx, &task, currentUser.ID)
+			if err != nil {
+				ts.logger.Errorf("Error enriching task with attempts: %v", err.Error())
+				continue
+			}
+			contestWithTasks.Tasks = append(contestWithTasks.Tasks, *taskWithAttempts)
+		}
+
+		response.Contests = append(response.Contests, contestWithTasks)
+	}
+
+	// Process non-contest tasks
+	for _, task := range nonContestTasks {
+		taskWithAttempts, err := ts.enrichTaskWithAttempts(tx, &task, currentUser.ID)
+		if err != nil {
+			ts.logger.Errorf("Error enriching task with attempts: %v", err.Error())
+			continue
+		}
+		response.NonContestTasks = append(response.NonContestTasks, *taskWithAttempts)
+	}
+
+	return response, nil
+}
+
+func (ts *taskService) enrichTaskWithAttempts(
+	tx *gorm.DB,
+	task *models.Task,
+	userID int64,
+) (*schemas.TaskWithAttempts, error) {
+	// Get attempt count
+	attemptCount, err := ts.submissionRepository.GetAttemptCountForTaskByUser(tx, task.ID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get best score if there are attempts
+	var bestScore *float64
+	if attemptCount > 0 {
+		bestScore, err = ts.submissionRepository.GetBestScoreForTaskByUser(tx, task.ID, userID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &schemas.TaskWithAttempts{
+		Task: schemas.Task{
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
+		},
+		BestScore:    bestScore,
+		AttemptCount: attemptCount,
+	}, nil
+}
+
 func NewTaskService(
 	filestorage filestorage.FileStorageService,
 	fileRepository repository.File,
@@ -779,15 +883,19 @@ func NewTaskService(
 	testCaseRepository repository.TestCaseRepository,
 	userRepository repository.UserRepository,
 	groupRepository repository.GroupRepository,
+	submissionRepository repository.SubmissionRepository,
+	contestRepository repository.ContestRepository,
 ) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		filestorage:        filestorage,
-		fileRepository:     fileRepository,
-		taskRepository:     taskRepository,
-		userRepository:     userRepository,
-		groupRepository:    groupRepository,
-		testCaseRepository: testCaseRepository,
-		logger:             log,
+		filestorage:          filestorage,
+		fileRepository:       fileRepository,
+		taskRepository:       taskRepository,
+		userRepository:       userRepository,
+		groupRepository:      groupRepository,
+		testCaseRepository:   testCaseRepository,
+		submissionRepository: submissionRepository,
+		contestRepository:    contestRepository,
+		logger:               log,
 	}
 }
