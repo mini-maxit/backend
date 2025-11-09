@@ -66,6 +66,7 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
 	response, err := tr.taskService.GetMyLiveTasks(tx, currentUser, paginationParams)
 	if err != nil {
@@ -203,6 +204,7 @@ func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
+	mux.HandleFunc("/tasks/my", route.GetMyTasks)
 	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -211,5 +213,4 @@ func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/tasks/my", route.GetMyTasks)
 }

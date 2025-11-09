@@ -91,10 +91,12 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 		IsRegistrationOpen: contest.IsRegistrationOpen,
 		IsSubmissionOpen:   contest.IsSubmissionOpen,
 		IsVisible:          contest.IsVisible,
+		StartAt:            contest.StartAt,
 	}
 
-	if contest.StartAt != nil {
-		model.StartAt = contest.StartAt
+	now := time.Now()
+	if contest.StartAt == nil {
+		model.StartAt = &now
 	}
 	if contest.EndAt != nil {
 		model.EndAt = contest.EndAt
@@ -434,13 +436,15 @@ func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser sch
 		}
 
 		result[i] = schemas.TaskWithContestStats{
-			ID:           task.ID,
-			Title:        task.Title,
-			CreatedBy:    task.CreatedBy,
-			CreatedAt:    task.CreatedAt,
-			UpdatedAt:    task.UpdatedAt,
-			BestScore:    bestScore,
-			AttemptCount: attemptCount,
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
+			AttemptsSummary: schemas.AttemptsSummary{
+				BestScore:    bestScore,
+				AttemptCount: attemptCount,
+			},
 		}
 	}
 	return result, nil

@@ -781,7 +781,6 @@ func (ts *taskService) GetMyLiveTasks(
 	currentUser schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.MyTasksResponse, error) {
-
 	// Get live tasks in contests
 	contestTasksMap, err := ts.taskRepository.GetLiveAssignedTasksGroupedByContest(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset)
 	if err != nil {
@@ -798,8 +797,8 @@ func (ts *taskService) GetMyLiveTasks(
 
 	// Build response structure
 	response := &schemas.MyTasksResponse{
-		Contests:        []schemas.ContestWithTasks{},
-		NonContestTasks: []schemas.TaskWithAttempts{},
+		Contests: []schemas.ContestWithTasks{},
+		Tasks:    []schemas.TaskWithAttempts{},
 	}
 
 	// Process contest tasks
@@ -837,7 +836,7 @@ func (ts *taskService) GetMyLiveTasks(
 			ts.logger.Errorf("Error enriching task with attempts: %v", err.Error())
 			continue
 		}
-		response.NonContestTasks = append(response.NonContestTasks, *taskWithAttempts)
+		response.Tasks = append(response.Tasks, *taskWithAttempts)
 	}
 
 	return response, nil
@@ -855,9 +854,10 @@ func (ts *taskService) enrichTaskWithAttempts(
 	}
 
 	// Get best score if there are attempts
-	var bestScore *float64
+	var bestScore float64
 	if attemptCount > 0 {
 		bestScore, err = ts.submissionRepository.GetBestScoreForTaskByUser(tx, task.ID, userID)
+		ts.logger.Infof("Best score for task %d and user %d: %v", task.ID, userID, bestScore)
 		if err != nil {
 			return nil, err
 		}
@@ -871,8 +871,10 @@ func (ts *taskService) enrichTaskWithAttempts(
 			CreatedAt: task.CreatedAt,
 			UpdatedAt: task.UpdatedAt,
 		},
-		BestScore:    bestScore,
-		AttemptCount: attemptCount,
+		AttemptsSummary: schemas.AttemptsSummary{
+			BestScore:    bestScore,
+			AttemptCount: attemptCount,
+		},
 	}, nil
 }
 

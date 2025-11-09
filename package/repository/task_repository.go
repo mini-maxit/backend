@@ -345,11 +345,11 @@ func (tr *taskRepository) GetLiveAssignedNonContestTasks(
 
 	// Get tasks assigned to user (directly or through groups) but not in any active contest
 	err := tx.Model(&models.Task{}).
-		Joins("LEFT JOIN task_users ON task_users.task_id = tasks.id").
-		Joins("LEFT JOIN task_groups ON task_groups.task_id = tasks.id").
-		Joins("LEFT JOIN user_groups ON user_groups.group_id = task_groups.group_id").
+		Joins(fmt.Sprintf("LEFT JOIN %s ON task_users.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskUser{}))).
+		Joins(fmt.Sprintf("LEFT JOIN %s ON task_groups.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskGroup{}))).
+		Joins(fmt.Sprintf("LEFT JOIN %s ON user_groups.group_id = task_groups.group_id", database.ResolveTableName(tx, &models.UserGroup{}))).
 		Where("(task_users.user_id = ? OR user_groups.user_id = ?) AND tasks.deleted_at IS NULL", userID, userID).
-		Where("tasks.id NOT IN (SELECT DISTINCT task_id FROM contest_tasks WHERE start_at <= NOW() AND (end_at IS NULL OR end_at > NOW()))").
+		Where(fmt.Sprintf("tasks.id NOT IN (SELECT DISTINCT task_id FROM %s WHERE start_at <= NOW() AND (end_at IS NULL OR end_at > NOW()))", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Distinct().
 		Limit(limit).
 		Offset(offset).
