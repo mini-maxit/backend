@@ -77,7 +77,7 @@ func TestGetAll(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, int64(0), gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		require.NoError(t, err)
@@ -280,7 +280,7 @@ func TestGetAllForGroup(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAllForGroup(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().GetAllForGroup(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(nil, int64(0), gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL + "/group/1")
 		require.NoError(t, err)
@@ -363,7 +363,7 @@ func TestGetAllForTask(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAllForTask(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().GetAllForTask(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(nil, int64(0), gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL + "/task/1")
 		require.NoError(t, err)
@@ -421,7 +421,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().GetAvailableLanguages(gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().GetAvailableLanguages(gomock.Any()).Return(nil, int64(0), gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		require.NoError(t, err)
