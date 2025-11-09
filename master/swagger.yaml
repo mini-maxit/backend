@@ -58,6 +58,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-MyTasksResponse:
+    properties:
+      data:
+        $ref: '#/definitions/MyTasksResponse'
+      ok:
+        type: boolean
+    type: object
   APIResponse-QueueStatus:
     properties:
       data:
@@ -199,6 +206,15 @@ definitions:
     required:
     - taskId
     type: object
+  AttemptsSummary:
+    properties:
+      attemptCount:
+        description: Number of submission attempts by the user
+        type: integer
+      bestScore:
+        description: Best score achieved by the user (percentage of passed tests)
+        type: number
+    type: object
   AuthResponse:
     properties:
       accessToken:
@@ -288,6 +304,21 @@ definitions:
         type: integer
       updatedAt:
         type: string
+    type: object
+  ContestWithTasks:
+    properties:
+      contestId:
+        type: integer
+      contestName:
+        type: string
+      endAt:
+        type: string
+      startAt:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/TaskWithAttempts'
+        type: array
     type: object
   CreateContest:
     properties:
@@ -410,6 +441,18 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  MyTasksResponse:
+    properties:
+      contests:
+        items:
+          $ref: '#/definitions/ContestWithTasks'
+        type: array
+      tasks:
+        description: Tasks not associated with any contest
+        items:
+          $ref: '#/definitions/TaskWithAttempts'
+        type: array
     type: object
   PutTestCase:
     properties:
@@ -556,14 +599,25 @@ definitions:
       title:
         type: string
     type: object
+  TaskWithAttempts:
+    properties:
+      attemptsSummary:
+        $ref: '#/definitions/AttemptsSummary'
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      id:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   TaskWithContestStats:
     properties:
-      attemptCount:
-        description: Number of submission attempts by the user
-        type: integer
-      bestScore:
-        description: Best score achieved by the user (percentage of passed tests)
-        type: number
+      attemptsSummary:
+        $ref: '#/definitions/AttemptsSummary'
       createdAt:
         type: string
       createdBy:
@@ -2513,14 +2567,24 @@ paths:
       - task
   /tasks/my:
     get:
-      description: Returns all tasks assigned to the current user
+      description: Returns all live tasks assigned to the current user, grouped by
+        contests and non-contest tasks
+      parameters:
+      - description: 'Number of results to return (default: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of results to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-MyTasksResponse'
         "500":
           description: Internal Server Error
           schema:
