@@ -101,10 +101,10 @@ func (mr *MockContestServiceMockRecorder) Delete(tx, currentUser, contestID any)
 }
 
 // Edit mocks base method.
-func (m *MockContestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
+func (m *MockContestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, contestID, editInfo)
-	ret0, _ := ret[0].(*schemas.Contest)
+	ret0, _ := ret[0].(*schemas.CreatedContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -161,10 +161,10 @@ func (mr *MockContestServiceMockRecorder) GetContestTask(tx, currentUser, contes
 }
 
 // GetContestsCreatedByUser mocks base method.
-func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error) {
+func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.CreatedContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContestsCreatedByUser", tx, userID, paginationParams)
-	ret0, _ := ret[0].([]schemas.Contest)
+	ret0, _ := ret[0].([]schemas.CreatedContest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
