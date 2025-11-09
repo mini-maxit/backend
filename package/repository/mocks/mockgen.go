@@ -1513,6 +1513,21 @@ func (mr *MockContestRepositoryMockRecorder) Edit(tx, contestID, contest any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestRepository)(nil).Edit), tx, contestID, contest)
 }
 
+// EditWithStats mocks base method.
+func (m *MockContestRepository) EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditWithStats", tx, contestID, contest)
+	ret0, _ := ret[0].(*models.ContestWithStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditWithStats indicates an expected call of EditWithStats.
+func (mr *MockContestRepositoryMockRecorder) EditWithStats(tx, contestID, contest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditWithStats", reflect.TypeOf((*MockContestRepository)(nil).EditWithStats), tx, contestID, contest)
+}
+
 // Get mocks base method.
 func (m *MockContestRepository) Get(tx *gorm.DB, contestID int64) (*models.Contest, error) {
 	m.ctrl.T.Helper()
@@ -1556,6 +1571,21 @@ func (m *MockContestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, o
 func (mr *MockContestRepositoryMockRecorder) GetAllForCreator(tx, creatorID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCreator", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCreator), tx, creatorID, offset, limit, sort)
+}
+
+// GetAllForCreatorWithStats mocks base method.
+func (m *MockContestRepository) GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset, limit int, sort string) ([]models.ContestWithStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForCreatorWithStats", tx, creatorID, offset, limit, sort)
+	ret0, _ := ret[0].([]models.ContestWithStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllForCreatorWithStats indicates an expected call of GetAllForCreatorWithStats.
+func (mr *MockContestRepositoryMockRecorder) GetAllForCreatorWithStats(tx, creatorID, offset, limit, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCreatorWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCreatorWithStats), tx, creatorID, offset, limit, sort)
 }
 
 // GetAllWithStats mocks base method.

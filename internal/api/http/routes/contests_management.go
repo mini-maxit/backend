@@ -109,7 +109,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.Contest]
+//	@Success		200		{object}	httputils.APIResponse[schemas.CreatedContest]
 //	@Router			/contests-management/contests/{id} [put]
 func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
@@ -689,7 +689,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Contest]
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.CreatedContest]
 //	@Router			/contests-management/contests/created [get]
 func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

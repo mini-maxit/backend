@@ -30,8 +30,12 @@ type ContestRepository interface {
 	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
 	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error)
+	// GetAllForCreatorWithStats retrieves all contests created by a specific user with participant and task counts
+	GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
+	// EditWithStats updates a contest and returns it with participant and task counts
+	EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error)
 	// Delete removes a contest
 	Delete(tx *gorm.DB, contestID int64) error
 	// CreatePendingRegistration creates a pending registration request
@@ -109,12 +113,96 @@ func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offs
 	return contests, nil
 }
 
+func (cr *contestRepository) GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+	var contests []models.ContestWithStats
+
+	// Build a query that calculates participant counts and task counts for contests created by a specific user.
+	// Similar to GetAllWithStats but filtered by creator.
+	query := tx.Model(&models.Contest{}).
+		Select(`contests.*,
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+			COALESCE(contest_task_count.count, 0) as task_count,
+			false as is_participant,
+			false as has_pending_reg`).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Where("contests.created_by = ?", creatorID)
+
+	// Apply pagination and sorting
+	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
+	if err != nil {
+		return nil, err
+	}
+
+	err = query.Find(&contests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return contests, nil
+}
+
 func (cr *contestRepository) Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error) {
 	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
 	if err != nil {
 		return nil, err
 	}
 	return cr.Get(tx, contestID)
+}
+
+func (cr *contestRepository) EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+	// First update the contest
+	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Then retrieve with stats
+	var contestWithStats models.ContestWithStats
+	query := tx.Model(&models.Contest{}).
+		Select(`contests.*,
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+			COALESCE(contest_task_count.count, 0) as task_count,
+			false as is_participant,
+			false as has_pending_reg`).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count
+			FROM %s
+			GROUP BY contest_id
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		Where("contests.id = ?", contestID)
+
+	err = query.First(&contestWithStats).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &contestWithStats, nil
 }
 
 func (cr *contestRepository) Delete(tx *gorm.DB, contestID int64) error {

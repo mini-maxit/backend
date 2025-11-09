@@ -25,6 +25,13 @@ type AvailableContest struct {
 	RegistrationStatus string `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
 }
 
+type CreatedContest struct {
+	Contest
+	IsRegistrationOpen *bool `json:"isRegistrationOpen"`
+	IsSubmissionOpen   *bool `json:"isSubmissionOpen"`
+	IsVisible          *bool `json:"isVisible"`
+}
+
 type CreateContest struct {
 	Name               string     `json:"name" validate:"required,gte=3,lte=100"`
 	Description        string     `json:"description,omitempty"`

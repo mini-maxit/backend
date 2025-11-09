@@ -26,7 +26,7 @@ type ContestService interface {
 	// GetUpcomingContests retrieves contests that haven't started yet
 	GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.AvailableContest, error)
 	// Edit updates a contest
-	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error)
+	Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error)
 	// Delete removes a contest
 	Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error
 	// RegisterForContest creates a pending registration for a contest
@@ -53,7 +53,7 @@ type ContestService interface {
 	// Returns an error if submission is not allowed (contest/task not open, user not participant, etc.)
 	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
 
-	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error)
+	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.CreatedContest, error)
 	GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 }
 
@@ -224,7 +224,7 @@ func (cs *contestService) isContestVisibleToUser(tx *gorm.DB, contest *models.Co
 	return isParticipant
 }
 
-func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.Contest, error) {
+func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
@@ -253,12 +253,12 @@ func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID 
 
 	cs.updateModel(model, editInfo)
 
-	newModel, err := cs.contestRepository.Edit(tx, contestID, model)
+	newModel, err := cs.contestRepository.EditWithStats(tx, contestID, model)
 	if err != nil {
 		return nil, err
 	}
 
-	return ContestToSchema(newModel), nil
+	return ContestWithStatsToCreatedContest(newModel), nil
 }
 
 func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
@@ -597,6 +597,27 @@ func ContestToSchema(model *models.Contest) *schemas.Contest {
 	}
 }
 
+func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {
+	return &schemas.CreatedContest{
+		Contest: schemas.Contest{
+			ID:               model.ID,
+			Name:             model.Name,
+			Description:      model.Description,
+			CreatedBy:        model.CreatedBy,
+			StartAt:          model.StartAt,
+			EndAt:            model.EndAt,
+			CreatedAt:        model.CreatedAt,
+			UpdatedAt:        model.UpdatedAt,
+			ParticipantCount: model.ParticipantCount,
+			TaskCount:        model.TaskCount,
+			Status:           getContestStatus(model.StartAt, model.EndAt),
+		},
+		IsRegistrationOpen: model.IsRegistrationOpen,
+		IsSubmissionOpen:   model.IsSubmissionOpen,
+		IsVisible:          model.IsVisible,
+	}
+}
+
 func ContestWithStatsToAvailableContest(model *models.ContestWithStats) *schemas.AvailableContest {
 	registrationStatus := "registrationClosed"
 
@@ -889,19 +910,19 @@ func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, task
 	return nil
 }
 
-func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.Contest, error) {
+func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) ([]schemas.CreatedContest, error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = defaultContestSort
 	}
 
-	contests, err := cs.contestRepository.GetAllForCreator(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	contests, err := cs.contestRepository.GetAllForCreatorWithStats(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]schemas.Contest, len(contests))
+	result := make([]schemas.CreatedContest, len(contests))
 	for i, contest := range contests {
-		result[i] = *ContestToSchema(&contest)
+		result[i] = *ContestWithStatsToCreatedContest(&contest)
 	}
 	return result, nil
 }
