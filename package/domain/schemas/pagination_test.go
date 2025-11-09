@@ -1,7 +1,9 @@
-package schemas
+package schemas_test
 
 import (
 	"testing"
+
+	"github.com/mini-maxit/backend/package/domain/schemas"
 )
 
 func TestNewPaginationMetadata(t *testing.T) {
@@ -10,14 +12,14 @@ func TestNewPaginationMetadata(t *testing.T) {
 		offset     int
 		limit      int
 		totalItems int
-		want       PaginationMetadata
+		want       schemas.PaginationMetadata
 	}{
 		{
 			name:       "First page with 10 items per page, 25 total",
 			offset:     0,
 			limit:      10,
 			totalItems: 25,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 1,
 				PageSize:    10,
 				TotalItems:  25,
@@ -29,7 +31,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     10,
 			limit:      10,
 			totalItems: 25,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 2,
 				PageSize:    10,
 				TotalItems:  25,
@@ -41,7 +43,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     20,
 			limit:      10,
 			totalItems: 25,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 3,
 				PageSize:    10,
 				TotalItems:  25,
@@ -53,7 +55,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     0,
 			limit:      10,
 			totalItems: 30,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 1,
 				PageSize:    10,
 				TotalItems:  30,
@@ -65,7 +67,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     0,
 			limit:      10,
 			totalItems: 0,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 1,
 				PageSize:    10,
 				TotalItems:  0,
@@ -77,7 +79,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     50,
 			limit:      5,
 			totalItems: 100,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 11,
 				PageSize:    5,
 				TotalItems:  100,
@@ -89,7 +91,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 			offset:     5,
 			limit:      1,
 			totalItems: 10,
-			want: PaginationMetadata{
+			want: schemas.PaginationMetadata{
 				CurrentPage: 6,
 				PageSize:    1,
 				TotalItems:  10,
@@ -100,7 +102,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewPaginationMetadata(tt.offset, tt.limit, tt.totalItems)
+			got := schemas.NewPaginationMetadata(tt.offset, tt.limit, tt.totalItems)
 			if got != tt.want {
 				t.Errorf("NewPaginationMetadata() = %+v, want %+v", got, tt.want)
 			}
@@ -119,7 +121,7 @@ func TestNewPaginatedResponse(t *testing.T) {
 		{Name: "Item2", ID: 2},
 	}
 
-	response := NewPaginatedResponse(data, 10, 5, 25)
+	response := schemas.NewPaginatedResponse(data, 10, 5, 25)
 
 	if response.Pagination.CurrentPage != 3 {
 		t.Errorf("Expected current page 3, got %d", response.Pagination.CurrentPage)
