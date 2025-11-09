@@ -662,6 +662,21 @@ func (mr *MockTaskServiceMockRecorder) GetLimits(tx, currentUser, taskID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), tx, currentUser, taskID)
 }
 
+// GetMyLiveTasks mocks base method.
+func (m *MockTaskService) GetMyLiveTasks(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMyLiveTasks", tx, currentUser, paginationParams)
+	ret0, _ := ret[0].(*schemas.MyTasksResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMyLiveTasks indicates an expected call of GetMyLiveTasks.
+func (mr *MockTaskServiceMockRecorder) GetMyLiveTasks(tx, currentUser, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyLiveTasks", reflect.TypeOf((*MockTaskService)(nil).GetMyLiveTasks), tx, currentUser, paginationParams)
+}
+
 // ParseTestCase mocks base method.
 func (m *MockTaskService) ParseTestCase(archivePath string) (int, error) {
 	m.ctrl.T.Helper()
@@ -1100,21 +1115,6 @@ func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user sc
 func (mr *MockSubmissionServiceMockRecorder) GetAllForUser(tx, userID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUser", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUser), tx, userID, user, paginationParams)
-}
-
-// GetAllForUserShort mocks base method.
-func (m *MockSubmissionService) GetAllForUserShort(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.SubmissionShort, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForUserShort", tx, userID, user, paginationParams)
-	ret0, _ := ret[0].([]schemas.SubmissionShort)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllForUserShort indicates an expected call of GetAllForUserShort.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForUserShort(tx, userID, user, paginationParams any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUserShort", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUserShort), tx, userID, user, paginationParams)
 }
 
 // GetAvailableLanguages mocks base method.

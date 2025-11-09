@@ -29,11 +29,33 @@ type TaskCreateResponse struct {
 }
 
 type TaskWithContestStats struct {
-	ID           int64     `json:"id"`
-	Title        string    `json:"title"`
-	CreatedBy    int64     `json:"createdBy"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
-	BestScore    *float64  `json:"bestScore"`    // Best score achieved by the user (percentage of passed tests)
-	AttemptCount int       `json:"attemptCount"` // Number of submission attempts by the user
+	ID              int64           `json:"id"`
+	Title           string          `json:"title"`
+	CreatedBy       int64           `json:"createdBy"`
+	CreatedAt       time.Time       `json:"createdAt"`
+	UpdatedAt       time.Time       `json:"updatedAt"`
+	AttemptsSummary AttemptsSummary `json:"attemptsSummary,omitempty"`
+}
+
+type AttemptsSummary struct {
+	BestScore    float64 `json:"bestScore"`    // Best score achieved by the user (percentage of passed tests)
+	AttemptCount int     `json:"attemptCount"` // Number of submission attempts by the user
+}
+
+type TaskWithAttempts struct {
+	Task
+	AttemptsSummary AttemptsSummary `json:"attemptsSummary,omitempty"`
+}
+
+type ContestWithTasks struct {
+	ContestID   int64              `json:"contestId"`
+	ContestName string             `json:"contestName"`
+	StartAt     *time.Time         `json:"startAt"`
+	EndAt       *time.Time         `json:"endAt"`
+	Tasks       []TaskWithAttempts `json:"tasks"`
+}
+
+type MyTasksResponse struct {
+	Contests []ContestWithTasks `json:"contests"`
+	Tasks    []TaskWithAttempts `json:"tasks"` // Tasks not associated with any contest
 }

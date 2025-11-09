@@ -72,6 +72,8 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		testCaseRepository,
 		userRepository,
 		groupRepository,
+		submissionRepository,
+		contestRepository,
 	)
 
 	// Create queue client (shared by both service and listener)

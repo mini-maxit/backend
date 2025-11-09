@@ -52,7 +52,7 @@ type SubmissionRepository interface {
 	// Get returns a submission by its ID.
 	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
 	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
-	GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error)
+	GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
 	GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error)
 	// MarkEvaluated marks a submission as evaluated.
@@ -397,7 +397,7 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 	return &submission, nil
 }
 
-func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error) {
+func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (float64, error) {
 	var bestScore *float64
 
 	// Query to get the best score (highest percentage of passed tests)
@@ -419,10 +419,13 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 		Scan(&bestScore).Error
 
 	if err != nil {
-		return nil, err
+		return 0, err
+	}
+	if bestScore == nil {
+		return 0, nil
 	}
 
-	return bestScore, nil
+	return *bestScore, nil
 }
 
 func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error) {

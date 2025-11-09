@@ -298,10 +298,10 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAttemptCountForTaskByUser(tx,
 }
 
 // GetBestScoreForTaskByUser mocks base method.
-func (m *MockSubmissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (*float64, error) {
+func (m *MockSubmissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBestScoreForTaskByUser", tx, taskID, userID)
-	ret0, _ := ret[0].(*float64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1125,6 +1125,36 @@ func (m *MockTaskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task
 func (mr *MockTaskRepositoryMockRecorder) GetByTitle(tx, title any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTitle", reflect.TypeOf((*MockTaskRepository)(nil).GetByTitle), tx, title)
+}
+
+// GetLiveAssignedNonContestTasks mocks base method.
+func (m *MockTaskRepository) GetLiveAssignedNonContestTasks(tx *gorm.DB, userID int64, limit, offset int) ([]models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLiveAssignedNonContestTasks", tx, userID, limit, offset)
+	ret0, _ := ret[0].([]models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLiveAssignedNonContestTasks indicates an expected call of GetLiveAssignedNonContestTasks.
+func (mr *MockTaskRepositoryMockRecorder) GetLiveAssignedNonContestTasks(tx, userID, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveAssignedNonContestTasks", reflect.TypeOf((*MockTaskRepository)(nil).GetLiveAssignedNonContestTasks), tx, userID, limit, offset)
+}
+
+// GetLiveAssignedTasksGroupedByContest mocks base method.
+func (m *MockTaskRepository) GetLiveAssignedTasksGroupedByContest(tx *gorm.DB, userID int64, limit, offset int) (map[int64][]models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLiveAssignedTasksGroupedByContest", tx, userID, limit, offset)
+	ret0, _ := ret[0].(map[int64][]models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLiveAssignedTasksGroupedByContest indicates an expected call of GetLiveAssignedTasksGroupedByContest.
+func (mr *MockTaskRepositoryMockRecorder) GetLiveAssignedTasksGroupedByContest(tx, userID, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveAssignedTasksGroupedByContest", reflect.TypeOf((*MockTaskRepository)(nil).GetLiveAssignedTasksGroupedByContest), tx, userID, limit, offset)
 }
 
 // IsAssignedToGroup mocks base method.
