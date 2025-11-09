@@ -149,16 +149,16 @@ func TestGetAllUsers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	us := service.NewUserService(ur)
-	queryParams := map[string]any{"limit": 10, "offset": 0, "sort": "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
 		ur.EXPECT().GetAll(
 			tx,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			paginationParams.Limit,
+			paginationParams.Offset,
+			paginationParams.Sort,
 		).Return([]models.User{}, nil).Times(1)
-		users, err := us.GetAll(tx, queryParams)
+		users, err := us.GetAll(tx, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, users)
 	})
@@ -173,11 +173,11 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		ur.EXPECT().GetAll(
 			tx,
-			queryParams["limit"],
-			queryParams["offset"],
-			queryParams["sort"],
+			paginationParams.Limit,
+			paginationParams.Offset,
+			paginationParams.Sort,
 		).Return([]models.User{*user}, nil).Times(1)
-		users, err := us.GetAll(tx, queryParams)
+		users, err := us.GetAll(tx, paginationParams)
 		require.NoError(t, err)
 		assert.Len(t, users, 1)
 		assert.Equal(t, user.Email, users[0].Email)

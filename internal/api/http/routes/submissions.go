@@ -35,7 +35,6 @@ const submissionBodyLimit = 2 << 20
 type SumbissionImpl struct {
 	submissionService service.SubmissionService
 	taskService       service.TaskService
-	fileStorageURL    string
 	queueService      service.QueueService
 	logger            *zap.SugaredLogger
 }
@@ -220,8 +219,9 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -284,8 +284,9 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submissions for group", "error", err)
@@ -338,8 +339,9 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submissions for task", "error", err)
@@ -547,8 +549,9 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, queryParams)
+	submissions, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -572,13 +575,11 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 // New Instance.
 func NewSubmissionRoutes(
 	submissionService service.SubmissionService,
-	fileStorageURL string,
 	queueService service.QueueService,
 	taskService service.TaskService,
 ) SubmissionRoutes {
 	route := &SumbissionImpl{
 		submissionService: submissionService,
-		fileStorageURL:    fileStorageURL,
 		queueService:      queueService,
 		taskService:       taskService,
 		logger:            utils.NewNamedLogger("submissions"),

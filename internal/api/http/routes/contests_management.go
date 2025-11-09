@@ -657,8 +657,9 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := cr.submissionService.GetAllForContest(tx, contestID, currentUser, queryParams)
+	submissions, err := cr.submissionService.GetAllForContest(tx, contestID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {

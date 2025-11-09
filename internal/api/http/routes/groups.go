@@ -188,9 +188,10 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	groups, err := gr.groupService.GetAll(tx, currentUser, queryParams)
+	groups, err := gr.groupService.GetAll(tx, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

@@ -15,7 +15,6 @@ import (
 
 	schemas "github.com/mini-maxit/backend/package/domain/schemas"
 	types "github.com/mini-maxit/backend/package/domain/types"
-	amqp091 "github.com/rabbitmq/amqp091-go"
 	gomock "go.uber.org/mock/gomock"
 	gorm "gorm.io/gorm"
 )
@@ -420,18 +419,18 @@ func (mr *MockUserServiceMockRecorder) Get(tx, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserService) GetAll(tx *gorm.DB, queryParams map[string]any) ([]schemas.User, error) {
+func (m *MockUserService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", tx, queryParams)
+	ret := m.ctrl.Call(m, "GetAll", tx, paginationParams)
 	ret0, _ := ret[0].([]schemas.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockUserServiceMockRecorder) GetAll(tx, queryParams any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetAll(tx, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserService)(nil).GetAll), tx, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserService)(nil).GetAll), tx, paginationParams)
 }
 
 // GetByEmail mocks base method.
@@ -574,33 +573,33 @@ func (mr *MockTaskServiceMockRecorder) Get(tx, currentUser, taskID any) *gomock.
 }
 
 // GetAll mocks base method.
-func (m *MockTaskService) GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockTaskServiceMockRecorder) GetAll(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) GetAll(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskService)(nil).GetAll), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskService)(nil).GetAll), tx, currentUser, paginationParams)
 }
 
 // GetAllAssigned mocks base method.
-func (m *MockTaskService) GetAllAssigned(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllAssigned(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAssigned", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetAllAssigned", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllAssigned indicates an expected call of GetAllAssigned.
-func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAssigned", reflect.TypeOf((*MockTaskService)(nil).GetAllAssigned), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAssigned", reflect.TypeOf((*MockTaskService)(nil).GetAllAssigned), tx, currentUser, paginationParams)
 }
 
 // GetAllCreated mocks base method.
@@ -619,18 +618,18 @@ func (mr *MockTaskServiceMockRecorder) GetAllCreated(tx, currentUser, pagination
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockTaskService) GetAllForGroup(tx *gorm.DB, currentUser schemas.User, groupID int64, queryParams map[string]any) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAllForGroup(tx *gorm.DB, currentUser schemas.User, groupID int64, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, currentUser, groupID, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForGroup", tx, currentUser, groupID, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockTaskServiceMockRecorder) GetAllForGroup(tx, currentUser, groupID, queryParams any) *gomock.Call {
+func (mr *MockTaskServiceMockRecorder) GetAllForGroup(tx, currentUser, groupID, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskService)(nil).GetAllForGroup), tx, currentUser, groupID, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskService)(nil).GetAllForGroup), tx, currentUser, groupID, paginationParams)
 }
 
 // GetByTitle mocks base method.
@@ -915,18 +914,18 @@ func (mr *MockGroupServiceMockRecorder) Get(tx, currentUser, groupID any) *gomoc
 }
 
 // GetAll mocks base method.
-func (m *MockGroupService) GetAll(tx *gorm.DB, currentUser schemas.User, queryParams map[string]any) ([]schemas.Group, error) {
+func (m *MockGroupService) GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, queryParams)
+	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockGroupServiceMockRecorder) GetAll(tx, currentUser, queryParams any) *gomock.Call {
+func (mr *MockGroupServiceMockRecorder) GetAll(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockGroupService)(nil).GetAll), tx, currentUser, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockGroupService)(nil).GetAll), tx, currentUser, paginationParams)
 }
 
 // GetTasks mocks base method.
@@ -1044,78 +1043,78 @@ func (mr *MockSubmissionServiceMockRecorder) GetAll(tx, user, userID, taskID, co
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionService) GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, user, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForContest indicates an expected call of GetAllForContest.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, user, queryParams any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForContest), tx, contestID, user, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForContest), tx, contestID, user, paginationParams)
 }
 
 // GetAllForGroup mocks base method.
-func (m *MockSubmissionService) GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForGroup(tx *gorm.DB, groupID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, user, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForGroup(tx, groupID, user, queryParams any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForGroup(tx, groupID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForGroup), tx, groupID, user, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForGroup), tx, groupID, user, paginationParams)
 }
 
 // GetAllForTask mocks base method.
-func (m *MockSubmissionService) GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, user, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForTask indicates an expected call of GetAllForTask.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForTask(tx, taskID, user, queryParams any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForTask(tx, taskID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTask", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForTask), tx, taskID, user, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTask", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForTask), tx, taskID, user, paginationParams)
 }
 
 // GetAllForUser mocks base method.
-func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.Submission, error) {
+func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Submission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForUser", tx, userID, user, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForUser", tx, userID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.Submission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForUser indicates an expected call of GetAllForUser.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForUser(tx, userID, user, queryParams any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForUser(tx, userID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUser", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUser), tx, userID, user, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUser", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUser), tx, userID, user, paginationParams)
 }
 
 // GetAllForUserShort mocks base method.
-func (m *MockSubmissionService) GetAllForUserShort(tx *gorm.DB, userID int64, user schemas.User, queryParams map[string]any) ([]schemas.SubmissionShort, error) {
+func (m *MockSubmissionService) GetAllForUserShort(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.SubmissionShort, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForUserShort", tx, userID, user, queryParams)
+	ret := m.ctrl.Call(m, "GetAllForUserShort", tx, userID, user, paginationParams)
 	ret0, _ := ret[0].([]schemas.SubmissionShort)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForUserShort indicates an expected call of GetAllForUserShort.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForUserShort(tx, userID, user, queryParams any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForUserShort(tx, userID, user, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUserShort", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUserShort), tx, userID, user, queryParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForUserShort", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForUserShort), tx, userID, user, paginationParams)
 }
 
 // GetAvailableLanguages mocks base method.
@@ -1448,20 +1447,6 @@ func (m *MockQueueService) RetryPendingSubmissions(db *gorm.DB) error {
 func (mr *MockQueueServiceMockRecorder) RetryPendingSubmissions(db any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryPendingSubmissions", reflect.TypeOf((*MockQueueService)(nil).RetryPendingSubmissions), db)
-}
-
-// SetConnection mocks base method.
-func (m *MockQueueService) SetConnection(conn *amqp091.Connection, channel *amqp091.Channel) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetConnection", conn, channel)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetConnection indicates an expected call of SetConnection.
-func (mr *MockQueueServiceMockRecorder) SetConnection(conn, channel any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConnection", reflect.TypeOf((*MockQueueService)(nil).SetConnection), conn, channel)
 }
 
 // StatusCond mocks base method.
