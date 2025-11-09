@@ -17,7 +17,7 @@ type PaginationMetadata struct {
 // PaginatedResponse wraps paginated data with metadata
 type PaginatedResponse[T any] struct {
 	Pagination PaginationMetadata `json:"pagination"`
-	Data       T                  `json:"data"`
+	Items      T                  `json:"items"`
 }
 
 // NewPaginationMetadata creates pagination metadata from offset, limit, and total count
@@ -44,6 +44,6 @@ func NewPaginationMetadata(offset, limit, totalItems int) PaginationMetadata {
 func NewPaginatedResponse[T any](data T, offset, limit, totalItems int) PaginatedResponse[T] {
 	return PaginatedResponse[T]{
 		Pagination: NewPaginationMetadata(offset, limit, totalItems),
-		Data:       data,
+		Items:      data,
 	}
 }

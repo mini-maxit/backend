@@ -351,10 +351,10 @@ func TestGetOngoingContests(t *testing.T) {
 		}
 
 		assert.True(t, response.Ok)
-		assert.Len(t, response.Data.Data, 1)
-		assert.Equal(t, "Ongoing Contest", response.Data.Data[0].Name)
-		assert.Equal(t, int64(5), response.Data.Data[0].ParticipantCount)
-		assert.Equal(t, int64(3), response.Data.Data[0].TaskCount)
+		assert.Len(t, response.Data.Items, 1)
+		assert.Equal(t, "Ongoing Contest", response.Data.Items[0].Name)
+		assert.Equal(t, int64(5), response.Data.Items[0].ParticipantCount)
+		assert.Equal(t, int64(3), response.Data.Items[0].TaskCount)
 		assert.Equal(t, 1, response.Data.Pagination.CurrentPage)
 		assert.Equal(t, int64(1), int64(response.Data.Pagination.TotalItems))
 	})

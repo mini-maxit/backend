@@ -749,6 +749,7 @@ func (ss *submissionService) testResultsModelToSchema(testResults []models.TestR
 			SubmissionResultID: testResult.SubmissionResultID,
 			TestCaseID:         testResult.TestCaseID,
 			Passed:             *testResult.Passed,
+			Code:               testResult.StatusCode.String(),
 			ErrorMessage:       testResult.ErrorMessage,
 		})
 	}

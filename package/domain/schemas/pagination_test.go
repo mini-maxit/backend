@@ -139,11 +139,11 @@ func TestNewPaginatedResponse(t *testing.T) {
 		t.Errorf("Expected total pages 5, got %d", response.Pagination.TotalPages)
 	}
 
-	if len(response.Data) != 2 {
-		t.Errorf("Expected 2 data items, got %d", len(response.Data))
+	if len(response.Items) != 2 {
+		t.Errorf("Expected 2 data items, got %d", len(response.Items))
 	}
 
-	if response.Data[0].Name != "Item1" {
-		t.Errorf("Expected first item name 'Item1', got '%s'", response.Data[0].Name)
+	if response.Items[0].Name != "Item1" {
+		t.Errorf("Expected first item name 'Item1', got '%s'", response.Items[0].Name)
 	}
 }
