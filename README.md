@@ -49,10 +49,18 @@ go install github.com/swaggo/swag/cmd/swag@latest
 Next you can generate swagger documentation using:
 
 ```bash
-./scripts/update-docs.sh
+make docs
 ```
 
 You can access it at `/api/v1/docs` when the application is running.
+
+### Mocks
+In order to generate mocks for services and repositories, you need to have the `mockgen` tool installed. You can install it using:
+
+```bash
+go install go.uber.org/mock/mockgen@latest
+make mocks
+```
 
 
 # Endpoints
