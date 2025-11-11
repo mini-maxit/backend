@@ -325,7 +325,8 @@ func TestGetOngoingContests(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(contests, nil)
+		paginatedResult := schemas.NewPaginatedResult(contests, 0, 10, int64(len(contests)))
+		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(paginatedResult, nil)
 
 		req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 		if err != nil {
@@ -344,21 +345,23 @@ func TestGetOngoingContests(t *testing.T) {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
 
-		var response httputils.APIResponse[[]schemas.Contest]
+		var response httputils.APIResponse[schemas.PaginatedResult[[]schemas.AvailableContest]]
 		err = json.Unmarshal(bodyBytes, &response)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response: %v", err)
 		}
 
 		assert.True(t, response.Ok)
-		assert.Len(t, response.Data, 1)
-		assert.Equal(t, "Ongoing Contest", response.Data[0].Name)
-		assert.Equal(t, int64(5), response.Data[0].ParticipantCount)
-		assert.Equal(t, int64(3), response.Data[0].TaskCount)
+		assert.Len(t, response.Data.Items, 1)
+		assert.Equal(t, "Ongoing Contest", response.Data.Items[0].Name)
+		assert.Equal(t, int64(5), response.Data.Items[0].ParticipantCount)
+		assert.Equal(t, int64(3), response.Data.Items[0].TaskCount)
+		assert.Equal(t, 1, response.Data.Pagination.CurrentPage)
+		assert.Equal(t, int64(1), int64(response.Data.Pagination.TotalItems))
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotFound)
+		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.AvailableContest]{}, myerrors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 		if err != nil {

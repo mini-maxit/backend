@@ -254,7 +254,7 @@ func TestGetAll(t *testing.T) {
 		user           schemas.User
 		userID         *int64
 		expectedMethod func() *gomock.Call
-		expectedResult []schemas.Submission
+		expectedResult *schemas.PaginatedResult[[]schemas.Submission]
 		expectedErr    bool
 	}{
 		{
@@ -265,11 +265,19 @@ func TestGetAll(t *testing.T) {
 				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
 					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
-				}, nil).Times(1)
+				}, int64(2), nil).Times(1)
 			},
-			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-				{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+			expectedResult: &schemas.PaginatedResult[[]schemas.Submission]{
+				Pagination: schemas.PaginationMetadata{
+					CurrentPage: 1,
+					PageSize:    10,
+					TotalItems:  2,
+					TotalPages:  1,
+				},
+				Items: []schemas.Submission{
+					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+				},
 			},
 			expectedErr: false,
 		},
@@ -282,11 +290,19 @@ func TestGetAll(t *testing.T) {
 					[]models.Submission{
 						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 						{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
-					}, nil).Times(1)
+					}, int64(2), nil).Times(1)
 			},
-			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-				{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+			expectedResult: &schemas.PaginatedResult[[]schemas.Submission]{
+				Pagination: schemas.PaginationMetadata{
+					CurrentPage: 1,
+					PageSize:    10,
+					TotalItems:  2,
+					TotalPages:  1,
+				},
+				Items: []schemas.Submission{
+					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+				},
 			},
 			expectedErr: false,
 		},
@@ -298,10 +314,18 @@ func TestGetAll(t *testing.T) {
 				return setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
 					[]models.Submission{
 						{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-					}, nil).Times(1)
+					}, int64(1), nil).Times(1)
 			},
-			expectedResult: []schemas.Submission{
-				{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			expectedResult: &schemas.PaginatedResult[[]schemas.Submission]{
+				Pagination: schemas.PaginationMetadata{
+					CurrentPage: 1,
+					PageSize:    10,
+					TotalItems:  1,
+					TotalPages:  1,
+				},
+				Items: []schemas.Submission{
+					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+				},
 			},
 			expectedErr: false,
 		},
@@ -311,7 +335,7 @@ func TestGetAll(t *testing.T) {
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
 				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return(
-					nil, gorm.ErrInvalidData,
+					nil, int64(0), gorm.ErrInvalidData,
 				).Times(1)
 			},
 			expectedResult: nil,
@@ -409,100 +433,6 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestSubmissionGetAllForGroup(t *testing.T) {
-	setup := setupSubmissionServiceTest(t)
-	defer setup.ctrl.Finish()
-
-	t.Run("Admin retrieves all submissions for a group", func(t *testing.T) {
-		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-			{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
-		}
-
-		setup.submissionRepository.EXPECT().GetAllForGroup(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
-		).Times(1)
-
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
-	})
-
-	t.Run("Teacher retrieves submissions for their group", func(t *testing.T) {
-		expectedGroup := &models.Group{ID: 1, CreatedBy: 2}
-		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-			{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
-		}
-
-		setup.groupRepository.EXPECT().Get(gomock.Any(), int64(1)).Return(expectedGroup, nil).Times(1)
-		setup.submissionRepository.EXPECT().GetAllForGroup(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
-		).Times(1)
-
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
-	})
-
-	t.Run("Teacher tries to retrieve submissions for a group they don't own", func(t *testing.T) {
-		expectedGroup := &models.Group{ID: 1, CreatedBy: 3}
-
-		setup.groupRepository.EXPECT().Get(gomock.Any(), int64(1)).Return(expectedGroup, nil).Times(1)
-
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.Error(t, err)
-		assert.Nil(t, submissions)
-	})
-	t.Run("Teacher tries to retrieve submissions for a group but can't get group", func(t *testing.T) {
-		setup.groupRepository.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.Error(t, err)
-		assert.Nil(t, submissions)
-	})
-
-	t.Run("Student tries to retrieve submissions for a group", func(t *testing.T) {
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "student", ID: 1}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.Error(t, err)
-		assert.Nil(t, submissions)
-	})
-
-	t.Run("Error retrieving submissions for a group", func(t *testing.T) {
-		setup.submissionRepository.EXPECT().GetAllForGroup(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			nil, gorm.ErrInvalidData,
-		).Times(1)
-
-		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
-
-		submissions, err := setup.service.GetAllForGroup(nil, 1, user, paginationParams)
-
-		require.Error(t, err)
-		assert.Nil(t, submissions)
-	})
-}
-
 func TestSubmissionGetAllForUser(t *testing.T) {
 	setup := setupSubmissionServiceTest(t)
 	defer setup.ctrl.Finish()
@@ -514,7 +444,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -523,7 +453,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
+		assert.Len(t, submissions.Items, 2)
 	})
 
 	t.Run("Student retrieves their own submissions", func(t *testing.T) {
@@ -532,7 +462,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -541,7 +471,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 1)
+		assert.Len(t, submissions.Items, 1)
 	})
 
 	t.Run("Student tries to retrieve another user's submissions", func(t *testing.T) {
@@ -550,7 +480,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 
@@ -567,7 +497,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -576,7 +506,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
+		assert.Len(t, submissions.Items, 2)
 	})
 
 	t.Run("Teacher tries to retrieve submissions for tasks they didn't create", func(t *testing.T) {
@@ -585,7 +515,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -594,12 +524,12 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Empty(t, submissions)
+		assert.Empty(t, submissions.Items)
 	})
 
 	t.Run("Error retrieving submissions", func(t *testing.T) {
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			nil, gorm.ErrInvalidData,
+			nil, int64(0), gorm.ErrInvalidData,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -623,7 +553,7 @@ func TestGetAllForTask(t *testing.T) {
 		}
 
 		setup.submissionRepository.EXPECT().GetAllForTask(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -632,7 +562,7 @@ func TestGetAllForTask(t *testing.T) {
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
+		assert.Len(t, submissions.Items, 2)
 	})
 
 	t.Run("Teacher retrieves submissions for their task", func(t *testing.T) {
@@ -644,7 +574,7 @@ func TestGetAllForTask(t *testing.T) {
 
 		setup.taskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
 		setup.submissionRepository.EXPECT().GetAllForTask(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -653,7 +583,7 @@ func TestGetAllForTask(t *testing.T) {
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 2)
+		assert.Len(t, submissions.Items, 2)
 	})
 
 	t.Run("Teacher tries to retrieve submissions for a task they didn't create", func(t *testing.T) {
@@ -685,7 +615,7 @@ func TestGetAllForTask(t *testing.T) {
 
 		setup.taskRepository.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(true, nil).Times(1)
 		setup.submissionRepository.EXPECT().GetAllForTaskByUser(gomock.Any(), int64(1), int64(1), 10, 0, "submitted_at:desc").Return(
-			expectedSubmissions, nil,
+			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
@@ -694,7 +624,7 @@ func TestGetAllForTask(t *testing.T) {
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Len(t, submissions, 1)
+		assert.Len(t, submissions.Items, 1)
 	})
 
 	t.Run("Student retrieves submissions for a task, but can't check if he is assigned", func(t *testing.T) {
@@ -722,7 +652,7 @@ func TestGetAllForTask(t *testing.T) {
 
 	t.Run("Error retrieving submissions for a task", func(t *testing.T) {
 		setup.submissionRepository.EXPECT().GetAllForTask(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
-			nil, gorm.ErrInvalidData,
+			nil, int64(0), gorm.ErrInvalidData,
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}

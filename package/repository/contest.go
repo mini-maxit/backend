@@ -23,15 +23,14 @@ type ContestRepository interface {
 	// Returns ContestWithStats which includes ParticipantCount, IsParticipant, and HasPendingReg fields.
 	GetAllWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
-	GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetPastContestsWithStats retrieves contests that have ended with stats
-	GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
-	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error)
-	// GetAllForCreatorWithStats retrieves all contests created by a specific user with participant and task counts
 	GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
+	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
 	// EditWithStats updates a contest and returns it with participant and task counts
@@ -100,17 +99,27 @@ func (cr *contestRepository) GetAll(tx *gorm.DB, offset int, limit int, sort str
 	return contests, nil
 }
 
-func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, error) {
+func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error) {
 	var contests []models.Contest
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	var totalCount int64
+
+	// Get total count first
+	baseQuery := tx.Model(&models.Contest{}).Where("created_by = ?", creatorID)
+	err := baseQuery.Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	err = tx.Model(&models.Contest{}).Where("created_by = ?", creatorID).Find(&contests).Error
+
+	// Apply pagination and sorting to a new query
+	paginatedQuery, err := utils.ApplyPaginationAndSort(tx.Model(&models.Contest{}), limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return contests, nil
+	err = paginatedQuery.Where("created_by = ?", creatorID).Find(&contests).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return contests, totalCount, nil
 }
 
 func (cr *contestRepository) GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
@@ -307,8 +316,19 @@ func (cr *contestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offset i
 	return contests, nil
 }
 
-func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	var contests []models.ContestWithStats
+	var totalCount int64
+
+	// Get total count first
+	countQuery := tx.Model(&models.Contest{}).
+		Where(`(
+			(start_at IS NULL OR start_at <= NOW()) AND (end_at IS NULL OR end_at > NOW())
+		)`)
+	err := countQuery.Count(&totalCount).Error
+	if err != nil {
+		return nil, 0, err
+	}
 
 	// Build query for ongoing contests (started but not ended, or no end date but started)
 	query := tx.Model(&models.Contest{}).
@@ -346,21 +366,30 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int
 		)`)
 
 	// Apply pagination and sorting
-	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
+	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	err = query.Find(&contests).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return contests, nil
+	return contests, totalCount, nil
 }
 
-func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	var contests []models.ContestWithStats
+	var totalCount int64
+
+	// Get total count first
+	countQuery := tx.Model(&models.Contest{}).
+		Where("end_at IS NOT NULL AND end_at <= NOW()")
+	err := countQuery.Count(&totalCount).Error
+	if err != nil {
+		return nil, 0, err
+	}
 
 	// Build query for past contests (ended)
 	query := tx.Model(&models.Contest{}).
@@ -396,21 +425,30 @@ func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64,
 		Where("end_at IS NOT NULL AND end_at <= NOW()")
 
 	// Apply pagination and sorting
-	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
+	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	err = query.Find(&contests).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return contests, nil
+	return contests, totalCount, nil
 }
 
-func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	var contests []models.ContestWithStats
+	var totalCount int64
+
+	// Get total count first
+	countQuery := tx.Model(&models.Contest{}).
+		Where("start_at IS NOT NULL AND start_at > NOW()")
+	err := countQuery.Count(&totalCount).Error
+	if err != nil {
+		return nil, 0, err
+	}
 
 	// Build query for upcoming contests (not started yet)
 	query := tx.Model(&models.Contest{}).
@@ -446,17 +484,17 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 		Where("start_at IS NOT NULL AND start_at > NOW()")
 
 	// Apply pagination and sorting
-	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
+	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	err = query.Find(&contests).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return contests, nil
+	return contests, totalCount, nil
 }
 
 func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {

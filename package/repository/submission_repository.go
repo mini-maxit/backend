@@ -15,38 +15,38 @@ type SubmissionRepository interface {
 	// Create creates a new submission and returns the submission ID.
 	Create(tx *gorm.DB, submission *models.Submission) (int64, error)
 	// GetAll returns all submissions. The submissions are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, error)
+	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUser returns all submissions by a user. The submissions are paginated.
-	GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
-	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTask returns all submissions for a task. The submissions are paginated.
-	GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
-	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
-	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
-	GetAllByUserForContest(tx *gorm.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContest(tx *gorm.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
-	GetAllByUserForTask(tx *gorm.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTask(tx *gorm.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestAndTask returns all submissions by a user for a specific contest and task. The submissions are paginated.
-	GetAllByUserForContestAndTask(tx *gorm.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestAndTask(tx *gorm.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
-	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTeacher returns all submissions by a specific user, filtered to only include submissions
 	// for tasks created by the teacher. The submissions are paginated.
-	GetAllByUserForTeacher(tx *gorm.DB, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTeacher(tx *gorm.DB, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTaskByTeacher returns all submissions by a user for a specific task,
 	// filtered to only include submissions where the teacher created the task. The submissions are paginated.
-	GetAllByUserForTaskByTeacher(tx *gorm.DB, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForTaskByTeacher(tx *gorm.DB, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestByTeacher returns all submissions by a user for a specific contest,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestByTeacher(tx *gorm.DB, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestByTeacher(tx *gorm.DB, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestAndTaskByTeacher returns all submissions by a user for a specific contest and task,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestAndTaskByTeacher(tx *gorm.DB, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, error)
+	GetAllByUserForContestAndTaskByTeacher(tx *gorm.DB, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
 	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error)
 	// Get returns a submission by its ID.
@@ -67,15 +67,22 @@ type SubmissionRepository interface {
 
 type submissionRepository struct{}
 
-func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, error) {
+func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -83,9 +90,9 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 		Preload("Result.TestResults").
 		Find(&submissions).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllForTeacher(
@@ -93,12 +100,26 @@ func (us *submissionRepository) GetAllForTeacher(
 	userID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Joins(
+			fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id",
+				database.ResolveTableName(tx, &models.Task{}),
+			)).
+		Where("tasks.created_by = ?", userID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -112,9 +133,9 @@ func (us *submissionRepository) GetAllForTeacher(
 		Where("tasks.created_by = ?", userID).
 		Find(&submissions).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Submission, error) {
@@ -138,15 +159,22 @@ func (us *submissionRepository) GetAllByUser(
 	userID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).Where("user_id = ?", userID).Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -154,10 +182,10 @@ func (us *submissionRepository) GetAllByUser(
 		Preload("Result.TestResults").
 		Where("user_id = ?", userID).Find(&submissions).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllForGroup(
@@ -165,15 +193,27 @@ func (us *submissionRepository) GetAllForGroup(
 	groupID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	countQuery := tx.Model(&models.Submission{}).
+		Joins(fmt.Sprintf("JOIN %s ON users.id = submissions.user_id", database.ResolveTableName(tx, &models.User{}))).
+		Joins(fmt.Sprintf("JOIN %s ON user_group.user_id = users.id", database.ResolveTableName(tx, &models.UserGroup{}))).
+		Joins(fmt.Sprintf("JOIN %s ON groups.id = user_group.group_id", database.ResolveTableName(tx, &models.Group{}))).
+		Where("groups.id = ?", groupID)
+	err := countQuery.Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -185,9 +225,9 @@ func (us *submissionRepository) GetAllForGroup(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllForGroupTeacher(
@@ -225,15 +265,22 @@ func (us *submissionRepository) GetAllForTask(
 	taskID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).Where("task_id = ?", taskID).Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -243,9 +290,9 @@ func (us *submissionRepository) GetAllForTask(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllForTaskTeacher(
@@ -360,15 +407,24 @@ func (us *submissionRepository) GetAllForTaskByUser(
 	taskID, userID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Where("submissions.task_id = ? AND submissions.user_id = ?", taskID, userID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -377,9 +433,9 @@ func (us *submissionRepository) GetAllForTaskByUser(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (sr *submissionRepository) GetLatestForTaskByUser(
@@ -421,6 +477,7 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 	if err != nil {
 		return 0, err
 	}
+
 	if bestScore == nil {
 		return 0, nil
 	}
@@ -447,15 +504,22 @@ func (us *submissionRepository) GetAllForContest(
 	contestID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).Where("contest_id = ?", contestID).Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.Submission{}).
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.Submission{}).
 		Preload("Language").
 		Preload("Task").
 		Preload("User").
@@ -465,9 +529,9 @@ func (us *submissionRepository) GetAllForContest(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForContest(
@@ -475,12 +539,22 @@ func (us *submissionRepository) GetAllByUserForContest(
 	userID, contestID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Where("user_id = ? AND contest_id = ?", userID, contestID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -493,9 +567,9 @@ func (us *submissionRepository) GetAllByUserForContest(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForTask(
@@ -503,12 +577,22 @@ func (us *submissionRepository) GetAllByUserForTask(
 	userID, taskID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Where("user_id = ? AND task_id = ?", userID, taskID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -521,9 +605,9 @@ func (us *submissionRepository) GetAllByUserForTask(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTask(
@@ -531,12 +615,22 @@ func (us *submissionRepository) GetAllByUserForContestAndTask(
 	userID, contestID, taskID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Where("user_id = ? AND contest_id = ? AND task_id = ?", userID, contestID, taskID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -549,9 +643,9 @@ func (us *submissionRepository) GetAllByUserForContestAndTask(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForTeacher(
@@ -559,12 +653,24 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 	userID, teacherID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("LEFT JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
+		Where("submissions.user_id = ? AND (tasks.created_by = ? OR (submissions.contest_id IS NOT NULL AND contests.created_by = ?))", userID, teacherID, teacherID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -579,9 +685,9 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForTaskByTeacher(
@@ -589,12 +695,23 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 	userID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Where("submissions.user_id = ? AND submissions.task_id = ? AND tasks.created_by = ?", userID, taskID, teacherID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -608,9 +725,9 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForContestByTeacher(
@@ -618,12 +735,24 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 	userID, contestID, teacherID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, teacherID, teacherID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -638,9 +767,9 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
@@ -648,12 +777,24 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 	userID, contestID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,
-) ([]models.Submission, error) {
+) ([]models.Submission, int64, error) {
 	submissions := []models.Submission{}
+	var totalCount int64
 
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	// Get total count first
+	err := tx.Model(&models.Submission{}).
+		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
+		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, taskID, teacherID, teacherID).
+		Count(&totalCount).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Apply pagination and get results
+	tx, err = utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	err = tx.Model(&models.Submission{}).
@@ -668,9 +809,9 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 		Find(&submissions).Error
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return submissions, nil
+	return submissions, totalCount, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {

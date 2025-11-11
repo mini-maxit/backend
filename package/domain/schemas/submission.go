@@ -44,5 +44,6 @@ type TestResult struct {
 	SubmissionResultID int64  `json:"submissionResultId"`
 	TestCaseID         int64  `json:"testCaseId"`
 	Passed             bool   `json:"passed"`
-	ErrorMessage       string `json:"-"`
+	Code               string `json:"code"`
+	ErrorMessage       string `json:"errorMessage"`
 }
