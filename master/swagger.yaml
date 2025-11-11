@@ -14,15 +14,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-AvailableContest:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/AvailableContest'
-        type: array
-      ok:
-        type: boolean
-    type: object
   APIResponse-Contest:
     properties:
       data:
@@ -58,10 +49,31 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-MyTasksResponse:
+  APIResponse-PaginatedResult-AvailableContest:
     properties:
       data:
-        $ref: '#/definitions/MyTasksResponse'
+        $ref: '#/definitions/PaginatedResult-AvailableContest'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-PaginatedResult-Submission:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-Submission'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-PaginatedResult-array_CreatedContest:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-array_CreatedContest'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-PaginatedResult-array_Task:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-array_Task'
       ok:
         type: boolean
     type: object
@@ -152,15 +164,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-array_CreatedContest:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/CreatedContest'
-        type: array
-      ok:
-        type: boolean
-    type: object
   APIResponse-array_Group:
     properties:
       data:
@@ -175,6 +178,15 @@ definitions:
       data:
         items:
           $ref: '#/definitions/LanguageConfig'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  APIResponse-array_Submission:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Submission'
         type: array
       ok:
         type: boolean
@@ -305,21 +317,6 @@ definitions:
       updatedAt:
         type: string
     type: object
-  ContestWithTasks:
-    properties:
-      contestId:
-        type: integer
-      contestName:
-        type: string
-      endAt:
-        type: string
-      startAt:
-        type: string
-      tasks:
-        items:
-          $ref: '#/definitions/TaskWithAttempts'
-        type: array
-    type: object
   CreateContest:
     properties:
       description:
@@ -442,17 +439,52 @@ definitions:
       message:
         type: string
     type: object
-  MyTasksResponse:
+  PaginatedResult-AvailableContest:
     properties:
-      contests:
+      items:
         items:
-          $ref: '#/definitions/ContestWithTasks'
+          $ref: '#/definitions/AvailableContest'
         type: array
-      tasks:
-        description: Tasks not associated with any contest
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginatedResult-Submission:
+    properties:
+      items:
         items:
-          $ref: '#/definitions/TaskWithAttempts'
+          $ref: '#/definitions/Submission'
         type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginatedResult-array_CreatedContest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/CreatedContest'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginatedResult-array_Task:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginationMetadata:
+    properties:
+      current_page:
+        type: integer
+      page_size:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
     type: object
   PutTestCase:
     properties:
@@ -599,21 +631,6 @@ definitions:
       title:
         type: string
     type: object
-  TaskWithAttempts:
-    properties:
-      attemptsSummary:
-        $ref: '#/definitions/AttemptsSummary'
-      createdAt:
-        type: string
-      createdBy:
-        type: integer
-      id:
-        type: integer
-      title:
-        type: string
-      updatedAt:
-        type: string
-    type: object
   TaskWithContestStats:
     properties:
       attemptsSummary:
@@ -640,6 +657,10 @@ definitions:
     type: object
   TestResult:
     properties:
+      code:
+        type: string
+      errorMessage:
+        type: string
       id:
         type: integer
       passed:
@@ -924,6 +945,7 @@ paths:
   /contests:
     get:
       description: Get global contests accessible to the (ongoing, upcoming, past)
+        with pagination metadata
       parameters:
       - description: Limit
         in: query
@@ -952,7 +974,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-AvailableContest'
+            $ref: '#/definitions/APIResponse-PaginatedResult-AvailableContest'
         "401":
           description: Unauthorized
           schema:
@@ -1162,7 +1184,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Submission'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
         "400":
           description: Bad Request
           schema:
@@ -1309,7 +1331,8 @@ paths:
       - contests-management
   /contests-management/contests/created:
     get:
-      description: Get all contests created by the currently authenticated user
+      description: Get all contests created by the currently authenticated user with
+        pagination metadata
       parameters:
       - description: Limit
         in: query
@@ -1329,7 +1352,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_CreatedContest'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_CreatedContest'
         "400":
           description: Bad Request
           schema:
@@ -1845,7 +1868,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Submission'
+            $ref: '#/definitions/APIResponse-array_Submission'
         "400":
           description: Bad Request
           schema:
@@ -1888,45 +1911,6 @@ paths:
       summary: Get a submission by ID
       tags:
       - submission
-  /submissions/groups/{id}:
-    get:
-      description: If the user is a student, it fails with 403 Forbidden.
-      parameters:
-      - description: Group ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Limit the number of returned submissions
-        in: query
-        name: limit
-        type: integer
-      - description: Offset the returned submissions
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-Submission'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get all submissions for a group
-      tags:
-      - submission
   /submissions/languages:
     get:
       description: Get all available languages for submitting solutions.
@@ -1967,7 +1951,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Submission'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
         "400":
           description: Bad Request
           schema:
@@ -2058,7 +2042,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Submission'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
         "400":
           description: Bad Request
           schema:
@@ -2101,7 +2085,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Submission'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
         "400":
           description: Bad Request
           schema:
@@ -2126,7 +2110,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
         "403":
           description: Forbidden
           schema:
@@ -2494,7 +2478,7 @@ paths:
       - tasks-management
   /tasks-management/tasks/created:
     get:
-      description: Gets all tasks created by the current user
+      description: Gets all tasks created by the current user with pagination metadata
       parameters:
       - description: Offset for pagination
         in: query
@@ -2514,7 +2498,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
         "403":
           description: Forbidden
           schema:
@@ -2584,7 +2568,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MyTasksResponse'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
         "500":
           description: Internal Server Error
           schema:
