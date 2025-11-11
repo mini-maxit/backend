@@ -55,9 +55,10 @@ make docs
 You can access it at `/api/v1/docs` when the application is running.
 
 ### Mocks
-You can generate mocks for services and repositories using:
+In order to generate mocks for services and repositories, you need to have the `mockgen` tool installed. You can install it using:
 
 ```bash
+go install go.uber.org/mock/mockgen@latest
 make mocks
 ```
 
