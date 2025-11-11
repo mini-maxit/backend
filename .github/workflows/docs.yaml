@@ -31,7 +31,7 @@ jobs:
 
       - name: Generate Swagger docs
         run: |
-          ./scripts/update-docs.sh
+          make docs
 
       - name: Extract owner and repo name
         id: repo

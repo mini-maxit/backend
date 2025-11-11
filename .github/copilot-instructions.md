@@ -60,7 +60,7 @@ Config is VERY strict (50+ linters). Current status: 0 issues.
 ### Swagger Docs
 After API changes:
 ```bash
-./scripts/update-docs.sh    # Requires: go install github.com/swaggo/swag/cmd/swag@latest
+make docs
 ```
 
 ### Docker Dev Environment
@@ -111,7 +111,7 @@ All must pass for PR merge.
 1. `go build -v ./...` - verify compilation
 2. `go test -v ./...` - verify tests pass
 3. `golangci-lint run ./...` - check lint (may take 60s)
-4. `./scripts/update-docs.sh` - if API changed
+4. `make generate` - if API changed
 
 ### Known Issues
 - **Path traversal vulnerability** in `package/utils/file_utils.go` (see TODOs, not being fixed)
