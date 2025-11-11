@@ -1,3 +1,4 @@
+.PHONY: docs mocks generate
 # Generate docs from comments
 docs: $(wildcard internal/api/http/routes/*.go)
 	swag init --dir ./cmd/app,./internal/api/http/httputils,./package/domain/schemas,. -o ./docs --ot yaml --st
