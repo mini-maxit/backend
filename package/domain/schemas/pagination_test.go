@@ -110,7 +110,7 @@ func TestNewPaginationMetadata(t *testing.T) {
 	}
 }
 
-func TestNewPaginatedResponse(t *testing.T) {
+func TestNewPaginatedResult(t *testing.T) {
 	type testData struct {
 		Name string
 		ID   int
@@ -121,7 +121,7 @@ func TestNewPaginatedResponse(t *testing.T) {
 		{Name: "Item2", ID: 2},
 	}
 
-	response := schemas.NewPaginatedResponse(data, 10, 5, 25)
+	response := schemas.NewPaginatedResult(data, 10, 5, 25)
 
 	if response.Pagination.CurrentPage != 3 {
 		t.Errorf("Expected current page 3, got %d", response.Pagination.CurrentPage)

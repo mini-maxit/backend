@@ -702,7 +702,7 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Task]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Task]]
 //	@Router			/tasks-management/tasks/created [get]
 func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -722,7 +722,7 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	task, totalCount, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
+	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -735,7 +735,6 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	response := schemas.NewPaginatedResponse(task, paginationParams.Offset, paginationParams.Limit, int(totalCount))
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 

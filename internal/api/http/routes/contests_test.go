@@ -325,7 +325,8 @@ func TestGetOngoingContests(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(contests, int64(1), nil)
+		paginatedResult := schemas.NewPaginatedResult(contests, 0, 10, int64(len(contests)))
+		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(paginatedResult, nil)
 
 		req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 		if err != nil {
@@ -344,7 +345,7 @@ func TestGetOngoingContests(t *testing.T) {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
 
-		var response httputils.APIResponse[schemas.PaginatedResponse[[]schemas.AvailableContest]]
+		var response httputils.APIResponse[schemas.PaginatedResult[[]schemas.AvailableContest]]
 		err = json.Unmarshal(bodyBytes, &response)
 		if err != nil {
 			t.Fatalf("Failed to unmarshal response: %v", err)
@@ -360,7 +361,7 @@ func TestGetOngoingContests(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, int64(0), myerrors.ErrNotFound)
+		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.AvailableContest]{}, myerrors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 		if err != nil {

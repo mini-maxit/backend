@@ -14,8 +14,8 @@ type PaginationMetadata struct {
 	TotalPages  int `json:"total_pages"`
 }
 
-// PaginatedResponse wraps paginated data with metadata
-type PaginatedResponse[T any] struct {
+// PaginatedResult wraps paginated data with metadata
+type PaginatedResult[T any] struct {
 	Pagination PaginationMetadata `json:"pagination"`
 	Items      T                  `json:"items"`
 }
@@ -40,10 +40,10 @@ func NewPaginationMetadata(offset, limit, totalItems int) PaginationMetadata {
 	}
 }
 
-// NewPaginatedResponse creates a paginated response
-func NewPaginatedResponse[T any](data T, offset, limit, totalItems int) PaginatedResponse[T] {
-	return PaginatedResponse[T]{
-		Pagination: NewPaginationMetadata(offset, limit, totalItems),
+// NewPaginatedResult creates a paginated response
+func NewPaginatedResult[T any](data T, offset, limit int, totalItems int64) PaginatedResult[T] {
+	return PaginatedResult[T]{
+		Pagination: NewPaginationMetadata(offset, limit, int(totalItems)),
 		Items:      data,
 	}
 }

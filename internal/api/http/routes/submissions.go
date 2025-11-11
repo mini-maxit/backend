@@ -21,7 +21,6 @@ type SubmissionRoutes interface {
 	GetAll(w http.ResponseWriter, r *http.Request)
 	GetByID(w http.ResponseWriter, r *http.Request)
 	GetAllForUser(w http.ResponseWriter, r *http.Request)
-	GetAllForGroup(w http.ResponseWriter, r *http.Request)
 	GetAllForTask(w http.ResponseWriter, r *http.Request)
 	GetAvailableLanguages(w http.ResponseWriter, r *http.Request)
 	GetMySubmissions(w http.ResponseWriter, r *http.Request)
@@ -191,7 +190,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			sort	query		string	false	"Sort order"
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -221,7 +220,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, _, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -239,63 +238,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // TODO: total count
 	httputils.ReturnSuccess(w, http.StatusOK, response)
-}
-
-// GetAllForUser godoc
-//
-//	@Tags			submission
-//	@Summary		Get all submissions for a group
-//	@Description	If the user is a student, it fails with 403 Forbidden.
-//
-// For teacher it returns all submissions from this group for tasks he created.
-// For admin it returns all submissions for specific group.
-//
-//	@Produce		json
-//	@Param			id		path		int	true	"Group ID"
-//	@Param			limit	query		int	false	"Limit the number of returned submissions"
-//	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.Submission]
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Router			/submissions/groups/{id} [get]
-func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	groupIDStr := httputils.GetPathValue(r, "id")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group id. "+err.Error())
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	paginationParams := httputils.ExtractPaginationParams(queryParams)
-
-	submissions, _, err := s.submissionService.GetAllForGroup(tx, groupID, currentUser, paginationParams)
-	if err != nil {
-		db.Rollback()
-		s.logger.Errorw("Failed to get submissions for group", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, submissions)
 }
 
 // GetAllForTask godoc
@@ -311,7 +254,7 @@ func (s *SumbissionImpl) GetAllForGroup(w http.ResponseWriter, r *http.Request) 
 //	@Param			id		path		int	true	"Task ID"
 //	@Param			limit	query		int	false	"Limit the number of returned submissions"
 //	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -342,7 +285,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submissions for task", "error", err)
@@ -350,7 +293,6 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // todo: total count
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
@@ -530,7 +472,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 //	@Param			id		path		int	true	"User ID"
 //	@Param			limit	query		int	false	"Limit the number of returned submissions"
 //	@Param			offset	query		int	false	"Offset the returned submissions"
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.Submission]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -553,7 +495,7 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	submissions, _, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -571,7 +513,6 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	response := schemas.NewPaginatedResponse(submissions, paginationParams.Offset, paginationParams.Limit, int(10)) // TODO: total count
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
@@ -601,7 +542,6 @@ func RegisterSubmissionRoutes(mux *mux.Router, route SubmissionRoutes) {
 	mux.HandleFunc("/submissions/languages", route.GetAvailableLanguages)
 	mux.HandleFunc("/submissions/my", route.GetMySubmissions)
 	mux.HandleFunc("/submissions/users/{id}", route.GetAllForUser)
-	mux.HandleFunc("/submissions/groups/{id}", route.GetAllForGroup)
 	mux.HandleFunc("/submissions/tasks/{id}", route.GetAllForTask)
 	mux.HandleFunc("/submissions/{id}", route.GetByID)
 }

@@ -99,7 +99,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
 //	@Param			status	query		string	true	"Contest status"	Enums(ongoing, upcoming, past)
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResponse[[]schemas.AvailableContest]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.AvailableContest]]
 //	@Failure		401		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Router			/contests [get]
@@ -131,15 +131,14 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 		httputils.ReturnError(w, http.StatusBadRequest, "Status query parameter must be a string")
 		return
 	}
-	var contests []schemas.AvailableContest
-	var totalCount int64
+	var response schemas.PaginatedResult[[]schemas.AvailableContest]
 	switch statusStr {
 	case "ongoing":
-		contests, totalCount, err = cr.contestService.GetOngoingContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetOngoingContests(tx, currentUser, paginationParams)
 	case "upcoming":
-		contests, totalCount, err = cr.contestService.GetUpcomingContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetUpcomingContests(tx, currentUser, paginationParams)
 	case "past":
-		contests, totalCount, err = cr.contestService.GetPastContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetPastContests(tx, currentUser, paginationParams)
 	default:
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status query parameter")
 		return
@@ -151,7 +150,6 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	response := schemas.NewPaginatedResponse(contests, paginationParams.Offset, paginationParams.Limit, int(totalCount))
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
