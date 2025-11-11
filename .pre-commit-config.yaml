@@ -21,6 +21,6 @@ repos:
   - repo: local
     hooks:
       - id: swagger
-        language: script
+        language: system
         name: Check if swagger is valid
-        entry: scripts/update-docs.sh
+        entry: make docs

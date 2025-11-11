@@ -49,10 +49,17 @@ go install github.com/swaggo/swag/cmd/swag@latest
 Next you can generate swagger documentation using:
 
 ```bash
-./scripts/update-docs.sh
+make docs
 ```
 
 You can access it at `/api/v1/docs` when the application is running.
+
+### Mocks
+You can generate mocks for services and repositories using:
+
+```bash
+make mocks
+```
 
 
 # Endpoints
