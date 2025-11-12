@@ -8,10 +8,10 @@ type PaginationParams struct {
 
 // PaginationMetadata contains metadata about paginated results
 type PaginationMetadata struct {
-	CurrentPage int `json:"current_page"`
-	PageSize    int `json:"page_size"`
-	TotalItems  int `json:"total_items"`
-	TotalPages  int `json:"total_pages"`
+	CurrentPage int `json:"currentPage"`
+	PageSize    int `json:"pageSize"`
+	TotalItems  int `json:"totalItems"`
+	TotalPages  int `json:"totalPages"`
 }
 
 // PaginatedResult wraps paginated data with metadata
