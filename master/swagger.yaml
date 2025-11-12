@@ -21,6 +21,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-ContestTask:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ContestTask'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-CreatedContest:
     properties:
       data:
@@ -286,6 +295,27 @@ definitions:
         type: string
       taskCount:
         type: integer
+      updatedAt:
+        type: string
+    type: object
+  ContestTask:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      creatorName:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      isSubmissionOpen:
+        type: boolean
+      startAt:
+        type: string
+      title:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -1219,7 +1249,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-ContestTask'
         "400":
           description: Bad Request
           schema:
