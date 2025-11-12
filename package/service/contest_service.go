@@ -55,6 +55,8 @@ type ContestService interface {
 
 	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
 	GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
+	// GetMyContestResults returns the results of the current user for a given contest
+	GetMyContestResults(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.ContestResults, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -976,6 +978,68 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsSubmissionOpen:   model.IsSubmissionOpen,
 	}
+}
+
+func (cs *contestService) GetMyContestResults(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.ContestResults, error) {
+	// Get contest to verify it exists and user has access
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, myerrors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Check if user has access to the contest
+	if !cs.isContestVisibleToUser(tx, contest, &currentUser) {
+		return nil, myerrors.ErrNotAuthorized
+	}
+
+	// Get all tasks for this contest
+	tasks, err := cs.contestRepository.GetTasksForContest(tx, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// For each task, get the user's statistics
+	taskResults := make([]schemas.TaskResult, 0, len(tasks))
+	for _, task := range tasks {
+		// Get attempt count
+		attemptCount, err := cs.submissionRepository.GetAttemptCountForTaskByUser(tx, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting attempt count for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with default values on error
+			attemptCount = 0
+		}
+
+		// Get best score
+		bestScore, err := cs.submissionRepository.GetBestScoreForTaskByUser(tx, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting best score for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with default values on error
+			bestScore = 0
+		}
+
+		// Get best submission ID
+		bestSubmissionID, err := cs.submissionRepository.GetBestSubmissionIDForTaskByUser(tx, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting best submission ID for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with nil on error
+			bestSubmissionID = nil
+		}
+
+		taskResults = append(taskResults, schemas.TaskResult{
+			TaskID:           task.ID,
+			AttemptCount:     attemptCount,
+			BestResult:       bestScore,
+			BestSubmissionID: bestSubmissionID,
+		})
+	}
+
+	return &schemas.ContestResults{
+		ContestID:   contestID,
+		TaskResults: taskResults,
+	}, nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, taskService TaskService) ContestService {
