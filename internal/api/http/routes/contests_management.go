@@ -560,7 +560,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.ContestTask]
 //	@Router			/contests-management/contests/{id}/tasks [get]
 func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

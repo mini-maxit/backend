@@ -236,10 +236,10 @@ func (mr *MockContestServiceMockRecorder) GetTaskProgressForContest(tx, currentU
 }
 
 // GetTasksForContest mocks base method.
-func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.ContestTask, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTasksForContest", tx, currentUser, contestID)
-	ret0, _ := ret[0].([]schemas.Task)
+	ret0, _ := ret[0].([]schemas.ContestTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

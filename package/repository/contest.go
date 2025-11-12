@@ -45,6 +45,8 @@ type ContestRepository interface {
 	IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
 	GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
+	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task
+	GetContestTasksWithSettings(tx *gorm.DB, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest
@@ -495,6 +497,20 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 	}
 
 	return contests, totalCount, nil
+}
+
+// GetContestTasksWithSettings retrieves contest-task relations (with timing flags) and preloads the associated Task
+func (cr *contestRepository) GetContestTasksWithSettings(tx *gorm.DB, contestID int64) ([]models.ContestTask, error) {
+	var relations []models.ContestTask
+	err := tx.Model(&models.ContestTask{}).
+		Where("contest_id = ?", contestID).
+		Preload("Task").
+		Preload("Task.Author").
+		Find(&relations).Error
+	if err != nil {
+		return nil, err
+	}
+	return relations, nil
 }
 
 func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {

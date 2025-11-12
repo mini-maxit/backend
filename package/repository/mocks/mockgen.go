@@ -1681,6 +1681,21 @@ func (mr *MockContestRepositoryMockRecorder) GetContestTask(tx, contestID, taskI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTask", reflect.TypeOf((*MockContestRepository)(nil).GetContestTask), tx, contestID, taskID)
 }
 
+// GetContestTasksWithSettings mocks base method.
+func (m *MockContestRepository) GetContestTasksWithSettings(tx *gorm.DB, contestID int64) ([]models.ContestTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestTasksWithSettings", tx, contestID)
+	ret0, _ := ret[0].([]models.ContestTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestTasksWithSettings indicates an expected call of GetContestTasksWithSettings.
+func (mr *MockContestRepositoryMockRecorder) GetContestTasksWithSettings(tx, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTasksWithSettings", reflect.TypeOf((*MockContestRepository)(nil).GetContestTasksWithSettings), tx, contestID)
+}
+
 // GetContestsForUserWithStats mocks base method.
 func (m *MockContestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
 	m.ctrl.T.Helper()

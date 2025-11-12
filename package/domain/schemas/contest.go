@@ -81,3 +81,11 @@ type RegistrationRequest struct {
 	Status    types.RegistrationRequestStatus `json:"status"`
 	CreatedAt time.Time                       `json:"createdAt"`
 }
+
+type ContestTask struct {
+	Task
+	CreatorName      string     `json:"creatorName"`
+	StartAt          time.Time  `json:"startAt"`
+	EndAt            *time.Time `json:"endAt"`
+	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
+}
