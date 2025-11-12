@@ -326,6 +326,21 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetBestScoreForTaskByUser(tx, ta
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestScoreForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetBestScoreForTaskByUser), tx, taskID, userID)
 }
 
+// GetBestSubmissionIDForTaskByUser mocks base method.
+func (m *MockSubmissionRepository) GetBestSubmissionIDForTaskByUser(tx *gorm.DB, taskID, userID int64) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBestSubmissionIDForTaskByUser", tx, taskID, userID)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBestSubmissionIDForTaskByUser indicates an expected call of GetBestSubmissionIDForTaskByUser.
+func (mr *MockSubmissionRepositoryMockRecorder) GetBestSubmissionIDForTaskByUser(tx, taskID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBestSubmissionIDForTaskByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetBestSubmissionIDForTaskByUser), tx, taskID, userID)
+}
+
 // GetLatestForTaskByUser mocks base method.
 func (m *MockSubmissionRepository) GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error) {
 	m.ctrl.T.Helper()
