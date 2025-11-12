@@ -477,13 +477,13 @@ definitions:
     type: object
   PaginationMetadata:
     properties:
-      current_page:
+      currentPage:
         type: integer
-      page_size:
+      pageSize:
         type: integer
-      total_items:
+      totalItems:
         type: integer
-      total_pages:
+      totalPages:
         type: integer
     type: object
   PutTestCase:
