@@ -54,6 +54,8 @@ type SubmissionRepository interface {
 	GetBestScoreForTaskByUser(db database.Database, taskID, userID int64) (float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
 	GetAttemptCountForTaskByUser(db database.Database, taskID, userID int64) (int, error)
+	// GetBestSubmissionIDForTaskByUser returns the submission ID with the best score for a task by a user.
+	GetBestSubmissionIDForTaskByUser(db database.Database, taskID, userID int64) (*int64, error)
 	// MarkEvaluated marks a submission as evaluated.
 	MarkEvaluated(db database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed.
@@ -489,6 +491,37 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(db database.Databas
 	}
 
 	return int(count), nil
+}
+
+func (sr *submissionRepository) GetBestSubmissionIDForTaskByUser(db database.Database, taskID, userID int64) (*int64, error) {
+	tx := db.GetInstance()
+	var submissionID *int64
+
+	// Query to get the submission ID with the best score
+	err := tx.Model(&models.Submission{}).
+		Select("submissions.id").
+		Joins(fmt.Sprintf("LEFT JOIN %s ON submissions.id = submission_results.submission_id", database.ResolveTableName(tx, &models.SubmissionResult{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM %s
+			GROUP BY submission_result_id
+		) as total_tests ON submission_results.id = total_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM %s
+			WHERE passed = true
+			GROUP BY submission_result_id
+		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
+		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, types.SubmissionStatusEvaluated).
+		Order("CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END DESC").
+		Limit(1).
+		Scan(&submissionID).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return submissionID, nil
 }
 
 func (us *submissionRepository) GetAllForContest(

@@ -62,6 +62,8 @@ type ContestService interface {
 	// GetManagedContests retrieves contests where the user is listed in access_control (any permission)
 	GetManagedContests(db database.Database, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error)
 	GetContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
+	// GetMyContestResults returns the results of the current user for a given contest
+	GetMyContestResults(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestResults, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -925,6 +927,68 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 		IsSubmissionOpen:   model.IsSubmissionOpen,
 		CreatedAt:          model.CreatedAt,
 	}
+}
+
+func (cs *contestService) GetMyContestResults(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestResults, error) {
+	// Get contest to verify it exists and user has access
+	contest, err := cs.contestRepository.Get(db, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Check if user has access to the contest
+	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+		return nil, errors.ErrForbidden
+	}
+
+	// Get all tasks for this contest
+	tasks, err := cs.contestRepository.GetTasksForContest(db, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// For each task, get the user's statistics
+	taskResults := make([]schemas.TaskResult, 0, len(tasks))
+	for _, task := range tasks {
+		// Get attempt count
+		attemptCount, err := cs.submissionRepository.GetAttemptCountForTaskByUser(db, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting attempt count for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with default values on error
+			attemptCount = 0
+		}
+
+		// Get best score
+		bestScore, err := cs.submissionRepository.GetBestScoreForTaskByUser(db, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting best score for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with default values on error
+			bestScore = 0
+		}
+
+		// Get best submission ID
+		bestSubmissionID, err := cs.submissionRepository.GetBestSubmissionIDForTaskByUser(db, task.ID, currentUser.ID)
+		if err != nil {
+			cs.logger.Warnf("Error getting best submission ID for task %d, user %d: %v", task.ID, currentUser.ID, err)
+			// Continue with nil on error
+			bestSubmissionID = nil
+		}
+
+		taskResults = append(taskResults, schemas.TaskResult{
+			TaskID:           task.ID,
+			AttemptCount:     attemptCount,
+			BestResult:       bestScore,
+			BestSubmissionID: bestSubmissionID,
+		})
+	}
+
+	return &schemas.ContestResults{
+		ContestID:   contestID,
+		TaskResults: taskResults,
+	}, nil
 }
 
 // hasContestPermission checks if the user has the required permission for the contest.

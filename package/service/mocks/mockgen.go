@@ -315,6 +315,21 @@ func (mr *MockContestServiceMockRecorder) GetManagedContests(db, userID, paginat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedContests", reflect.TypeOf((*MockContestService)(nil).GetManagedContests), db, userID, paginationParams)
 }
 
+// GetMyContestResults mocks base method.
+func (m *MockContestService) GetMyContestResults(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestResults, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMyContestResults", db, currentUser, contestID)
+	ret0, _ := ret[0].(*schemas.ContestResults)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMyContestResults indicates an expected call of GetMyContestResults.
+func (mr *MockContestServiceMockRecorder) GetMyContestResults(db, currentUser, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyContestResults", reflect.TypeOf((*MockContestService)(nil).GetMyContestResults), db, currentUser, contestID)
+}
+
 // GetOngoingContests mocks base method.
 func (m *MockContestService) GetOngoingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
 	m.ctrl.T.Helper()

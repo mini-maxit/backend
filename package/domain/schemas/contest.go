@@ -105,3 +105,14 @@ type ContestTask struct {
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
 }
+type TaskResult struct {
+	TaskID           int64   `json:"taskId"`
+	AttemptCount     int     `json:"attemptCount"`
+	BestResult       float64 `json:"bestResult"`
+	BestSubmissionID *int64  `json:"bestSubmissionId,omitempty"`
+}
+
+type ContestResults struct {
+	ContestID   int64        `json:"contestId"`
+	TaskResults []TaskResult `json:"taskResults"`
+}
