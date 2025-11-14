@@ -58,6 +58,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-MyTasksResponse:
+    properties:
+      data:
+        $ref: '#/definitions/MyTasksResponse'
+      ok:
+        type: boolean
+    type: object
   APIResponse-PaginatedResult-AvailableContest:
     properties:
       data:
@@ -347,6 +354,21 @@ definitions:
       updatedAt:
         type: string
     type: object
+  ContestWithTasks:
+    properties:
+      contestId:
+        type: integer
+      contestName:
+        type: string
+      endAt:
+        type: string
+      startAt:
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/TaskWithAttempts'
+        type: array
+    type: object
   CreateContest:
     properties:
       description:
@@ -468,6 +490,13 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  MyTasksResponse:
+    properties:
+      contests:
+        items:
+          $ref: '#/definitions/ContestWithTasks'
+        type: array
     type: object
   PaginatedResult-AvailableContest:
     properties:
@@ -655,6 +684,21 @@ definitions:
       id:
         type: integer
       title:
+        type: string
+    type: object
+  TaskWithAttempts:
+    properties:
+      attemptsSummary:
+        $ref: '#/definitions/AttemptsSummary'
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      id:
+        type: integer
+      title:
+        type: string
+      updatedAt:
         type: string
     type: object
   TaskWithContestStats:
@@ -2406,7 +2450,7 @@ paths:
   /tasks/my:
     get:
       description: Returns all live tasks assigned to the current user, grouped by
-        contests and non-contest tasks
+        contests with submission statistics
       parameters:
       - description: 'Number of results to return (default: 100)'
         in: query
@@ -2422,7 +2466,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
+            $ref: '#/definitions/APIResponse-MyTasksResponse'
         "500":
           description: Internal Server Error
           schema:
