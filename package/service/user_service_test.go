@@ -298,3 +298,90 @@ func TestChangePassword(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
+
+func TestIsTaskAssignedToUser(t *testing.T) {
+	tx := &gorm.DB{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
+
+	userID := int64(1)
+	taskID := int64(100)
+
+	t.Run("Error getting task contests", func(t *testing.T) {
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(nil, assert.AnError).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.Error(t, err)
+		assert.False(t, isAssigned)
+	})
+
+	t.Run("Task not assigned to any contest", func(t *testing.T) {
+		cs.EXPECT().GetTaskContests(tx, taskID).Return([]int64{}, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.False(t, isAssigned)
+	})
+
+	t.Run("Task assigned to contests but user not participant", func(t *testing.T) {
+		contestIDs := []int64{1, 2, 3}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(3), userID).Return(false, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.False(t, isAssigned)
+	})
+
+	t.Run("Error checking user participation", func(t *testing.T) {
+		contestIDs := []int64{1, 2}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, assert.AnError).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.Error(t, err)
+		assert.False(t, isAssigned)
+	})
+
+	t.Run("User is participant in first contest", func(t *testing.T) {
+		contestIDs := []int64{1, 2, 3}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(true, nil).Times(1)
+		// Should return immediately after finding first match, no more calls
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.True(t, isAssigned)
+	})
+
+	t.Run("User is participant in middle contest", func(t *testing.T) {
+		contestIDs := []int64{1, 2, 3}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(true, nil).Times(1)
+		// Should return immediately after finding match, no call for contest 3
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.True(t, isAssigned)
+	})
+
+	t.Run("User is participant in last contest", func(t *testing.T) {
+		contestIDs := []int64{1, 2, 3}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(3), userID).Return(true, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.True(t, isAssigned)
+	})
+
+	t.Run("Task in single contest and user is participant", func(t *testing.T) {
+		contestIDs := []int64{5}
+		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(tx, int64(5), userID).Return(true, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		require.NoError(t, err)
+		assert.True(t, isAssigned)
+	})
+}

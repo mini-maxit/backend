@@ -52,7 +52,7 @@ func (tr *taskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, e
 
 func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
 	task := &models.Task{}
-	err := tx.Preload("Author").Preload("Groups").Preload("DescriptionFile").Model(&models.Task{}).Where(
+	err := tx.Preload("Author").Preload("DescriptionFile").Model(&models.Task{}).Where(
 		"id = ? AND deleted_at IS NULL",
 		taskID,
 	).First(task).Error

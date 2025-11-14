@@ -1085,21 +1085,6 @@ func (mr *MockTaskRepositoryMockRecorder) GetLiveAssignedTasksGroupedByContest(t
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveAssignedTasksGroupedByContest", reflect.TypeOf((*MockTaskRepository)(nil).GetLiveAssignedTasksGroupedByContest), tx, userID, limit, offset)
 }
 
-// IsAssignedToUser mocks base method.
-func (m *MockTaskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAssignedToUser", tx, taskID, userID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAssignedToUser indicates an expected call of IsAssignedToUser.
-func (mr *MockTaskRepositoryMockRecorder) IsAssignedToUser(tx, taskID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAssignedToUser", reflect.TypeOf((*MockTaskRepository)(nil).IsAssignedToUser), tx, taskID, userID)
-}
-
 // MockTestRepository is a mock of TestRepository interface.
 type MockTestRepository struct {
 	ctrl     *gomock.Controller

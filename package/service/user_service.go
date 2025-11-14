@@ -197,24 +197,24 @@ func UserToSchema(user *models.User) *schemas.User {
 	}
 }
 
-func (us *userService) updateModel(curretnModel *models.User, updateInfo *schemas.UserEdit) {
+func (us *userService) updateModel(currentModel *models.User, updateInfo *schemas.UserEdit) {
 	if updateInfo.Email != nil {
-		curretnModel.Email = *updateInfo.Email
+		currentModel.Email = *updateInfo.Email
 	}
 
 	if updateInfo.Name != nil {
-		curretnModel.Name = *updateInfo.Name
+		currentModel.Name = *updateInfo.Name
 	}
 
 	if updateInfo.Surname != nil {
-		curretnModel.Surname = *updateInfo.Surname
+		currentModel.Surname = *updateInfo.Surname
 	}
 
 	if updateInfo.Username != nil {
-		curretnModel.Username = *updateInfo.Username
+		currentModel.Username = *updateInfo.Username
 	}
 	if updateInfo.Role != nil {
-		curretnModel.Role = *updateInfo.Role
+		currentModel.Role = *updateInfo.Role
 	}
 }
 
