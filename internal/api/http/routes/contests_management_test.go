@@ -299,8 +299,6 @@ func TestEditContest(t *testing.T) {
 				Name:             "Updated Contest",
 				Description:      "Test Description",
 				CreatedBy:        1,
-				CreatedAt:        time.Now(),
-				UpdatedAt:        time.Now(),
 				ParticipantCount: 5,
 				TaskCount:        3,
 			},

@@ -11,7 +11,7 @@ type Contest struct {
 	Name               string     `gorm:"not null;unique"`
 	Description        string     `gorm:"type:text;null"`
 	CreatedBy          int64      `gorm:"foreignKey:UserID;not null"`
-	StartAt            *time.Time `gorm:"null"`
+	StartAt            time.Time  `gorm:"not null"`
 	EndAt              *time.Time `gorm:"null"`
 	IsRegistrationOpen *bool      `gorm:"default:true;not null"`  // if false, only admins can add participants
 	IsSubmissionOpen   *bool      `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
@@ -75,6 +75,10 @@ type ContestWithStats struct {
 type ParticipantContestStats struct {
 	Contest
 	ParticipantCount int64 `gorm:"column:participant_count"`
-	TaskCount        int64 `gorm:"column:task_count"`
-	SolvedCount      int64 `gorm:"column:solved_count"`
+
+	TaskCount       int64 `gorm:"column:task_count"`
+	SolvedTaskCount int64 `gorm:"column:solved_task_count"`
+
+	TestCount       int64 `gorm:"column:test_count"`
+	SolvedTestCount int64 `gorm:"column:solved_test_count"`
 }
