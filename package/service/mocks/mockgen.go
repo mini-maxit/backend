@@ -220,6 +220,21 @@ func (mr *MockContestServiceMockRecorder) GetRegistrationRequests(tx, currentUse
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestService)(nil).GetRegistrationRequests), tx, currentUser, contestID, statusFilter)
 }
 
+// GetTaskContests mocks base method.
+func (m *MockContestService) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskContests", tx, taskID)
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskContests indicates an expected call of GetTaskContests.
+func (mr *MockContestServiceMockRecorder) GetTaskContests(tx, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskContests", reflect.TypeOf((*MockContestService)(nil).GetTaskContests), tx, taskID)
+}
+
 // GetTaskProgressForContest mocks base method.
 func (m *MockContestService) GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
 	m.ctrl.T.Helper()
@@ -293,6 +308,21 @@ func (m *MockContestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int6
 func (mr *MockContestServiceMockRecorder) IsTaskInContest(tx, contestID, taskID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTaskInContest", reflect.TypeOf((*MockContestService)(nil).IsTaskInContest), tx, contestID, taskID)
+}
+
+// IsUserParticipant mocks base method.
+func (m *MockContestService) IsUserParticipant(tx *gorm.DB, contestID, userID int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUserParticipant", tx, contestID, userID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsUserParticipant indicates an expected call of IsUserParticipant.
+func (mr *MockContestServiceMockRecorder) IsUserParticipant(tx, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserParticipant", reflect.TypeOf((*MockContestService)(nil).IsUserParticipant), tx, contestID, userID)
 }
 
 // RegisterForContest mocks base method.
@@ -448,6 +478,21 @@ func (mr *MockUserServiceMockRecorder) GetByEmail(tx, email any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmail", reflect.TypeOf((*MockUserService)(nil).GetByEmail), tx, email)
 }
 
+// IsTaskAssignedToUser mocks base method.
+func (m *MockUserService) IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTaskAssignedToUser", tx, userID, taskID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsTaskAssignedToUser indicates an expected call of IsTaskAssignedToUser.
+func (mr *MockUserServiceMockRecorder) IsTaskAssignedToUser(tx, userID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTaskAssignedToUser", reflect.TypeOf((*MockUserService)(nil).IsTaskAssignedToUser), tx, userID, taskID)
+}
+
 // MockTaskService is a mock of TaskService interface.
 type MockTaskService struct {
 	ctrl     *gomock.Controller
@@ -470,34 +515,6 @@ func NewMockTaskService(ctrl *gomock.Controller) *MockTaskService {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTaskService) EXPECT() *MockTaskServiceMockRecorder {
 	return m.recorder
-}
-
-// AssignToGroups mocks base method.
-func (m *MockTaskService) AssignToGroups(tx *gorm.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignToGroups", tx, currentUser, taskID, groupIDs)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AssignToGroups indicates an expected call of AssignToGroups.
-func (mr *MockTaskServiceMockRecorder) AssignToGroups(tx, currentUser, taskID, groupIDs any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignToGroups", reflect.TypeOf((*MockTaskService)(nil).AssignToGroups), tx, currentUser, taskID, groupIDs)
-}
-
-// AssignToUsers mocks base method.
-func (m *MockTaskService) AssignToUsers(tx *gorm.DB, currentUser schemas.User, taskID int64, userIDs []int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignToUsers", tx, currentUser, taskID, userIDs)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AssignToUsers indicates an expected call of AssignToUsers.
-func (mr *MockTaskServiceMockRecorder) AssignToUsers(tx, currentUser, taskID, userIDs any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignToUsers", reflect.TypeOf((*MockTaskService)(nil).AssignToUsers), tx, currentUser, taskID, userIDs)
 }
 
 // Create mocks base method.
@@ -587,21 +604,6 @@ func (mr *MockTaskServiceMockRecorder) GetAll(tx, currentUser, paginationParams 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskService)(nil).GetAll), tx, currentUser, paginationParams)
 }
 
-// GetAllAssigned mocks base method.
-func (m *MockTaskService) GetAllAssigned(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAssigned", tx, currentUser, paginationParams)
-	ret0, _ := ret[0].([]schemas.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllAssigned indicates an expected call of GetAllAssigned.
-func (mr *MockTaskServiceMockRecorder) GetAllAssigned(tx, currentUser, paginationParams any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAssigned", reflect.TypeOf((*MockTaskService)(nil).GetAllAssigned), tx, currentUser, paginationParams)
-}
-
 // GetAllCreated mocks base method.
 func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error) {
 	m.ctrl.T.Helper()
@@ -615,21 +617,6 @@ func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, p
 func (mr *MockTaskServiceMockRecorder) GetAllCreated(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskService)(nil).GetAllCreated), tx, currentUser, paginationParams)
-}
-
-// GetAllForGroup mocks base method.
-func (m *MockTaskService) GetAllForGroup(tx *gorm.DB, currentUser schemas.User, groupID int64, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, currentUser, groupID, paginationParams)
-	ret0, _ := ret[0].([]schemas.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockTaskServiceMockRecorder) GetAllForGroup(tx, currentUser, groupID, paginationParams any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskService)(nil).GetAllForGroup), tx, currentUser, groupID, paginationParams)
 }
 
 // GetByTitle mocks base method.
@@ -718,34 +705,6 @@ func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskI
 func (mr *MockTaskServiceMockRecorder) PutLimits(tx, currentUser, taskID, limits any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutLimits", reflect.TypeOf((*MockTaskService)(nil).PutLimits), tx, currentUser, taskID, limits)
-}
-
-// UnassignFromGroups mocks base method.
-func (m *MockTaskService) UnassignFromGroups(tx *gorm.DB, currentUser schemas.User, taskID int64, groupIDs []int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnassignFromGroups", tx, currentUser, taskID, groupIDs)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UnassignFromGroups indicates an expected call of UnassignFromGroups.
-func (mr *MockTaskServiceMockRecorder) UnassignFromGroups(tx, currentUser, taskID, groupIDs any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignFromGroups", reflect.TypeOf((*MockTaskService)(nil).UnassignFromGroups), tx, currentUser, taskID, groupIDs)
-}
-
-// UnassignFromUsers mocks base method.
-func (m *MockTaskService) UnassignFromUsers(tx *gorm.DB, currentUser schemas.User, taskID int64, userID []int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnassignFromUsers", tx, currentUser, taskID, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UnassignFromUsers indicates an expected call of UnassignFromUsers.
-func (mr *MockTaskServiceMockRecorder) UnassignFromUsers(tx, currentUser, taskID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignFromUsers", reflect.TypeOf((*MockTaskService)(nil).UnassignFromUsers), tx, currentUser, taskID, userID)
 }
 
 // MockAuthService is a mock of AuthService interface.
@@ -941,21 +900,6 @@ func (m *MockGroupService) GetAll(tx *gorm.DB, currentUser schemas.User, paginat
 func (mr *MockGroupServiceMockRecorder) GetAll(tx, currentUser, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockGroupService)(nil).GetAll), tx, currentUser, paginationParams)
-}
-
-// GetTasks mocks base method.
-func (m *MockGroupService) GetTasks(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTasks", tx, currentUser, groupID)
-	ret0, _ := ret[0].([]schemas.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTasks indicates an expected call of GetTasks.
-func (mr *MockGroupServiceMockRecorder) GetTasks(tx, currentUser, groupID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasks", reflect.TypeOf((*MockGroupService)(nil).GetTasks), tx, currentUser, groupID)
 }
 
 // GetUsers mocks base method.

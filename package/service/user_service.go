@@ -28,10 +28,15 @@ type UserService interface {
 	GetByEmail(tx *gorm.DB, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
 	Get(tx *gorm.DB, userID int64) (*schemas.User, error)
+	// IsTaskAssignedToUser checks if a user has access to a specific task.
+	// Currently, a user has access if the task is assigned to a contest and the user is a participant in that contest.
+	// Future: may support direct task-to-user assignments.
+	IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (bool, error)
 }
 
 type userService struct {
 	userRepository repository.UserRepository
+	contestService ContestService
 	logger         *zap.SugaredLogger
 }
 
@@ -192,31 +197,64 @@ func UserToSchema(user *models.User) *schemas.User {
 	}
 }
 
-func (us *userService) updateModel(curretnModel *models.User, updateInfo *schemas.UserEdit) {
+func (us *userService) updateModel(currentModel *models.User, updateInfo *schemas.UserEdit) {
 	if updateInfo.Email != nil {
-		curretnModel.Email = *updateInfo.Email
+		currentModel.Email = *updateInfo.Email
 	}
 
 	if updateInfo.Name != nil {
-		curretnModel.Name = *updateInfo.Name
+		currentModel.Name = *updateInfo.Name
 	}
 
 	if updateInfo.Surname != nil {
-		curretnModel.Surname = *updateInfo.Surname
+		currentModel.Surname = *updateInfo.Surname
 	}
 
 	if updateInfo.Username != nil {
-		curretnModel.Username = *updateInfo.Username
+		currentModel.Username = *updateInfo.Username
 	}
 	if updateInfo.Role != nil {
-		curretnModel.Role = *updateInfo.Role
+		currentModel.Role = *updateInfo.Role
 	}
 }
 
-func NewUserService(userRepository repository.UserRepository) UserService {
+func (us *userService) IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (bool, error) {
+	// TODO: In the future, this should also check for direct task-to-user assignments
+	// For now, check if task is assigned to any contest that the user participates in
+
+	// Get all contests that this task is assigned to
+	contestIDs, err := us.contestService.GetTaskContests(tx, taskID)
+	if err != nil {
+		us.logger.Errorf("Error getting task contests: %v", err.Error())
+		return false, err
+	}
+
+	// If task is not assigned to any contest, user doesn't have access
+	if len(contestIDs) == 0 {
+		return false, nil
+	}
+
+	// Check if user is a participant in any of the contests
+	for _, contestID := range contestIDs {
+		isParticipant, err := us.contestService.IsUserParticipant(tx, contestID, userID)
+		if err != nil {
+			us.logger.Errorf("Error checking user participation in contest: %v", err.Error())
+			return false, err
+		}
+		if isParticipant {
+			return true, nil
+		}
+	}
+
+	// User is not a participant in any contest that has this task
+	return false, nil
+}
+
+func NewUserService(userRepository repository.UserRepository, contestService ContestService) UserService {
 	log := utils.NewNamedLogger("user_service")
 	return &userService{
 		userRepository: userRepository,
+		contestService: contestService,
 		logger:         log,
 	}
 }

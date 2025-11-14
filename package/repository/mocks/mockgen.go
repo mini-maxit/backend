@@ -539,21 +539,6 @@ func (mr *MockGroupRepositoryMockRecorder) GetAllForTeacher(tx, teacherID, offse
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTeacher", reflect.TypeOf((*MockGroupRepository)(nil).GetAllForTeacher), tx, teacherID, offset, limit, sort)
 }
 
-// GetTasks mocks base method.
-func (m *MockGroupRepository) GetTasks(tx *gorm.DB, groupID int64) ([]models.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTasks", tx, groupID)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTasks indicates an expected call of GetTasks.
-func (mr *MockGroupRepositoryMockRecorder) GetTasks(tx, groupID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasks", reflect.TypeOf((*MockGroupRepository)(nil).GetTasks), tx, groupID)
-}
-
 // GetUsers mocks base method.
 func (m *MockGroupRepository) GetUsers(tx *gorm.DB, groupID int64) ([]models.User, error) {
 	m.ctrl.T.Helper()
@@ -980,34 +965,6 @@ func (m *MockTaskRepository) EXPECT() *MockTaskRepositoryMockRecorder {
 	return m.recorder
 }
 
-// AssignToGroup mocks base method.
-func (m *MockTaskRepository) AssignToGroup(tx *gorm.DB, taskID, groupID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignToGroup", tx, taskID, groupID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AssignToGroup indicates an expected call of AssignToGroup.
-func (mr *MockTaskRepositoryMockRecorder) AssignToGroup(tx, taskID, groupID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignToGroup", reflect.TypeOf((*MockTaskRepository)(nil).AssignToGroup), tx, taskID, groupID)
-}
-
-// AssignToUser mocks base method.
-func (m *MockTaskRepository) AssignToUser(tx *gorm.DB, taskID, userID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AssignToUser", tx, taskID, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AssignToUser indicates an expected call of AssignToUser.
-func (mr *MockTaskRepositoryMockRecorder) AssignToUser(tx, taskID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignToUser", reflect.TypeOf((*MockTaskRepository)(nil).AssignToUser), tx, taskID, userID)
-}
-
 // Create mocks base method.
 func (m *MockTaskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) {
 	m.ctrl.T.Helper()
@@ -1082,22 +1039,6 @@ func (mr *MockTaskRepositoryMockRecorder) GetAll(tx, limit, offset, sort any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskRepository)(nil).GetAll), tx, limit, offset, sort)
 }
 
-// GetAllAssigned mocks base method.
-func (m *MockTaskRepository) GetAllAssigned(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Task, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAssigned", tx, userID, limit, offset, sort)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetAllAssigned indicates an expected call of GetAllAssigned.
-func (mr *MockTaskRepositoryMockRecorder) GetAllAssigned(tx, userID, limit, offset, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAssigned", reflect.TypeOf((*MockTaskRepository)(nil).GetAllAssigned), tx, userID, limit, offset, sort)
-}
-
 // GetAllCreated mocks base method.
 func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
@@ -1112,21 +1053,6 @@ func (m *MockTaskRepository) GetAllCreated(tx *gorm.DB, userID int64, offset, li
 func (mr *MockTaskRepositoryMockRecorder) GetAllCreated(tx, userID, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskRepository)(nil).GetAllCreated), tx, userID, offset, limit, sort)
-}
-
-// GetAllForGroup mocks base method.
-func (m *MockTaskRepository) GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForGroup", tx, groupID, limit, offset, sort)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllForGroup indicates an expected call of GetAllForGroup.
-func (mr *MockTaskRepositoryMockRecorder) GetAllForGroup(tx, groupID, limit, offset, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForGroup", reflect.TypeOf((*MockTaskRepository)(nil).GetAllForGroup), tx, groupID, limit, offset, sort)
 }
 
 // GetByTitle mocks base method.
@@ -1144,21 +1070,6 @@ func (mr *MockTaskRepositoryMockRecorder) GetByTitle(tx, title any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTitle", reflect.TypeOf((*MockTaskRepository)(nil).GetByTitle), tx, title)
 }
 
-// GetLiveAssignedNonContestTasks mocks base method.
-func (m *MockTaskRepository) GetLiveAssignedNonContestTasks(tx *gorm.DB, userID int64, limit, offset int) ([]models.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLiveAssignedNonContestTasks", tx, userID, limit, offset)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLiveAssignedNonContestTasks indicates an expected call of GetLiveAssignedNonContestTasks.
-func (mr *MockTaskRepositoryMockRecorder) GetLiveAssignedNonContestTasks(tx, userID, limit, offset any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveAssignedNonContestTasks", reflect.TypeOf((*MockTaskRepository)(nil).GetLiveAssignedNonContestTasks), tx, userID, limit, offset)
-}
-
 // GetLiveAssignedTasksGroupedByContest mocks base method.
 func (m *MockTaskRepository) GetLiveAssignedTasksGroupedByContest(tx *gorm.DB, userID int64, limit, offset int) (map[int64][]models.Task, error) {
 	m.ctrl.T.Helper()
@@ -1172,64 +1083,6 @@ func (m *MockTaskRepository) GetLiveAssignedTasksGroupedByContest(tx *gorm.DB, u
 func (mr *MockTaskRepositoryMockRecorder) GetLiveAssignedTasksGroupedByContest(tx, userID, limit, offset any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveAssignedTasksGroupedByContest", reflect.TypeOf((*MockTaskRepository)(nil).GetLiveAssignedTasksGroupedByContest), tx, userID, limit, offset)
-}
-
-// IsAssignedToGroup mocks base method.
-func (m *MockTaskRepository) IsAssignedToGroup(tx *gorm.DB, taskID, groupID int64) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAssignedToGroup", tx, taskID, groupID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAssignedToGroup indicates an expected call of IsAssignedToGroup.
-func (mr *MockTaskRepositoryMockRecorder) IsAssignedToGroup(tx, taskID, groupID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAssignedToGroup", reflect.TypeOf((*MockTaskRepository)(nil).IsAssignedToGroup), tx, taskID, groupID)
-}
-
-// IsAssignedToUser mocks base method.
-func (m *MockTaskRepository) IsAssignedToUser(tx *gorm.DB, taskID, userID int64) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsAssignedToUser", tx, taskID, userID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsAssignedToUser indicates an expected call of IsAssignedToUser.
-func (mr *MockTaskRepositoryMockRecorder) IsAssignedToUser(tx, taskID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAssignedToUser", reflect.TypeOf((*MockTaskRepository)(nil).IsAssignedToUser), tx, taskID, userID)
-}
-
-// UnassignFromGroup mocks base method.
-func (m *MockTaskRepository) UnassignFromGroup(tx *gorm.DB, taskID, groupID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnassignFromGroup", tx, taskID, groupID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UnassignFromGroup indicates an expected call of UnassignFromGroup.
-func (mr *MockTaskRepositoryMockRecorder) UnassignFromGroup(tx, taskID, groupID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignFromGroup", reflect.TypeOf((*MockTaskRepository)(nil).UnassignFromGroup), tx, taskID, groupID)
-}
-
-// UnassignFromUser mocks base method.
-func (m *MockTaskRepository) UnassignFromUser(tx *gorm.DB, taskID, userID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnassignFromUser", tx, taskID, userID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UnassignFromUser indicates an expected call of UnassignFromUser.
-func (mr *MockTaskRepositoryMockRecorder) UnassignFromUser(tx, taskID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnassignFromUser", reflect.TypeOf((*MockTaskRepository)(nil).UnassignFromUser), tx, taskID, userID)
 }
 
 // MockTestRepository is a mock of TestRepository interface.
@@ -1771,6 +1624,21 @@ func (m *MockContestRepository) GetRegistrationRequests(tx *gorm.DB, contestID i
 func (mr *MockContestRepositoryMockRecorder) GetRegistrationRequests(tx, contestID, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestRepository)(nil).GetRegistrationRequests), tx, contestID, status)
+}
+
+// GetTaskContests mocks base method.
+func (m *MockContestRepository) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskContests", tx, taskID)
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskContests indicates an expected call of GetTaskContests.
+func (mr *MockContestRepositoryMockRecorder) GetTaskContests(tx, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskContests", reflect.TypeOf((*MockContestRepository)(nil).GetTaskContests), tx, taskID)
 }
 
 // GetTasksForContest mocks base method.

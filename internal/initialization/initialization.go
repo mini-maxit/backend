@@ -64,7 +64,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create file storage service: %s", err.Error())
 	}
-	userService := service.NewUserService(userRepository)
 	taskService := service.NewTaskService(
 		filestorage,
 		fileRepository,
@@ -106,6 +105,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
 	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, taskService)
+	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(

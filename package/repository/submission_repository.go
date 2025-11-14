@@ -230,36 +230,6 @@ func (us *submissionRepository) GetAllForGroup(
 	return submissions, totalCount, nil
 }
 
-func (us *submissionRepository) GetAllForGroupTeacher(
-	tx *gorm.DB,
-	groupID, userID int64,
-	limit, offset int,
-	sort string,
-) ([]models.Submission, error) {
-	submissions := []models.Submission{}
-
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Model(&models.Submission{}).
-		Preload("Language").
-		Preload("Task").
-		Preload("User").
-		Preload("Result").
-		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
-		Joins(fmt.Sprintf("JOIN %s ON task_group.task_id = tasks.id", database.ResolveTableName(tx, &models.TaskGroup{}))).
-		Joins(fmt.Sprintf("JOIN %s ON groups.id = task_group.group_id", database.ResolveTableName(tx, &models.Group{}))).
-		Where("groups.id = ? AND tasks.created_by_id = ?", groupID, userID).
-		Find(&submissions).Error
-
-	if err != nil {
-		return nil, err
-	}
-	return submissions, nil
-}
-
 func (us *submissionRepository) GetAllForTask(
 	tx *gorm.DB,
 	taskID int64,
