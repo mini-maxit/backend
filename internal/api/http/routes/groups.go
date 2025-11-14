@@ -26,7 +26,6 @@ type GroupRoute interface {
 	AddUsersToGroup(w http.ResponseWriter, r *http.Request)
 	DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request)
 	GetGroupUsers(w http.ResponseWriter, r *http.Request)
-	GetGroupTasks(w http.ResponseWriter, r *http.Request)
 }
 
 type GroupRouteImpl struct {
@@ -486,52 +485,6 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 	httputils.ReturnSuccess(w, http.StatusOK, users)
 }
 
-func (gr *GroupRouteImpl) GetGroupTasks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	groupIDStr := httputils.GetPathValue(r, "id")
-	if groupIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
-		return
-	}
-
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
-		return
-	}
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	tasks, err := gr.groupService.GetTasks(tx, currentUser, groupID)
-	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
-			status = http.StatusNotFound
-		} else {
-			gr.logger.Errorw("Failed to get group tasks", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group tasks retrieval failed")
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, tasks)
-}
-
 func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -567,8 +520,6 @@ func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-
-	mux.HandleFunc("/{id}/tasks", groupRoute.GetGroupTasks)
 }
 
 func NewGroupRoute(groupService service.GroupService) GroupRoute {

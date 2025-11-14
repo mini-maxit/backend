@@ -26,8 +26,6 @@ type GroupRepository interface {
 	GetAll(tx *gorm.DB, offset int, limit int, sort string) ([]models.Group, error)
 	// GetAllForTeacher returns all groups created by teacher with pagination and sorting
 	GetAllForTeacher(tx *gorm.DB, teacherID int64, offset int, limit int, sort string) ([]models.Group, error)
-	// GetTasks returns all tasks assigned to group
-	GetTasks(tx *gorm.DB, groupID int64) ([]models.Task, error)
 	// GetUsers returns all users that belong to group
 	GetUsers(tx *gorm.DB, groupID int64) ([]models.User, error)
 	// UserBelongsTo checks if user belongs to group
@@ -145,19 +143,6 @@ func (gr *groupRepository) UserBelongsTo(tx *gorm.DB, groupID int64, userID int6
 		return false, err
 	}
 	return count > 0, nil
-}
-
-// TODO: refactor this, maybe this should be in task repository.
-func (gr *groupRepository) GetTasks(tx *gorm.DB, groupID int64) ([]models.Task, error) {
-	group := &models.Group{}
-	err := tx.
-		Where("id = ?", groupID).
-		Preload("Tasks").
-		First(group).Error
-	if err != nil {
-		return nil, err
-	}
-	return group.Tasks, nil
 }
 
 func NewGroupRepository() GroupRepository {

@@ -49,6 +49,10 @@ type ContestService interface {
 	RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error
 	// IsTaskInContest checks if a task is part of a contest
 	IsTaskInContest(tx *gorm.DB, contestID, taskID int64) (bool, error)
+	// IsUserParticipant checks if a user is a participant in a contest
+	IsUserParticipant(tx *gorm.DB, contestID, userID int64) (bool, error)
+	// GetTaskContests retrieves all contest IDs that a task is assigned to
+	GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error)
 	// ValidateContestSubmission validates if a user can submit a solution for a task in a contest
 	// Returns an error if submission is not allowed (contest/task not open, user not participant, etc.)
 	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
@@ -852,6 +856,14 @@ func (cs *contestService) IsTaskInContest(tx *gorm.DB, contestID, taskID int64) 
 		return false, err
 	}
 	return contestTask != nil, nil
+}
+
+func (cs *contestService) IsUserParticipant(tx *gorm.DB, contestID, userID int64) (bool, error) {
+	return cs.contestRepository.IsUserParticipant(tx, contestID, userID)
+}
+
+func (cs *contestService) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error) {
+	return cs.contestRepository.GetTaskContests(tx, taskID)
 }
 
 func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error {

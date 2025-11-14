@@ -8,15 +8,6 @@ type Task struct {
 
 	BaseModel
 
-	Author          User    `gorm:"foreignKey:CreatedBy; references:ID"`
-	Groups          []Group `gorm:"many2many:task_groups;"`
-	DescriptionFile File    `gorm:"foreignKey:DescriptionFileID; references:ID"`
-}
-
-type TaskUser struct {
-	TaskID int64 `gorm:"primaryKey"`
-	UserID int64 `gorm:"primaryKey"`
-
-	Task Task `gorm:"foreignKey:TaskID; references:ID"`
-	User User `gorm:"foreignKey:UserID; references:ID"`
+	Author          User `gorm:"foreignKey:CreatedBy; references:ID"`
+	DescriptionFile File `gorm:"foreignKey:DescriptionFileID; references:ID"`
 }

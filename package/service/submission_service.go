@@ -358,7 +358,7 @@ func (ss *submissionService) GetAllForTask(
 		}
 		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
-		isAssigned, er := ss.taskRepository.IsAssignedToUser(tx, taskID, user.ID)
+		isAssigned, er := ss.userService.IsTaskAssignedToUser(tx, user.ID, taskID)
 		if er != nil {
 			return nil, er
 		}

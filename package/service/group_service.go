@@ -27,8 +27,6 @@ type GroupService interface {
 	Get(tx *gorm.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
 	// GetAll retrieves all groups based on query parameters.
 	GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error)
-	// GetTasks retrieves all tasks associated with a group.
-	GetTasks(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error)
 	// GetUsers retrieves all users associated with a group.
 	GetUsers(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error)
 }
@@ -298,46 +296,6 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 
 	return result, nil
 }
-
-func (gs *groupService) GetTasks(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.Task, error) {
-	group, err := gs.groupRepository.Get(tx, groupID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrGroupNotFound
-		}
-		return nil, err
-	}
-
-	switch currentUser.Role {
-	case types.UserRoleAdmin:
-		break
-	case types.UserRoleTeacher:
-		if group.CreatedBy != currentUser.ID {
-			return nil, myerrors.ErrNotAuthorized
-		}
-	case types.UserRoleStudent:
-		exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, currentUser.ID)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, myerrors.ErrNotAuthorized
-		}
-	}
-
-	tasks, err := gs.groupRepository.GetTasks(tx, groupID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]schemas.Task, len(tasks))
-	for i, task := range tasks {
-		result[i] = *TaskToSchema(&task)
-	}
-
-	return result, nil
-}
-
 func (gs *groupService) updateModel(model *models.Group, editInfo *schemas.EditGroup) {
 	if editInfo.Name != nil {
 		model.Name = *editInfo.Name
@@ -345,10 +303,6 @@ func (gs *groupService) updateModel(model *models.Group, editInfo *schemas.EditG
 }
 
 func GroupToSchemaDetailed(model *models.Group) *schemas.GroupDetailed {
-	tasks := make([]schemas.Task, len(model.Tasks))
-	for i, task := range model.Tasks {
-		tasks[i] = *TaskToSchema(&task)
-	}
 	users := make([]schemas.User, len(model.Users))
 	for i, user := range model.Users {
 		users[i] = *UserToSchema(&user)
@@ -360,7 +314,6 @@ func GroupToSchemaDetailed(model *models.Group) *schemas.GroupDetailed {
 		CreatedBy: model.CreatedBy,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
-		Tasks:     tasks,
 		Users:     users,
 	}
 }

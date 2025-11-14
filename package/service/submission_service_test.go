@@ -613,7 +613,7 @@ func TestGetAllForTask(t *testing.T) {
 			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 
-		setup.taskRepository.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(true, nil).Times(1)
+		setup.userService.EXPECT().IsTaskAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(true, nil).Times(1)
 		setup.submissionRepository.EXPECT().GetAllForTaskByUser(gomock.Any(), int64(1), int64(1), 10, 0, "submitted_at:desc").Return(
 			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
@@ -628,7 +628,7 @@ func TestGetAllForTask(t *testing.T) {
 	})
 
 	t.Run("Student retrieves submissions for a task, but can't check if he is assigned", func(t *testing.T) {
-		setup.taskRepository.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, gorm.ErrRecordNotFound).Times(1)
+		setup.userService.EXPECT().IsTaskAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, gorm.ErrRecordNotFound).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}
@@ -639,7 +639,7 @@ func TestGetAllForTask(t *testing.T) {
 		assert.Nil(t, submissions)
 	})
 	t.Run("Student tries to retrieve submissions for a task they are not assigned to", func(t *testing.T) {
-		setup.taskRepository.EXPECT().IsAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, nil).Times(1)
+		setup.userService.EXPECT().IsTaskAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, nil).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
 		user := schemas.User{Role: "student", ID: 1}

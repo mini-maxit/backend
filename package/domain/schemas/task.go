@@ -57,5 +57,4 @@ type ContestWithTasks struct {
 
 type MyTasksResponse struct {
 	Contests []ContestWithTasks `json:"contests"`
-	Tasks    []TaskWithAttempts `json:"tasks"` // Tasks not associated with any contest
 }

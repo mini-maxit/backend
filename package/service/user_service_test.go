@@ -9,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
+	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -20,7 +21,8 @@ func TestGetUserByEmail(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	tx := &gorm.DB{}
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 
 	t.Run("User does not exist", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(tx, "nonexistentemail").Return(nil, gorm.ErrRecordNotFound).Times(1)
@@ -54,7 +56,8 @@ func TestGetUserByID(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 
 	t.Run("User does not exist", func(t *testing.T) {
 		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
@@ -88,7 +91,8 @@ func TestEditUser(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 
 	adminUser := schemas.User{
 		ID:   1,
@@ -148,7 +152,8 @@ func TestGetAllUsers(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
 	t.Run("No users", func(t *testing.T) {
@@ -193,7 +198,8 @@ func TestChangeRole(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 
 	adminUser := schemas.User{
 		ID:   1,
@@ -233,7 +239,8 @@ func TestChangePassword(t *testing.T) {
 	tx := &gorm.DB{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
-	us := service.NewUserService(ur)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
 
 	password := "password"
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
