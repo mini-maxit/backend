@@ -20,6 +20,7 @@ services:
       - .env
     environment:
       - DB_HOST=db
+      - DUMP=true
       - QUEUE_HOST=rabbitmq
       - FILE_STORAGE_HOST=file-storage
   db:

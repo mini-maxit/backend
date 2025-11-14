@@ -42,12 +42,12 @@ type groupsRequest struct {
 //
 //	@Tags			tasks
 //	@Summary		Get my assigned tasks
-//	@Description	Returns all live tasks assigned to the current user, grouped by contests and non-contest tasks
+//	@Description	Returns all live tasks assigned to the current user, grouped by contests with submission statistics
 //	@Produce		json
 //	@Param			limit	query		int	false	"Number of results to return (default: 100)"
 //	@Param			offset	query		int	false	"Number of results to skip (default: 0)"
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Task]]
+//	@Success		200	{object}	httputils.APIResponse[schemas.MyTasksResponse]
 //	@Router			/tasks/my [get]
 func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
