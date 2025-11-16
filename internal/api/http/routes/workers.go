@@ -49,7 +49,7 @@ func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := wr.workserService.GetStatus(currentUser)
 	if err != nil {
 		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusUnauthorized, err.Error())
+			httputils.ReturnError(w, http.StatusForbidden, err.Error())
 			return
 		} else if errors.Is(err, myerrors.ErrTimeout) {
 			httputils.ReturnError(w, http.StatusGatewayTimeout, err.Error())
@@ -83,7 +83,7 @@ func (wr *workerRoute) GetQueueStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := wr.workserService.GetQueueStatus(currentUser)
 	if err != nil {
 		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusUnauthorized, err.Error())
+			httputils.ReturnError(w, http.StatusForbidden, err.Error())
 			return
 		}
 		wr.logger.Errorw("Failed to get queue status", "error", err)
@@ -114,7 +114,7 @@ func (wr *workerRoute) ReconnectQueue(w http.ResponseWriter, r *http.Request) {
 	err := wr.workserService.ReconnectQueue(currentUser)
 	if err != nil {
 		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusUnauthorized, err.Error())
+			httputils.ReturnError(w, http.StatusForbidden, err.Error())
 			return
 		}
 		wr.logger.Errorw("Failed to reconnect queue", "error", err)
