@@ -961,14 +961,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := true
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -986,14 +988,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1010,14 +1014,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1034,14 +1040,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1058,14 +1066,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1081,7 +1091,7 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(999)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1097,7 +1107,7 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(10)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, errors.New("db error")).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 

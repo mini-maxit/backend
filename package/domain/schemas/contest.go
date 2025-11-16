@@ -6,16 +6,20 @@ import (
 	"github.com/mini-maxit/backend/package/domain/types"
 )
 
+type BaseContest struct {
+	ID          int64      `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	CreatedBy   int64      `json:"createdBy"`
+	StartAt     time.Time  `json:"startAt"`
+	EndAt       *time.Time `json:"endAt"`
+}
+
 type Contest struct {
-	ID               int64      `json:"id"`
-	Name             string     `json:"name"`
-	Description      string     `json:"description"`
-	CreatedBy        int64      `json:"createdBy"`
-	StartAt          time.Time  `json:"startAt"`
-	EndAt            *time.Time `json:"endAt"`
-	ParticipantCount int64      `json:"participantCount"`
-	TaskCount        int64      `json:"taskCount"`
-	Status           string     `json:"status"` // "upcoming", "ongoing", "past"
+	BaseContest
+	ParticipantCount int64               `json:"participantCount"`
+	TaskCount        int64               `json:"taskCount"`
+	Status           types.ContestStatus `json:"status"` // "upcoming", "ongoing", "past"
 }
 
 type AvailableContest struct {
@@ -24,7 +28,7 @@ type AvailableContest struct {
 }
 
 type CreatedContest struct {
-	Contest
+	BaseContest
 	IsRegistrationOpen *bool `json:"isRegistrationOpen"`
 	IsSubmissionOpen   *bool `json:"isSubmissionOpen"`
 	IsVisible          *bool `json:"isVisible"`

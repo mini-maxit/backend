@@ -107,10 +107,12 @@ func TestGetContest(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		contest := &schemas.Contest{
-			ID:          1,
-			Name:        "Test Contest",
-			Description: "Test Description",
-			CreatedBy:   1,
+			BaseContest: schemas.BaseContest{
+				ID:          1,
+				Name:        "Test Contest",
+				Description: "Test Description",
+				CreatedBy:   1,
+			},
 		}
 
 		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
@@ -310,12 +312,14 @@ func TestGetOngoingContests(t *testing.T) {
 		contests := []schemas.AvailableContest{
 			{
 				Contest: schemas.Contest{
-					ID:               1,
-					Name:             "Ongoing Contest",
-					Description:      "Test Description",
-					CreatedBy:        1,
-					StartAt:          now,
-					EndAt:            nil,
+					BaseContest: schemas.BaseContest{
+						ID:          1,
+						Name:        "Ongoing Contest",
+						Description: "Test Description",
+						CreatedBy:   1,
+						StartAt:     now,
+						EndAt:       nil,
+					},
 					ParticipantCount: 5,
 					TaskCount:        3,
 				},
