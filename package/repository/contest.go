@@ -13,7 +13,7 @@ import (
 type ContestRepository interface {
 	// Create creates a new contest
 	Create(tx *gorm.DB, contest *models.Contest) (int64, error)
-	// Get retrieves a contest by ID with participant and task counts
+	// Get retrieves a contest by ID
 	Get(tx *gorm.DB, contestID int64) (*models.Contest, error)
 	// Get retrieves a contest by ID with participant and task counts
 	GetWithCount(tx *gorm.DB, contestID int64) (*models.ParticipantContestStats, error)

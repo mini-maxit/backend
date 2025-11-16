@@ -533,7 +533,6 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 				ongoing = append(ongoing, contestSchema)
 			} else {
 				// Contest has ended
-				cs.logger.Info(contest)
 				pastContest := *ParticipantContestStatsToPastSchema(&contest)
 				past = append(past, pastContest)
 			}
@@ -974,6 +973,10 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 }
 
 func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats) *schemas.PastContestWithStats {
+	solvedPercentage := 0.0
+	if contest.TaskCount > 0 {
+		solvedPercentage = float64(contest.SolvedTaskCount) / float64(contest.TaskCount) * 100
+	}
 	return &schemas.PastContestWithStats{
 		Contest: schemas.Contest{
 			BaseContest: schemas.BaseContest{
@@ -984,11 +987,11 @@ func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats
 				StartAt:     contest.StartAt,
 				EndAt:       contest.EndAt,
 			},
-			TaskCount:        contest.TestCount,
+			TaskCount:        contest.TaskCount,
 			ParticipantCount: contest.ParticipantCount,
 			Status:           getContestStatus(contest.StartAt, contest.EndAt),
 		},
-		SolvedTaskPercentage: float64(contest.SolvedTaskCount) / float64(contest.TaskCount) * 100,
+		SolvedTaskPercentage: solvedPercentage,
 		Score:                contest.SolvedTestCount,
 		MaximumScore:         contest.TestCount,
 		Rank:                 0, // TODO: implement
