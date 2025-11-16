@@ -188,22 +188,19 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 		Payload:   payloadJSON,
 	}
 
-	go func() {
-		err := qs.publishMessage(msg)
-		if err != nil {
-			// Don't fail the submission - just keep it in "received" status
-			// It will be picked up later when queue becomes available
-			qs.logger.Warnf("Queue unavailable - submission %d will be queued later: %v", submissionID, err)
-			return
-		}
-
-		err = qs.submissionRepository.MarkProcessing(tx, submissionID)
-		if err != nil {
-			qs.logger.Errorf("Error marking submission processing: %v", err)
-			return
-		}
-		qs.logger.Info("Submission published")
-	}()
+	err = qs.publishMessage(msg)
+	if err != nil {
+		// Don't fail the submission - just keep it in "received" status
+		// It will be picked up later when queue becomes available
+		qs.logger.Warnf("Queue unavailable - submission %d will be queued later: %v", submissionID, err)
+		return nil
+	}
+	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
+	if err != nil {
+		qs.logger.Errorf("Error marking submission processing: %v", err)
+		return err
+	}
+	qs.logger.Info("Submission published")
 
 	return nil
 }

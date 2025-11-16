@@ -125,7 +125,10 @@ func (c *client) Shutdown() error {
 }
 
 func (c *client) IsConnected() bool {
-	c.connMux.RLock()
+	locked := c.connMux.TryRLock()
+	if !locked {
+		return false
+	}
 	defer c.connMux.RUnlock()
 	return c.conn != nil && !c.conn.IsClosed() &&
 		c.pubChan != nil && !c.pubChan.IsClosed() &&

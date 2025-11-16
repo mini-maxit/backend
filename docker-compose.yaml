@@ -43,7 +43,7 @@ services:
     volumes:
       - file-storage-media:/app/file-storage-media
   worker:
-    image: maxit/worker
+    image: seber/maxit-worker
     pull_policy: never
     depends_on:
       - file-storage
