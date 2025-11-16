@@ -198,7 +198,7 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error marking submission processing: %v", err)
-		return nil
+		return err
 	}
 	qs.logger.Info("Submission published")
 
