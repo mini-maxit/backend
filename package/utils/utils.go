@@ -92,7 +92,7 @@ func NewValidator() (*validator.Validate, error) {
 // ValidateRoleAccess validates if the current role has access to the resource.
 func ValidateRoleAccess(currentRole types.UserRole, acceptedRoles []types.UserRole) error {
 	if !slices.Contains(acceptedRoles, currentRole) {
-		return errors.ErrNotAuthorized
+		return errors.ErrForbidden
 	}
 	return nil
 }

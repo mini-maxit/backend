@@ -83,7 +83,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to create contest", "error", err)
@@ -154,7 +154,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
@@ -213,7 +213,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
@@ -275,7 +275,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get available tasks for contest", "error", err)
@@ -344,7 +344,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
@@ -415,7 +415,7 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get registration requests", "error", err)
@@ -463,7 +463,7 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
@@ -531,7 +531,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
@@ -595,7 +595,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get tasks for contest", "error", err)
@@ -713,7 +713,7 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get created contests", "error", err)

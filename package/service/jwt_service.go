@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -209,6 +210,9 @@ func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schema
 			return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrTokenUserNotFound
 		}
 		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
+	}
+	if user.Role != types.UserRole(claims.Role) {
+		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrNotAuthorized
 	}
 
 	return &schemas.ValidateTokenResponse{Valid: true, User: *UserToSchema(user)}, nil

@@ -90,7 +90,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			gr.logger.Errorw("Failed to create group", "error", err)
@@ -148,7 +148,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			gr.logger.Errorw("Failed to get group", "error", err)
@@ -194,7 +194,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			gr.logger.Errorw("Failed to list groups", "error", err)
@@ -264,7 +264,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			gr.logger.Errorw("Failed to edit group", "error", err)
@@ -335,7 +335,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound
@@ -408,7 +408,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 		db.Rollback()
 		var status int
 		switch {
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			status = http.StatusForbidden
 		case errors.Is(err, myerrors.ErrUserNotFound):
 			status = http.StatusBadRequest
@@ -471,7 +471,7 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
 			status = http.StatusNotFound

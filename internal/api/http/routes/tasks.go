@@ -109,7 +109,7 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			tr.logger.Errorw("Failed to get all tasks", "error", err)
@@ -166,7 +166,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 		db.Rollback()
 		status := http.StatusInternalServerError
 		switch {
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			status = http.StatusForbidden
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound

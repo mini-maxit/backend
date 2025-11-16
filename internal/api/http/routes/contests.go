@@ -77,7 +77,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get contest", "error", err)
@@ -200,7 +200,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 		db.Rollback()
 		status := http.StatusInternalServerError
 		switch {
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			status = http.StatusForbidden
 		case errors.Is(err, myerrors.ErrNotFound):
 			status = http.StatusNotFound
@@ -267,7 +267,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 		status := http.StatusInternalServerError
 		if errors.Is(err, myerrors.ErrNotFound) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+		} else if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			cr.logger.Errorw("Failed to get task progress for contest", "error", err)
@@ -380,7 +380,7 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 		switch {
 		case errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrTaskNotInContest):
 			status = http.StatusNotFound
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			status = http.StatusForbidden
 		default:
 			cr.logger.Errorw("Failed to get contest task", "error", err)

@@ -111,7 +111,7 @@ func TestEditUser(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		err := us.Edit(tx, studentUser, adminUser.ID, &schemas.UserEdit{})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
@@ -218,7 +218,7 @@ func TestChangeRole(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		err := us.ChangeRole(tx, studentUser, adminUser.ID, types.UserRoleAdmin)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -267,7 +267,7 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		err := us.ChangePassword(tx, randomUser, user.ID, &schemas.UserChangePassword{})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Invalid old password", func(t *testing.T) {

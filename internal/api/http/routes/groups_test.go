@@ -156,7 +156,7 @@ func TestCreateGroup(t *testing.T) {
 			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, expectedGroup.Name, group.Name)
 				assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
-				return 0, myerrors.ErrNotAuthorized
+				return 0, myerrors.ErrForbidden
 			}).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
@@ -313,7 +313,7 @@ func TestGetGroup(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized).Times(1)
+		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/1")
 		require.NoError(t, err)
@@ -404,7 +404,7 @@ func TestGetAllGroup(t *testing.T) {
 		assert.Contains(t, string(bodyBytes), "Internal Server Error")
 	})
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized).Times(1)
+		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/")
 		require.NoError(t, err)
@@ -556,7 +556,7 @@ func TestEditGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().Edit(gomock.Any(), gomock.Any(), int64(1), &body).
-			Return(nil, myerrors.ErrNotAuthorized).Times(1)
+			Return(nil, myerrors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -711,7 +711,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrNotAuthorized).Times(1)
+			Return(myerrors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -905,7 +905,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrNotAuthorized).Times(1)
+			Return(myerrors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -1082,7 +1082,7 @@ func TestGetGroupUsers(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrNotAuthorized).Times(1)
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/1/users")
 		require.NoError(t, err)

@@ -87,7 +87,7 @@ func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
 
 func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	if currentUser.Role != types.UserRoleAdmin && currentUser.ID != userID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {
@@ -115,7 +115,7 @@ func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64,
 
 func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userID int64, role types.UserRole) error {
 	if currentUser.Role != types.UserRoleAdmin {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {
@@ -141,7 +141,7 @@ func (us *userService) ChangePassword(
 	data *schemas.UserChangePassword,
 ) error {
 	if currentUser.ID != userID && currentUser.Role != types.UserRoleAdmin {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {

@@ -42,19 +42,20 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 		tokenResponse, err := jwtService.AuthenticateToken(tx, token)
 		if err != nil {
 			tx.Rollback()
-
 			if errors.Is(err, myerrors.ErrInvalidToken) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Invalid token")
 				return
-			}
-			if errors.Is(err, myerrors.ErrTokenExpired) {
+			} else if errors.Is(err, myerrors.ErrTokenExpired) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Token expired")
 				return
-			}
-			if errors.Is(err, myerrors.ErrTokenUserNotFound) {
+			} else if errors.Is(err, myerrors.ErrTokenUserNotFound) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "User associated with token not found")
 				return
+			} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+				httputils.ReturnError(w, http.StatusUnauthorized, "Malformed or outdated token")
+				return
 			}
+
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate token. "+err.Error())
 			return
 		}

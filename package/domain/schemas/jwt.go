@@ -1,6 +1,8 @@
 package schemas
 
-import "time"
+import (
+	"time"
+)
 
 // JWTTokens represents the response containing access and refresh tokens
 type JWTTokens struct {

@@ -426,7 +426,7 @@ func TestEditUser(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAuthorized).Times(1)
+		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
 
 		handler.ServeHTTP(w, req)
 
@@ -665,7 +665,7 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAuthorized).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
 
 		handler.ServeHTTP(w, req)
 

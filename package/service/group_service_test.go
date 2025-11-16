@@ -41,7 +41,7 @@ func TestCreateGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
 		})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Equal(t, int64(0), groupID)
 	})
 }
@@ -69,7 +69,7 @@ func TestDeleteGroup(t *testing.T) {
 	t.Run("Not authorized student", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		err := gs.Delete(tx, *currentUser, 2)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestDeleteGroup(t *testing.T) {
 			CreatedBy: 1,
 		}, nil).Times(1)
 		err := gs.Delete(tx, *currentUser, 2)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
@@ -117,7 +117,7 @@ func TestGetAllGroup(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, groups)
 	})
 
@@ -164,7 +164,7 @@ func TestGetGroup(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		group, err := gs.Get(tx, *currentUser, 1)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, group)
 	})
 }
@@ -195,7 +195,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		groupID := int64(1) // Assuming the group ID is 1 for the test
 		user := &schemas.User{ID: 3}
 		err := gs.AddUsers(tx, *currentUser, groupID, []int64{user.ID})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
@@ -226,9 +226,9 @@ func TestGetGroupUsers(t *testing.T) {
 		groupID := int64(1)
 		user := &schemas.User{ID: 3}
 		err := gs.AddUsers(tx, *currentUser, groupID, []int64{user.ID})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		users, err := gs.GetUsers(tx, *currentUser, groupID)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, users)
 	})
 }
@@ -286,7 +286,7 @@ func TestEditGroup(t *testing.T) {
 			Name: &newGroupName,
 		}
 		updatedGroup, err := gs.Edit(tx, *currentUser, group.ID, editInfo)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, updatedGroup)
 	})
 
@@ -332,7 +332,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		user := &schemas.User{ID: 3}
 		err := gs.DeleteUsers(tx, *currentUser, groupID, []int64{user.ID})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Not authorized teacher", func(t *testing.T) {
@@ -345,7 +345,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
 		user := &schemas.User{ID: 2}
 		err := gs.DeleteUsers(tx, *currentUser, group.ID, []int64{user.ID})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("User not found", func(t *testing.T) {

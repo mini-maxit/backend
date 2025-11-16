@@ -87,7 +87,7 @@ func TestValidateRoleAccess(t *testing.T) {
 
 		err := utils.ValidateRoleAccess(currentRole, acceptedRoles)
 		require.Error(t, err)
-		assert.Equal(t, errors.ErrNotAuthorized, err)
+		assert.Equal(t, errors.ErrForbidden, err)
 	})
 }
 

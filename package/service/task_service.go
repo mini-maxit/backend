@@ -217,7 +217,7 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int6
 		return err
 	}
 	if currentUser.Role == types.UserRoleTeacher && task.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	err = ts.taskRepository.Delete(tx, taskID)
@@ -240,7 +240,7 @@ func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64,
 	}
 	if currentUser.Role == types.UserRoleTeacher &&
 		(currentTask.CreatedBy != currentUser.ID || currentUser.Role == types.UserRoleStudent) {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	ts.updateModel(currentTask, updateInfo)
@@ -490,7 +490,7 @@ func (ts *taskService) PutLimits(
 	}
 
 	if task.CreatedBy != currentUser.ID && currentUser.Role != types.UserRoleAdmin {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	for _, io := range newLimits.Limits {
