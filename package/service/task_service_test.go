@@ -156,7 +156,7 @@ func TestCreateTask(t *testing.T) {
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
 		})
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Equal(t, int64(0), taskID)
 	})
 }
@@ -353,7 +353,7 @@ func TestDeleteTask(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		err := ts.Delete(tx, currentUser, taskID)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
@@ -511,7 +511,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		result, err := ts.GetAllCreated(tx, studentUser, queryParams)
-		require.ErrorIs(t, err, errors.ErrNotAuthorized)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
 	})

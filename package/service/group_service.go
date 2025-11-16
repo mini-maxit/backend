@@ -81,7 +81,7 @@ func (gs *groupService) Delete(tx *gorm.DB, currentUser schemas.User, groupID in
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	return gs.groupRepository.Delete(tx, groupID)
@@ -114,7 +114,7 @@ func (gs *groupService) Edit(
 		return nil, err
 	}
 	if currentUser.Role == types.UserRoleTeacher && model.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	gs.updateModel(model, editInfo)
@@ -153,9 +153,9 @@ func (gs *groupService) GetAll(
 			return nil, err
 		}
 	case types.UserRoleStudent:
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	default:
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 	result := make([]schemas.Group, len(groups))
 	for i, group := range groups {
@@ -180,7 +180,7 @@ func (gs *groupService) Get(tx *gorm.DB, currentUser schemas.User, groupID int64
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	return GroupToSchemaDetailed(group), nil
@@ -201,7 +201,7 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	for _, userID := range userIDs {
@@ -241,7 +241,7 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	for _, userID := range userIDs {
@@ -281,7 +281,7 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	users, err := gs.groupRepository.GetUsers(tx, groupID)

@@ -126,10 +126,10 @@ func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID i
 	// Check visibility and permissions
 	if !*contest.IsVisible {
 		if currentUser.Role == types.UserRoleStudent {
-			return nil, myerrors.ErrNotAuthorized
+			return nil, myerrors.ErrForbidden
 		}
 		if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-			return nil, myerrors.ErrNotAuthorized
+			return nil, myerrors.ErrForbidden
 		}
 	}
 
@@ -254,7 +254,7 @@ func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID 
 
 	// Check permissions
 	if currentUser.Role == types.UserRoleTeacher && model.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	cs.updateModel(model, editInfo)
@@ -282,7 +282,7 @@ func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestI
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	return cs.contestRepository.Delete(tx, contestID)
@@ -301,10 +301,10 @@ func (cs *contestService) RegisterForContest(tx *gorm.DB, currentUser schemas.Us
 	// Check if contest is visible to user
 	if !*contest.IsVisible {
 		if currentUser.Role == types.UserRoleStudent {
-			return myerrors.ErrNotAuthorized
+			return myerrors.ErrForbidden
 		}
 		if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-			return myerrors.ErrNotAuthorized
+			return myerrors.ErrForbidden
 		}
 	}
 
@@ -387,7 +387,7 @@ func (cs *contestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.Us
 	}
 
 	if !cs.isContestVisibleToUser(tx, contest, &currentUser) {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	relations, err := cs.contestRepository.GetContestTasksWithSettings(tx, contestID)
@@ -418,7 +418,7 @@ func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser sch
 	}
 
 	if !cs.isContestVisibleToUser(tx, contest, &currentUser) {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	// Fetch raw task models (repository method unchanged - does not include per-contest timing fields)
@@ -467,12 +467,12 @@ func (cs *contestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas.Us
 	// Only admins and teachers can see available tasks for adding to contest
 	err = utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	// Additional check: user must be the contest creator (for teachers)
 	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	tasks, err := cs.contestRepository.GetAssignableTasks(tx, contestID)
@@ -564,7 +564,7 @@ func (cs *contestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.Use
 		return err
 	}
 	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	startAt := time.Now()
@@ -713,7 +713,7 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 
 	// Check authorization - only contest creator or admin can view registration requests
 	if currentUser.Role != types.UserRoleAdmin && contest.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	// Get registration requests from repository
@@ -752,7 +752,7 @@ func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser sc
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	// Check if user exists
@@ -807,7 +807,7 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	// Check if user exists
@@ -953,7 +953,7 @@ func (cs *contestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User,
 		return nil, err
 	}
 	if !cs.isContestVisibleToUser(tx, contest, currentUser) {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	_, err = cs.contestRepository.GetContestTask(tx, contestID, taskID)

@@ -29,7 +29,7 @@ func (ws *workerService) GetStatus(currentUser schemas.User) (*schemas.WorkerSta
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher},
 	); err != nil {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	err := ws.queueService.PublishWorkerStatus()
@@ -76,7 +76,7 @@ func (ws *workerService) GetQueueStatus(currentUser schemas.User) (*schemas.Queu
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin},
 	); err != nil {
-		return nil, myerrors.ErrNotAuthorized
+		return nil, myerrors.ErrForbidden
 	}
 
 	connected := ws.queueService.IsConnected()
@@ -100,7 +100,7 @@ func (ws *workerService) ReconnectQueue(currentUser schemas.User) error {
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin},
 	); err != nil {
-		return myerrors.ErrNotAuthorized
+		return myerrors.ErrForbidden
 	}
 
 	// Check if queue is connected

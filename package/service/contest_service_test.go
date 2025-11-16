@@ -404,7 +404,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -442,7 +442,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -770,7 +770,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -808,7 +808,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -1047,7 +1047,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("unauthorized - teacher viewing invisible contest not created by them", func(t *testing.T) {
@@ -1071,7 +1071,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		require.ErrorIs(t, err, myerrors.ErrNotAuthorized)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {

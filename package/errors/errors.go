@@ -14,8 +14,11 @@ var ErrTaskExists = errors.New("task with this title already exists")
 // ErrTaskNotFound is returned when the specified task is not found.
 var ErrTaskNotFound = errors.New("task not found")
 
-// ErrNotAuthorized is returned when the user is not authorized to perform the action.
-var ErrNotAuthorized = errors.New("not authorized to perform this action")
+// ErrForbidden is returned when the user is not authorized to perform the action.
+var ErrForbidden = errors.New("not authorized to perform this action")
+
+// ErrNotAuthorized is returned when the user is not authorized.
+var ErrNotAuthorized = errors.New("not authorized")
 
 // ErrTaskAlreadyAssigned is returned when the task is already assigned to the user.
 var ErrTaskAlreadyAssigned = errors.New("task is already assigned to the user")

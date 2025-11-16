@@ -132,7 +132,7 @@ func TestCreateContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		cs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), myerrors.ErrNotAuthorized)
+		cs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), myerrors.ErrForbidden)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -265,7 +265,7 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
+		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -387,7 +387,7 @@ func TestDeleteContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotAuthorized)
+		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1", nil)
 		if err != nil {
@@ -476,7 +476,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -617,7 +617,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNotAuthorized)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrForbidden)
 
 		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
 		if err != nil {

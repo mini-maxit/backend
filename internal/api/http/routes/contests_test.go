@@ -94,7 +94,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotAuthorized)
+		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -186,7 +186,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized - contest not visible", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotAuthorized)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {

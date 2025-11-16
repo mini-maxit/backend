@@ -108,7 +108,7 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			tr.logger.Errorw("Failed to upload task", "error", err)
@@ -182,7 +182,7 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		db.Rollback()
 		switch {
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this task.")
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
@@ -274,7 +274,7 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			tr.logger.Errorw("Failed to delete task", "error", err)
@@ -398,7 +398,7 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		switch {
 		case errors.Is(err, myerrors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to update limits for this task.")
 		default:
 			tr.logger.Errorw("Failed to put task limits", "error", err)
@@ -446,7 +446,7 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotAuthorized) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			status = http.StatusForbidden
 		} else {
 			tr.logger.Errorw("Failed to get created tasks", "error", err)

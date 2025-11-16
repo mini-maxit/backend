@@ -188,7 +188,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, myerrors.ErrUserNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "User not found")
 			return
-		case errors.Is(err, myerrors.ErrNotAuthorized):
+		case errors.Is(err, myerrors.ErrForbidden):
 			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
 			return
 		default:
@@ -265,7 +265,7 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		}{
 			myerrors.ErrNotAllowed:         {http.StatusForbidden, "You are not allowed to change user role"},
 			myerrors.ErrUserNotFound:       {http.StatusNotFound, "User not found"},
-			myerrors.ErrNotAuthorized:      {http.StatusForbidden, "You are not authorized to edit this user"},
+			myerrors.ErrForbidden:          {http.StatusForbidden, "You are not authorized to edit this user"},
 			myerrors.ErrInvalidCredentials: {http.StatusBadRequest, "Invalid old password"},
 			myerrors.ErrInvalidData:        {http.StatusBadRequest, "New password and confirm password do not match"},
 		}
