@@ -9,11 +9,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type AccessControlRoute interface {
@@ -608,7 +612,7 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
 }
 
-func NewAccessControlRoute(contestService service.ContestService, taskService service.TaskService) AccessControlRoute {
+func NewAccessControlRoute(accessControlService service.AccessControlService, contestRepository repository.ContestRepository, taskRepository repository.TaskRepository) AccessControlRoute {
 	route := &accessControlRoute{
 		contestService: contestService,
 		taskService:    taskService,

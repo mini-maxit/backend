@@ -66,18 +66,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create file storage service: %s", err.Error())
 	}
-	taskService := service.NewTaskService(
-		filestorage,
-		fileRepository,
-		taskRepository,
-		testCaseRepository,
-		userRepository,
-		groupRepository,
-		submissionRepository,
-		contestRepository,
-		accessControlRepository,
-	)
-
+	
 	// Create queue client (shared by both service and listener)
 	queueClient := pkgqueue.NewClient(
 		pkgqueue.Config{
@@ -107,7 +96,24 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlRepository, taskService)
+	
+	// Create AccessControlService first
+	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository)
+	
+	// Create TaskService (needs AccessControlService)
+	taskService := service.NewTaskService(
+		filestorage,
+		fileRepository,
+		taskRepository,
+		testCaseRepository,
+		userRepository,
+		groupRepository,
+		submissionRepository,
+		contestRepository,
+		accessControlService,
+	)
+	
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlService, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
@@ -136,7 +142,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(taskService)
 	tasksManagementRoute := routes.NewTasksManagementRoute(taskService)
-	accessControlRoute := routes.NewAccessControlRoute(contestService, taskService)
+	accessControlRoute := routes.NewAccessControlRoute(accessControlService, contestRepository, taskRepository)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
