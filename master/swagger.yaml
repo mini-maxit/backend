@@ -93,6 +93,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-PaginatedResult-array_User:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-array_User'
+      ok:
+        type: boolean
+    type: object
   APIResponse-QueueStatus:
     properties:
       data:
@@ -530,6 +537,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/Task'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginatedResult-array_User:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/User'
         type: array
       pagination:
         $ref: '#/definitions/PaginationMetadata'
@@ -2496,7 +2512,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-User'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_User'
         "405":
           description: Method Not Allowed
           schema:
