@@ -98,7 +98,7 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	var totalCount int64
 
 	// Get total count first (only globally visible tasks)
-	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_globally_visible = ?", true).Count(&totalCount).Error
+	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -107,7 +107,7 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	if err != nil {
 		return nil, 0, err
 	}
-	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_globally_visible = ?", true).Find(&tasks).Error
+	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Find(&tasks).Error
 	if err != nil {
 		return nil, 0, err
 	}

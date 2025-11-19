@@ -5,7 +5,7 @@ type Task struct {
 	Title             string `gorm:"type:varchar(255)"`
 	DescriptionFileID int64  `gorm:"null;default:null"`
 	CreatedBy         int64  `gorm:"foreignKey:UserID"`
-	IsVisible         bool   `gorm:"default:false"`
+	IsVisible         bool   `gorm:"default:false;not null"`
 
 	BaseModel
 
