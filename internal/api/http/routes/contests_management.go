@@ -29,6 +29,12 @@ type ContestsManagementRoute interface {
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
+	
+	// Collaborator management
+	AddContestCollaborator(w http.ResponseWriter, r *http.Request)
+	GetContestCollaborators(w http.ResponseWriter, r *http.Request)
+	UpdateContestCollaborator(w http.ResponseWriter, r *http.Request)
+	RemoveContestCollaborator(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -724,6 +730,290 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+// AddContestCollaborator godoc
+//
+//	@Tags			contests-management
+//	@Summary		Add a collaborator to a contest
+//	@Description	Add a user as a collaborator to a contest with specified permissions (view, edit, or manage). Only users with manage permission can add collaborators.
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int						true	"Contest ID"
+//	@Param			body	body		schemas.AddCollaborator	true	"Collaborator details"
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/collaborators [post]
+func (cr *contestsManagementRouteImpl) AddContestCollaborator(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	var request schemas.AddCollaborator
+	err = httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	err = cr.contestService.AddContestCollaborator(tx, currentUser, contestID, &request)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrForbidden) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to add collaborator", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to add collaborator")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator added successfully"))
+}
+
+// GetContestCollaborators godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get collaborators for a contest
+//	@Description	Get all collaborators for a specific contest. Users with view permission or higher can see collaborators.
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Collaborator]
+//	@Router			/contests-management/contests/{id}/collaborators [get]
+func (cr *contestsManagementRouteImpl) GetContestCollaborators(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	collaborators, err := cr.contestService.GetContestCollaborators(tx, currentUser, contestID)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrForbidden) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to get collaborators", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to get collaborators")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, collaborators)
+}
+
+// UpdateContestCollaborator godoc
+//
+//	@Tags			contests-management
+//	@Summary		Update a collaborator's permission
+//	@Description	Update the permission level of a collaborator for a contest. Only users with manage permission can update collaborators.
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int							true	"Contest ID"
+//	@Param			user_id	path		int							true	"User ID"
+//	@Param			body	body		schemas.UpdateCollaborator	true	"New permission"
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/collaborators/{user_id} [put]
+func (cr *contestsManagementRouteImpl) UpdateContestCollaborator(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	userStr := httputils.GetPathValue(r, "user_id")
+	if userStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
+		return
+	}
+	userID, err := strconv.ParseInt(userStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	var request schemas.UpdateCollaborator
+	err = httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		var valErrs validator.ValidationErrors
+		if errors.As(err, &valErrs) {
+			httputils.ReturnValidationError(w, valErrs)
+			return
+		}
+		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	err = cr.contestService.UpdateContestCollaborator(tx, currentUser, contestID, userID, &request)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrForbidden) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to update collaborator", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to update collaborator permission")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator permission updated successfully"))
+}
+
+// RemoveContestCollaborator godoc
+//
+//	@Tags			contests-management
+//	@Summary		Remove a collaborator from a contest
+//	@Description	Remove a user's collaborator access to a contest. Only users with manage permission can remove collaborators. Cannot remove the creator.
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			user_id	path		int	true	"User ID"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/collaborators/{user_id} [delete]
+func (cr *contestsManagementRouteImpl) RemoveContestCollaborator(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	userStr := httputils.GetPathValue(r, "user_id")
+	if userStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
+		return
+	}
+	userID, err := strconv.ParseInt(userStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+
+	err = cr.contestService.RemoveContestCollaborator(tx, currentUser, contestID, userID)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrForbidden) {
+			status = http.StatusForbidden
+		} else if errors.Is(err, myerrors.ErrNotFound) {
+			status = http.StatusNotFound
+		} else {
+			cr.logger.Errorw("Failed to remove collaborator", "error", err)
+		}
+		httputils.ReturnError(w, status, err.Error())
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
+}
+
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -778,6 +1068,28 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
+
+	mux.HandleFunc("/contests/{id}/collaborators", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetContestCollaborators(w, r)
+		case http.MethodPost:
+			route.AddContestCollaborator(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/collaborators/{user_id}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPut:
+			route.UpdateContestCollaborator(w, r)
+		case http.MethodDelete:
+			route.RemoveContestCollaborator(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
 }
 
 func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {

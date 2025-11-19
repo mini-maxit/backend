@@ -43,6 +43,20 @@ func (m *MockContestService) EXPECT() *MockContestServiceMockRecorder {
 	return m.recorder
 }
 
+// AddContestCollaborator mocks base method.
+func (m *MockContestService) AddContestCollaborator(tx *gorm.DB, currentUser schemas.User, contestID int64, request *schemas.AddCollaborator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddContestCollaborator", tx, currentUser, contestID, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddContestCollaborator indicates an expected call of AddContestCollaborator.
+func (mr *MockContestServiceMockRecorder) AddContestCollaborator(tx, currentUser, contestID, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddContestCollaborator", reflect.TypeOf((*MockContestService)(nil).AddContestCollaborator), tx, currentUser, contestID, request)
+}
+
 // AddTaskToContest mocks base method.
 func (m *MockContestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
 	m.ctrl.T.Helper()
@@ -143,6 +157,21 @@ func (m *MockContestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas
 func (mr *MockContestServiceMockRecorder) GetAssignableTasks(tx, currentUser, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestService)(nil).GetAssignableTasks), tx, currentUser, contestID)
+}
+
+// GetContestCollaborators mocks base method.
+func (m *MockContestService) GetContestCollaborators(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Collaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestCollaborators", tx, currentUser, contestID)
+	ret0, _ := ret[0].([]schemas.Collaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestCollaborators indicates an expected call of GetContestCollaborators.
+func (mr *MockContestServiceMockRecorder) GetContestCollaborators(tx, currentUser, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestCollaborators", reflect.TypeOf((*MockContestService)(nil).GetContestCollaborators), tx, currentUser, contestID)
 }
 
 // GetContestTask mocks base method.
@@ -351,6 +380,34 @@ func (m *MockContestService) RejectRegistrationRequest(tx *gorm.DB, currentUser 
 func (mr *MockContestServiceMockRecorder) RejectRegistrationRequest(tx, currentUser, contestID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectRegistrationRequest", reflect.TypeOf((*MockContestService)(nil).RejectRegistrationRequest), tx, currentUser, contestID, userID)
+}
+
+// RemoveContestCollaborator mocks base method.
+func (m *MockContestService) RemoveContestCollaborator(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveContestCollaborator", tx, currentUser, contestID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveContestCollaborator indicates an expected call of RemoveContestCollaborator.
+func (mr *MockContestServiceMockRecorder) RemoveContestCollaborator(tx, currentUser, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveContestCollaborator", reflect.TypeOf((*MockContestService)(nil).RemoveContestCollaborator), tx, currentUser, contestID, userID)
+}
+
+// UpdateContestCollaborator mocks base method.
+func (m *MockContestService) UpdateContestCollaborator(tx *gorm.DB, currentUser schemas.User, contestID, userID int64, request *schemas.UpdateCollaborator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateContestCollaborator", tx, currentUser, contestID, userID, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateContestCollaborator indicates an expected call of UpdateContestCollaborator.
+func (mr *MockContestServiceMockRecorder) UpdateContestCollaborator(tx, currentUser, contestID, userID, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContestCollaborator", reflect.TypeOf((*MockContestService)(nil).UpdateContestCollaborator), tx, currentUser, contestID, userID, request)
 }
 
 // ValidateContestSubmission mocks base method.
