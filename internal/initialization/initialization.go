@@ -58,6 +58,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	queueRepository := repository.NewQueueMessageRepository()
 	submissionResultRepository := repository.NewSubmissionResultRepository()
 	contestRepository := repository.NewContestRepository()
+	collaboratorRepository := repository.NewCollaboratorRepository()
 
 	// Services
 	filestorage, err := filestorage.NewFileStorageService(cfg.FileStorageURL)
@@ -104,7 +105,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, taskService)
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, collaboratorRepository, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
