@@ -2,3 +2,5 @@
 UPDATE "maxit"."contests" SET "start_at" = "created_at" WHERE "start_at" IS NULL;
 -- Modify "contests" table
 ALTER TABLE "maxit"."contests" ALTER COLUMN "start_at" SET NOT NULL;
+-- Modify "tasks" table
+ALTER TABLE "maxit"."tasks" ADD COLUMN "is_visible" boolean NULL DEFAULT true;

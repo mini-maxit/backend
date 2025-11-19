@@ -3,17 +3,17 @@ package schemas
 import "time"
 
 type EditTask struct {
-	Title             *string `json:"title,omitempty"`
-	IsGloballyVisible *bool   `json:"isGloballyVisible,omitempty"`
+	Title     *string `json:"title,omitempty"`
+	IsVisible *bool   `json:"isVisible,omitempty"`
 }
 
 type Task struct {
-	ID                int64     `json:"id"`
-	Title             string    `json:"title"`
-	CreatedBy         int64     `json:"createdBy"`
-	CreatedAt         time.Time `json:"createdAt"`
-	UpdatedAt         time.Time `json:"updatedAt"`
-	IsGloballyVisible bool      `json:"isGloballyVisible"`
+	ID        int64     `json:"id"`
+	Title     string    `json:"title"`
+	CreatedBy int64     `json:"createdBy"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	IsVisible bool      `json:"isVisible"`
 }
 
 type TaskDetailed struct {

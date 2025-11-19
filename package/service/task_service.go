@@ -83,10 +83,10 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser schemas.User, task *schem
 	}
 
 	model := models.Task{
-		Title:             task.Title,
-		CreatedBy:         task.CreatedBy,
-		Author:            *author,
-		IsGloballyVisible: true, // Default to globally visible
+		Title:     task.Title,
+		CreatedBy: task.CreatedBy,
+		Author:    *author,
+		IsVisible: true, // Default to globally visible
 	}
 	taskID, err := ts.taskRepository.Create(tx, &model)
 	if err != nil {
@@ -521,19 +521,19 @@ func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schema
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title
 	}
-	if updateInfo.IsGloballyVisible != nil {
-		currentModel.IsGloballyVisible = *updateInfo.IsGloballyVisible
+	if updateInfo.IsVisible != nil {
+		currentModel.IsVisible = *updateInfo.IsVisible
 	}
 }
 
 func TaskToSchema(model *models.Task) *schemas.Task {
 	return &schemas.Task{
-		ID:                model.ID,
-		Title:             model.Title,
-		CreatedBy:         model.CreatedBy,
-		CreatedAt:         model.CreatedAt,
-		UpdatedAt:         model.UpdatedAt,
-		IsGloballyVisible: model.IsGloballyVisible,
+		ID:        model.ID,
+		Title:     model.Title,
+		CreatedBy: model.CreatedBy,
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
+		IsVisible: model.IsVisible,
 	}
 }
 

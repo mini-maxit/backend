@@ -226,10 +226,10 @@ func TestGetAllTasks(t *testing.T) {
 		currentUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tasks := []models.Task{
 			{
-				ID:                1,
-				Title:             "Test Task",
-				CreatedBy:         currentUser.ID,
-				IsGloballyVisible: true,
+				ID:        1,
+				Title:     "Test Task",
+				CreatedBy: currentUser.ID,
+				IsVisible: true,
 			},
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
@@ -237,7 +237,7 @@ func TestGetAllTasks(t *testing.T) {
 		resultTasks, err := ts.GetAll(tx, currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultTasks)
-		assert.True(t, resultTasks[0].IsGloballyVisible)
+		assert.True(t, resultTasks[0].IsVisible)
 	})
 
 	t.Run("Only globally visible tasks", func(t *testing.T) {
@@ -245,10 +245,10 @@ func TestGetAllTasks(t *testing.T) {
 		// Repository should only return globally visible tasks
 		tasks := []models.Task{
 			{
-				ID:                1,
-				Title:             "Visible Task",
-				CreatedBy:         currentUser.ID,
-				IsGloballyVisible: true,
+				ID:        1,
+				Title:     "Visible Task",
+				CreatedBy: currentUser.ID,
+				IsVisible: true,
 			},
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
@@ -257,7 +257,7 @@ func TestGetAllTasks(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, resultTasks, 1)
 		assert.Equal(t, "Visible Task", resultTasks[0].Title)
-		assert.True(t, resultTasks[0].IsGloballyVisible)
+		assert.True(t, resultTasks[0].IsVisible)
 	})
 }
 
@@ -418,22 +418,22 @@ func TestEditTask(t *testing.T) {
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 
-	t.Run("Update isGloballyVisible", func(t *testing.T) {
+	t.Run("Update isVisible", func(t *testing.T) {
 		task := &models.Task{
-			ID:                taskID,
-			Title:             "Test Task",
-			CreatedBy:         adminUser.ID,
-			IsGloballyVisible: true,
+			ID:        taskID,
+			Title:     "Test Task",
+			CreatedBy: adminUser.ID,
+			IsVisible: true,
 		}
 		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(1)
 		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
-			// Verify that IsGloballyVisible was updated
-			assert.False(t, updatedTask.IsGloballyVisible)
+			// Verify that IsVisible was updated
+			assert.False(t, updatedTask.IsVisible)
 			return nil
 		}).Times(1)
 
 		isVisible := false
-		updatedTask := &schemas.EditTask{IsGloballyVisible: &isVisible}
+		updatedTask := &schemas.EditTask{IsVisible: &isVisible}
 		err := ts.Edit(tx, adminUser, taskID, updatedTask)
 		require.NoError(t, err)
 	})
