@@ -35,9 +35,10 @@ type AccessControlRoute interface {
 }
 
 type accessControlRoute struct {
-	contestService service.ContestService
-	taskService    service.TaskService
-	logger         *zap.SugaredLogger
+	accessControlService service.AccessControlService
+	contestRepository    repository.ContestRepository
+	taskRepository       repository.TaskRepository
+	logger               *zap.SugaredLogger
 }
 
 // Contest Collaborators
@@ -96,7 +97,33 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.contestService.AddContestCollaborator(tx, currentUser, contestID, &request)
+	// Check if contest exists and user has manage permission
+	contest, err := ac.contestRepository.Get(tx, contestID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			httputils.ReturnError(w, http.StatusNotFound, "Contest not found")
+			return
+		}
+		ac.logger.Errorw("Failed to get contest", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get contest")
+		return
+	}
+
+	hasPermission, err := ac.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage)
+	if err != nil {
+		db.Rollback()
+		ac.logger.Errorw("Failed to check permission", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to check permission")
+		return
+	}
+	if !hasPermission {
+		db.Rollback()
+		httputils.ReturnError(w, http.StatusForbidden, "You don't have permission to manage collaborators")
+		return
+	}
+
+	err = ac.accessControlService.AddCollaborator(tx, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -152,9 +179,9 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	collaborators, err := ac.contestService.GetContestCollaborators(tx, currentUser, contestID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, models.ResourceTypeContest, contestID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -236,9 +263,9 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	err = ac.contestService.UpdateContestCollaborator(tx, currentUser, contestID, userID, &request)
+	err = ac.accessControlService.UpdateCollaborator(tx, models.ResourceTypeContest, contestID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -306,9 +333,9 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	err = ac.contestService.RemoveContestCollaborator(tx, currentUser, contestID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -380,9 +407,9 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	err = ac.taskService.AddTaskCollaborator(tx, currentUser, taskID, &request)
+	err = ac.accessControlService.AddCollaborator(tx, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -438,9 +465,9 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	collaborators, err := ac.taskService.GetTaskCollaborators(tx, currentUser, taskID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, models.ResourceTypeTask, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -522,9 +549,9 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	err = ac.taskService.UpdateTaskCollaborator(tx, currentUser, taskID, userID, &request)
+	err = ac.accessControlService.UpdateCollaborator(tx, models.ResourceTypeTask, taskID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -592,9 +619,9 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
 
-	err = ac.taskService.RemoveTaskCollaborator(tx, currentUser, taskID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -614,9 +641,10 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 
 func NewAccessControlRoute(accessControlService service.AccessControlService, contestRepository repository.ContestRepository, taskRepository repository.TaskRepository) AccessControlRoute {
 	route := &accessControlRoute{
-		contestService: contestService,
-		taskService:    taskService,
-		logger:         utils.NewNamedLogger("access_control_route"),
+		accessControlService: accessControlService,
+		contestRepository:    contestRepository,
+		taskRepository:       taskRepository,
+		logger:               utils.NewNamedLogger("access_control_route"),
 	}
 	if err := utils.ValidateStruct(*route); err != nil {
 		panic(err)
