@@ -98,6 +98,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -126,6 +127,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -147,6 +149,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -294,15 +297,11 @@ func TestEditContest(t *testing.T) {
 		isRegistrationOpen := true
 		isSubmissionOpen := true
 		contest := &schemas.CreatedContest{
-			Contest: schemas.Contest{
-				ID:               1,
-				Name:             "Updated Contest",
-				Description:      "Test Description",
-				CreatedBy:        1,
-				CreatedAt:        time.Now(),
-				UpdatedAt:        time.Now(),
-				ParticipantCount: 5,
-				TaskCount:        3,
+			BaseContest: schemas.BaseContest{
+				ID:          1,
+				Name:        "Updated Contest",
+				Description: "Test Description",
+				CreatedBy:   1,
 			},
 			IsVisible:          &isVisible,
 			IsRegistrationOpen: &isRegistrationOpen,

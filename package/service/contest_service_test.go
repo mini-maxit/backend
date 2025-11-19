@@ -28,7 +28,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			ID:          1,
 			Name:        "Test Contest",
 			Description: "Test Description",
-			StartAt:     &startTime,
+			StartAt:     startTime,
 			EndAt:       &endTime,
 			CreatedBy:   1,
 			IsVisible:   &visible,
@@ -45,7 +45,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 	assert.Equal(t, int64(1), result.ID)
 	assert.Equal(t, "Test Contest", result.Name)
 	assert.Equal(t, "Test Description", result.Description)
-	assert.Equal(t, &startTime, result.StartAt)
+	assert.Equal(t, startTime, result.StartAt)
 	assert.Equal(t, &endTime, result.EndAt)
 	assert.Equal(t, int64(1), result.CreatedBy)
 	assert.Equal(t, int64(5), result.TaskCount)
@@ -62,7 +62,7 @@ func TestContestWithStatsToSchemaWithNilUserInfo(t *testing.T) {
 			ID:          1,
 			Name:        "Test Contest",
 			Description: "Test Description",
-			StartAt:     &startTime,
+			StartAt:     startTime,
 			EndAt:       &endTime,
 			CreatedBy:   1,
 			IsVisible:   &visible,
@@ -79,7 +79,7 @@ func TestContestWithStatsToSchemaWithNilUserInfo(t *testing.T) {
 	assert.Equal(t, int64(1), result.ID)
 	assert.Equal(t, "Test Contest", result.Name)
 	assert.Equal(t, "Test Description", result.Description)
-	assert.Equal(t, &startTime, result.StartAt)
+	assert.Equal(t, startTime, result.StartAt)
 	assert.Equal(t, &endTime, result.EndAt)
 	assert.Equal(t, int64(1), result.CreatedBy)
 	assert.Equal(t, int64(5), result.TaskCount)
@@ -97,7 +97,7 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 				ID:          1,
 				Name:        "Contest 1",
 				Description: "Description 1",
-				StartAt:     &startTime,
+				StartAt:     startTime,
 				EndAt:       &endTime,
 				CreatedBy:   1,
 				IsVisible:   &visible,
@@ -112,7 +112,7 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 				ID:          2,
 				Name:        "Contest 2",
 				Description: "Description 2",
-				StartAt:     &startTime,
+				StartAt:     startTime,
 				EndAt:       &endTime,
 				CreatedBy:   2,
 				IsVisible:   &visible,
@@ -151,7 +151,7 @@ func TestContestWithStatsToSchemaWithNilIsVisible(t *testing.T) {
 			ID:          1,
 			Name:        "Test Contest",
 			Description: "Test Description",
-			StartAt:     &startTime,
+			StartAt:     startTime,
 			EndAt:       &endTime,
 			CreatedBy:   1,
 			IsVisible:   nil,
@@ -961,14 +961,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := true
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -986,14 +988,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1010,14 +1014,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1034,14 +1040,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1058,14 +1066,16 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-			IsVisible: &visible,
+		contest := &models.ParticipantContestStats{
+			Contest: models.Contest{
+				ID:        contestID,
+				Name:      "Test Contest",
+				CreatedBy: 2,
+				IsVisible: &visible,
+			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1081,7 +1091,7 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(999)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1097,7 +1107,7 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(10)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, errors.New("db error")).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 

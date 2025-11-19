@@ -49,7 +49,7 @@ type TaskWithAttempts struct {
 type ContestWithTasks struct {
 	ContestID   int64              `json:"contestId"`
 	ContestName string             `json:"contestName"`
-	StartAt     *time.Time         `json:"startAt"`
+	StartAt     time.Time          `json:"startAt"`
 	EndAt       *time.Time         `json:"endAt"`
 	Tasks       []TaskWithAttempts `json:"tasks"`
 }

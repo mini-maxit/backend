@@ -98,10 +98,6 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 		StartAt:            contest.StartAt,
 	}
 
-	now := time.Now()
-	if contest.StartAt == nil {
-		model.StartAt = &now
-	}
 	if contest.EndAt != nil {
 		model.EndAt = contest.EndAt
 	}
@@ -115,7 +111,7 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 }
 
 func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	contest, err := cs.contestRepository.GetWithCount(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, myerrors.ErrNotFound
@@ -133,7 +129,19 @@ func (cs *contestService) Get(tx *gorm.DB, currentUser schemas.User, contestID i
 		}
 	}
 
-	return ContestToSchema(contest), nil
+	return &schemas.Contest{
+		BaseContest: schemas.BaseContest{
+			ID:          contest.ID,
+			Name:        contest.Name,
+			Description: contest.Description,
+			CreatedBy:   contest.CreatedBy,
+			StartAt:     contest.StartAt,
+			EndAt:       contest.EndAt,
+		},
+		ParticipantCount: contest.ParticipantCount,
+		TaskCount:        contest.TaskCount,
+		Status:           getContestStatus(contest.StartAt, contest.EndAt),
+	}, nil
 }
 
 func (cs *contestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
@@ -358,9 +366,8 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	if editInfo.Description != nil {
 		model.Description = *editInfo.Description
 	}
-	// TODO: handle when setting to nil is intended
 	if editInfo.StartAt != nil {
-		model.StartAt = editInfo.StartAt
+		model.StartAt = *editInfo.StartAt
 	}
 	// TODO: handle when setting to nil is intended
 	if editInfo.EndAt != nil {
@@ -508,7 +515,7 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 	}
 
 	ongoing := make([]schemas.ContestWithStats, 0)
-	past := make([]schemas.ContestWithStats, 0)
+	past := make([]schemas.PastContestWithStats, 0)
 	upcoming := make([]schemas.ContestWithStats, 0)
 	now := time.Now()
 
@@ -516,21 +523,19 @@ func (cs *contestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.Us
 		contestSchema := *ParticipantContestStatsToSchema(&contest)
 
 		// Determine contest status
-		if contest.StartAt != nil && !contest.StartAt.After(now) {
+		if contest.StartAt.After(now) {
+			// Contest is upcoming
+			upcoming = append(upcoming, contestSchema)
+		} else {
 			// Contest has started
 			if contest.EndAt == nil || contest.EndAt.After(now) {
 				// Contest is ongoing
 				ongoing = append(ongoing, contestSchema)
 			} else {
 				// Contest has ended
-				past = append(past, contestSchema)
+				pastContest := *ParticipantContestStatsToPastSchema(&contest)
+				past = append(past, pastContest)
 			}
-		} else if contest.EndAt != nil && !contest.EndAt.After(now) {
-			// Contest has ended (edge case)
-			past = append(past, contestSchema)
-		} else {
-			// Contest is upcoming
-			upcoming = append(upcoming, contestSchema)
 		}
 	}
 
@@ -590,36 +595,15 @@ func (cs *contestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.Use
 	return cs.contestRepository.AddTaskToContest(tx, taskContest)
 }
 
-func ContestToSchema(model *models.Contest) *schemas.Contest {
-	return &schemas.Contest{
-		ID:               model.ID,
-		Name:             model.Name,
-		Description:      model.Description,
-		CreatedBy:        model.CreatedBy,
-		StartAt:          model.StartAt,
-		EndAt:            model.EndAt,
-		CreatedAt:        model.CreatedAt,
-		UpdatedAt:        model.UpdatedAt,
-		ParticipantCount: 0,
-		TaskCount:        0,
-		Status:           getContestStatus(model.StartAt, model.EndAt),
-	}
-}
-
 func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {
 	return &schemas.CreatedContest{
-		Contest: schemas.Contest{
-			ID:               model.ID,
-			Name:             model.Name,
-			Description:      model.Description,
-			CreatedBy:        model.CreatedBy,
-			StartAt:          model.StartAt,
-			EndAt:            model.EndAt,
-			CreatedAt:        model.CreatedAt,
-			UpdatedAt:        model.UpdatedAt,
-			ParticipantCount: model.ParticipantCount,
-			TaskCount:        model.TaskCount,
-			Status:           getContestStatus(model.StartAt, model.EndAt),
+		BaseContest: schemas.BaseContest{
+			ID:          model.ID,
+			Name:        model.Name,
+			Description: model.Description,
+			CreatedBy:   model.CreatedBy,
+			StartAt:     model.StartAt,
+			EndAt:       model.EndAt,
 		},
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsSubmissionOpen:   model.IsSubmissionOpen,
@@ -648,14 +632,14 @@ func ContestWithStatsToAvailableContest(model *models.ContestWithStats) *schemas
 	status := getContestStatus(model.StartAt, model.EndAt)
 	return &schemas.AvailableContest{
 		Contest: schemas.Contest{
-			ID:               model.ID,
-			Name:             model.Name,
-			Description:      model.Description,
-			CreatedBy:        model.CreatedBy,
-			StartAt:          model.StartAt,
-			EndAt:            model.EndAt,
-			CreatedAt:        model.CreatedAt,
-			UpdatedAt:        model.UpdatedAt,
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
 			ParticipantCount: model.ParticipantCount,
 			TaskCount:        model.TaskCount,
 			Status:           status,
@@ -664,19 +648,19 @@ func ContestWithStatsToAvailableContest(model *models.ContestWithStats) *schemas
 	}
 }
 
-func getContestStatus(startAt, endAt *time.Time) string {
-	status := "upcoming"
+func getContestStatus(startAt time.Time, endAt *time.Time) types.ContestStatus {
+	status := types.ContestStatusUpcoming
 	now := time.Now()
 
-	if startAt != nil && !startAt.After(now) {
+	if !startAt.After(now) {
 		// Started
 		if endAt == nil || endAt.After(now) {
-			status = "ongoing"
+			status = types.ContestStatusOngoing
 		} else {
-			status = "past"
+			status = types.ContestStatusPast
 		}
 	} else if endAt != nil && !endAt.After(now) {
-		status = "past"
+		status = types.ContestStatusPast
 	}
 	return status
 }
@@ -685,19 +669,19 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 	status := getContestStatus(model.StartAt, model.EndAt)
 	return &schemas.ContestWithStats{
 		Contest: schemas.Contest{
-			ID:               model.ID,
-			Name:             model.Name,
-			Description:      model.Description,
-			CreatedBy:        model.CreatedBy,
-			StartAt:          model.StartAt,
-			EndAt:            model.EndAt,
-			CreatedAt:        model.CreatedAt,
-			UpdatedAt:        model.UpdatedAt,
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
 			ParticipantCount: model.ParticipantCount,
 			TaskCount:        model.TaskCount,
 			Status:           status,
 		},
-		SolvedTaskCount: model.SolvedCount,
+		SolvedTaskCount: model.SolvedTaskCount,
 	}
 }
 
@@ -882,7 +866,7 @@ func (cs *contestService) ValidateContestSubmission(tx *gorm.DB, contestID, task
 	}
 
 	// Check if contest has started
-	if contest.StartAt != nil && time.Now().Before(*contest.StartAt) {
+	if time.Now().Before(contest.StartAt) {
 		return myerrors.ErrContestNotStarted
 	}
 
@@ -974,20 +958,43 @@ func (cs *contestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User,
 
 func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 	return &schemas.CreatedContest{
-		Contest: schemas.Contest{
+		BaseContest: schemas.BaseContest{
 			ID:          model.ID,
 			Name:        model.Name,
 			Description: model.Description,
 			CreatedBy:   model.CreatedBy,
 			StartAt:     model.StartAt,
 			EndAt:       model.EndAt,
-			CreatedAt:   model.CreatedAt,
-			UpdatedAt:   model.UpdatedAt,
-			Status:      getContestStatus(model.StartAt, model.EndAt),
 		},
 		IsVisible:          model.IsVisible,
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsSubmissionOpen:   model.IsSubmissionOpen,
+	}
+}
+
+func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats) *schemas.PastContestWithStats {
+	solvedPercentage := 0.0
+	if contest.TaskCount > 0 {
+		solvedPercentage = float64(contest.SolvedTaskCount) / float64(contest.TaskCount) * 100
+	}
+	return &schemas.PastContestWithStats{
+		Contest: schemas.Contest{
+			BaseContest: schemas.BaseContest{
+				ID:          contest.ID,
+				Name:        contest.Name,
+				Description: contest.Description,
+				CreatedBy:   contest.CreatedBy,
+				StartAt:     contest.StartAt,
+				EndAt:       contest.EndAt,
+			},
+			TaskCount:        contest.TaskCount,
+			ParticipantCount: contest.ParticipantCount,
+			Status:           getContestStatus(contest.StartAt, contest.EndAt),
+		},
+		SolvedTaskPercentage: solvedPercentage,
+		Score:                contest.SolvedTestCount,
+		MaximumScore:         contest.TestCount,
+		Rank:                 0, // TODO: implement
 	}
 }
 

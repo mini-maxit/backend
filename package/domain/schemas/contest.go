@@ -6,18 +6,20 @@ import (
 	"github.com/mini-maxit/backend/package/domain/types"
 )
 
+type BaseContest struct {
+	ID          int64      `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	CreatedBy   int64      `json:"createdBy"`
+	StartAt     time.Time  `json:"startAt"`
+	EndAt       *time.Time `json:"endAt"`
+}
+
 type Contest struct {
-	ID               int64      `json:"id"`
-	Name             string     `json:"name"`
-	Description      string     `json:"description"`
-	CreatedBy        int64      `json:"createdBy"`
-	StartAt          *time.Time `json:"startAt"`
-	EndAt            *time.Time `json:"endAt"`
-	CreatedAt        time.Time  `json:"createdAt"`
-	UpdatedAt        time.Time  `json:"updatedAt"`
-	ParticipantCount int64      `json:"participantCount"`
-	TaskCount        int64      `json:"taskCount"`
-	Status           string     `json:"status"` // "upcoming", "ongoing", "past"
+	BaseContest
+	ParticipantCount int64               `json:"participantCount"`
+	TaskCount        int64               `json:"taskCount"`
+	Status           types.ContestStatus `json:"status"` // "upcoming", "ongoing", "past"
 }
 
 type AvailableContest struct {
@@ -26,7 +28,7 @@ type AvailableContest struct {
 }
 
 type CreatedContest struct {
-	Contest
+	BaseContest
 	IsRegistrationOpen *bool `json:"isRegistrationOpen"`
 	IsSubmissionOpen   *bool `json:"isSubmissionOpen"`
 	IsVisible          *bool `json:"isVisible"`
@@ -34,8 +36,8 @@ type CreatedContest struct {
 
 type CreateContest struct {
 	Name               string     `json:"name" validate:"required,gte=3,lte=100"`
-	Description        string     `json:"description,omitempty"`
-	StartAt            *time.Time `json:"startAt,omitempty"`
+	Description        string     `json:"description" validate:"required"`
+	StartAt            time.Time  `json:"startAt" validate:"required"`
 	EndAt              *time.Time `json:"endAt,omitempty"`
 	IsRegistrationOpen *bool      `json:"isRegistrationOpen"`
 	IsSubmissionOpen   *bool      `json:"isSubmissionOpen"`
@@ -61,10 +63,18 @@ type UpcomingContest struct {
 	Contest
 }
 
+type PastContestWithStats struct {
+	Contest
+	SolvedTaskPercentage float64 `json:"solvedPercentage"`
+	Score                int64   `json:"score"`
+	MaximumScore         int64   `json:"maximumScore"`
+	Rank                 int64   `json:"rank"`
+}
+
 type UserContestsWithStats struct {
-	Ongoing  []ContestWithStats `json:"ongoing"`
-	Past     []ContestWithStats `json:"past"`
-	Upcoming []ContestWithStats `json:"upcoming"`
+	Ongoing  []ContestWithStats     `json:"ongoing"`
+	Past     []PastContestWithStats `json:"past"`
+	Upcoming []ContestWithStats     `json:"upcoming"`
 }
 
 type AddTaskToContest struct {

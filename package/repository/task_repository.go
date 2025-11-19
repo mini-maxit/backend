@@ -191,8 +191,6 @@ func (tr *taskRepository) GetLiveAssignedTasksGroupedByContest(
 		Where("(contest_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL)").
 		Where("contest_tasks.start_at <= NOW() AND (contest_tasks.end_at IS NULL OR contest_tasks.end_at > NOW())").
 		Where("tasks.deleted_at IS NULL").
-		Limit(limit).
-		Offset(offset).
 		Find(&tasksWithContests).Error
 
 	if err != nil {

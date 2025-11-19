@@ -46,8 +46,8 @@ type groupsRequest struct {
 //	@Produce		json
 //	@Param			limit	query		int	false	"Number of results to return (default: 100)"
 //	@Param			offset	query		int	false	"Number of results to skip (default: 0)"
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[schemas.MyTasksResponse]
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.MyTasksResponse]
 //	@Router			/tasks/my [get]
 func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -80,7 +80,7 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 
 // GetAllTasks godoc
 //
-//	@Tags			task
+//	@Tags			tasks
 //	@Summary		Get all globally available tasks
 //	@Description	Returns all tasks
 //	@Produce		json
@@ -123,7 +123,7 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
 // GetTask godoc
 //
-//	@Tags			task
+//	@Tags			tasks
 //	@Summary		Get a task
 //	@Description	Returns a task by ID
 //	@Produce		json

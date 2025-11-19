@@ -18,7 +18,9 @@ import (
 
 type ContestRoute interface {
 	GetContest(w http.ResponseWriter, r *http.Request)
-	GetMyContests(w http.ResponseWriter, r *http.Request)
+	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
+	GetMyActiveContests(w http.ResponseWriter, r *http.Request)
+	GetMyPastContests(w http.ResponseWriter, r *http.Request)
 	GetContests(w http.ResponseWriter, r *http.Request)
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
@@ -281,16 +283,16 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 // GetMyContests godoc
 //
 //	@Tags			contests
-//	@Summary		Get contests for a user
-//	@Description	Get contests for a user
+//	@Summary		Get contests for a user (combined - deprecated; use /contests/my/active or /contests/my/past)
+//	@Description	Get contests for a user (returns ongoing, past, upcoming)
 //	@Produce		json
-//	@Param			id	path		int	true	"User ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		404	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.UserContestsWithStats]
-//	@Router			/contests/my [get]
+//	@Deprecated
+//	@Failure	400	{object}	httputils.APIError
+//	@Failure	404	{object}	httputils.APIError
+//	@Failure	405	{object}	httputils.APIError
+//	@Failure	500	{object}	httputils.APIError
+//	@Success	200	{object}	httputils.APIResponse[schemas.UserContestsWithStats]
+//	@Router		/contests/my [get]
 func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -322,20 +324,101 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 	httputils.ReturnSuccess(w, http.StatusOK, contests)
 }
 
+// GetMyActiveContests godoc
+//
+//	@Tags			contests
+//	@Summary		Get active contests for the current user
+//	@Description	Active contests = started AND not finished (ongoing)
+//	@Produce		json
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.ContestWithStats]
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/contests/my/active [get]
+func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrUserNotFound) {
+			httputils.ReturnError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		cr.logger.Errorw("Failed to get active contests", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, combined.Ongoing)
+}
+
+// GetMyPastContests godoc
+//
+//	@Tags			contests
+//	@Summary		Get past contests for the current user
+//	@Description	Past contests = contests whose end time has elapsed
+//	@Produce		json
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.PastContestWithStats]
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/contests/my/past [get]
+func (cr *ContestRouteImpl) GetMyPastContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrUserNotFound) {
+			httputils.ReturnError(w, http.StatusNotFound, "User not found")
+			return
+		}
+		cr.logger.Errorw("Failed to get past contests", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, combined.Past)
+}
+
 // GetContestTask godoc
-// @Tags			contests
-// @Summary		Get a specific task from a contest
-// @Description	Get detailed information about a specific task within a contest
-// @Produce		json
-// @Param			id		path		int	true	"Contest ID"
-// @Param			task_id	path		int	true	"Task ID"
-// @Failure		400	{object}	httputils.APIError
-// @Failure		403	{object}	httputils.APIError
-// @Failure		404	{object}	httputils.APIError
-// @Failure		405	{object}	httputils.APIError
-// @Failure		500	{object}	httputils.APIError
-// @Success		200	{object}	httputils.APIResponse[schemas.TaskDetailed]
-// @Router			/contests/{id}/tasks/{task_id} [get]
+//
+//	@Tags			contests
+//	@Summary		Get a specific task from a contest
+//	@Description	Get detailed information about a specific task within a contest
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			task_id	path		int	true	"Task ID"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.TaskDetailed]
+//	@Router			/contests/{id}/tasks/{task_id} [get]
 func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -403,7 +486,11 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 		}
 	})
 
+	// Legacy combined endpoint (optional keep); new split endpoints:
+	// /contests/my/active and /contests/my/past
 	mux.HandleFunc("/contests/my", contestRoute.GetMyContests)
+	mux.HandleFunc("/contests/my/active", contestRoute.GetMyActiveContests)
+	mux.HandleFunc("/contests/my/past", contestRoute.GetMyPastContests)
 
 	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

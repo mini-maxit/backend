@@ -100,8 +100,8 @@ func (wr *workerRoute) GetQueueStatus(w http.ResponseWriter, r *http.Request) {
 //	@Summary		Reconnect to queue
 //	@Description	Triggers queue reconnection and processes pending submissions (admin only)
 //	@Produce		json
-//	@Failure		401	{object}	httputils.APIError	"Not authorized - requires admin role"
-//	@Failure		500	{object}	httputils.APIError	"Internal server error"
+//	@Failure		401	{object}	httputils.APIError				"Not authorized - requires admin role"
+//	@Failure		500	{object}	httputils.APIError				"Internal server error"
 //	@Success		200	{object}	httputils.APIResponse[string]	"message"
 //	@Router			/workers/queue/reconnect [post]
 func (wr *workerRoute) ReconnectQueue(w http.ResponseWriter, r *http.Request) {
