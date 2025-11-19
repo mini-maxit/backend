@@ -98,6 +98,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -126,6 +127,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -147,6 +149,7 @@ func TestCreateContest(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",
 			Description: "Test Description",
+			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {

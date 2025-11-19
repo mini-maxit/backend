@@ -36,8 +36,8 @@ type CreatedContest struct {
 
 type CreateContest struct {
 	Name               string     `json:"name" validate:"required,gte=3,lte=100"`
-	Description        string     `json:"description,omitempty"`
-	StartAt            time.Time  `json:"startAt"`
+	Description        string     `json:"description" validate:"required"`
+	StartAt            time.Time  `json:"startAt" validate:"required"`
 	EndAt              *time.Time `json:"endAt,omitempty"`
 	IsRegistrationOpen *bool      `json:"isRegistrationOpen"`
 	IsSubmissionOpen   *bool      `json:"isSubmissionOpen"`
