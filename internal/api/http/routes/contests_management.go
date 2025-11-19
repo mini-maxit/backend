@@ -29,7 +29,7 @@ type ContestsManagementRoute interface {
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
-	
+
 	// Collaborator management
 	AddContestCollaborator(w http.ResponseWriter, r *http.Request)
 	GetContestCollaborators(w http.ResponseWriter, r *http.Request)

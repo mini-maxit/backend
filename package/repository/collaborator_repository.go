@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"gorm.io/gorm"
@@ -63,7 +65,7 @@ func (r *collaboratorRepository) RemoveContestCollaborator(tx *gorm.DB, contestI
 func (r *collaboratorRepository) HasContestPermission(tx *gorm.DB, contestID, userID int64, requiredPermission types.Permission) (bool, error) {
 	permission, err := r.GetUserContestPermission(tx, contestID, userID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -117,7 +119,7 @@ func (r *collaboratorRepository) RemoveTaskCollaborator(tx *gorm.DB, taskID, use
 func (r *collaboratorRepository) HasTaskPermission(tx *gorm.DB, taskID, userID int64, requiredPermission types.Permission) (bool, error) {
 	permission, err := r.GetUserTaskPermission(tx, taskID, userID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
 		return false, err
