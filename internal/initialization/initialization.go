@@ -30,6 +30,7 @@ type Initialization struct {
 	SubmissionRoute        routes.SubmissionRoutes
 	TaskRoute              routes.TaskRoute
 	TaskManagementRoute    routes.TasksManagementRoute
+	AccessControlRoute     routes.AccessControlRoute
 	UserRoute              routes.UserRoute
 	WorkerRoute            routes.WorkerRoute
 
@@ -135,6 +136,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(taskService)
 	tasksManagementRoute := routes.NewTasksManagementRoute(taskService)
+	accessControlRoute := routes.NewAccessControlRoute(contestService, taskService)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
@@ -168,6 +170,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SubmissionRoute:        submissionRoute,
 		TaskRoute:              taskRoute,
 		TaskManagementRoute:    tasksManagementRoute,
+		AccessControlRoute:     accessControlRoute,
 		UserRoute:              userRoute,
 		WorkerRoute:            workerRoute,
 
