@@ -1221,12 +1221,13 @@ func (mr *MockUserRepositoryMockRecorder) Get(tx, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
+func (m *MockUserRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, limit, offset, sort)
 	ret0, _ := ret[0].([]models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetAll indicates an expected call of GetAll.

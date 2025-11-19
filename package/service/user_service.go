@@ -23,7 +23,7 @@ type UserService interface {
 	// Edit updates the information of a user.
 	Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
 	// GetAll retrieves all users based on the provided query parameters.
-	GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error)
+	GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
 	// GetByEmail retrieves a user by their email.
 	GetByEmail(tx *gorm.DB, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
@@ -53,15 +53,15 @@ func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, err
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error) {
+func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = "role:desc"
 	}
 
-	userModels, err := us.userRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	userModels, totalCount, err := us.userRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
-		return nil, err
+		return schemas.PaginatedResult[[]schemas.User]{}, err
 	}
 
 	users := make([]schemas.User, len(userModels))
@@ -69,7 +69,7 @@ func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationPa
 		users[i] = *UserToSchema(&userModel)
 	}
 
-	return users, nil
+	return schemas.NewPaginatedResult(users, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
 func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
