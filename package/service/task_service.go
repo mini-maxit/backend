@@ -44,19 +44,26 @@ type TaskService interface {
 	ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error
 	// PutLimits updates limits associated with each input/output.
 	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
+
+	// Task collaborator methods
+	AddTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, request *schemas.AddCollaborator) error
+	GetTaskCollaborators(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.Collaborator, error)
+	UpdateTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, userID int64, request *schemas.UpdateCollaborator) error
+	RemoveTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, userID int64) error
 }
 
 const defaultTaskSort = "created_at:desc"
 
 type taskService struct {
-	filestorage          filestorage.FileStorageService
-	fileRepository       repository.File
-	groupRepository      repository.GroupRepository
-	testCaseRepository   repository.TestCaseRepository
-	taskRepository       repository.TaskRepository
-	userRepository       repository.UserRepository
-	submissionRepository repository.SubmissionRepository
-	contestRepository    repository.ContestRepository
+	filestorage             filestorage.FileStorageService
+	fileRepository          repository.File
+	groupRepository         repository.GroupRepository
+	testCaseRepository      repository.TestCaseRepository
+	taskRepository          repository.TaskRepository
+	userRepository          repository.UserRepository
+	submissionRepository    repository.SubmissionRepository
+	contestRepository       repository.ContestRepository
+	accessControlRepository repository.AccessControlRepository
 
 	logger *zap.SugaredLogger
 }
@@ -91,6 +98,12 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser schemas.User, task *schem
 	if err != nil {
 		ts.logger.Errorf("Error creating task: %v", err.Error())
 		return 0, err
+	}
+
+	// Automatically grant manage permission to the creator
+	if err := ts.accessControlRepository.AddTaskCollaborator(tx, taskID, currentUser.ID, types.PermissionManage); err != nil {
+		ts.logger.Warnf("Failed to add creator as task collaborator: %v", err)
+		// Don't fail the creation if we can't add creator as collaborator
 	}
 
 	return taskID, nil
@@ -211,12 +224,16 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int6
 		return err
 	}
 
-	task, err := ts.taskRepository.Get(tx, taskID)
+	// Check permissions using collaborator system - only manage permission can delete
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
 	if err != nil {
-		ts.logger.Errorf("Error getting task: %v", err.Error())
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		ts.logger.Errorf("Error checking task permission: %v", err.Error())
 		return err
 	}
-	if currentUser.Role == types.UserRoleTeacher && task.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -230,17 +247,23 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int6
 }
 
 func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
-	currentTask, err := ts.taskRepository.Get(tx, taskID)
+	// Check permissions using collaborator system - need edit permission
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
-		ts.logger.Errorf("Error getting task: %v", err.Error())
+		ts.logger.Errorf("Error checking task permission: %v", err.Error())
 		return err
 	}
-	if currentUser.Role == types.UserRoleTeacher &&
-		(currentTask.CreatedBy != currentUser.ID || currentUser.Role == types.UserRoleStudent) {
+	if !hasPermission {
 		return myerrors.ErrForbidden
+	}
+
+	currentTask, err := ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		ts.logger.Errorf("Error getting task: %v", err.Error())
+		return err
 	}
 
 	ts.updateModel(currentTask, updateInfo)
@@ -376,11 +399,19 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 }
 
 func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error {
-	if currentUser.Role == types.UserRoleStudent {
-		return myerrors.ErrNotAllowed
+	// Check permissions using collaborator system - need edit permission
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+	if !hasPermission {
+		return myerrors.ErrForbidden
 	}
 
-	err := ts.filestorage.ValidateArchiveStructure(archivePath)
+	err = ts.filestorage.ValidateArchiveStructure(archivePath)
 	if err != nil {
 		return fmt.Errorf("failed to validate archive structure: %w", err)
 	}
@@ -481,15 +512,15 @@ func (ts *taskService) PutLimits(
 	taskID int64,
 	newLimits schemas.PutTestCaseLimitsRequest,
 ) error {
-	task, err := ts.taskRepository.Get(tx, taskID)
+	// Check permissions using collaborator system - need edit permission
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
 		return err
 	}
-
-	if task.CreatedBy != currentUser.ID && currentUser.Role != types.UserRoleAdmin {
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -626,6 +657,153 @@ func (ts *taskService) enrichTaskWithAttempts(
 	}, nil
 }
 
+// hasTaskPermission checks if the user has the required permission for the task.
+// Returns true if:
+// 1. User is admin
+// 2. User is the creator (which should also have manage permission via collaborator)
+// 3. User has the required permission via collaborator
+func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, userID int64, userRole types.UserRole, requiredPermission types.Permission) (bool, error) {
+	// Check creator first (also verifies task exists)
+	task, err := ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		return false, err
+	}
+
+	// Admins have all permissions
+	if userRole == types.UserRoleAdmin {
+		return true, nil
+	}
+
+	if task.CreatedBy == userID {
+		return true, nil
+	}
+
+	// Check collaborator permissions
+	hasPermission, err := ts.accessControlRepository.HasTaskPermission(tx, taskID, userID, requiredPermission)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return hasPermission, nil
+}
+
+// AddTaskCollaborator adds a collaborator to a task.
+func (ts *taskService) AddTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, request *schemas.AddCollaborator) error {
+	// Only users with manage permission can add collaborators
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
+	if err != nil {
+		return err
+	}
+	if !hasPermission {
+		return myerrors.ErrForbidden
+	}
+
+	// Check if user exists
+	_, err = ts.userRepository.Get(tx, request.UserID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Check if task exists
+	_, err = ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Add collaborator
+	return ts.accessControlRepository.AddTaskCollaborator(tx, taskID, request.UserID, request.Permission)
+}
+
+// GetTaskCollaborators retrieves all collaborators for a task.
+func (ts *taskService) GetTaskCollaborators(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.Collaborator, error) {
+	// Only users with view permission can see collaborators
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionView)
+	if err != nil {
+		return nil, err
+	}
+	if !hasPermission {
+		return nil, myerrors.ErrForbidden
+	}
+
+	collaborators, err := ts.accessControlRepository.GetTaskCollaborators(tx, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.Collaborator, len(collaborators))
+	for i, collab := range collaborators {
+		result[i] = schemas.Collaborator{
+			UserID:     collab.UserID,
+			UserName:   collab.User.Name,
+			UserEmail:  collab.User.Email,
+			Permission: collab.Permission,
+			AddedAt:    collab.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+
+	return result, nil
+}
+
+// UpdateTaskCollaborator updates a collaborator's permission.
+func (ts *taskService) UpdateTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, userID int64, request *schemas.UpdateCollaborator) error {
+	// Only users with manage permission can update collaborators
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
+	if err != nil {
+		return err
+	}
+	if !hasPermission {
+		return myerrors.ErrForbidden
+	}
+
+	// Check if collaborator exists
+	_, err = ts.accessControlRepository.GetAccess(tx, models.ResourceTypeTask, taskID, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	return ts.accessControlRepository.UpdateTaskCollaboratorPermission(tx, taskID, userID, request.Permission)
+}
+
+// RemoveTaskCollaborator removes a collaborator from a task.
+func (ts *taskService) RemoveTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, userID int64) error {
+	// Only users with manage permission can remove collaborators
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
+	if err != nil {
+		return err
+	}
+	if !hasPermission {
+		return myerrors.ErrForbidden
+	}
+
+	// Get task to check if user is the creator
+	task, err := ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
+	// Don't allow removing the creator's manage permission
+	if task.CreatedBy == userID {
+		return errors.New("cannot remove creator from collaborators")
+	}
+
+	return ts.accessControlRepository.RemoveTaskCollaborator(tx, taskID, userID)
+}
+
 func NewTaskService(
 	filestorage filestorage.FileStorageService,
 	fileRepository repository.File,
@@ -635,17 +813,19 @@ func NewTaskService(
 	groupRepository repository.GroupRepository,
 	submissionRepository repository.SubmissionRepository,
 	contestRepository repository.ContestRepository,
+	accessControlRepository repository.AccessControlRepository,
 ) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		filestorage:          filestorage,
-		fileRepository:       fileRepository,
-		taskRepository:       taskRepository,
-		userRepository:       userRepository,
-		groupRepository:      groupRepository,
-		testCaseRepository:   testCaseRepository,
-		submissionRepository: submissionRepository,
-		contestRepository:    contestRepository,
-		logger:               log,
+		filestorage:             filestorage,
+		fileRepository:          fileRepository,
+		taskRepository:          taskRepository,
+		userRepository:          userRepository,
+		groupRepository:         groupRepository,
+		testCaseRepository:      testCaseRepository,
+		submissionRepository:    submissionRepository,
+		contestRepository:       contestRepository,
+		accessControlRepository: accessControlRepository,
+		logger:                  log,
 	}
 }

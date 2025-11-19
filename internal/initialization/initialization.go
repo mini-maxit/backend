@@ -58,7 +58,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	queueRepository := repository.NewQueueMessageRepository()
 	submissionResultRepository := repository.NewSubmissionResultRepository()
 	contestRepository := repository.NewContestRepository()
-	collaboratorRepository := repository.NewCollaboratorRepository()
+	accessControlRepository := repository.NewAccessControlRepository()
 
 	// Services
 	filestorage, err := filestorage.NewFileStorageService(cfg.FileStorageURL)
@@ -74,6 +74,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		groupRepository,
 		submissionRepository,
 		contestRepository,
+		accessControlRepository,
 	)
 
 	// Create queue client (shared by both service and listener)
@@ -105,7 +106,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, collaboratorRepository, taskService)
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlRepository, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)

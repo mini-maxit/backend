@@ -176,8 +176,8 @@ func TestContestService_GetPastContests(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
-	collab := mock_repository.NewMockCollaboratorRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, collab, ts)
+	accessCtrl := mock_repository.NewMockAccessControlRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, accessCtrl, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -246,8 +246,8 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
-	collab := mock_repository.NewMockCollaboratorRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, collab, ts)
+	accessCtrl := mock_repository.NewMockAccessControlRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, accessCtrl, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -316,8 +316,8 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
-	collab := mock_repository.NewMockCollaboratorRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, collab, ts)
+	accessCtrl := mock_repository.NewMockAccessControlRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, accessCtrl, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
@@ -441,7 +441,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		collab.EXPECT().HasContestPermission(tx, contestID, currentUser.ID, types.PermissionManage).Return(false, nil).Times(1)
+		accessCtrl.EXPECT().HasContestPermission(tx, contestID, currentUser.ID, types.PermissionManage).Return(false, nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -686,8 +686,8 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
-	collab := mock_repository.NewMockCollaboratorRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, collab, ts)
+	accessCtrl := mock_repository.NewMockAccessControlRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, accessCtrl, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
@@ -809,7 +809,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		collab.EXPECT().HasContestPermission(tx, contestID, currentUser.ID, types.PermissionManage).Return(false, nil).Times(1)
+		accessCtrl.EXPECT().HasContestPermission(tx, contestID, currentUser.ID, types.PermissionManage).Return(false, nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -956,8 +956,8 @@ func TestContestService_Get(t *testing.T) {
 	sr := mock_repository.NewMockSubmissionRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
-	collab := mock_repository.NewMockCollaboratorRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, collab, ts)
+	accessCtrl := mock_repository.NewMockAccessControlRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, accessCtrl, ts)
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {

@@ -70,11 +70,11 @@ type ContestService interface {
 const defaultContestSort = "created_at:desc"
 
 type contestService struct {
-	contestRepository      repository.ContestRepository
-	taskRepository         repository.TaskRepository
-	userRepository         repository.UserRepository
-	submissionRepository   repository.SubmissionRepository
-	collaboratorRepository repository.CollaboratorRepository
+	contestRepository       repository.ContestRepository
+	taskRepository          repository.TaskRepository
+	userRepository          repository.UserRepository
+	submissionRepository    repository.SubmissionRepository
+	accessControlRepository repository.AccessControlRepository
 
 	taskService TaskService
 
@@ -119,12 +119,7 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 	}
 
 	// Automatically grant manage permission to the creator
-	creatorCollaborator := &models.ContestCollaborator{
-		ContestID:  contestID,
-		UserID:     currentUser.ID,
-		Permission: types.PermissionManage,
-	}
-	if err := cs.collaboratorRepository.AddContestCollaborator(tx, creatorCollaborator); err != nil {
+	if err := cs.accessControlRepository.AddContestCollaborator(tx, contestID, currentUser.ID, types.PermissionManage); err != nil {
 		cs.logger.Warnf("Failed to add creator as collaborator: %v", err)
 		// Don't fail the creation if we can't add creator as collaborator
 	}
@@ -1043,7 +1038,7 @@ func (cs *contestService) hasContestPermission(tx *gorm.DB, contestID int64, use
 	}
 
 	// Check collaborator permissions
-	hasPermission, err := cs.collaboratorRepository.HasContestPermission(tx, contestID, userID, requiredPermission)
+	hasPermission, err := cs.accessControlRepository.HasContestPermission(tx, contestID, userID, requiredPermission)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -1084,13 +1079,7 @@ func (cs *contestService) AddContestCollaborator(tx *gorm.DB, currentUser schema
 	}
 
 	// Add collaborator
-	collaborator := &models.ContestCollaborator{
-		ContestID:  contestID,
-		UserID:     request.UserID,
-		Permission: request.Permission,
-	}
-
-	return cs.collaboratorRepository.AddContestCollaborator(tx, collaborator)
+	return cs.accessControlRepository.AddContestCollaborator(tx, contestID, request.UserID, request.Permission)
 }
 
 // GetContestCollaborators retrieves all collaborators for a contest.
@@ -1104,7 +1093,7 @@ func (cs *contestService) GetContestCollaborators(tx *gorm.DB, currentUser schem
 		return nil, myerrors.ErrForbidden
 	}
 
-	collaborators, err := cs.collaboratorRepository.GetContestCollaborators(tx, contestID)
+	collaborators, err := cs.accessControlRepository.GetContestCollaborators(tx, contestID)
 	if err != nil {
 		return nil, err
 	}
@@ -1135,7 +1124,7 @@ func (cs *contestService) UpdateContestCollaborator(tx *gorm.DB, currentUser sch
 	}
 
 	// Check if collaborator exists
-	_, err = cs.collaboratorRepository.GetContestCollaborator(tx, contestID, userID)
+	_, err = cs.accessControlRepository.GetAccess(tx, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
@@ -1143,7 +1132,7 @@ func (cs *contestService) UpdateContestCollaborator(tx *gorm.DB, currentUser sch
 		return err
 	}
 
-	return cs.collaboratorRepository.UpdateContestCollaboratorPermission(tx, contestID, userID, request.Permission)
+	return cs.accessControlRepository.UpdateContestCollaboratorPermission(tx, contestID, userID, request.Permission)
 }
 
 // RemoveContestCollaborator removes a collaborator from a contest.
@@ -1171,17 +1160,17 @@ func (cs *contestService) RemoveContestCollaborator(tx *gorm.DB, currentUser sch
 		return errors.New("cannot remove creator from collaborators")
 	}
 
-	return cs.collaboratorRepository.RemoveContestCollaborator(tx, contestID, userID)
+	return cs.accessControlRepository.RemoveContestCollaborator(tx, contestID, userID)
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, collaboratorRepository repository.CollaboratorRepository, taskService TaskService) ContestService {
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, accessControlRepository repository.AccessControlRepository, taskService TaskService) ContestService {
 	return &contestService{
-		contestRepository:      contestRepository,
-		taskRepository:         taskRepository,
-		userRepository:         userRepository,
-		submissionRepository:   submissionRepository,
-		collaboratorRepository: collaboratorRepository,
-		taskService:            taskService,
-		logger:                 utils.NewNamedLogger("contest_service"),
+		contestRepository:       contestRepository,
+		taskRepository:          taskRepository,
+		userRepository:          userRepository,
+		submissionRepository:    submissionRepository,
+		accessControlRepository: accessControlRepository,
+		taskService:             taskService,
+		logger:                  utils.NewNamedLogger("contest_service"),
 	}
 }

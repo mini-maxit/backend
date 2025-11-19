@@ -574,6 +574,20 @@ func (m *MockTaskService) EXPECT() *MockTaskServiceMockRecorder {
 	return m.recorder
 }
 
+// AddTaskCollaborator mocks base method.
+func (m *MockTaskService) AddTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID int64, request *schemas.AddCollaborator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTaskCollaborator", tx, currentUser, taskID, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddTaskCollaborator indicates an expected call of AddTaskCollaborator.
+func (mr *MockTaskServiceMockRecorder) AddTaskCollaborator(tx, currentUser, taskID, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTaskCollaborator", reflect.TypeOf((*MockTaskService)(nil).AddTaskCollaborator), tx, currentUser, taskID, request)
+}
+
 // Create mocks base method.
 func (m *MockTaskService) Create(tx *gorm.DB, currentUser schemas.User, task *schemas.Task) (int64, error) {
 	m.ctrl.T.Helper()
@@ -721,6 +735,21 @@ func (mr *MockTaskServiceMockRecorder) GetMyLiveTasks(tx, currentUser, paginatio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMyLiveTasks", reflect.TypeOf((*MockTaskService)(nil).GetMyLiveTasks), tx, currentUser, paginationParams)
 }
 
+// GetTaskCollaborators mocks base method.
+func (m *MockTaskService) GetTaskCollaborators(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.Collaborator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskCollaborators", tx, currentUser, taskID)
+	ret0, _ := ret[0].([]schemas.Collaborator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskCollaborators indicates an expected call of GetTaskCollaborators.
+func (mr *MockTaskServiceMockRecorder) GetTaskCollaborators(tx, currentUser, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskCollaborators", reflect.TypeOf((*MockTaskService)(nil).GetTaskCollaborators), tx, currentUser, taskID)
+}
+
 // ParseTestCase mocks base method.
 func (m *MockTaskService) ParseTestCase(archivePath string) (int, error) {
 	m.ctrl.T.Helper()
@@ -762,6 +791,34 @@ func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskI
 func (mr *MockTaskServiceMockRecorder) PutLimits(tx, currentUser, taskID, limits any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutLimits", reflect.TypeOf((*MockTaskService)(nil).PutLimits), tx, currentUser, taskID, limits)
+}
+
+// RemoveTaskCollaborator mocks base method.
+func (m *MockTaskService) RemoveTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTaskCollaborator", tx, currentUser, taskID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTaskCollaborator indicates an expected call of RemoveTaskCollaborator.
+func (mr *MockTaskServiceMockRecorder) RemoveTaskCollaborator(tx, currentUser, taskID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskCollaborator", reflect.TypeOf((*MockTaskService)(nil).RemoveTaskCollaborator), tx, currentUser, taskID, userID)
+}
+
+// UpdateTaskCollaborator mocks base method.
+func (m *MockTaskService) UpdateTaskCollaborator(tx *gorm.DB, currentUser schemas.User, taskID, userID int64, request *schemas.UpdateCollaborator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTaskCollaborator", tx, currentUser, taskID, userID, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTaskCollaborator indicates an expected call of UpdateTaskCollaborator.
+func (mr *MockTaskServiceMockRecorder) UpdateTaskCollaborator(tx, currentUser, taskID, userID, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskCollaborator", reflect.TypeOf((*MockTaskService)(nil).UpdateTaskCollaborator), tx, currentUser, taskID, userID, request)
 }
 
 // MockAuthService is a mock of AuthService interface.

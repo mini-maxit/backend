@@ -118,7 +118,7 @@ func TestCreateTask(t *testing.T) {
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestGetTaskByTitle(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -206,7 +206,7 @@ func TestGetAllTasks(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
@@ -250,7 +250,7 @@ func TestGetTask(t *testing.T) {
 	config := testutils.NewTestConfig()
 	fs, err := filestorage.NewFileStorageService(config.FileStorageURL)
 	require.NoError(t, err)
-	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil, nil)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
@@ -333,7 +333,7 @@ func TestDeleteTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
@@ -366,7 +366,7 @@ func TestEditTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
@@ -391,7 +391,7 @@ func TestEditTask(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
-		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
@@ -406,7 +406,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
@@ -526,7 +526,7 @@ func TestCreateTestCase(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	teacherUser := schemas.User{ID: 2}
 	task := &models.Task{
 		ID:        int64(1),
@@ -566,7 +566,7 @@ func TestParseTestCase(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	tests := []struct {
 		name          string
 		caseType      string
@@ -653,7 +653,7 @@ func TestGetLimits(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
 
 	teacherUser := schemas.User{ID: 2}
@@ -684,7 +684,7 @@ func TestPutLimit(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
 	ioID := int64(1)
 	testCase := &models.TestCase{
