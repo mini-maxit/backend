@@ -346,6 +346,8 @@ definitions:
         type: integer
       isSubmissionOpen:
         type: boolean
+      isVisible:
+        type: boolean
       startAt:
         type: string
       title:
@@ -716,6 +718,8 @@ definitions:
         type: integer
       id:
         type: integer
+      isVisible:
+        type: boolean
       title:
         type: string
       updatedAt:
@@ -751,6 +755,8 @@ definitions:
         type: integer
       id:
         type: integer
+      isVisible:
+        type: boolean
       title:
         type: string
       updatedAt:
