@@ -3,7 +3,8 @@ package schemas
 import "time"
 
 type EditTask struct {
-	Title *string `json:"title,omitempty"`
+	Title     *string `json:"title,omitempty"`
+	IsVisible *bool   `json:"isVisible,omitempty"`
 }
 
 type Task struct {
@@ -12,6 +13,7 @@ type Task struct {
 	CreatedBy int64     `json:"createdBy"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	IsVisible bool      `json:"isVisible"`
 }
 
 type TaskDetailed struct {
