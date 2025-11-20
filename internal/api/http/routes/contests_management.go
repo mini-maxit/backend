@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -723,7 +724,6 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
-
 func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {
 	route := &contestsManagementRouteImpl{
 		contestService:    contestService,
@@ -734,4 +734,60 @@ func NewContestsManagementRoute(contestService service.ContestService, submissio
 		panic("Invalid contests management route parameters: " + err.Error())
 	}
 	return route
+}
+
+func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
+	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			route.CreateContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/created", route.GetCreatedContests)
+
+	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPut:
+			route.EditContest(w, r)
+		case http.MethodDelete:
+			route.DeleteContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/submissions", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetContestSubmissions(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/tasks/assignable-tasks", route.GetAssignableTasks)
+
+	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetContestTasks(w, r)
+		case http.MethodPost:
+			route.AddTaskToContest(w, r)
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetRegistrationRequests(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
+	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
 }

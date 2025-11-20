@@ -44,20 +44,19 @@ type TaskService interface {
 	ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error
 	// PutLimits updates limits associated with each input/output.
 	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
-
 }
 
 const defaultTaskSort = "created_at:desc"
 
 type taskService struct {
-	filestorage             filestorage.FileStorageService
-	fileRepository          repository.File
-	groupRepository         repository.GroupRepository
-	testCaseRepository      repository.TestCaseRepository
-	taskRepository          repository.TaskRepository
-	userRepository          repository.UserRepository
-	submissionRepository    repository.SubmissionRepository
-	contestRepository       repository.ContestRepository
+	filestorage          filestorage.FileStorageService
+	fileRepository       repository.File
+	groupRepository      repository.GroupRepository
+	testCaseRepository   repository.TestCaseRepository
+	taskRepository       repository.TaskRepository
+	userRepository       repository.UserRepository
+	submissionRepository repository.SubmissionRepository
+	contestRepository    repository.ContestRepository
 	accessControlService AccessControlService
 
 	logger *zap.SugaredLogger
@@ -234,6 +233,9 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int6
 
 	err = ts.taskRepository.Delete(tx, taskID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
 		ts.logger.Errorf("Error deleting task: %v", err.Error())
 		return err
 	}
@@ -657,6 +659,10 @@ func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, userID int64
 	// Get task to find creator
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, myerrors.ErrNotFound
+		}
+		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return false, err
 	}
 
@@ -678,15 +684,15 @@ func NewTaskService(
 ) TaskService {
 	log := utils.NewNamedLogger("task_service")
 	return &taskService{
-		filestorage:             filestorage,
-		fileRepository:          fileRepository,
-		taskRepository:          taskRepository,
-		userRepository:          userRepository,
-		groupRepository:         groupRepository,
-		testCaseRepository:      testCaseRepository,
-		submissionRepository:    submissionRepository,
-		contestRepository:       contestRepository,
+		filestorage:          filestorage,
+		fileRepository:       fileRepository,
+		taskRepository:       taskRepository,
+		userRepository:       userRepository,
+		groupRepository:      groupRepository,
+		testCaseRepository:   testCaseRepository,
+		submissionRepository: submissionRepository,
+		contestRepository:    contestRepository,
 		accessControlService: accessControlService,
-		logger:                  log,
+		logger:               log,
 	}
 }

@@ -176,7 +176,7 @@ func (acs *accessControlService) GrantCreatorAccess(tx *gorm.DB, resourceType mo
 		UserID:       creatorID,
 		Permission:   types.PermissionManage,
 	}
-	
+
 	err := acs.accessControlRepository.AddAccess(tx, access)
 	if err != nil {
 		acs.logger.Warnw("Failed to grant creator access", "error", err, "resourceType", resourceType, "resourceID", resourceID, "creatorID", creatorID)

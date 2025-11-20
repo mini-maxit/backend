@@ -458,7 +458,6 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
-
 func NewTasksManagementRoute(taskService service.TaskService) TasksManagementRoute {
 	route := &tasksManagementRoute{
 		taskService: taskService,
@@ -501,8 +500,6 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-
-
 }
 
 func isValidFileFormat(filename string) bool {

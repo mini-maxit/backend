@@ -66,7 +66,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	if err != nil {
 		log.Panicf("Failed to create file storage service: %s", err.Error())
 	}
-	
+
 	// Create queue client (shared by both service and listener)
 	queueClient := pkgqueue.NewClient(
 		pkgqueue.Config{
@@ -96,10 +96,10 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	
+
 	// Create AccessControlService first
 	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository)
-	
+
 	// Create TaskService (needs AccessControlService)
 	taskService := service.NewTaskService(
 		filestorage,
@@ -112,7 +112,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		contestRepository,
 		accessControlService,
 	)
-	
+
 	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlService, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
