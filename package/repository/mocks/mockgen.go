@@ -1759,6 +1759,22 @@ func (mr *MockContestRepositoryMockRecorder) GetAll(tx, offset, limit, sort any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockContestRepository)(nil).GetAll), tx, offset, limit, sort)
 }
 
+// GetAllForCollaborator mocks base method.
+func (m *MockContestRepository) GetAllForCollaborator(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.ManagedContest, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForCollaborator", tx, userID, offset, limit, sort)
+	ret0, _ := ret[0].([]models.ManagedContest)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAllForCollaborator indicates an expected call of GetAllForCollaborator.
+func (mr *MockContestRepositoryMockRecorder) GetAllForCollaborator(tx, userID, offset, limit, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCollaborator", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCollaborator), tx, userID, offset, limit, sort)
+}
+
 // GetAllForCreator mocks base method.
 func (m *MockContestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset, limit int, sort string) ([]models.Contest, int64, error) {
 	m.ctrl.T.Helper()

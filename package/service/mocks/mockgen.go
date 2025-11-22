@@ -45,17 +45,17 @@ func (m *MockAccessControlService) EXPECT() *MockAccessControlServiceMockRecorde
 }
 
 // AddCollaborator mocks base method.
-func (m *MockAccessControlService) AddCollaborator(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (m *MockAccessControlService) AddCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCollaborator", tx, resourceType, resourceID, userID, permission)
+	ret := m.ctrl.Call(m, "AddCollaborator", tx, currentUser, resourceType, resourceID, userID, permission)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCollaborator indicates an expected call of AddCollaborator.
-func (mr *MockAccessControlServiceMockRecorder) AddCollaborator(tx, resourceType, resourceID, userID, permission any) *gomock.Call {
+func (mr *MockAccessControlServiceMockRecorder) AddCollaborator(tx, currentUser, resourceType, resourceID, userID, permission any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).AddCollaborator), tx, resourceType, resourceID, userID, permission)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).AddCollaborator), tx, currentUser, resourceType, resourceID, userID, permission)
 }
 
 // CanUserAccess mocks base method.
@@ -74,18 +74,18 @@ func (mr *MockAccessControlServiceMockRecorder) CanUserAccess(tx, resourceType, 
 }
 
 // GetCollaborators mocks base method.
-func (m *MockAccessControlService) GetCollaborators(tx *gorm.DB, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error) {
+func (m *MockAccessControlService) GetCollaborators(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCollaborators", tx, resourceType, resourceID)
-	ret0, _ := ret[0].([]models.AccessControl)
+	ret := m.ctrl.Call(m, "GetCollaborators", tx, currentUser, resourceType, resourceID)
+	ret0, _ := ret[0].([]schemas.Collaborator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCollaborators indicates an expected call of GetCollaborators.
-func (mr *MockAccessControlServiceMockRecorder) GetCollaborators(tx, resourceType, resourceID any) *gomock.Call {
+func (mr *MockAccessControlServiceMockRecorder) GetCollaborators(tx, currentUser, resourceType, resourceID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollaborators", reflect.TypeOf((*MockAccessControlService)(nil).GetCollaborators), tx, resourceType, resourceID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCollaborators", reflect.TypeOf((*MockAccessControlService)(nil).GetCollaborators), tx, currentUser, resourceType, resourceID)
 }
 
 // GetUserPermission mocks base method.
@@ -103,18 +103,18 @@ func (mr *MockAccessControlServiceMockRecorder) GetUserPermission(tx, resourceTy
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPermission", reflect.TypeOf((*MockAccessControlService)(nil).GetUserPermission), tx, resourceType, resourceID, userID)
 }
 
-// GrantCreatorAccess mocks base method.
-func (m *MockAccessControlService) GrantCreatorAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID, creatorID int64) error {
+// GrantOwnerAccess mocks base method.
+func (m *MockAccessControlService) GrantOwnerAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID, ownerID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GrantCreatorAccess", tx, resourceType, resourceID, creatorID)
+	ret := m.ctrl.Call(m, "GrantOwnerAccess", tx, resourceType, resourceID, ownerID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// GrantCreatorAccess indicates an expected call of GrantCreatorAccess.
-func (mr *MockAccessControlServiceMockRecorder) GrantCreatorAccess(tx, resourceType, resourceID, creatorID any) *gomock.Call {
+// GrantOwnerAccess indicates an expected call of GrantOwnerAccess.
+func (mr *MockAccessControlServiceMockRecorder) GrantOwnerAccess(tx, resourceType, resourceID, ownerID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GrantCreatorAccess", reflect.TypeOf((*MockAccessControlService)(nil).GrantCreatorAccess), tx, resourceType, resourceID, creatorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GrantOwnerAccess", reflect.TypeOf((*MockAccessControlService)(nil).GrantOwnerAccess), tx, resourceType, resourceID, ownerID)
 }
 
 // HasPermission mocks base method.
@@ -133,31 +133,31 @@ func (mr *MockAccessControlServiceMockRecorder) HasPermission(tx, resourceType, 
 }
 
 // RemoveCollaborator mocks base method.
-func (m *MockAccessControlService) RemoveCollaborator(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) error {
+func (m *MockAccessControlService) RemoveCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveCollaborator", tx, resourceType, resourceID, userID)
+	ret := m.ctrl.Call(m, "RemoveCollaborator", tx, currentUser, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveCollaborator indicates an expected call of RemoveCollaborator.
-func (mr *MockAccessControlServiceMockRecorder) RemoveCollaborator(tx, resourceType, resourceID, userID any) *gomock.Call {
+func (mr *MockAccessControlServiceMockRecorder) RemoveCollaborator(tx, currentUser, resourceType, resourceID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).RemoveCollaborator), tx, resourceType, resourceID, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).RemoveCollaborator), tx, currentUser, resourceType, resourceID, userID)
 }
 
 // UpdateCollaborator mocks base method.
-func (m *MockAccessControlService) UpdateCollaborator(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (m *MockAccessControlService) UpdateCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCollaborator", tx, resourceType, resourceID, userID, permission)
+	ret := m.ctrl.Call(m, "UpdateCollaborator", tx, currentUser, resourceType, resourceID, userID, permission)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateCollaborator indicates an expected call of UpdateCollaborator.
-func (mr *MockAccessControlServiceMockRecorder) UpdateCollaborator(tx, resourceType, resourceID, userID, permission any) *gomock.Call {
+func (mr *MockAccessControlServiceMockRecorder) UpdateCollaborator(tx, currentUser, resourceType, resourceID, userID, permission any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).UpdateCollaborator), tx, resourceType, resourceID, userID, permission)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCollaborator", reflect.TypeOf((*MockAccessControlService)(nil).UpdateCollaborator), tx, currentUser, resourceType, resourceID, userID, permission)
 }
 
 // MockContestService is a mock of ContestService interface.
@@ -314,6 +314,21 @@ func (m *MockContestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64,
 func (mr *MockContestServiceMockRecorder) GetContestsCreatedByUser(tx, userID, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsCreatedByUser", reflect.TypeOf((*MockContestService)(nil).GetContestsCreatedByUser), tx, userID, paginationParams)
+}
+
+// GetManagedContests mocks base method.
+func (m *MockContestService) GetManagedContests(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManagedContests", tx, userID, paginationParams)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.ManagedContest])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManagedContests indicates an expected call of GetManagedContests.
+func (mr *MockContestServiceMockRecorder) GetManagedContests(tx, userID, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedContests", reflect.TypeOf((*MockContestService)(nil).GetManagedContests), tx, userID, paginationParams)
 }
 
 // GetOngoingContests mocks base method.

@@ -58,6 +58,8 @@ type ContestService interface {
 	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
 
 	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
+	// GetManagedContests retrieves contests where the user is listed in access_control (any permission)
+	GetManagedContests(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error)
 	GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 }
 
@@ -108,10 +110,10 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 		return -1, err
 	}
 
-	// Automatically grant manage permission to the creator
-	if err := cs.accessControlService.GrantCreatorAccess(tx, models.ResourceTypeContest, contestID, currentUser.ID); err != nil {
-		cs.logger.Warnf("Failed to add creator as collaborator: %v", err)
-		// Don't fail the creation if we can't add creator as collaborator
+	// Automatically grant owner permission to the creator (immutable highest level)
+	if err := cs.accessControlService.GrantOwnerAccess(tx, models.ResourceTypeContest, contestID, currentUser.ID); err != nil {
+		cs.logger.Warnf("Failed to grant owner permission: %v", err)
+		// Don't fail the creation if we can't add owner permission entry
 	}
 
 	return contestID, nil
@@ -939,6 +941,24 @@ func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, pa
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
+// GetManagedContests retrieves contests where the user has any collaborator access (view/edit/manage)
+func (cs *contestService) GetManagedContests(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
+	}
+
+	contests, totalCount, err := cs.contestRepository.GetAllForCollaborator(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.ManagedContest]{}, err
+	}
+
+	result := make([]schemas.ManagedContest, len(contests))
+	for i, contest := range contests {
+		result[i] = *ManagedContestToSchema(&contest)
+	}
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
 func (cs *contestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
@@ -980,6 +1000,7 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 		IsVisible:          model.IsVisible,
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsSubmissionOpen:   model.IsSubmissionOpen,
+		CreatedAt:          model.CreatedAt,
 	}
 }
 
@@ -1022,6 +1043,26 @@ func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats
 		Score:                contest.SolvedTestCount,
 		MaximumScore:         contest.TestCount,
 		Rank:                 0, // TODO: implement
+	}
+}
+
+func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContest {
+	return &schemas.ManagedContest{
+		CreatedContest: schemas.CreatedContest{
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
+			IsVisible:          model.IsVisible,
+			IsRegistrationOpen: model.IsRegistrationOpen,
+			IsSubmissionOpen:   model.IsSubmissionOpen,
+			CreatedAt:          model.CreatedAt,
+		},
+		PermissionType: model.PermissionType,
 	}
 }
 

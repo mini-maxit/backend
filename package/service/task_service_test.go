@@ -131,7 +131,7 @@ func TestCreateTask(t *testing.T) {
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(tx, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-		acs.EXPECT().GrantCreatorAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		taskID, err := ts.Create(tx, adminUser, task)
 		require.NoError(t, err)

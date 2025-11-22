@@ -132,12 +132,11 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 //	@Tags			tasks-management
 //	@Summary		Update a task
 //	@Description	Updates a task by ID
+//	@Consumes		multipart/form-data
 //	@Produce		json
 //	@Param			id		path		int		true	"Task ID"
 //	@Param			title	formData	string	false	"New title for the task"
-//
 //	@Param			archive	formData	file	false	"New archive for the task"
-//
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError

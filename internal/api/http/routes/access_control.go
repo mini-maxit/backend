@@ -47,7 +47,7 @@ type accessControlRoute struct {
 //
 //	@Tags			access-control
 //	@Summary		Add a collaborator to a contest
-//	@Description	Add a user as a collaborator to a contest with specified permissions (view, edit, or manage). Only users with manage permission can add collaborators.
+//	@Description	Add a user as a collaborator to a contest with specified permissions (edit or manage). Only users with manage permission can add collaborators.
 //	@Accept			json
 //	@Produce		json
 //	@Param			resource_id	path		int						true	"Contest ID"
@@ -123,7 +123,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	err = ac.accessControlService.AddCollaborator(tx, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(tx, &currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -145,7 +145,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 //
 //	@Tags			access-control
 //	@Summary		Get collaborators for a contest
-//	@Description	Get all collaborators for a specific contest. Users with view permission or higher can see collaborators.
+//	@Description	Get all collaborators for a specific contest. Users with edit permission or higher can see collaborators.
 //	@Produce		json
 //	@Param			resource_id	path		int	true	"Contest ID"
 //	@Failure		400			{object}	httputils.APIError
@@ -179,9 +179,9 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, models.ResourceTypeContest, contestID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, &user, models.ResourceTypeContest, contestID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -263,9 +263,9 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, models.ResourceTypeContest, contestID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(tx, &user, models.ResourceTypeContest, contestID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -333,9 +333,9 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, models.ResourceTypeContest, contestID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, &user, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -359,7 +359,7 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 //
 //	@Tags			access-control
 //	@Summary		Add a collaborator to a task
-//	@Description	Add a user as a collaborator to a task with specified permissions (view, edit, or manage). Only users with manage permission can add collaborators.
+//	@Description	Add a user as a collaborator to a task with specified permissions (edit or manage). Only users with manage permission can add collaborators.
 //	@Accept			json
 //	@Produce		json
 //	@Param			resource_id	path		int						true	"Task ID"
@@ -407,9 +407,9 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.accessControlService.AddCollaborator(tx, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(tx, &user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -431,7 +431,7 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 //
 //	@Tags			access-control
 //	@Summary		Get collaborators for a task
-//	@Description	Get all collaborators for a specific task. Users with view permission or higher can see collaborators.
+//	@Description	Get all collaborators for a specific task. Users with edit permission or higher can see collaborators.
 //	@Produce		json
 //	@Param			resource_id	path		int	true	"Task ID"
 //	@Failure		400			{object}	httputils.APIError
@@ -465,9 +465,9 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, models.ResourceTypeTask, taskID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, &user, models.ResourceTypeTask, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -549,9 +549,9 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, models.ResourceTypeTask, taskID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(tx, &user, models.ResourceTypeTask, taskID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -619,9 +619,9 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	_ = r.Context().Value(httputils.UserKey).(schemas.User) // TODO: Add permission check
+	user := r.Context().Value(httputils.UserKey).(schemas.User)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, models.ResourceTypeTask, taskID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, &user, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

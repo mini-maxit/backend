@@ -57,7 +57,7 @@ func (r *accessControlRepository) GetAccess(tx *gorm.DB, resourceType models.Res
 
 func (r *accessControlRepository) GetResourceAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error) {
 	var accesses []models.AccessControl
-	err := tx.Where("resource_type = ? AND resource_id = ?", resourceType, resourceID).
+	err := tx.Model(&models.AccessControl{}).Where("resource_type = ? AND resource_id = ?", resourceType, resourceID).
 		Preload("User").
 		Find(&accesses).Error
 	return accesses, err

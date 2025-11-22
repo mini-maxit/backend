@@ -95,10 +95,10 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser schemas.User, task *schem
 		return 0, err
 	}
 
-	// Automatically grant manage permission to the creator
-	if err := ts.accessControlService.GrantCreatorAccess(tx, models.ResourceTypeTask, taskID, currentUser.ID); err != nil {
-		ts.logger.Warnf("Failed to add creator as task collaborator: %v", err)
-		// Don't fail the creation if we can't add creator as collaborator
+	// Automatically grant owner permission to the creator (immutable highest level)
+	if err := ts.accessControlService.GrantOwnerAccess(tx, models.ResourceTypeTask, taskID, currentUser.ID); err != nil {
+		ts.logger.Warnf("Failed to grant owner permission: %v", err)
+		// Don't fail the creation if we can't add owner permission entry
 	}
 
 	return taskID, nil

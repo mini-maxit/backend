@@ -23,8 +23,3 @@ type AccessControl struct {
 
 	User User `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:CASCADE"`
 }
-
-// TableName overrides the table name to be access_control
-func (AccessControl) TableName() string {
-	return "access_control"
-}

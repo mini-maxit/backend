@@ -98,7 +98,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authService := service.NewAuthService(userRepository, jwtService)
 
 	// Create AccessControlService first
-	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository)
+	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository, taskRepository, contestRepository)
 
 	// Create TaskService (needs AccessControlService)
 	taskService := service.NewTaskService(

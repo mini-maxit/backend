@@ -19,12 +19,12 @@ func (p Permission) Value() (driver.Value, error) {
 }
 
 const (
-	// PermissionView represents view-only access.
-	PermissionView Permission = "view"
-	// PermissionEdit represents edit access (view + edit).
+	// PermissionEdit represents edit access.
 	PermissionEdit Permission = "edit"
-	// PermissionManage represents full access (view + edit + delete + manage collaborators).
+	// PermissionManage represents full access (edit + manage collaborators).
 	PermissionManage Permission = "manage"
+	// PermissionOwner represents immutable ownership (highest level).
+	PermissionOwner Permission = "owner"
 )
 
 // Scan implements the sql.Scanner interface.
@@ -34,7 +34,7 @@ func (p *Permission) Scan(value any) error {
 		return errors.New("Permission must be a string")
 	}
 	permission := Permission(valueString)
-	availablePermissions := []Permission{PermissionView, PermissionEdit, PermissionManage}
+	availablePermissions := []Permission{PermissionEdit, PermissionManage, PermissionOwner}
 	if !slices.Contains(availablePermissions, permission) {
 		return fmt.Errorf("invalid Permission: %s. Available permissions: %v", permission, availablePermissions)
 	}
@@ -43,12 +43,12 @@ func (p *Permission) Scan(value any) error {
 }
 
 // HasPermission checks if the current permission level includes the required permission.
-// Manage > Edit > View
+// Owner > Manage > Edit
 func (p Permission) HasPermission(required Permission) bool {
 	permissionLevels := map[Permission]int{
-		PermissionView:   1,
-		PermissionEdit:   2,
-		PermissionManage: 3,
+		PermissionEdit:   1,
+		PermissionManage: 2,
+		PermissionOwner:  3,
 	}
 	return permissionLevels[p] >= permissionLevels[required]
 }
