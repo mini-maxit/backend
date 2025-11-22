@@ -29,6 +29,7 @@ type ContestsManagementRoute interface {
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
+	GetManageableContests(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -680,17 +681,18 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 // GetCreatedContests godoc
 //
 //	@Tags			contests-management
-//	@Summary		Get contests created by the current user
+//	@Summary		This endpoint is deprecated and will be removed in future versions. Please use the /contests-management/contests endpoint instead.
 //	@Description	Get all contests created by the currently authenticated user with pagination metadata
-//	@Produce		json
-//	@Param			limit	query		int		false	"Limit"
-//	@Param			offset	query		int		false	"Offset"
-//	@Param			sort	query		string	false	"Sort"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.CreatedContest]]
-//	@Router			/contests-management/contests/created [get]
+//	@Deprecated
+//	@Produce	json
+//	@Param		limit	query		int		false	"Limit"
+//	@Param		offset	query		int		false	"Offset"
+//	@Param		sort	query		string	false	"Sort"
+//	@Failure	400		{object}	httputils.APIError
+//	@Failure	403		{object}	httputils.APIError
+//	@Failure	500		{object}	httputils.APIError
+//	@Success	200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.CreatedContest]]
+//	@Router		/contests-management/contests/created [get]
 func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -724,11 +726,72 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+// GetManageableContests godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get contests manageable by the current user
+//	@Description	Get all contests where the current user is the creator or has collaborator access (view, edit, or manage) with pagination metadata
+//	@Produce		json
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedContest]]
+//	@Router			/contests-management/contests [get]
+func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	response, err := cr.contestService.GetManagedContests(tx, currentUser.ID, paginationParams)
+	if err != nil {
+		db.Rollback()
+		status := http.StatusInternalServerError
+		if errors.Is(err, myerrors.ErrForbidden) {
+			status = http.StatusForbidden
+		} else {
+			cr.logger.Errorw("Failed to get manageable contests", "error", err)
+		}
+		httputils.ReturnError(w, status, "Failed to get manageable contests")
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, response)
+}
+
+func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {
+	route := &contestsManagementRouteImpl{
+		contestService:    contestService,
+		submissionService: submissionService,
+		logger:            utils.NewNamedLogger("contests-management-route"),
+	}
+	if err := utils.ValidateStruct(*route); err != nil {
+		panic("Invalid contests management route parameters: " + err.Error())
+	}
+	return route
+}
+
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			route.CreateContest(w, r)
+		case http.MethodGet:
+			route.GetManageableContests(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
@@ -778,16 +841,4 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
-}
-
-func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {
-	route := &contestsManagementRouteImpl{
-		contestService:    contestService,
-		submissionService: submissionService,
-		logger:            utils.NewNamedLogger("contests-management-route"),
-	}
-	if err := utils.ValidateStruct(*route); err != nil {
-		panic("Invalid contests management route parameters: " + err.Error())
-	}
-	return route
 }

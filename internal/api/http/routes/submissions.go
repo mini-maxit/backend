@@ -469,9 +469,9 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 // For admin it returns all submissions for specific user.
 //
 //	@Produce		json
-//	@Param			id		path		int	true	"User ID"
-//	@Param			limit	query		int	false	"Limit the number of returned submissions"
-//	@Param			offset	query		int	false	"Offset the returned submissions"
+//	@Param			limit	query		int		false	"Limit the number of returned submissions"
+//	@Param			offset	query		int		false	"Offset the returned submissions"
+//	@Param			sort	query		string	false	"Sort order"
 //	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError

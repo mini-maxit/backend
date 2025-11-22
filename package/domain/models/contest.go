@@ -82,3 +82,8 @@ type ParticipantContestStats struct {
 	TestCount       int64 `gorm:"column:test_count"`
 	SolvedTestCount int64 `gorm:"column:solved_test_count"`
 }
+
+type ManagedContest struct {
+	Contest
+	PermissionType types.Permission `gorm:"column:permission_type"`
+}

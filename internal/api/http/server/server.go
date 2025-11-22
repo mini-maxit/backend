@@ -70,6 +70,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	tasksManagementMux := mux.NewRouter()
 	routes.RegisterTasksManagementRoutes(tasksManagementMux, init.TaskManagementRoute)
 
+	// Access control routes
+	accessControlMux := mux.NewRouter()
+	routes.RegisterAccessControlRoutes(accessControlMux, init.AccessControlRoute)
+
 	// User routes
 	userMux := mux.NewRouter()
 	routes.RegisterUserRoutes(userMux, init.UserRoute)
@@ -96,6 +100,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
 	secureMux.PathPrefix("/tasks-management/").Handler(http.StripPrefix("/tasks-management", tasksManagementMux))
+	secureMux.PathPrefix("/access-control/").Handler(http.StripPrefix("/access-control", accessControlMux))
 	secureMux.PathPrefix("/tasks").Handler(taskMux)
 	secureMux.PathPrefix("/submissions").Handler(subbmissionMux)
 	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))

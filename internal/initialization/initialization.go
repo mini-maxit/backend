@@ -30,6 +30,7 @@ type Initialization struct {
 	SubmissionRoute        routes.SubmissionRoutes
 	TaskRoute              routes.TaskRoute
 	TaskManagementRoute    routes.TasksManagementRoute
+	AccessControlRoute     routes.AccessControlRoute
 	UserRoute              routes.UserRoute
 	WorkerRoute            routes.WorkerRoute
 
@@ -58,22 +59,13 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	queueRepository := repository.NewQueueMessageRepository()
 	submissionResultRepository := repository.NewSubmissionResultRepository()
 	contestRepository := repository.NewContestRepository()
+	accessControlRepository := repository.NewAccessControlRepository()
 
 	// Services
 	filestorage, err := filestorage.NewFileStorageService(cfg.FileStorageURL)
 	if err != nil {
 		log.Panicf("Failed to create file storage service: %s", err.Error())
 	}
-	taskService := service.NewTaskService(
-		filestorage,
-		fileRepository,
-		taskRepository,
-		testCaseRepository,
-		userRepository,
-		groupRepository,
-		submissionRepository,
-		contestRepository,
-	)
 
 	// Create queue client (shared by both service and listener)
 	queueClient := pkgqueue.NewClient(
@@ -104,7 +96,24 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	)
 	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
 	authService := service.NewAuthService(userRepository, jwtService)
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, taskService)
+
+	// Create AccessControlService first
+	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository, taskRepository, contestRepository)
+
+	// Create TaskService (needs AccessControlService)
+	taskService := service.NewTaskService(
+		filestorage,
+		fileRepository,
+		taskRepository,
+		testCaseRepository,
+		userRepository,
+		groupRepository,
+		submissionRepository,
+		contestRepository,
+		accessControlService,
+	)
+
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlService, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
@@ -133,6 +142,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(taskService)
 	tasksManagementRoute := routes.NewTasksManagementRoute(taskService)
+	accessControlRoute := routes.NewAccessControlRoute(accessControlService)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
@@ -166,6 +176,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		SubmissionRoute:        submissionRoute,
 		TaskRoute:              taskRoute,
 		TaskManagementRoute:    tasksManagementRoute,
+		AccessControlRoute:     accessControlRoute,
 		UserRoute:              userRoute,
 		WorkerRoute:            workerRoute,
 

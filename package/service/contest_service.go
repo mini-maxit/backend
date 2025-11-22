@@ -58,6 +58,8 @@ type ContestService interface {
 	ValidateContestSubmission(tx *gorm.DB, contestID, taskID, userID int64) error
 
 	GetContestsCreatedByUser(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
+	// GetManagedContests retrieves contests where the user is listed in access_control (any permission)
+	GetManagedContests(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error)
 	GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 }
 
@@ -68,6 +70,7 @@ type contestService struct {
 	taskRepository       repository.TaskRepository
 	userRepository       repository.UserRepository
 	submissionRepository repository.SubmissionRepository
+	accessControlService AccessControlService
 
 	taskService TaskService
 
@@ -105,6 +108,12 @@ func (cs *contestService) Create(tx *gorm.DB, currentUser schemas.User, contest 
 	contestID, err := cs.contestRepository.Create(tx, model)
 	if err != nil {
 		return -1, err
+	}
+
+	// Automatically grant owner permission to the creator (immutable highest level)
+	if err := cs.accessControlService.GrantOwnerAccess(tx, models.ResourceTypeContest, contestID, currentUser.ID); err != nil {
+		cs.logger.Warnf("Failed to grant owner permission: %v", err)
+		// Don't fail the creation if we can't add owner permission entry
 	}
 
 	return contestID, nil
@@ -260,8 +269,12 @@ func (cs *contestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID 
 		return nil, err
 	}
 
-	// Check permissions
-	if currentUser.Role == types.UserRoleTeacher && model.CreatedBy != currentUser.ID {
+	// Check permissions using collaborator system
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return nil, err
+	}
+	if !hasPermission {
 		return nil, myerrors.ErrForbidden
 	}
 
@@ -281,15 +294,16 @@ func (cs *contestService) Delete(tx *gorm.DB, currentUser schemas.User, contestI
 		return err
 	}
 
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	// Check permissions using collaborator system - only manage permission can delete
+	// This also verifies the contest exists
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
 		return err
 	}
-
-	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -463,22 +477,22 @@ func (cs *contestService) GetTaskProgressForContest(tx *gorm.DB, currentUser sch
 }
 
 func (cs *contestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	// Only admins and teachers can see available tasks for adding to contest
+	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
+	if err != nil {
+		return nil, myerrors.ErrForbidden
+	}
+
+	// Check permissions using collaborator system - need edit permission
+	// This also verifies the contest exists
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, myerrors.ErrNotFound
 		}
 		return nil, err
 	}
-
-	// Only admins and teachers can see available tasks for adding to contest
-	err = utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return nil, myerrors.ErrForbidden
-	}
-
-	// Additional check: user must be the contest creator (for teachers)
-	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return nil, myerrors.ErrForbidden
 	}
 
@@ -568,7 +582,13 @@ func (cs *contestService) AddTaskToContest(tx *gorm.DB, currentUser *schemas.Use
 		}
 		return err
 	}
-	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+
+	// Check permissions using collaborator system - need edit permission
+	hasPermission, err := cs.hasContestPermission(tx, contestID, *currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -686,17 +706,16 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 }
 
 func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, status types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
-	// First, check if contest exists
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	// Check authorization - need manage permission to view registration requests
+	// This also verifies the contest exists
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, myerrors.ErrNotFound
 		}
 		return nil, err
 	}
-
-	// Check authorization - only contest creator or admin can view registration requests
-	if currentUser.Role != types.UserRoleAdmin && contest.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return nil, myerrors.ErrForbidden
 	}
 
@@ -723,19 +742,16 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 }
 
 func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
-	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
-		return err
-	}
-
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	// Check permissions using collaborator system - need manage permission
+	// This also verifies the contest exists
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
 		return err
 	}
-
-	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -778,19 +794,16 @@ func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser sc
 }
 
 func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
-	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
-		return err
-	}
-
-	contest, err := cs.contestRepository.Get(tx, contestID)
+	// Check permissions using collaborator system - need manage permission
+	// This also verifies the contest exists
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
 		return err
 	}
-
-	if currentUser.Role == types.UserRoleTeacher && contest.CreatedBy != currentUser.ID {
+	if !hasPermission {
 		return myerrors.ErrForbidden
 	}
 
@@ -928,6 +941,24 @@ func (cs *contestService) GetContestsCreatedByUser(tx *gorm.DB, userID int64, pa
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
+// GetManagedContests retrieves contests where the user has any collaborator access (view/edit/manage)
+func (cs *contestService) GetManagedContests(tx *gorm.DB, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
+	}
+
+	contests, totalCount, err := cs.contestRepository.GetAllForCollaborator(tx, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.ManagedContest]{}, err
+	}
+
+	result := make([]schemas.ManagedContest, len(contests))
+	for i, contest := range contests {
+		result[i] = *ManagedContestToSchema(&contest)
+	}
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
 func (cs *contestService) GetContestTask(tx *gorm.DB, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error) {
 	contest, err := cs.contestRepository.Get(tx, contestID)
 	if err != nil {
@@ -969,7 +1000,24 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 		IsVisible:          model.IsVisible,
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsSubmissionOpen:   model.IsSubmissionOpen,
+		CreatedAt:          model.CreatedAt,
 	}
+}
+
+// hasContestPermission checks if the user has the required permission for the contest.
+// Returns true if:
+// 1. User is admin
+// 2. User is the creator (which should also have manage permission via collaborator)
+// 3. User has the required permission via collaborator
+func (cs *contestService) hasContestPermission(tx *gorm.DB, contestID int64, user schemas.User, requiredPermission types.Permission) (bool, error) {
+	// Fetch contest (verifies existence)
+	contest, err := cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		return false, err
+	}
+
+	// Delegate permission logic to AccessControlService
+	return cs.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, contest.CreatedBy, requiredPermission)
 }
 
 func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats) *schemas.PastContestWithStats {
@@ -998,12 +1046,33 @@ func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats
 	}
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, taskService TaskService) ContestService {
+func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContest {
+	return &schemas.ManagedContest{
+		CreatedContest: schemas.CreatedContest{
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
+			IsVisible:          model.IsVisible,
+			IsRegistrationOpen: model.IsRegistrationOpen,
+			IsSubmissionOpen:   model.IsSubmissionOpen,
+			CreatedAt:          model.CreatedAt,
+		},
+		PermissionType: model.PermissionType,
+	}
+}
+
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
 	return &contestService{
 		contestRepository:    contestRepository,
 		taskRepository:       taskRepository,
 		userRepository:       userRepository,
 		submissionRepository: submissionRepository,
+		accessControlService: accessControlService,
 		taskService:          taskService,
 		logger:               utils.NewNamedLogger("contest_service"),
 	}

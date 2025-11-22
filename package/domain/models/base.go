@@ -27,6 +27,7 @@ var AllModels = []interface{}{
 	&ContestParticipantGroup{},
 	&ContestTask{},
 	&ContestRegistrationRequests{},
+	&AccessControl{},
 	&File{},
 	&TestCase{},
 	&LanguageConfig{},

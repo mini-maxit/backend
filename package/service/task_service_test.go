@@ -10,10 +10,11 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	"github.com/mini-maxit/backend/package/errors"
+	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
+	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -118,7 +119,8 @@ func TestCreateTask(t *testing.T) {
 	gr := mock_repository.NewMockGroupRepository(ctrl)
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -129,6 +131,7 @@ func TestCreateTask(t *testing.T) {
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(tx, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		taskID, err := ts.Create(tx, adminUser, task)
 		require.NoError(t, err)
@@ -146,7 +149,7 @@ func TestCreateTask(t *testing.T) {
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
 		taskID, err := ts.Create(tx, adminUser, task)
-		require.ErrorIs(t, err, errors.ErrTaskExists)
+		require.ErrorIs(t, err, myerrors.ErrTaskExists)
 		assert.Equal(t, int64(0), taskID)
 	})
 
@@ -156,7 +159,7 @@ func TestCreateTask(t *testing.T) {
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
 		})
-		require.ErrorIs(t, err, errors.ErrForbidden)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 		assert.Equal(t, int64(0), taskID)
 	})
 }
@@ -169,7 +172,7 @@ func TestGetTaskByTitle(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
@@ -191,9 +194,9 @@ func TestGetTaskByTitle(t *testing.T) {
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		taskTitle := "Nonexistent Task"
-		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, errors.ErrTaskNotFound).Times(1)
+		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, myerrors.ErrTaskNotFound).Times(1)
 		task, err := ts.GetByTitle(tx, taskTitle)
-		require.ErrorIs(t, err, errors.ErrTaskNotFound)
+		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
@@ -206,7 +209,7 @@ func TestGetAllTasks(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
@@ -272,7 +275,7 @@ func TestGetTask(t *testing.T) {
 	config := testutils.NewTestConfig()
 	fs, err := filestorage.NewFileStorageService(config.FileStorageURL)
 	require.NoError(t, err)
-	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil, nil)
 
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
@@ -341,7 +344,7 @@ func TestGetTask(t *testing.T) {
 		taskID := int64(0)
 		tr.EXPECT().Get(tx, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		taskResp, err := ts.Get(tx, adminUser, taskID)
-		require.ErrorIs(t, err, errors.ErrNotFound)
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 		assert.Nil(t, taskResp)
 	})
 }
@@ -355,13 +358,15 @@ func TestDeleteTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
 	t.Run("Success for admin", func(t *testing.T) {
 		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		tr.EXPECT().Get(gomock.Any(), taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		err := ts.Delete(tx, adminUser, taskID)
 		require.NoError(t, err)
 	})
@@ -369,13 +374,13 @@ func TestDeleteTask(t *testing.T) {
 	t.Run("Nonexistent task", func(t *testing.T) {
 		tr.EXPECT().Get(gomock.Any(), int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		err := ts.Delete(tx, adminUser, 0)
-		require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		err := ts.Delete(tx, currentUser, taskID)
-		require.ErrorIs(t, err, errors.ErrForbidden)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 }
 
@@ -388,7 +393,8 @@ func TestEditTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
@@ -401,8 +407,9 @@ func TestEditTask(t *testing.T) {
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
+		}, nil).Times(2)
 		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		err := ts.Edit(tx, adminUser, taskID, updatedTask)
@@ -412,10 +419,10 @@ func TestEditTask(t *testing.T) {
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
-		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+		tr.EXPECT().Get(tx, int64(0)).Return(nil, myerrors.ErrTaskNotFound).Times(1)
+		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
-		require.ErrorIs(t, err, errors.ErrTaskNotFound)
+		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
 	})
 
 	t.Run("Update isVisible", func(t *testing.T) {
@@ -425,7 +432,8 @@ func TestEditTask(t *testing.T) {
 			CreatedBy: adminUser.ID,
 			IsVisible: true,
 		}
-		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
 			// Verify that IsVisible was updated
 			assert.False(t, updatedTask.IsVisible)
@@ -448,7 +456,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
@@ -553,7 +561,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		result, err := ts.GetAllCreated(tx, studentUser, queryParams)
-		require.ErrorIs(t, err, errors.ErrForbidden)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
 	})
@@ -568,7 +576,7 @@ func TestCreateTestCase(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	teacherUser := schemas.User{ID: 2}
 	task := &models.Task{
 		ID:        int64(1),
@@ -589,7 +597,7 @@ func TestCreateTestCase(t *testing.T) {
 		defer os.Remove(pathToArchive)
 		tr.EXPECT().Get(tx, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
-		require.ErrorIs(t, err, errors.ErrNotFound)
+		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
@@ -608,7 +616,7 @@ func TestParseTestCase(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	tests := []struct {
 		name          string
 		caseType      string
@@ -639,31 +647,31 @@ func TestParseTestCase(t *testing.T) {
 		caseType:      "nonexistent_file",
 		expected:      -1,
 		isError:       true,
-		expectedError: errors.ErrFileOpen,
+		expectedError: myerrors.ErrFileOpen,
 	}, {
 		name:          "Invalid archive",
 		caseType:      "invalid_archive",
 		expected:      -1,
 		isError:       true,
-		expectedError: errors.ErrDecompressArchive,
+		expectedError: myerrors.ErrDecompressArchive,
 	}, {
 		name:          "No output dir",
 		caseType:      "no_output",
 		expected:      -1,
 		isError:       true,
-		expectedError: errors.ErrNoOutputDirectory,
+		expectedError: myerrors.ErrNoOutputDirectory,
 	}, {
 		name:          "No input dir",
 		caseType:      "no_input",
 		expected:      -1,
 		isError:       true,
-		expectedError: errors.ErrNoInputDirectory,
+		expectedError: myerrors.ErrNoInputDirectory,
 	}, {
 		name:          "Input contains directories",
 		caseType:      "input_dir",
 		expected:      -1,
 		isError:       true,
-		expectedError: errors.ErrInputContainsDir,
+		expectedError: myerrors.ErrInputContainsDir,
 	},
 	}
 	for _, tt := range tests {
@@ -695,7 +703,7 @@ func TestGetLimits(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
 
 	teacherUser := schemas.User{ID: 2}
@@ -725,8 +733,9 @@ func TestPutLimit(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
 	tx := &gorm.DB{}
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	taskID := int64(1)
 	ioID := int64(1)
 	testCase := &models.TestCase{
@@ -763,6 +772,7 @@ func TestPutLimit(t *testing.T) {
 			MemoryLimit: newLimits.Limits[0].MemoryLimit,
 		}
 		io.EXPECT().Put(tx, expectedModel).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 
 		err := ts.PutLimits(tx, teacherUser, taskID, newLimits)
 		require.NoError(t, err)

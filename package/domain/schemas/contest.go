@@ -29,9 +29,15 @@ type AvailableContest struct {
 
 type CreatedContest struct {
 	BaseContest
-	IsRegistrationOpen *bool `json:"isRegistrationOpen"`
-	IsSubmissionOpen   *bool `json:"isSubmissionOpen"`
-	IsVisible          *bool `json:"isVisible"`
+	CreatedAt          time.Time `json:"createdAt"`
+	IsRegistrationOpen *bool     `json:"isRegistrationOpen"`
+	IsSubmissionOpen   *bool     `json:"isSubmissionOpen"`
+	IsVisible          *bool     `json:"isVisible"`
+}
+
+type ManagedContest struct {
+	CreatedContest
+	PermissionType types.Permission `json:"permissionType"` // "view", "edit", "manage", "owner"
 }
 
 type CreateContest struct {

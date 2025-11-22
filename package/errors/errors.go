@@ -38,6 +38,9 @@ var ErrUserNotFound = errors.New("user not found")
 // ErrUserAlreadyExists is returned when the user already exists.
 var ErrUserAlreadyExists = errors.New("user already exists")
 
+// ErrAccessAlreadyExists is returned when the access control entry already exists.
+var ErrAccessAlreadyExists = errors.New("access already exists")
+
 // ErrInvalidCredentials is returned when the provided credentials are invalid.
 var ErrInvalidCredentials = errors.New("invalid credentials")
 

@@ -27,6 +27,8 @@ type ContestRepository interface {
 	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
 	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
+	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
+	GetAllForCollaborator(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
 	// EditWithStats updates a contest and returns it with participant and task counts
@@ -118,6 +120,41 @@ func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offs
 	if err != nil {
 		return nil, 0, err
 	}
+	return contests, totalCount, nil
+}
+
+// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator)
+// It returns contests with pagination and total count.
+func (cr *contestRepository) GetAllForCollaborator(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
+	var contests []models.ManagedContest
+	var totalCount int64
+
+	accessControlTable := database.ResolveTableName(tx, &models.AccessControl{})
+
+	// Base query joining access control entries for contests
+	baseQuery := tx.Model(&models.Contest{}).
+		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
+			models.ResourceTypeContest, userID)
+
+	err := baseQuery.Count(&totalCount).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and sorting to the joined query
+	paginatedQuery, err := utils.ApplyPaginationAndSort(tx.Model(&models.Contest{}).
+		Select("contests.*", "ac.permission as permission_type").
+		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
+			models.ResourceTypeContest, userID), limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedQuery.Find(&contests).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
 	return contests, totalCount, nil
 }
 
