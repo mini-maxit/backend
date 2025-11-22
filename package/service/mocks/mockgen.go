@@ -1217,6 +1217,51 @@ func (mr *MockSubmissionServiceMockRecorder) GetAvailableLanguages(tx any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableLanguages", reflect.TypeOf((*MockSubmissionService)(nil).GetAvailableLanguages), tx)
 }
 
+// GetTaskStatsForContest mocks base method.
+func (m *MockSubmissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskStatsForContest", tx, user, contestID)
+	ret0, _ := ret[0].([]schemas.ContestTaskStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskStatsForContest indicates an expected call of GetTaskStatsForContest.
+func (mr *MockSubmissionServiceMockRecorder) GetTaskStatsForContest(tx, user, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatsForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetTaskStatsForContest), tx, user, contestID)
+}
+
+// GetUserStatsForContest mocks base method.
+func (m *MockSubmissionService) GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStatsForContest", tx, user, contestID, userID)
+	ret0, _ := ret[0].([]schemas.UserContestStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStatsForContest indicates an expected call of GetUserStatsForContest.
+func (mr *MockSubmissionServiceMockRecorder) GetUserStatsForContest(tx, user, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatsForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetUserStatsForContest), tx, user, contestID, userID)
+}
+
+// GetUserStatsForContestTask mocks base method.
+func (m *MockSubmissionService) GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStatsForContestTask", tx, user, contestID, taskID)
+	ret0, _ := ret[0].([]schemas.TaskUserStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStatsForContestTask indicates an expected call of GetUserStatsForContestTask.
+func (mr *MockSubmissionServiceMockRecorder) GetUserStatsForContestTask(tx, user, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatsForContestTask", reflect.TypeOf((*MockSubmissionService)(nil).GetUserStatsForContestTask), tx, user, contestID, taskID)
+}
+
 // MarkComplete mocks base method.
 func (m *MockSubmissionService) MarkComplete(tx *gorm.DB, submissionID int64) error {
 	m.ctrl.T.Helper()
