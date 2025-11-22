@@ -11,13 +11,10 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/domain/types"
 	myerrors "github.com/mini-maxit/backend/package/errors"
-	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type AccessControlRoute interface {
@@ -36,8 +33,6 @@ type AccessControlRoute interface {
 
 type accessControlRoute struct {
 	accessControlService service.AccessControlService
-	contestRepository    repository.ContestRepository
-	taskRepository       repository.TaskRepository
 	logger               *zap.SugaredLogger
 }
 
@@ -96,32 +91,6 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 	}
 
 	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
-
-	// Check if contest exists and user has manage permission
-	contest, err := ac.contestRepository.Get(tx, contestID)
-	if err != nil {
-		db.Rollback()
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "Contest not found")
-			return
-		}
-		ac.logger.Errorw("Failed to get contest", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get contest")
-		return
-	}
-
-	hasPermission, err := ac.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage)
-	if err != nil {
-		db.Rollback()
-		ac.logger.Errorw("Failed to check permission", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to check permission")
-		return
-	}
-	if !hasPermission {
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusForbidden, "You don't have permission to manage collaborators")
-		return
-	}
 
 	err = ac.accessControlService.AddCollaborator(tx, &currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
@@ -632,18 +601,16 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 		} else {
 			ac.logger.Errorw("Failed to remove task collaborator", "error", err)
 		}
-		httputils.ReturnError(w, status, err.Error())
+		httputils.ReturnError(w, status, "Failed to remove collaborator")
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
 }
 
-func NewAccessControlRoute(accessControlService service.AccessControlService, contestRepository repository.ContestRepository, taskRepository repository.TaskRepository) AccessControlRoute {
+func NewAccessControlRoute(accessControlService service.AccessControlService) AccessControlRoute {
 	route := &accessControlRoute{
 		accessControlService: accessControlService,
-		contestRepository:    contestRepository,
-		taskRepository:       taskRepository,
 		logger:               utils.NewNamedLogger("access_control_route"),
 	}
 	if err := utils.ValidateStruct(*route); err != nil {

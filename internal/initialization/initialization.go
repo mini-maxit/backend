@@ -142,7 +142,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionRoute := routes.NewSubmissionRoutes(submissionService, queueService, taskService)
 	taskRoute := routes.NewTaskRoute(taskService)
 	tasksManagementRoute := routes.NewTasksManagementRoute(taskService)
-	accessControlRoute := routes.NewAccessControlRoute(accessControlService, contestRepository, taskRepository)
+	accessControlRoute := routes.NewAccessControlRoute(accessControlService)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
 
