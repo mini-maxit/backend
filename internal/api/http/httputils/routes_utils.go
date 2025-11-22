@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -46,6 +47,21 @@ func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 		ReturnError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+}
+
+func camelToSnake(s string) string {
+	var b strings.Builder
+	for i, r := range s {
+		if unicode.IsUpper(r) {
+			if i > 0 && (unicode.IsLower(rune(s[i-1])) || unicode.IsDigit(rune(s[i-1]))) {
+				b.WriteByte('_')
+			}
+			b.WriteRune(unicode.ToLower(r))
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 func ReturnSuccess(w http.ResponseWriter, statusCode int, data any) {
@@ -92,12 +108,24 @@ func GetQueryParams(query *url.Values) (map[string]any, error) {
 	queryParams["offset"] = int(offset)
 
 	if sortFields, ok := queryParams["sort"]; ok {
-		sortFieldsParts := strings.Split(sortFields.(string), ",")
-		for _, sortField := range sortFieldsParts {
-			sortFieldParts := strings.Split(sortField, ":")
-			if len(sortFieldParts) != 2 || (sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc") {
-				return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
+		raw := sortFields.(string)
+		if raw != "" {
+			sortFieldsParts := strings.Split(raw, ",")
+			converted := make([]string, 0, len(sortFieldsParts))
+			for _, sortField := range sortFieldsParts {
+				sortField = strings.TrimSpace(sortField)
+				if sortField == "" {
+					continue
+				}
+				sortFieldParts := strings.Split(sortField, ":")
+				if len(sortFieldParts) != 2 || (sortFieldParts[1] != "asc" && sortFieldParts[1] != "desc") {
+					return nil, fmt.Errorf("invalid sort value. expected field:how, got %s", sortField)
+				}
+				fieldName := sortFieldParts[0]
+				fieldName = camelToSnake(fieldName)
+				converted = append(converted, fieldName+":"+sortFieldParts[1])
 			}
+			queryParams["sort"] = strings.Join(converted, ",")
 		}
 	} else {
 		queryParams["sort"] = ""

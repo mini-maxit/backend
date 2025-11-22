@@ -91,7 +91,7 @@ func TestGetAllUsers(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.User]{}, gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -124,7 +124,8 @@ func TestGetAllUsers(t *testing.T) {
 			{ID: 2, Name: "User2", Email: "user2@email.com", Role: types.UserRoleAdmin},
 		}
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(expectedUsers, nil).Times(1)
+		paginatedResult := schemas.NewPaginatedResult(expectedUsers, 0, 0, int64(len(expectedUsers)))
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(paginatedResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -138,10 +139,10 @@ func TestGetAllUsers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[[]schemas.User]{}
+		response := &httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.Equal(t, expectedUsers, response.Data)
+		assert.Equal(t, expectedUsers, response.Data.Items)
 	})
 
 	t.Run("Success with empty list", func(t *testing.T) {
@@ -153,7 +154,8 @@ func TestGetAllUsers(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+		emptyResult := schemas.NewPaginatedResult([]schemas.User{}, 0, 0, 0)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(emptyResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -167,10 +169,10 @@ func TestGetAllUsers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to read response body: %v", err)
 		}
-		response := &httputils.APIResponse[[]schemas.User]{}
+		response := &httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
-		assert.Empty(t, response.Data)
+		assert.Empty(t, response.Data.Items)
 	})
 }
 

@@ -590,10 +590,10 @@ func (mr *MockUserServiceMockRecorder) Get(tx, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) ([]schemas.User, error) {
+func (m *MockUserService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, paginationParams)
-	ret0, _ := ret[0].([]schemas.User)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.User])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

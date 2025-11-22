@@ -15,13 +15,10 @@ type ContestRepository interface {
 	Create(tx *gorm.DB, contest *models.Contest) (int64, error)
 	// Get retrieves a contest by ID
 	Get(tx *gorm.DB, contestID int64) (*models.Contest, error)
+	// Get retrieves a contest by ID with participant and task counts
+	GetWithCount(tx *gorm.DB, contestID int64) (*models.ParticipantContestStats, error)
 	// GetAll retrieves all contests with pagination and sorting
 	GetAll(tx *gorm.DB, offset int, limit int, sort string) ([]models.Contest, error)
-	// GetAllWithStats retrieves all contests with participant counts and user registration status.
-	// This method efficiently calculates participant counts (both direct participants and those via groups)
-	// and determines the user's registration status for each contest in a single SQL query.
-	// Returns ContestWithStats which includes ParticipantCount, IsParticipant, and HasPendingReg fields.
-	GetAllWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
 	GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetPastContestsWithStats retrieves contests that have ended with stats
@@ -29,7 +26,6 @@ type ContestRepository interface {
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
 	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error)
 	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
 	// Edit updates a contest
 	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
@@ -173,7 +169,9 @@ func (cr *contestRepository) Edit(tx *gorm.DB, contestID int64, contest *models.
 	if err != nil {
 		return nil, err
 	}
-	return cr.Get(tx, contestID)
+	var updatedContest models.Contest
+	err = tx.Model(&models.Contest{}).Where("id = ?", contestID).First(&updatedContest).Error
+	return &updatedContest, err
 }
 
 func (cr *contestRepository) EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
@@ -556,44 +554,101 @@ func (cr *contestRepository) GetAssignableTasks(tx *gorm.DB, contestID int64) ([
 func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
 	var contests []models.ParticipantContestStats
 
-	// Build query to get contests where user is a participant with statistics
-	// including how many tasks the user has solved (achieved 100% score)
+	// Build query to get contests where user is a participant with statistics.
+	// solved_task_count: number of tasks for which the user has at least one perfect (all tests passed) submission.
+	// test_count: total number of test cases across all tasks in the contest.
+	// solved_test_count: sum of passed tests from the BEST evaluated submission per task (max passed tests; tie -> latest submitted_at).
 	query := tx.Model(&models.Contest{}).
 		Select(`contests.*,
-			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
-			COALESCE(contest_task_count.count, 0) as task_count,
-			COALESCE(user_solved_tasks.count, 0) as solved_count`).
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) AS participant_count,
+			COALESCE(contest_task_count.count, 0) AS task_count,
+			COALESCE(user_solved_tasks.count, 0) AS solved_task_count,
+			COALESCE(contest_test_count.test_count, 0) AS test_count,
+			COALESCE(user_best_solved_tests.solved_test_count, 0) AS solved_test_count
+		`).
+		// Direct participants
 		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
+			SELECT contest_id, COUNT(*) AS count
 			FROM %s
 			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		) AS direct_participants ON contests.id = direct_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		// Group participants expanded to distinct users
 		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) AS count
 			FROM %s cpg
 			JOIN %s ug ON cpg.group_id = ug.group_id
 			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+		) AS group_participants ON contests.id = group_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipantGroup{}),
+			database.ResolveTableName(tx, &models.UserGroup{}))).
+		// Task count per contest
 		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
+			SELECT contest_id, COUNT(*) AS count
 			FROM %s
 			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
+		) AS contest_task_count ON contests.id = contest_task_count.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{}))).
+		// Total test cases per contest
 		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT ct.contest_id, COUNT(*) as count
+			SELECT ct.contest_id, COUNT(tc.id) AS test_count
 			FROM %s ct
-			INNER JOIN %s s ON s.task_id = ct.task_id AND s.user_id = ?
+			JOIN %s tc ON tc.task_id = ct.task_id
+			GROUP BY ct.contest_id
+		) AS contest_test_count ON contests.id = contest_test_count.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{}),
+			database.ResolveTableName(tx, &models.TestCase{}))).
+		// Perfectly solved tasks (all tests passed in at least one submission result)
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT ct.contest_id, COUNT(DISTINCT ct.task_id) AS count
+			FROM %s ct
+			INNER JOIN %s s ON s.task_id = ct.task_id AND s.user_id = ? AND s.status = '%s'
 			INNER JOIN %s sr ON sr.submission_id = s.id
 			INNER JOIN (
 				SELECT submission_result_id,
-					   COUNT(*) as total_tests,
-					   COUNT(CASE WHEN passed = true THEN 1 END) as passed_tests
+					   COUNT(*) AS total_tests,
+					   COUNT(CASE WHEN passed = true THEN 1 END) AS passed_tests
 				FROM %s
 				GROUP BY submission_result_id
 				HAVING COUNT(*) = COUNT(CASE WHEN passed = true THEN 1 END)
 			) perfect_results ON perfect_results.submission_result_id = sr.id
 			GROUP BY ct.contest_id
-		) as user_solved_tasks ON contests.id = user_solved_tasks.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}), database.ResolveTableName(tx, &models.Submission{}), database.ResolveTableName(tx, &models.SubmissionResult{}), database.ResolveTableName(tx, &models.TestResult{})), userID).
+		) AS user_solved_tasks ON contests.id = user_solved_tasks.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{}),
+			database.ResolveTableName(tx, &models.Submission{}),
+			types.SubmissionStatusEvaluated,
+			database.ResolveTableName(tx, &models.SubmissionResult{}),
+			database.ResolveTableName(tx, &models.TestResult{})), userID).
+		// Best evaluated submission per task (highest passed tests; tie -> latest submitted_at)
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT ct.contest_id,
+				   SUM(best.passed_tests) AS solved_test_count
+			FROM %s ct
+			JOIN (
+				SELECT s.task_id,
+					   sr.id AS submission_result_id,
+					   COUNT(tr.id) AS total_tests,
+					   COUNT(CASE WHEN tr.passed = true THEN 1 END) AS passed_tests,
+					   s.submitted_at,
+					   ROW_NUMBER() OVER (
+						   PARTITION BY s.task_id
+						   ORDER BY COUNT(CASE WHEN tr.passed = true THEN 1 END) DESC,
+									s.submitted_at DESC
+					   ) AS rn
+				FROM %s s
+				JOIN %s sr ON sr.submission_id = s.id
+				LEFT JOIN %s tr ON tr.submission_result_id = sr.id
+				WHERE s.user_id = ? AND s.status = '%s'
+				GROUP BY s.task_id, sr.id, s.submitted_at
+			) best ON best.task_id = ct.task_id AND best.rn = 1
+			GROUP BY ct.contest_id
+		) AS user_best_solved_tests ON contests.id = user_best_solved_tests.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{}),
+			database.ResolveTableName(tx, &models.Submission{}),
+			database.ResolveTableName(tx, &models.SubmissionResult{}),
+			database.ResolveTableName(tx, &models.TestResult{}),
+			types.SubmissionStatusEvaluated), userID).
+		// Participation filter (direct or via group)
 		Where(fmt.Sprintf(`EXISTS (
 			SELECT 1 FROM %s cp
 			WHERE cp.contest_id = contests.id AND cp.user_id = ?
@@ -601,7 +656,11 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 			SELECT 1 FROM %s cpg
 			JOIN %s ug ON cpg.group_id = ug.group_id
 			WHERE cpg.contest_id = contests.id AND ug.user_id = ?
-		)`, database.ResolveTableName(tx, &models.ContestParticipant{}), database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID, userID)
+		)`,
+			database.ResolveTableName(tx, &models.ContestParticipant{}),
+			database.ResolveTableName(tx, &models.ContestParticipantGroup{}),
+			database.ResolveTableName(tx, &models.UserGroup{})),
+			userID, userID)
 
 	err := query.Find(&contests).Error
 	if err != nil {
@@ -677,6 +736,49 @@ func (cr *contestRepository) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64
 		return nil, err
 	}
 	return contestIDs, nil
+}
+
+func (cr *contestRepository) GetWithCount(tx *gorm.DB, contestID int64) (*models.ParticipantContestStats, error) {
+	var contest models.ParticipantContestStats
+	err := tx.Model(&models.Contest{}).
+		Select(`
+		contests.*,
+		COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+		COALESCE(contest_task_count.count, 0) as task_count
+		`).
+		Where("id = ?", contestID).
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT contest_id, COUNT(*) AS count
+			FROM %s
+			GROUP BY contest_id
+		) AS direct_participants ON contests.id = direct_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipant{})),
+		).
+		// Group participants expanded to distinct users
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) AS count
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) AS group_participants ON contests.id = group_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipantGroup{}),
+			database.ResolveTableName(tx, &models.UserGroup{})),
+		).
+		// Task count per contest
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT contest_id, COUNT(*) AS count
+			FROM %s
+			GROUP BY contest_id
+		) AS contest_task_count ON contests.id = contest_task_count.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{})),
+		).First(&contest).Error
+	if err != nil {
+		return nil, err
+	}
+	return &contest, nil
 }
 
 func NewContestRepository() ContestRepository {

@@ -40,7 +40,7 @@ type UserRouteImpl struct {
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
-//	@Success		200		{object}	httputils.APIResponse[schemas.User]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Router			/users/ [get]
@@ -60,7 +60,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	users, err := u.userService.GetAll(tx, paginationParams)
+	result, err := u.userService.GetAll(tx, paginationParams)
 	if err != nil {
 		db.Rollback()
 		u.logger.Errorw("Failed to get users", "error", err)
@@ -68,7 +68,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, users)
+	httputils.ReturnSuccess(w, http.StatusOK, result)
 }
 
 // GetUserByID godoc

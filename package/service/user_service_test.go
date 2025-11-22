@@ -162,10 +162,11 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
-		).Return([]models.User{}, nil).Times(1)
-		users, err := us.GetAll(tx, paginationParams)
+		).Return([]models.User{}, int64(0), nil).Times(1)
+		result, err := us.GetAll(tx, paginationParams)
 		require.NoError(t, err)
-		assert.Empty(t, users)
+		assert.Empty(t, result.Items)
+		assert.Equal(t, 0, result.Pagination.TotalItems)
 	})
 
 	t.Run("Users exist", func(t *testing.T) {
@@ -181,16 +182,18 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
-		).Return([]models.User{*user}, nil).Times(1)
-		users, err := us.GetAll(tx, paginationParams)
+		).Return([]models.User{*user}, int64(1), nil).Times(1)
+		result, err := us.GetAll(tx, paginationParams)
 		require.NoError(t, err)
-		assert.Len(t, users, 1)
-		assert.Equal(t, user.Email, users[0].Email)
-		assert.Equal(t, user.Name, users[0].Name)
-		assert.Equal(t, user.Surname, users[0].Surname)
-		assert.Equal(t, user.Username, users[0].Username)
-		assert.Equal(t, user.ID, users[0].ID)
-		assert.Equal(t, user.Role, users[0].Role)
+		assert.Len(t, result.Items, 1)
+		assert.Equal(t, user.Email, result.Items[0].Email)
+		assert.Equal(t, user.Name, result.Items[0].Name)
+		assert.Equal(t, user.Surname, result.Items[0].Surname)
+		assert.Equal(t, user.Username, result.Items[0].Username)
+		assert.Equal(t, user.ID, result.Items[0].ID)
+		assert.Equal(t, user.Role, result.Items[0].Role)
+		assert.Equal(t, 1, result.Pagination.TotalItems)
+		assert.Equal(t, 1, result.Pagination.TotalItems)
 	})
 }
 

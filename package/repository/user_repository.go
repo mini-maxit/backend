@@ -11,11 +11,11 @@ type UserRepository interface {
 	Create(tx *gorm.DB, user *models.User) (int64, error)
 	// Edit updates the user information by setting the new values
 	Edit(tx *gorm.DB, user *models.User) error
-	// GetAll returns all users with pagination and sorting
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error)
+	// GetAll returns all users with pagination and sorting and total count
+	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, int64, error)
 	// Get returns a user by ID
 	Get(tx *gorm.DB, userID int64) (*models.User, error)
-	//
+	// GetByEmail returns a user by email
 	GetByEmail(tx *gorm.DB, email string) (*models.User, error)
 }
 
@@ -48,23 +48,29 @@ func (ur *userRepository) GetByEmail(tx *gorm.DB, email string) (*models.User, e
 	return user, nil
 }
 
-func (ur *userRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, error) {
+func (ur *userRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, int64, error) {
 	users := &[]models.User{}
-	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, err
+	var totalCount int64
+
+	// Get total count (without pagination)
+	if err := tx.Model(&models.User{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
 	}
 
-	err = tx.Model(&models.User{}).Find(users).Error
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return *users, nil
+
+	if err := paginatedTx.Model(&models.User{}).Find(users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return *users, totalCount, nil
 }
 
 func (ur *userRepository) Edit(tx *gorm.DB, user *models.User) error {
-	err := tx.Save(user).Error
-	return err
+	return tx.Save(user).Error
 }
 
 func NewUserRepository() UserRepository {

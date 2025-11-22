@@ -97,8 +97,8 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	tasks := []models.Task{}
 	var totalCount int64
 
-	// Get total count first
-	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL").Count(&totalCount).Error
+	// Get total count first (only globally visible tasks)
+	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -107,7 +107,7 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	if err != nil {
 		return nil, 0, err
 	}
-	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL").Find(&tasks).Error
+	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Find(&tasks).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -191,8 +191,6 @@ func (tr *taskRepository) GetLiveAssignedTasksGroupedByContest(
 		Where("(contest_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL)").
 		Where("contest_tasks.start_at <= NOW() AND (contest_tasks.end_at IS NULL OR contest_tasks.end_at > NOW())").
 		Where("tasks.deleted_at IS NULL").
-		Limit(limit).
-		Offset(offset).
 		Find(&tasksWithContests).Error
 
 	if err != nil {
