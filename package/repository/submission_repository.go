@@ -63,6 +63,12 @@ type SubmissionRepository interface {
 	MarkProcessing(tx *gorm.DB, submissionID int64) error
 	// GetPendingSubmissions returns submissions that are in "received" status (not yet sent for evaluation).
 	GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error)
+	// GetTaskStatsForContest returns aggregated statistics for each task in a contest
+	GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]map[string]interface{}, error)
+	// GetUserStatsForContestTask returns per-user statistics for a specific task in a contest
+	GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]map[string]interface{}, error)
+	// GetUserStatsForContest returns overall statistics for each user in a contest
+	GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]map[string]interface{}, error)
 }
 
 type submissionRepository struct{}
@@ -782,6 +788,202 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 		return nil, 0, err
 	}
 	return submissions, totalCount, nil
+}
+
+func (us *submissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]map[string]interface{}, error) {
+	var results []map[string]interface{}
+
+	query := `
+		SELECT 
+			t.id as task_id,
+			t.title as task_title,
+			COUNT(DISTINCT cp.user_id) as total_participants,
+			COUNT(DISTINCT s.user_id) as submitted_count,
+			COUNT(DISTINCT CASE 
+				WHEN sr.code = 1 THEN s.user_id 
+			END) as fully_solved_count,
+			COUNT(DISTINCT CASE 
+				WHEN sr.code != 1 AND sr.code > 0 THEN s.user_id 
+			END) as partially_solved_count,
+			COALESCE(AVG(CASE 
+				WHEN total_tests.count > 0 
+				THEN (passed_tests.count * 100.0 / total_tests.count) 
+				ELSE 0 
+			END), 0) as average_score
+		FROM ` + database.ResolveTableName(tx, &models.Task{}) + ` t
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.task_id = t.id
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.contest_id = ct.contest_id
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.Submission{}) + ` s ON s.task_id = t.id 
+			AND s.contest_id = ct.contest_id 
+			AND s.user_id = cp.user_id
+			AND s.status = 'evaluated'
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
+		LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+			GROUP BY submission_result_id
+		) as total_tests ON total_tests.submission_result_id = sr.id
+		LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+			WHERE passed = true
+			GROUP BY submission_result_id
+		) as passed_tests ON passed_tests.submission_result_id = sr.id
+		WHERE ct.contest_id = ?
+		GROUP BY t.id, t.title
+		ORDER BY t.id
+	`
+
+	err := tx.Raw(query, contestID).Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (us *submissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]map[string]interface{}, error) {
+	var results []map[string]interface{}
+
+	query := `
+		SELECT 
+			u.id as user_id,
+			u.username as username,
+			COUNT(DISTINCT s.id) as submission_count,
+			COALESCE(MAX(CASE 
+				WHEN total_tests.count > 0 
+				THEN (passed_tests.count * 100.0 / total_tests.count) 
+				ELSE 0 
+			END), 0) as best_score,
+			(SELECT s2.status 
+			 FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2
+			 WHERE s2.user_id = u.id 
+			   AND s2.task_id = ?
+			   AND s2.contest_id = ?
+			 ORDER BY s2.submitted_at DESC 
+			 LIMIT 1) as latest_status,
+			(SELECT sr2.code 
+			 FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2
+			 INNER JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr2 ON sr2.submission_id = s2.id
+			 WHERE s2.user_id = u.id 
+			   AND s2.task_id = ?
+			   AND s2.contest_id = ?
+			 ORDER BY s2.submitted_at DESC 
+			 LIMIT 1) as latest_result_code
+		FROM ` + database.ResolveTableName(tx, &models.User{}) + ` u
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.user_id = u.id
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.Submission{}) + ` s ON s.user_id = u.id 
+			AND s.task_id = ? 
+			AND s.contest_id = ?
+			AND s.status = 'evaluated'
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
+		LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+			GROUP BY submission_result_id
+		) as total_tests ON total_tests.submission_result_id = sr.id
+		LEFT JOIN (
+			SELECT submission_result_id, COUNT(*) as count
+			FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+			WHERE passed = true
+			GROUP BY submission_result_id
+		) as passed_tests ON passed_tests.submission_result_id = sr.id
+		WHERE cp.contest_id = ?
+		GROUP BY u.id, u.username
+		ORDER BY best_score DESC, u.username
+	`
+
+	err := tx.Raw(query, taskID, contestID, taskID, contestID, taskID, contestID, contestID).Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]map[string]interface{}, error) {
+	var results []map[string]interface{}
+
+	userFilter := ""
+	args := []interface{}{contestID, contestID, contestID, contestID, contestID, contestID}
+	if userID != nil {
+		userFilter = " AND u.id = ?"
+		args = append(args, *userID)
+	}
+
+	query := `
+		SELECT 
+			u.id as user_id,
+			u.username as username,
+			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN t.id END) as tasks_attempted,
+			COUNT(DISTINCT CASE 
+				WHEN sr.code = 1 THEN t.id 
+			END) as tasks_solved,
+			COUNT(DISTINCT CASE 
+				WHEN sr.code != 1 AND sr.code > 0 THEN t.id 
+			END) as tasks_partially_solved,
+			json_agg(
+				json_build_object(
+					'taskId', t.id,
+					'taskTitle', t.title,
+					'bestScore', COALESCE(best_scores.score, 0),
+					'attemptCount', COALESCE(attempt_counts.count, 0),
+					'isSolved', COALESCE(best_scores.is_solved, false)
+				) ORDER BY t.id
+			) FILTER (WHERE t.id IS NOT NULL) as task_breakdown
+		FROM ` + database.ResolveTableName(tx, &models.User{}) + ` u
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.user_id = u.id
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.contest_id = cp.contest_id
+		INNER JOIN ` + database.ResolveTableName(tx, &models.Task{}) + ` t ON t.id = ct.task_id
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.Submission{}) + ` s ON s.user_id = u.id 
+			AND s.task_id = t.id 
+			AND s.contest_id = cp.contest_id
+			AND s.status = 'evaluated'
+		LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
+		LEFT JOIN LATERAL (
+			SELECT 
+				MAX(CASE 
+					WHEN tt.count > 0 
+					THEN (pt.count * 100.0 / tt.count) 
+					ELSE 0 
+				END) as score,
+				MAX(CASE WHEN sr2.code = 1 THEN true ELSE false END) as is_solved
+			FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2
+			LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr2 ON sr2.submission_id = s2.id
+			LEFT JOIN (
+				SELECT submission_result_id, COUNT(*) as count
+				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+				GROUP BY submission_result_id
+			) as tt ON tt.submission_result_id = sr2.id
+			LEFT JOIN (
+				SELECT submission_result_id, COUNT(*) as count
+				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+				WHERE passed = true
+				GROUP BY submission_result_id
+			) as pt ON pt.submission_result_id = sr2.id
+			WHERE s2.user_id = u.id 
+			  AND s2.task_id = t.id 
+			  AND s2.contest_id = ?
+			  AND s2.status = 'evaluated'
+		) as best_scores ON true
+		LEFT JOIN LATERAL (
+			SELECT COUNT(*) as count
+			FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s3
+			WHERE s3.user_id = u.id 
+			  AND s3.task_id = t.id 
+			  AND s3.contest_id = ?
+		) as attempt_counts ON true
+		WHERE cp.contest_id = ?` + userFilter + `
+		GROUP BY u.id, u.username
+		ORDER BY tasks_solved DESC, tasks_attempted DESC, u.username
+	`
+
+	err := tx.Raw(query, args...).Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {

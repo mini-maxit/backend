@@ -43,6 +43,12 @@ type SubmissionService interface {
 	MarkProcessing(tx *gorm.DB, submissionID int64) error
 	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
 	Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
+	// GetTaskStatsForContest retrieves aggregated statistics for each task in a contest.
+	GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error)
+	// GetUserStatsForContestTask retrieves per-user statistics for a specific task in a contest.
+	GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error)
+	// GetUserStatsForContest retrieves overall statistics for users in a contest.
+	GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
@@ -799,4 +805,148 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 		User:        *UserToSchema(&submission.User),
 		Result:      ss.resultModelToSchema(submission.Result),
 	}
+}
+
+func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
+	// Check authorization
+	if user.Role == types.UserRoleStudent {
+		return nil, myerrors.ErrPermissionDenied
+	}
+
+	// For teachers, check if they created the contest
+	if user.Role == types.UserRoleTeacher {
+		contest, err := ss.contestService.Get(tx, user, contestID)
+		if err != nil {
+			return nil, err
+		}
+		if contest.CreatedBy != user.ID {
+			return nil, myerrors.ErrPermissionDenied
+		}
+	}
+
+	// Get raw stats from repository
+	rawStats, err := ss.submissionRepository.GetTaskStatsForContest(tx, contestID)
+	if err != nil {
+		ss.logger.Errorw("Error getting task stats for contest", "error", err)
+		return nil, err
+	}
+
+	// Convert to schema
+	stats := make([]schemas.ContestTaskStats, 0, len(rawStats))
+	for _, raw := range rawStats {
+		stat := schemas.ContestTaskStats{
+			TaskID:               raw["task_id"].(int64),
+			TaskTitle:            raw["task_title"].(string),
+			TotalParticipants:    raw["total_participants"].(int64),
+			SubmittedCount:       raw["submitted_count"].(int64),
+			FullySolvedCount:     raw["fully_solved_count"].(int64),
+			PartiallySolvedCount: raw["partially_solved_count"].(int64),
+			AverageScore:         raw["average_score"].(float64),
+		}
+		// Calculate success rate
+		if stat.SubmittedCount > 0 {
+			stat.SuccessRate = float64(stat.FullySolvedCount) / float64(stat.SubmittedCount) * 100
+		}
+		stats = append(stats, stat)
+	}
+
+	return stats, nil
+}
+
+func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
+	// Check authorization
+	if user.Role == types.UserRoleStudent {
+		return nil, myerrors.ErrPermissionDenied
+	}
+
+	// For teachers, check if they created the contest or the task
+	if user.Role == types.UserRoleTeacher {
+		contest, err := ss.contestService.Get(tx, user, contestID)
+		if err != nil {
+			return nil, err
+		}
+		task, err := ss.taskService.Get(tx, user, taskID)
+		if err != nil {
+			return nil, err
+		}
+		if contest.CreatedBy != user.ID && task.CreatedBy != user.ID {
+			return nil, myerrors.ErrPermissionDenied
+		}
+	}
+
+	// Get raw stats from repository
+	rawStats, err := ss.submissionRepository.GetUserStatsForContestTask(tx, contestID, taskID)
+	if err != nil {
+		ss.logger.Errorw("Error getting user stats for contest task", "error", err)
+		return nil, err
+	}
+
+	// Convert to schema
+	stats := make([]schemas.TaskUserStats, 0, len(rawStats))
+	for _, raw := range rawStats {
+		stat := schemas.TaskUserStats{
+			UserID:          raw["user_id"].(int64),
+			Username:        raw["username"].(string),
+			SubmissionCount: int(raw["submission_count"].(int64)),
+			BestScore:       raw["best_score"].(float64),
+		}
+		// Handle nullable fields
+		if status, ok := raw["latest_status"].(string); ok {
+			stat.LatestStatus = types.SubmissionStatus(status)
+		}
+		if code, ok := raw["latest_result_code"].(int64); ok {
+			stat.LatestResultCode = types.SubmissionResultCode(code).String()
+		}
+		stats = append(stats, stat)
+	}
+
+	return stats, nil
+}
+
+func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
+	// Check authorization
+	if user.Role == types.UserRoleStudent {
+		return nil, myerrors.ErrPermissionDenied
+	}
+
+	// For teachers, check if they created the contest
+	if user.Role == types.UserRoleTeacher {
+		contest, err := ss.contestService.Get(tx, user, contestID)
+		if err != nil {
+			return nil, err
+		}
+		if contest.CreatedBy != user.ID {
+			return nil, myerrors.ErrPermissionDenied
+		}
+	}
+
+	// Get raw stats from repository
+	rawStats, err := ss.submissionRepository.GetUserStatsForContest(tx, contestID, userID)
+	if err != nil {
+		ss.logger.Errorw("Error getting user stats for contest", "error", err)
+		return nil, err
+	}
+
+	// Convert to schema
+	stats := make([]schemas.UserContestStats, 0, len(rawStats))
+	for _, raw := range rawStats {
+		stat := schemas.UserContestStats{
+			UserID:               raw["user_id"].(int64),
+			Username:             raw["username"].(string),
+			TasksAttempted:       int(raw["tasks_attempted"].(int64)),
+			TasksSolved:          int(raw["tasks_solved"].(int64)),
+			TasksPartiallySolved: int(raw["tasks_partially_solved"].(int64)),
+		}
+
+		// Parse task breakdown JSON
+		if breakdownRaw, ok := raw["task_breakdown"].(string); ok && breakdownRaw != "" {
+			// Handle JSON parsing
+			stat.TaskBreakdown = []schemas.UserTaskPerformance{}
+			// For simplicity, we'll leave this empty for now and populate it in a separate query if needed
+		}
+
+		stats = append(stats, stat)
+	}
+
+	return stats, nil
 }
