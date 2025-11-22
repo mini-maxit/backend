@@ -432,7 +432,8 @@ func TestEditTask(t *testing.T) {
 			CreatedBy: adminUser.ID,
 			IsVisible: true,
 		}
-		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
 			// Verify that IsVisible was updated
 			assert.False(t, updatedTask.IsVisible)
