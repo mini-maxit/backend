@@ -14,6 +14,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-Collaborator:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/Collaborator'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-Contest:
     properties:
       data:
@@ -69,6 +78,13 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/PaginatedResult-AvailableContest'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-PaginatedResult-ManagedContest:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-ManagedContest'
       ok:
         type: boolean
     type: object
@@ -246,6 +262,21 @@ definitions:
       ok:
         type: boolean
     type: object
+  AddCollaborator:
+    properties:
+      permission:
+        allOf:
+        - $ref: '#/definitions/Permission'
+        enum:
+        - edit
+        - manage
+      user_id:
+        minimum: 1
+        type: integer
+    required:
+    - permission
+    - user_id
+    type: object
   AddTaskToContest:
     properties:
       endAt:
@@ -298,6 +329,19 @@ definitions:
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
+    type: object
+  Collaborator:
+    properties:
+      added_at:
+        type: string
+      permission:
+        $ref: '#/definitions/Permission'
+      user_email:
+        type: string
+      user_id:
+        type: integer
+      user_name:
+        type: string
     type: object
   Contest:
     properties:
@@ -429,6 +473,8 @@ definitions:
     type: object
   CreatedContest:
     properties:
+      createdAt:
+        type: string
       createdBy:
         type: integer
       description:
@@ -503,6 +549,33 @@ definitions:
       version:
         type: string
     type: object
+  ManagedContest:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      isRegistrationOpen:
+        type: boolean
+      isSubmissionOpen:
+        type: boolean
+      isVisible:
+        type: boolean
+      name:
+        type: string
+      permissionType:
+        allOf:
+        - $ref: '#/definitions/Permission'
+        description: '"view", "edit", "manage", "owner"'
+      startAt:
+        type: string
+    type: object
   MessageResponse:
     properties:
       message:
@@ -520,6 +593,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/AvailableContest'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
+  PaginatedResult-ManagedContest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ManagedContest'
         type: array
       pagination:
         $ref: '#/definitions/PaginationMetadata'
@@ -602,6 +684,24 @@ definitions:
       taskCount:
         type: integer
     type: object
+  Permission:
+    enum:
+    - edit
+    - manage
+    - owner
+    type: string
+    x-enum-comments:
+      PermissionEdit: PermissionEdit represents edit access.
+      PermissionManage: PermissionManage represents full access (edit + manage collaborators).
+      PermissionOwner: PermissionOwner represents immutable ownership (highest level).
+    x-enum-descriptions:
+    - PermissionEdit represents edit access.
+    - PermissionManage represents full access (edit + manage collaborators).
+    - PermissionOwner represents immutable ownership (highest level).
+    x-enum-varnames:
+    - PermissionEdit
+    - PermissionManage
+    - PermissionOwner
   PutTestCase:
     properties:
       memoryLimit:
@@ -801,6 +901,17 @@ definitions:
       testCaseId:
         type: integer
     type: object
+  UpdateCollaborator:
+    properties:
+      permission:
+        allOf:
+        - $ref: '#/definitions/Permission'
+        enum:
+        - edit
+        - manage
+    required:
+    - permission
+    type: object
   User:
     properties:
       createdAt:
@@ -954,6 +1065,342 @@ info:
   title: Mini-Maxit API
   version: 1.0.0
 paths:
+  /access-control/contests/{resource_id}/collaborators:
+    get:
+      description: Get all collaborators for a specific contest. Users with edit permission
+        or higher can see collaborators.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Collaborator'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get collaborators for a contest
+      tags:
+      - access-control
+    post:
+      consumes:
+      - application/json
+      description: Add a user as a collaborator to a contest with specified permissions
+        (edit or manage). Only users with manage permission can add collaborators.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: Collaborator details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AddCollaborator'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Add a collaborator to a contest
+      tags:
+      - access-control
+  /access-control/contests/{resource_id}/collaborators/{user_id}:
+    delete:
+      description: Remove a user's collaborator access to a contest. Only users with
+        manage permission can remove collaborators. Cannot remove the creator.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Remove a collaborator from a contest
+      tags:
+      - access-control
+    put:
+      consumes:
+      - application/json
+      description: Update the permission level of a collaborator for a contest. Only
+        users with manage permission can update collaborators.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: New permission
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateCollaborator'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Update a contest collaborator's permission
+      tags:
+      - access-control
+  /access-control/tasks/{resource_id}/collaborators:
+    get:
+      description: Get all collaborators for a specific task. Users with edit permission
+        or higher can see collaborators.
+      parameters:
+      - description: Task ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Collaborator'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get collaborators for a task
+      tags:
+      - access-control
+    post:
+      consumes:
+      - application/json
+      description: Add a user as a collaborator to a task with specified permissions
+        (edit or manage). Only users with manage permission can add collaborators.
+      parameters:
+      - description: Task ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: Collaborator details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AddCollaborator'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Add a collaborator to a task
+      tags:
+      - access-control
+  /access-control/tasks/{resource_id}/collaborators/{user_id}:
+    delete:
+      description: Remove a user's collaborator access to a task. Only users with
+        manage permission can remove collaborators. Cannot remove the creator.
+      parameters:
+      - description: Task ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Remove a collaborator from a task
+      tags:
+      - access-control
+    put:
+      consumes:
+      - application/json
+      description: Update the permission level of a collaborator for a task. Only
+        users with manage permission can update collaborators.
+      parameters:
+      - description: Task ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: New permission
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateCollaborator'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Update a task collaborator's permission
+      tags:
+      - access-control
   /auth/login:
     post:
       consumes:
@@ -1118,6 +1565,44 @@ paths:
       tags:
       - contests
   /contests-management/contests:
+    get:
+      description: Get all contests where the current user is the creator or has collaborator
+        access (view, edit, or manage) with pagination metadata
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-PaginatedResult-ManagedContest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contests manageable by the current user
+      tags:
+      - contests-management
     post:
       consumes:
       - application/json
@@ -1462,6 +1947,7 @@ paths:
       - contests-management
   /contests-management/contests/created:
     get:
+      deprecated: true
       description: Get all contests created by the currently authenticated user with
         pagination metadata
       parameters:
@@ -1496,7 +1982,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get contests created by the current user
+      summary: This endpoint is deprecated and will be removed in future versions.
+        Please use the /contests-management/contests endpoint instead.
       tags:
       - contests-management
   /contests/{id}:
@@ -2109,11 +2596,6 @@ paths:
     get:
       description: If the user is a student, it fails with 403 Forbidden.
       parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
       - description: Limit the number of returned submissions
         in: query
         name: limit
@@ -2122,6 +2604,10 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: Sort order
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
