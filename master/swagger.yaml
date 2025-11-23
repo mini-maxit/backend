@@ -39,6 +39,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-ContestTaskStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/ContestTaskStats'
+        type: array
+      ok:
+        type: boolean
+    type: object
   APIResponse-CreatedContest:
     properties:
       data:
@@ -148,6 +157,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-Task]:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-array_Task'
+      ok:
+        type: boolean
+    type: object
   APIResponse-TaskCreateResponse:
     properties:
       data:
@@ -159,6 +175,15 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-TaskUserStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/TaskUserStats'
+        type: array
       ok:
         type: boolean
     type: object
@@ -184,6 +209,15 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/User'
+      ok:
+        type: boolean
+    type: object
+  APIResponse-UserContestStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/UserContestStats'
+        type: array
       ok:
         type: boolean
     type: object
@@ -233,15 +267,6 @@ definitions:
       data:
         items:
           $ref: '#/definitions/PastContestWithStats'
-        type: array
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_Submission:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Submission'
         type: array
       ok:
         type: boolean
@@ -398,6 +423,23 @@ definitions:
         type: string
       updatedAt:
         type: string
+    type: object
+  ContestTaskStats:
+    properties:
+      averageScore:
+        type: number
+      fullySolvedCount:
+        type: integer
+      partiallySolvedCount:
+        type: integer
+      submittedCount:
+        type: integer
+      successRate:
+        type: number
+      task:
+        $ref: '#/definitions/TaskInfo'
+      totalParticipants:
+        type: integer
     type: object
   ContestWithStats:
     properties:
@@ -609,9 +651,7 @@ definitions:
   PaginatedResult-Submission:
     properties:
       items:
-        items:
-          $ref: '#/definitions/Submission'
-        type: array
+        $ref: '#/definitions/Submission'
       pagination:
         $ref: '#/definitions/PaginationMetadata'
     type: object
@@ -845,6 +885,24 @@ definitions:
       title:
         type: string
     type: object
+  TaskInfo:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  TaskUserStats:
+    properties:
+      bestScore:
+        type: number
+      bestSubmissionId:
+        type: integer
+      submissionCount:
+        type: integer
+      user:
+        $ref: '#/definitions/UserInfo'
+    type: object
   TaskWithAttempts:
     properties:
       attemptsSummary:
@@ -945,6 +1003,21 @@ definitions:
     - newPassword
     - newPasswordConfirm
     type: object
+  UserContestStats:
+    properties:
+      taskBreakdown:
+        items:
+          $ref: '#/definitions/UserTaskPerformance'
+        type: array
+      tasksAttempted:
+        type: integer
+      tasksPartiallySolved:
+        type: integer
+      tasksSolved:
+        type: integer
+      user:
+        $ref: '#/definitions/UserInfo'
+    type: object
   UserContestsWithStats:
     properties:
       ongoing:
@@ -979,6 +1052,17 @@ definitions:
         items:
           type: integer
         type: array
+    type: object
+  UserInfo:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+      username:
+        type: string
     type: object
   UserLoginRequest:
     properties:
@@ -1038,6 +1122,19 @@ definitions:
     - UserRoleStudent
     - UserRoleTeacher
     - UserRoleAdmin
+  UserTaskPerformance:
+    properties:
+      attemptCount:
+        type: integer
+      bestScore:
+        type: number
+      isSolved:
+        type: boolean
+      taskId:
+        type: integer
+      taskTitle:
+        type: string
+    type: object
   ValidationErrorResponse:
     type: object
   WorkerStatus:
@@ -1820,6 +1917,38 @@ paths:
       summary: Get submissions for a contest
       tags:
       - contests-management
+  /contests-management/contests/{id}/task-stats:
+    get:
+      description: Get aggregated statistics for each task in a contest (for contest
+        creators or admins)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-ContestTaskStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get task statistics for a contest
+      tags:
+      - contests-management
   /contests-management/contests/{id}/tasks:
     get:
       description: Get all tasks associated with a specific contest
@@ -1905,6 +2034,101 @@ paths:
       summary: Add a task to a contest
       tags:
       - contests-management
+  /contests-management/contests/{id}/tasks/{taskId}/user-stats:
+    get:
+      description: Get per-user statistics for a task in a contest (for contest/task
+        creators or admins)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-TaskUserStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get user statistics for a specific task in a contest
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/tasks/{taskId}/users/{userId}/submissions:
+    get:
+      description: Get all submissions for a user on a task in a contest with filtering
+        (for contest/task creators or admins)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task ID
+        in: path
+        name: taskId
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      - description: Filter by submission status
+        in: query
+        name: status
+        type: string
+      - description: Limit the number of returned submissions
+        in: query
+        name: limit
+        type: integer
+      - description: Offset the returned submissions
+        in: query
+        name: offset
+        type: integer
+      - description: Sort order
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get submissions for a specific user, task, and contest
+      tags:
+      - contests-management
   /contests-management/contests/{id}/tasks/assignable-tasks:
     get:
       description: Get all tasks that are NOT yet assigned to the specified contest
@@ -1943,6 +2167,42 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Get available tasks for a contest
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/user-stats:
+    get:
+      description: Get overall performance statistics for all users (or a specific
+        user) in a contest (for contest creators or admins)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Filter by specific user ID
+        in: query
+        name: userId
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-UserContestStats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get overall user statistics for a contest
       tags:
       - contests-management
   /contests-management/contests/created:
@@ -2532,7 +2792,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Submission'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
         "400":
           description: Bad Request
           schema:
@@ -2773,7 +3033,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
+            $ref: '#/definitions/APIResponse-Task]'
         "403":
           description: Forbidden
           schema:
