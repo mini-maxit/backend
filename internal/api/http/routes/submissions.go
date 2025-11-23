@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
+	_ "github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -304,6 +305,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 // Temporary solution, while all tasks have same languages
 //
 //	@Produce		json
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
 //	@Failure		500	{object}	httputils.APIError
 //	@Router			/submissions/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
