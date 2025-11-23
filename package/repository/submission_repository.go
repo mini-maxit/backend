@@ -922,7 +922,11 @@ func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID in
 			u.surname AS user_surname,
 			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN t.id END) AS tasks_attempted,
 			COUNT(DISTINCT CASE WHEN sr.code = 1 THEN t.id END) AS tasks_solved,
-			COUNT(DISTINCT CASE WHEN sr.code != 1 AND sr.code > 0 THEN t.id END) AS tasks_partially_solved
+			COUNT(DISTINCT CASE WHEN sr.code != 1 AND sr.code > 0 AND NOT EXISTS (
+				SELECT 1 FROM ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr2
+				JOIN ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2 ON sr2.submission_id = s2.id
+				WHERE s2.user_id = u.id AND s2.task_id = t.id AND s2.contest_id = cp.contest_id AND sr2.code = 1
+			) THEN t.id END) AS tasks_partially_solved
 		FROM ` + database.ResolveTableName(tx, &models.User{}) + ` u
 		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.user_id = u.id
 		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.contest_id = cp.contest_id
