@@ -24,17 +24,17 @@ type SubmissionService interface {
 	// CreateSubmissionResult creates a new submission result based on the response message.
 	CreateSubmissionResult(tx *gorm.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
-	GetAll(tx *gorm.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAll(tx *gorm.DB, user *schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
-	GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForTask(tx *gorm.DB, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
-	GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForContest(tx *gorm.DB, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForUser(tx *gorm.DB, userID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
-	Get(tx *gorm.DB, submissionID int64, user schemas.User) (schemas.Submission, error)
+	Get(tx *gorm.DB, submissionID int64, user *schemas.User) (schemas.Submission, error)
 	// MarkComplete marks a submission as complete.
 	MarkComplete(tx *gorm.DB, submissionID int64) error
 	// MarkFailed marks a submission as failed with an error message.
@@ -44,11 +44,11 @@ type SubmissionService interface {
 	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
 	Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
 	// GetTaskStatsForContest retrieves aggregated statistics for each task in a contest.
-	GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error)
+	GetTaskStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error)
 	// GetUserStatsForContestTask retrieves per-user statistics for a specific task in a contest.
-	GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error)
+	GetUserStatsForContestTask(tx *gorm.DB, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error)
 	// GetUserStatsForContest retrieves overall statistics for users in a contest.
-	GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error)
+	GetUserStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
@@ -73,7 +73,7 @@ type submissionService struct {
 
 func (ss *submissionService) GetAll(
 	tx *gorm.DB,
-	user schemas.User,
+	user *schemas.User,
 	userID, taskID, contestID *int64,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.PaginatedResult[[]schemas.Submission], error) {
@@ -103,7 +103,7 @@ func (ss *submissionService) GetAll(
 
 func (ss *submissionService) getFilteredSubmissions(
 	tx *gorm.DB,
-	user schemas.User,
+	user *schemas.User,
 	userID, contestID, taskID *int64,
 	paginationParams schemas.PaginationParams,
 ) ([]models.Submission, int64, error) {
@@ -185,7 +185,7 @@ func (ss *submissionService) fetchSubmissionsByFilters(
 
 func (ss *submissionService) getUnfilteredSubmissions(
 	tx *gorm.DB,
-	user schemas.User,
+	user *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) ([]models.Submission, int64, error) {
 	var submissionModels []models.Submission
@@ -221,7 +221,7 @@ func (ss *submissionService) modelsToSchemas(submissionModels []models.Submissio
 	return result
 }
 
-func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user schemas.User) (schemas.Submission, error) {
+func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user *schemas.User) (schemas.Submission, error) {
 	submissionModel, err := ss.submissionRepository.Get(tx, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission: %v", err.Error())
@@ -251,7 +251,7 @@ func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user schemas.U
 func (ss *submissionService) GetAllForUser(
 	tx *gorm.DB,
 	userID int64,
-	currentUser schemas.User,
+	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	if paginationParams.Sort == "" {
@@ -294,7 +294,7 @@ func (ss *submissionService) GetAllForUser(
 func (ss *submissionService) GetAllForGroup(
 	tx *gorm.DB,
 	groupID int64,
-	user schemas.User,
+	user *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) ([]schemas.Submission, int64, error) {
 	var err error
@@ -341,7 +341,7 @@ func (ss *submissionService) GetAllForGroup(
 func (ss *submissionService) GetAllForTask(
 	tx *gorm.DB,
 	taskID int64,
-	user schemas.User,
+	user *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	var err error
@@ -391,7 +391,7 @@ func (ss *submissionService) GetAllForTask(
 func (ss *submissionService) GetAllForContest(
 	tx *gorm.DB,
 	contestID int64,
-	user schemas.User,
+	user *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	var err error
@@ -574,7 +574,7 @@ func (ss *submissionService) Submit(
 	contestID *int64, // null means no contest
 	submissionFilePath string,
 ) (int64, error) {
-	_, err := ss.taskService.Get(tx, *user, taskID)
+	_, err := ss.taskService.Get(tx, user, taskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting task: %v", err.Error())
 		return -1, err
@@ -810,21 +810,16 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 	}
 }
 
-func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
-	// Check authorization
-	if user.Role == types.UserRoleStudent {
-		return nil, myerrors.ErrPermissionDenied
+func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
+	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	if err != nil {
+		return nil, err
 	}
 
-	// For teachers, check if they created the contest
-	if user.Role == types.UserRoleTeacher {
-		contest, err := ss.contestService.Get(tx, user, contestID)
-		if err != nil {
-			return nil, err
-		}
-		if contest.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
-		}
+	_, err = ss.contestService.Get(tx, user, contestID)
+	if err != nil {
+		ss.logger.Errorw("Error getting contest for contest task stats", "error", err)
+		return nil, err
 	}
 
 	// Get raw stats from repository
@@ -854,25 +849,20 @@ func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.Us
 	return stats, nil
 }
 
-func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
-	// Check authorization
-	if user.Role == types.UserRoleStudent {
-		return nil, myerrors.ErrPermissionDenied
+func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
+	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	if err != nil {
+		return nil, err
 	}
 
-	// For teachers, check if they created the contest or the task
-	if user.Role == types.UserRoleTeacher {
-		contest, err := ss.contestService.Get(tx, user, contestID)
-		if err != nil {
-			return nil, err
-		}
-		task, err := ss.taskService.Get(tx, user, taskID)
-		if err != nil {
-			return nil, err
-		}
-		if contest.CreatedBy != user.ID && task.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
-		}
+	isInContest, err := ss.contestService.IsTaskInContest(tx, contestID, taskID)
+	if err != nil {
+		ss.logger.Errorw("Error checking if task is in contest for contest task stats", "error", err)
+		return nil, err
+	}
+	if !isInContest {
+		ss.logger.Errorw("Task is not in contest for contest task stats", "contestID", contestID, "taskID", taskID)
+		return nil, myerrors.ErrNotFound
 	}
 
 	// Get raw stats from repository
@@ -897,16 +887,11 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user schema
 	return stats, nil
 }
 
-func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
-	hasPermission, err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
+	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
-		ss.logger.Errorw("Error checking access control for contest stats", "error", err)
 		return nil, err
 	}
-	if !hasPermission {
-		return nil, myerrors.ErrPermissionDenied
-	}
-
 	// Repository now returns typed model slice instead of generic maps
 	rawStats, err := ss.submissionRepository.GetUserStatsForContest(tx, contestID, userID)
 	if err != nil {

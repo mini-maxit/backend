@@ -189,3 +189,5 @@ var ErrTaskSubmissionEnded = errors.New("task submission period has ended")
 
 // ErrNotContestParticipant is returned when user is not a participant of the contest.
 var ErrNotContestParticipant = errors.New("user is not a participant of this contest")
+
+var ErrCannotAssignOwner = errors.New("cannot assign owner role to another user")

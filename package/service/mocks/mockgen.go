@@ -59,12 +59,11 @@ func (mr *MockAccessControlServiceMockRecorder) AddCollaborator(tx, currentUser,
 }
 
 // CanUserAccess mocks base method.
-func (m *MockAccessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user schemas.User, requiredPermission types.Permission) (bool, error) {
+func (m *MockAccessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanUserAccess", tx, resourceType, resourceID, user, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CanUserAccess indicates an expected call of CanUserAccess.
@@ -184,7 +183,7 @@ func (mr *MockContestServiceMockRecorder) AddTaskToContest(tx, currentUser, cont
 }
 
 // ApproveRegistrationRequest mocks base method.
-func (m *MockContestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+func (m *MockContestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser *schemas.User, contestID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ApproveRegistrationRequest", tx, currentUser, contestID, userID)
 	ret0, _ := ret[0].(error)
@@ -198,7 +197,7 @@ func (mr *MockContestServiceMockRecorder) ApproveRegistrationRequest(tx, current
 }
 
 // Create mocks base method.
-func (m *MockContestService) Create(tx *gorm.DB, currentUser schemas.User, contest *schemas.CreateContest) (int64, error) {
+func (m *MockContestService) Create(tx *gorm.DB, currentUser *schemas.User, contest *schemas.CreateContest) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, currentUser, contest)
 	ret0, _ := ret[0].(int64)
@@ -213,7 +212,7 @@ func (mr *MockContestServiceMockRecorder) Create(tx, currentUser, contest any) *
 }
 
 // Delete mocks base method.
-func (m *MockContestService) Delete(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+func (m *MockContestService) Delete(tx *gorm.DB, currentUser *schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", tx, currentUser, contestID)
 	ret0, _ := ret[0].(error)
@@ -227,7 +226,7 @@ func (mr *MockContestServiceMockRecorder) Delete(tx, currentUser, contestID any)
 }
 
 // Edit mocks base method.
-func (m *MockContestService) Edit(tx *gorm.DB, currentUser schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error) {
+func (m *MockContestService) Edit(tx *gorm.DB, currentUser *schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, contestID, editInfo)
 	ret0, _ := ret[0].(*schemas.CreatedContest)
@@ -242,7 +241,7 @@ func (mr *MockContestServiceMockRecorder) Edit(tx, currentUser, contestID, editI
 }
 
 // Get mocks base method.
-func (m *MockContestService) Get(tx *gorm.DB, currentUser schemas.User, contestID int64) (*schemas.Contest, error) {
+func (m *MockContestService) Get(tx *gorm.DB, currentUser *schemas.User, contestID int64) (*schemas.Contest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, currentUser, contestID)
 	ret0, _ := ret[0].(*schemas.Contest)
@@ -257,7 +256,7 @@ func (mr *MockContestServiceMockRecorder) Get(tx, currentUser, contestID any) *g
 }
 
 // GetAssignableTasks mocks base method.
-func (m *MockContestService) GetAssignableTasks(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.Task, error) {
+func (m *MockContestService) GetAssignableTasks(tx *gorm.DB, currentUser *schemas.User, contestID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssignableTasks", tx, currentUser, contestID)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -317,7 +316,7 @@ func (mr *MockContestServiceMockRecorder) GetManagedContests(tx, userID, paginat
 }
 
 // GetOngoingContests mocks base method.
-func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
+func (m *MockContestService) GetOngoingContests(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOngoingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.AvailableContest])
@@ -332,7 +331,7 @@ func (mr *MockContestServiceMockRecorder) GetOngoingContests(tx, currentUser, pa
 }
 
 // GetPastContests mocks base method.
-func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
+func (m *MockContestService) GetPastContests(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.AvailableContest])
@@ -347,7 +346,7 @@ func (mr *MockContestServiceMockRecorder) GetPastContests(tx, currentUser, pagin
 }
 
 // GetRegistrationRequests mocks base method.
-func (m *MockContestService) GetRegistrationRequests(tx *gorm.DB, currentUser schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
+func (m *MockContestService) GetRegistrationRequests(tx *gorm.DB, currentUser *schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistrationRequests", tx, currentUser, contestID, statusFilter)
 	ret0, _ := ret[0].([]schemas.RegistrationRequest)
@@ -377,7 +376,7 @@ func (mr *MockContestServiceMockRecorder) GetTaskContests(tx, taskID any) *gomoc
 }
 
 // GetTaskProgressForContest mocks base method.
-func (m *MockContestService) GetTaskProgressForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
+func (m *MockContestService) GetTaskProgressForContest(tx *gorm.DB, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTaskProgressForContest", tx, currentUser, contestID)
 	ret0, _ := ret[0].([]schemas.TaskWithContestStats)
@@ -392,7 +391,7 @@ func (mr *MockContestServiceMockRecorder) GetTaskProgressForContest(tx, currentU
 }
 
 // GetTasksForContest mocks base method.
-func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) ([]schemas.ContestTask, error) {
+func (m *MockContestService) GetTasksForContest(tx *gorm.DB, currentUser *schemas.User, contestID int64) ([]schemas.ContestTask, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTasksForContest", tx, currentUser, contestID)
 	ret0, _ := ret[0].([]schemas.ContestTask)
@@ -407,7 +406,7 @@ func (mr *MockContestServiceMockRecorder) GetTasksForContest(tx, currentUser, co
 }
 
 // GetUpcomingContests mocks base method.
-func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
+func (m *MockContestService) GetUpcomingContests(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUpcomingContests", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.AvailableContest])
@@ -422,10 +421,10 @@ func (mr *MockContestServiceMockRecorder) GetUpcomingContests(tx, currentUser, p
 }
 
 // GetUserContests mocks base method.
-func (m *MockContestService) GetUserContests(tx *gorm.DB, userID int64) (schemas.UserContestsWithStats, error) {
+func (m *MockContestService) GetUserContests(tx *gorm.DB, userID int64) (*schemas.UserContestsWithStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserContests", tx, userID)
-	ret0, _ := ret[0].(schemas.UserContestsWithStats)
+	ret0, _ := ret[0].(*schemas.UserContestsWithStats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -467,7 +466,7 @@ func (mr *MockContestServiceMockRecorder) IsUserParticipant(tx, contestID, userI
 }
 
 // RegisterForContest mocks base method.
-func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser schemas.User, contestID int64) error {
+func (m *MockContestService) RegisterForContest(tx *gorm.DB, currentUser *schemas.User, contestID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterForContest", tx, currentUser, contestID)
 	ret0, _ := ret[0].(error)
@@ -481,7 +480,7 @@ func (mr *MockContestServiceMockRecorder) RegisterForContest(tx, currentUser, co
 }
 
 // RejectRegistrationRequest mocks base method.
-func (m *MockContestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
+func (m *MockContestService) RejectRegistrationRequest(tx *gorm.DB, currentUser *schemas.User, contestID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RejectRegistrationRequest", tx, currentUser, contestID, userID)
 	ret0, _ := ret[0].(error)
@@ -659,7 +658,7 @@ func (m *MockTaskService) EXPECT() *MockTaskServiceMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockTaskService) Create(tx *gorm.DB, currentUser schemas.User, task *schemas.Task) (int64, error) {
+func (m *MockTaskService) Create(tx *gorm.DB, currentUser *schemas.User, task *schemas.Task) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", tx, currentUser, task)
 	ret0, _ := ret[0].(int64)
@@ -688,7 +687,7 @@ func (mr *MockTaskServiceMockRecorder) CreateTestCase(tx, taskID, archivePath an
 }
 
 // Delete mocks base method.
-func (m *MockTaskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int64) error {
+func (m *MockTaskService) Delete(tx *gorm.DB, currentUser *schemas.User, taskID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", tx, currentUser, taskID)
 	ret0, _ := ret[0].(error)
@@ -702,7 +701,7 @@ func (mr *MockTaskServiceMockRecorder) Delete(tx, currentUser, taskID any) *gomo
 }
 
 // Edit mocks base method.
-func (m *MockTaskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
+func (m *MockTaskService) Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Edit", tx, currentUser, taskID, updateInfo)
 	ret0, _ := ret[0].(error)
@@ -716,7 +715,7 @@ func (mr *MockTaskServiceMockRecorder) Edit(tx, currentUser, taskID, updateInfo 
 }
 
 // Get mocks base method.
-func (m *MockTaskService) Get(tx *gorm.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (m *MockTaskService) Get(tx *gorm.DB, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, currentUser, taskID)
 	ret0, _ := ret[0].(*schemas.TaskDetailed)
@@ -731,7 +730,7 @@ func (mr *MockTaskServiceMockRecorder) Get(tx, currentUser, taskID any) *gomock.
 }
 
 // GetAll mocks base method.
-func (m *MockTaskService) GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
+func (m *MockTaskService) GetAll(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].([]schemas.Task)
@@ -746,7 +745,7 @@ func (mr *MockTaskServiceMockRecorder) GetAll(tx, currentUser, paginationParams 
 }
 
 // GetAllCreated mocks base method.
-func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error) {
+func (m *MockTaskService) GetAllCreated(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllCreated", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.Task])
@@ -776,7 +775,7 @@ func (mr *MockTaskServiceMockRecorder) GetByTitle(tx, title any) *gomock.Call {
 }
 
 // GetLimits mocks base method.
-func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
+func (m *MockTaskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLimits", tx, currentUser, taskID)
 	ret0, _ := ret[0].([]schemas.TestCase)
@@ -791,7 +790,7 @@ func (mr *MockTaskServiceMockRecorder) GetLimits(tx, currentUser, taskID any) *g
 }
 
 // GetMyLiveTasks mocks base method.
-func (m *MockTaskService) GetMyLiveTasks(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error) {
+func (m *MockTaskService) GetMyLiveTasks(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMyLiveTasks", tx, currentUser, paginationParams)
 	ret0, _ := ret[0].(*schemas.MyTasksResponse)
@@ -821,7 +820,7 @@ func (mr *MockTaskServiceMockRecorder) ParseTestCase(archivePath any) *gomock.Ca
 }
 
 // ProcessAndUpload mocks base method.
-func (m *MockTaskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error {
+func (m *MockTaskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, taskID int64, archivePath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessAndUpload", tx, currentUser, taskID, archivePath)
 	ret0, _ := ret[0].(error)
@@ -835,7 +834,7 @@ func (mr *MockTaskServiceMockRecorder) ProcessAndUpload(tx, currentUser, taskID,
 }
 
 // PutLimits mocks base method.
-func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error {
+func (m *MockTaskService) PutLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PutLimits", tx, currentUser, taskID, limits)
 	ret0, _ := ret[0].(error)
@@ -1113,7 +1112,7 @@ func (mr *MockSubmissionServiceMockRecorder) CreateSubmissionResult(tx, submissi
 }
 
 // Get mocks base method.
-func (m *MockSubmissionService) Get(tx *gorm.DB, submissionID int64, user schemas.User) (schemas.Submission, error) {
+func (m *MockSubmissionService) Get(tx *gorm.DB, submissionID int64, user *schemas.User) (schemas.Submission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", tx, submissionID, user)
 	ret0, _ := ret[0].(schemas.Submission)
@@ -1128,7 +1127,7 @@ func (mr *MockSubmissionServiceMockRecorder) Get(tx, submissionID, user any) *go
 }
 
 // GetAll mocks base method.
-func (m *MockSubmissionService) GetAll(tx *gorm.DB, user schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
+func (m *MockSubmissionService) GetAll(tx *gorm.DB, user *schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", tx, user, userID, taskID, contestID, paginationParams)
 	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.Submission])
@@ -1143,7 +1142,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAll(tx, user, userID, taskID, co
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionService) GetAllForContest(tx *gorm.DB, contestID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
+func (m *MockSubmissionService) GetAllForContest(tx *gorm.DB, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForContest", tx, contestID, user, paginationParams)
 	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.Submission])
@@ -1158,7 +1157,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(tx, contestID, use
 }
 
 // GetAllForTask mocks base method.
-func (m *MockSubmissionService) GetAllForTask(tx *gorm.DB, taskID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
+func (m *MockSubmissionService) GetAllForTask(tx *gorm.DB, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForTask", tx, taskID, user, paginationParams)
 	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.Submission])
@@ -1173,7 +1172,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAllForTask(tx, taskID, user, pag
 }
 
 // GetAllForUser mocks base method.
-func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
+func (m *MockSubmissionService) GetAllForUser(tx *gorm.DB, userID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForUser", tx, userID, user, paginationParams)
 	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.Submission])
@@ -1203,7 +1202,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetAvailableLanguages(tx any) *gomo
 }
 
 // GetTaskStatsForContest mocks base method.
-func (m *MockSubmissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
+func (m *MockSubmissionService) GetTaskStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTaskStatsForContest", tx, user, contestID)
 	ret0, _ := ret[0].([]schemas.ContestTaskStats)
@@ -1218,7 +1217,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetTaskStatsForContest(tx, user, co
 }
 
 // GetUserStatsForContest mocks base method.
-func (m *MockSubmissionService) GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
+func (m *MockSubmissionService) GetUserStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserStatsForContest", tx, user, contestID, userID)
 	ret0, _ := ret[0].([]schemas.UserContestStats)
@@ -1233,7 +1232,7 @@ func (mr *MockSubmissionServiceMockRecorder) GetUserStatsForContest(tx, user, co
 }
 
 // GetUserStatsForContestTask mocks base method.
-func (m *MockSubmissionService) GetUserStatsForContestTask(tx *gorm.DB, user schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
+func (m *MockSubmissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserStatsForContestTask", tx, user, contestID, taskID)
 	ret0, _ := ret[0].([]schemas.TaskUserStats)
@@ -1631,7 +1630,7 @@ func (m *MockWorkerService) EXPECT() *MockWorkerServiceMockRecorder {
 }
 
 // GetQueueStatus mocks base method.
-func (m *MockWorkerService) GetQueueStatus(currentUser schemas.User) (*schemas.QueueStatus, error) {
+func (m *MockWorkerService) GetQueueStatus(currentUser *schemas.User) (*schemas.QueueStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetQueueStatus", currentUser)
 	ret0, _ := ret[0].(*schemas.QueueStatus)
@@ -1646,7 +1645,7 @@ func (mr *MockWorkerServiceMockRecorder) GetQueueStatus(currentUser any) *gomock
 }
 
 // GetStatus mocks base method.
-func (m *MockWorkerService) GetStatus(currentUser schemas.User) (*schemas.WorkerStatus, error) {
+func (m *MockWorkerService) GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatus", currentUser)
 	ret0, _ := ret[0].(*schemas.WorkerStatus)
@@ -1661,7 +1660,7 @@ func (mr *MockWorkerServiceMockRecorder) GetStatus(currentUser any) *gomock.Call
 }
 
 // ReconnectQueue mocks base method.
-func (m *MockWorkerService) ReconnectQueue(currentUser schemas.User) error {
+func (m *MockWorkerService) ReconnectQueue(currentUser *schemas.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReconnectQueue", currentUser)
 	ret0, _ := ret[0].(error)

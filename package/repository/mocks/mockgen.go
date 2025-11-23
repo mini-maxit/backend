@@ -189,51 +189,6 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetUserTaskPermission(tx, tas
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTaskPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).GetUserTaskPermission), tx, taskID, userID)
 }
 
-// HasContestPermission mocks base method.
-func (m *MockAccessControlRepository) HasContestPermission(tx *gorm.DB, contestID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasContestPermission", tx, contestID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasContestPermission indicates an expected call of HasContestPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasContestPermission(tx, contestID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasContestPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasContestPermission), tx, contestID, userID, requiredPermission)
-}
-
-// HasPermission mocks base method.
-func (m *MockAccessControlRepository) HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasPermission", tx, resourceType, resourceID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasPermission indicates an expected call of HasPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasPermission(tx, resourceType, resourceID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasPermission), tx, resourceType, resourceID, userID, requiredPermission)
-}
-
-// HasTaskPermission mocks base method.
-func (m *MockAccessControlRepository) HasTaskPermission(tx *gorm.DB, taskID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasTaskPermission", tx, taskID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasTaskPermission indicates an expected call of HasTaskPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasTaskPermission(tx, taskID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasTaskPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasTaskPermission), tx, taskID, userID, requiredPermission)
-}
-
 // RemoveAccess mocks base method.
 func (m *MockAccessControlRepository) RemoveAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) error {
 	m.ctrl.T.Helper()

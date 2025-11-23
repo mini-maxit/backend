@@ -89,7 +89,7 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Create a multipart writer for the HTTP request to FileStorage service
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	// Create empty task to get the task ID
 	task := schemas.Task{
@@ -169,7 +169,7 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	request := schemas.EditTask{}
 	newTitle := r.FormValue("title")
@@ -267,7 +267,7 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = tr.taskService.Delete(tx, currentUser, taskID)
 	if err != nil {
@@ -322,7 +322,7 @@ func (tr *tasksManagementRoute) GetLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
 	if err != nil {
@@ -377,7 +377,7 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
@@ -439,7 +439,7 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
 	if err != nil {

@@ -82,7 +82,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	contestID, err := cr.contestService.Create(tx, currentUser, &request)
 	if err != nil {
@@ -153,7 +153,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	resp, err := cr.contestService.Edit(tx, currentUser, contestID, &request)
 	if err != nil {
@@ -212,7 +212,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.Delete(tx, currentUser, contestID)
 	if err != nil {
@@ -272,7 +272,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetAssignableTasks(tx, currentUser, contestID)
 	if err != nil {
@@ -313,7 +313,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -345,7 +345,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		return
 	}
 
-	err = cr.contestService.AddTaskToContest(tx, &currentUser, contestID, &request)
+	err = cr.contestService.AddTaskToContest(tx, currentUser, contestID, &request)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -403,7 +403,7 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	statusQuery := r.URL.Query().Get("status")
 	if statusQuery == "" {
 		statusQuery = "pending"
@@ -437,7 +437,7 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -505,7 +505,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -592,7 +592,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID)
 	if err != nil {
@@ -653,7 +653,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	// Only teachers and admins can view all contest submissions
 	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
@@ -714,7 +714,7 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
 	if err != nil {
 		db.Rollback()
@@ -763,7 +763,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetTaskStatsForContest(tx, currentUser, contestID)
 	if err != nil {
 		db.Rollback()
@@ -820,7 +820,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWr
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
 		db.Rollback()
@@ -889,7 +889,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.Resp
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
@@ -955,7 +955,7 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContest(tx, currentUser, contestID, userID)
 	if err != nil {
 		db.Rollback()
@@ -1002,7 +1002,7 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetManagedContests(tx, currentUser.ID, paginationParams)
 	if err != nil {
 		db.Rollback()

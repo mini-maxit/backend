@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -44,7 +43,7 @@ func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	status, err := wr.workserService.GetStatus(currentUser)
 	if err != nil {
@@ -78,7 +77,7 @@ func (wr *workerRoute) GetQueueStatus(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	status, err := wr.workserService.GetQueueStatus(currentUser)
 	if err != nil {
@@ -109,7 +108,7 @@ func (wr *workerRoute) ReconnectQueue(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err := wr.workserService.ReconnectQueue(currentUser)
 	if err != nil {

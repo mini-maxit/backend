@@ -77,7 +77,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	group := &schemas.Group{
 		Name:      request.Name,
@@ -86,7 +86,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	groupID, err := gr.groupService.Create(tx, currentUser, group)
+	groupID, err := gr.groupService.Create(tx, *currentUser, group)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -140,9 +140,9 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	group, err := gr.groupService.Get(tx, currentUser, groupID)
+	group, err := gr.groupService.Get(tx, *currentUser, groupID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -188,9 +188,9 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	groups, err := gr.groupService.GetAll(tx, currentUser, paginationParams)
+	groups, err := gr.groupService.GetAll(tx, *currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -258,9 +258,9 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	resp, err := gr.groupService.Edit(tx, currentUser, groupID, &request)
+	resp, err := gr.groupService.Edit(tx, *currentUser, groupID, &request)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -329,9 +329,9 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	err = gr.groupService.AddUsers(tx, currentUser, groupID, request.UserIDs)
+	err = gr.groupService.AddUsers(tx, *currentUser, groupID, request.UserIDs)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -401,9 +401,9 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	err = gr.groupService.DeleteUsers(tx, currentUser, groupID, request.UserIDs)
+	err = gr.groupService.DeleteUsers(tx, *currentUser, groupID, request.UserIDs)
 	if err != nil {
 		db.Rollback()
 		var status int
@@ -465,9 +465,9 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	users, err := gr.groupService.GetUsers(tx, currentUser, groupID)
+	users, err := gr.groupService.GetUsers(tx, *currentUser, groupID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

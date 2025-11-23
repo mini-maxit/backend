@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -50,7 +49,7 @@ type SumbissionImpl struct {
 //	@Param			limit		query		int		false	"Limit the number of returned submissions"
 //	@Param			offset		query		int		false	"Offset the returned submissions"
 //	@Param			sort		query		string	false	"Sort order"
-//	@Success		200			{object}	httputils.APIResponse[[]schemas.Submission]
+//	@Success		200			{object}	httputils.APIResponse[schemas.PaginatedResult[schemas.Submission]]
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
@@ -61,7 +60,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	query := r.URL.Query()
 	queryParams, err := httputils.GetQueryParams(&query)
 	if err != nil {
@@ -163,7 +162,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	submission, err := s.submissionService.Get(tx, submissionID, currentUser)
 	if err != nil {
@@ -216,7 +215,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
@@ -273,7 +272,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -305,7 +304,6 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 // Temporary solution, while all tasks have same languages
 //
 //	@Produce		json
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
 //	@Failure		500	{object}	httputils.APIError
 //	@Router			/submissions/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
@@ -387,7 +385,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Extract user ID
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	// Extract language
 	languageStr := r.FormValue("languageID")
@@ -421,7 +419,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Create the submission with the correct order
-	submissionID, err := s.submissionService.Submit(tx, &currentUser, taskID, languageID, contestID, filePath)
+	submissionID, err := s.submissionService.Submit(tx, currentUser, taskID, languageID, contestID, filePath)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -472,7 +470,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 //	@Param			limit	query		int		false	"Limit the number of returned submissions"
 //	@Param			offset	query		int		false	"Offset the returned submissions"
 //	@Param			sort	query		string	false	"Sort order"
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[schemas.Submission]]
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
@@ -491,7 +489,7 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
