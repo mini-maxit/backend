@@ -118,6 +118,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
+		accessControlService,
 		contestService,
 		filestorage,
 		fileRepository,

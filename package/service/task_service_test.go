@@ -365,19 +365,20 @@ func TestDeleteTask(t *testing.T) {
 
 	t.Run("Success for admin", func(t *testing.T) {
 		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Get(gomock.Any(), taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		err := ts.Delete(tx, adminUser, taskID)
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		tr.EXPECT().Get(gomock.Any(), int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
 		err := ts.Delete(tx, adminUser, 0)
 		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		currentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		err := ts.Delete(tx, currentUser, taskID)
 		require.ErrorIs(t, err, myerrors.ErrForbidden)
@@ -407,9 +408,9 @@ func TestEditTask(t *testing.T) {
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
-		}, nil).Times(2)
+		}, nil).Times(1)
 		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		err := ts.Edit(tx, adminUser, taskID, updatedTask)
@@ -420,7 +421,7 @@ func TestEditTask(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		tr.EXPECT().Get(tx, int64(0)).Return(nil, myerrors.ErrTaskNotFound).Times(1)
-		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
 	})
@@ -432,8 +433,8 @@ func TestEditTask(t *testing.T) {
 			CreatedBy: adminUser.ID,
 			IsVisible: true,
 		}
-		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(2)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
 			// Verify that IsVisible was updated
 			assert.False(t, updatedTask.IsVisible)
@@ -772,7 +773,7 @@ func TestPutLimit(t *testing.T) {
 			MemoryLimit: newLimits.Limits[0].MemoryLimit,
 		}
 		io.EXPECT().Put(tx, expectedModel).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 
 		err := ts.PutLimits(tx, teacherUser, taskID, newLimits)
 		require.NoError(t, err)

@@ -59,18 +59,18 @@ func (mr *MockAccessControlServiceMockRecorder) AddCollaborator(tx, currentUser,
 }
 
 // CanUserAccess mocks base method.
-func (m *MockAccessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user schemas.User, creatorID int64, requiredPermission types.Permission) (bool, error) {
+func (m *MockAccessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user schemas.User, requiredPermission types.Permission) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CanUserAccess", tx, resourceType, resourceID, user, creatorID, requiredPermission)
+	ret := m.ctrl.Call(m, "CanUserAccess", tx, resourceType, resourceID, user, requiredPermission)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CanUserAccess indicates an expected call of CanUserAccess.
-func (mr *MockAccessControlServiceMockRecorder) CanUserAccess(tx, resourceType, resourceID, user, creatorID, requiredPermission any) *gomock.Call {
+func (mr *MockAccessControlServiceMockRecorder) CanUserAccess(tx, resourceType, resourceID, user, requiredPermission any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUserAccess", reflect.TypeOf((*MockAccessControlService)(nil).CanUserAccess), tx, resourceType, resourceID, user, creatorID, requiredPermission)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUserAccess", reflect.TypeOf((*MockAccessControlService)(nil).CanUserAccess), tx, resourceType, resourceID, user, requiredPermission)
 }
 
 // GetCollaborators mocks base method.
@@ -115,21 +115,6 @@ func (m *MockAccessControlService) GrantOwnerAccess(tx *gorm.DB, resourceType mo
 func (mr *MockAccessControlServiceMockRecorder) GrantOwnerAccess(tx, resourceType, resourceID, ownerID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GrantOwnerAccess", reflect.TypeOf((*MockAccessControlService)(nil).GrantOwnerAccess), tx, resourceType, resourceID, ownerID)
-}
-
-// HasPermission mocks base method.
-func (m *MockAccessControlService) HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasPermission", tx, resourceType, resourceID, user, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasPermission indicates an expected call of HasPermission.
-func (mr *MockAccessControlServiceMockRecorder) HasPermission(tx, resourceType, resourceID, user, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPermission", reflect.TypeOf((*MockAccessControlService)(nil).HasPermission), tx, resourceType, resourceID, user, requiredPermission)
 }
 
 // RemoveCollaborator mocks base method.

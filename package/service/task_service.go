@@ -212,15 +212,10 @@ func (ts *taskService) GetAllCreated(
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
+// TODO: remove access control associated with the task
 func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int64) error {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
-	if err != nil {
-		ts.logger.Errorf("Error validating user role: %v", err.Error())
-		return err
-	}
-
 	// Check permissions using collaborator system - only manage permission can delete
-	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
+	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionOwner)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
@@ -522,6 +517,14 @@ func (ts *taskService) PutLimits(
 		return myerrors.ErrForbidden
 	}
 
+	_, err = ts.taskRepository.Get(tx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
+	}
+
 	for _, io := range newLimits.Limits {
 		ioID, err := ts.testCaseRepository.GetTestCaseID(tx, taskID, io.Order)
 		if err != nil {
@@ -661,19 +664,16 @@ func (ts *taskService) enrichTaskWithAttempts(
 
 // hasTaskPermission checks if the user has the required permission for the task.
 func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, userID int64, userRole types.UserRole, requiredPermission types.Permission) (bool, error) {
-	// Get task to find creator
-	task, err := ts.taskRepository.Get(tx, taskID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, myerrors.ErrNotFound
-		}
-		ts.logger.Errorf("Error getting task: %v", err.Error())
-		return false, err
-	}
-
 	// Use AccessControlService to check permission
 	user := schemas.User{ID: userID, Role: userRole}
-	return ts.accessControlService.CanUserAccess(tx, models.ResourceTypeTask, taskID, user, task.CreatedBy, requiredPermission)
+	return ts.accessControlService.CanUserAccess(tx, models.ResourceTypeTask, taskID, user, requiredPermission)
+}
+
+func TaskToInfoSchema(model *models.Task) *schemas.TaskInfo {
+	return &schemas.TaskInfo{
+		ID:    model.ID,
+		Title: model.Title,
+	}
 }
 
 func NewTaskService(

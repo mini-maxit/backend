@@ -54,10 +54,12 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 	taskService := mock_service.NewMockTaskService(ctrl)
 	userService := mock_service.NewMockUserService(ctrl)
 	queueService := mock_service.NewMockQueueService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
 	fs, err := filestorage.NewFileStorageService("dummy")
 	require.NoError(t, err)
 
 	svc := service.NewSubmissionService(
+		acs,
 		contestService,
 		fs,
 		fileRepository,

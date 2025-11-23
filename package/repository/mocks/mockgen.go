@@ -657,10 +657,10 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetPendingSubmissions(tx, limit 
 }
 
 // GetTaskStatsForContest mocks base method.
-func (m *MockSubmissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]map[string]any, error) {
+func (m *MockSubmissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]models.ContestTaskStatsModel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTaskStatsForContest", tx, contestID)
-	ret0, _ := ret[0].([]map[string]any)
+	ret0, _ := ret[0].([]models.ContestTaskStatsModel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -672,10 +672,10 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetTaskStatsForContest(tx, conte
 }
 
 // GetUserStatsForContest mocks base method.
-func (m *MockSubmissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]map[string]any, error) {
+func (m *MockSubmissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsModel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserStatsForContest", tx, contestID, userID)
-	ret0, _ := ret[0].([]map[string]any)
+	ret0, _ := ret[0].([]models.UserContestStatsModel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -687,10 +687,10 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetUserStatsForContest(tx, conte
 }
 
 // GetUserStatsForContestTask mocks base method.
-func (m *MockSubmissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]map[string]any, error) {
+func (m *MockSubmissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]models.TaskUserStatsModel, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserStatsForContestTask", tx, contestID, taskID)
-	ret0, _ := ret[0].([]map[string]any)
+	ret0, _ := ret[0].([]models.TaskUserStatsModel)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

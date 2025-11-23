@@ -54,6 +54,7 @@ type SubmissionService interface {
 const defaultSortOrder = "submitted_at:desc"
 
 type submissionService struct {
+	accessControlService       AccessControlService
 	contestService             ContestService
 	filestorage                filestorage.FileStorageService
 	fileRepository             repository.File
@@ -723,6 +724,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 }
 
 func NewSubmissionService(
+	accessControlService AccessControlService,
 	contestService ContestService,
 	filestorage filestorage.FileStorageService,
 	fileRepository repository.File,
@@ -739,6 +741,7 @@ func NewSubmissionService(
 ) SubmissionService {
 	log := utils.NewNamedLogger("submission_service")
 	service := &submissionService{
+		accessControlService:       accessControlService,
 		contestService:             contestService,
 		filestorage:                filestorage,
 		fileRepository:             fileRepository,
@@ -831,19 +834,17 @@ func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user schemas.Us
 		return nil, err
 	}
 
-	// Convert to schema
+	// Convert typed model slice to schema slice
 	stats := make([]schemas.ContestTaskStats, 0, len(rawStats))
 	for _, raw := range rawStats {
 		stat := schemas.ContestTaskStats{
-			TaskID:               raw["task_id"].(int64),
-			TaskTitle:            raw["task_title"].(string),
-			TotalParticipants:    raw["total_participants"].(int64),
-			SubmittedCount:       raw["submitted_count"].(int64),
-			FullySolvedCount:     raw["fully_solved_count"].(int64),
-			PartiallySolvedCount: raw["partially_solved_count"].(int64),
-			AverageScore:         raw["average_score"].(float64),
+			Task:                 *TaskToInfoSchema(&raw.Task),
+			TotalParticipants:    raw.TotalParticipants,
+			SubmittedCount:       raw.SubmittedCount,
+			FullySolvedCount:     raw.FullySolvedCount,
+			PartiallySolvedCount: raw.PartiallySolvedCount,
+			AverageScore:         raw.AverageScore,
 		}
-		// Calculate success rate
 		if stat.SubmittedCount > 0 {
 			stat.SuccessRate = float64(stat.FullySolvedCount) / float64(stat.SubmittedCount) * 100
 		}
@@ -881,21 +882,14 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user schema
 		return nil, err
 	}
 
-	// Convert to schema
+	// Convert typed model slice to schema slice
 	stats := make([]schemas.TaskUserStats, 0, len(rawStats))
 	for _, raw := range rawStats {
 		stat := schemas.TaskUserStats{
-			UserID:          raw["user_id"].(int64),
-			Username:        raw["username"].(string),
-			SubmissionCount: int(raw["submission_count"].(int64)),
-			BestScore:       raw["best_score"].(float64),
-		}
-		// Handle nullable fields
-		if status, ok := raw["latest_status"].(string); ok {
-			stat.LatestStatus = types.SubmissionStatus(status)
-		}
-		if code, ok := raw["latest_result_code"].(int64); ok {
-			stat.LatestResultCode = types.SubmissionResultCode(code).String()
+			User:             *UserToInfoSchema(&raw.User),
+			SubmissionCount:  int(raw.SubmissionCount),
+			BestScore:        raw.BestScore,
+			BestSubmissionID: raw.BestSubmissionID,
 		}
 		stats = append(stats, stat)
 	}
@@ -904,45 +898,49 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user schema
 }
 
 func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
-	// Check authorization
-	if user.Role == types.UserRoleStudent {
+	hasPermission, err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	if err != nil {
+		ss.logger.Errorw("Error checking access control for contest stats", "error", err)
+		return nil, err
+	}
+	if !hasPermission {
 		return nil, myerrors.ErrPermissionDenied
 	}
 
-	// For teachers, check if they created the contest
-	if user.Role == types.UserRoleTeacher {
-		contest, err := ss.contestService.Get(tx, user, contestID)
-		if err != nil {
-			return nil, err
-		}
-		if contest.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
-		}
-	}
-
-	// Get raw stats from repository
+	// Repository now returns typed model slice instead of generic maps
 	rawStats, err := ss.submissionRepository.GetUserStatsForContest(tx, contestID, userID)
 	if err != nil {
 		ss.logger.Errorw("Error getting user stats for contest", "error", err)
 		return nil, err
 	}
 
-	// Convert to schema
 	stats := make([]schemas.UserContestStats, 0, len(rawStats))
 	for _, raw := range rawStats {
 		stat := schemas.UserContestStats{
-			UserID:               raw["user_id"].(int64),
-			Username:             raw["username"].(string),
-			TasksAttempted:       int(raw["tasks_attempted"].(int64)),
-			TasksSolved:          int(raw["tasks_solved"].(int64)),
-			TasksPartiallySolved: int(raw["tasks_partially_solved"].(int64)),
+			User:                 *UserToInfoSchema(&raw.User),
+			TasksAttempted:       int(raw.TasksAttempted),
+			TasksSolved:          int(raw.TasksSolved),
+			TasksPartiallySolved: int(raw.TasksPartiallySolved),
+			TaskBreakdown:        []schemas.UserTaskPerformance{},
 		}
 
-		// Parse task breakdown JSON
-		if breakdownRaw, ok := raw["task_breakdown"].(string); ok && breakdownRaw != "" {
-			// Handle JSON parsing
-			stat.TaskBreakdown = []schemas.UserTaskPerformance{}
-			// For simplicity, we'll leave this empty for now and populate it in a separate query if needed
+		// Parse JSON breakdown into model structs, then convert
+		if raw.TaskBreakdownJson != "" && raw.TaskBreakdownJson != "null" {
+			var breakdownModels []models.UserTaskPerformanceModel
+			if err := json.Unmarshal([]byte(raw.TaskBreakdownJson), &breakdownModels); err != nil {
+				// Log and continue; do not fail whole request
+				ss.logger.Warnw("Failed to unmarshal task breakdown JSON", "userId", raw.User.ID, "error", err)
+			} else {
+				for _, bm := range breakdownModels {
+					stat.TaskBreakdown = append(stat.TaskBreakdown, schemas.UserTaskPerformance{
+						TaskID:       bm.TaskID,
+						TaskTitle:    bm.TaskTitle,
+						BestScore:    bm.BestScore,
+						AttemptCount: bm.AttemptCount,
+						IsSolved:     bm.IsSolved,
+					})
+				}
+			}
 		}
 
 		stats = append(stats, stat)

@@ -744,15 +744,20 @@ func (cs *contestService) GetRegistrationRequests(tx *gorm.DB, currentUser schem
 func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
 	// Check permissions using collaborator system - need manage permission
 	// This also verifies the contest exists
-	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+	if !hasPermission {
+		return myerrors.ErrForbidden
+	}
+
+	_, err = cs.contestRepository.Get(tx, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
 		}
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	// Check if user exists
@@ -796,7 +801,7 @@ func (cs *contestService) ApproveRegistrationRequest(tx *gorm.DB, currentUser sc
 func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser schemas.User, contestID, userID int64) error {
 	// Check permissions using collaborator system - need manage permission
 	// This also verifies the contest exists
-	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionManage)
+	hasPermission, err := cs.hasContestPermission(tx, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return myerrors.ErrNotFound
@@ -805,6 +810,14 @@ func (cs *contestService) RejectRegistrationRequest(tx *gorm.DB, currentUser sch
 	}
 	if !hasPermission {
 		return myerrors.ErrForbidden
+	}
+
+	_, err = cs.contestRepository.Get(tx, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrNotFound
+		}
+		return err
 	}
 
 	// Check if user exists
@@ -1010,14 +1023,7 @@ func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
 // 2. User is the creator (which should also have manage permission via collaborator)
 // 3. User has the required permission via collaborator
 func (cs *contestService) hasContestPermission(tx *gorm.DB, contestID int64, user schemas.User, requiredPermission types.Permission) (bool, error) {
-	// Fetch contest (verifies existence)
-	contest, err := cs.contestRepository.Get(tx, contestID)
-	if err != nil {
-		return false, err
-	}
-
-	// Delegate permission logic to AccessControlService
-	return cs.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, contest.CreatedBy, requiredPermission)
+	return cs.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, requiredPermission)
 }
 
 func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats) *schemas.PastContestWithStats {

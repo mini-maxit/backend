@@ -185,6 +185,15 @@ func (us *userService) ChangePassword(
 	return nil
 }
 
+func UserToInfoSchema(user *models.User) *schemas.UserInfo {
+	return &schemas.UserInfo{
+		ID:       user.ID,
+		Name:     user.Name,
+		Surname:  user.Surname,
+		Username: user.Username,
+	}
+}
+
 func UserToSchema(user *models.User) *schemas.User {
 	return &schemas.User{
 		ID:        user.ID,
