@@ -3,10 +3,16 @@ package schemas
 import "time"
 
 type WorkerStatus struct {
-	BusyWorkers  int               `json:"busyWorkers"`
-	TotalWorkers int               `json:"totalWorkers"`
-	WorkerStatus map[string]string `json:"workerStatus"`
-	StatusTime   time.Time         `json:"statusTime"`
+	ID                  int     `json:"id"`
+	Status              string  `json:"status"`
+	ProcessingMessageID *string `json:"processingMessageId,omitempty"`
+}
+
+type WorkersStatus struct {
+	BusyWorkers  int            `json:"busyWorkers"`
+	TotalWorkers int            `json:"totalWorkers"`
+	Statuses     []WorkerStatus `json:"workerStatus"`
+	StatusTime   time.Time      `json:"statusTime"`
 }
 
 type QueueStatus struct {

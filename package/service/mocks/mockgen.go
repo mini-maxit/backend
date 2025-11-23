@@ -1494,10 +1494,10 @@ func (mr *MockQueueServiceMockRecorder) IsConnected() *gomock.Call {
 }
 
 // LastWorkerStatus mocks base method.
-func (m *MockQueueService) LastWorkerStatus() schemas.WorkerStatus {
+func (m *MockQueueService) LastWorkerStatus() schemas.WorkersStatus {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LastWorkerStatus")
-	ret0, _ := ret[0].(schemas.WorkerStatus)
+	ret0, _ := ret[0].(schemas.WorkersStatus)
 	return ret0
 }
 
@@ -1645,10 +1645,10 @@ func (mr *MockWorkerServiceMockRecorder) GetQueueStatus(currentUser any) *gomock
 }
 
 // GetStatus mocks base method.
-func (m *MockWorkerService) GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error) {
+func (m *MockWorkerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatus", currentUser)
-	ret0, _ := ret[0].(*schemas.WorkerStatus)
+	ret0, _ := ret[0].(*schemas.WorkersStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

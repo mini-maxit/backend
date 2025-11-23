@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -42,7 +43,7 @@ type QueueService interface {
 	// StatusCond returns the status condition variable
 	StatusCond() *sync.Cond
 	// LastWorkerStatus returns the last known worker status
-	LastWorkerStatus() schemas.WorkerStatus
+	LastWorkerStatus() schemas.WorkersStatus
 }
 
 type queueService struct {
@@ -59,7 +60,7 @@ type queueService struct {
 
 	statusMux        *sync.Mutex
 	statusCond       *sync.Cond
-	lastWorkerStatus schemas.WorkerStatus
+	lastWorkerStatus schemas.WorkersStatus
 
 	logger *zap.SugaredLogger
 }
@@ -85,7 +86,7 @@ func NewQueueService(
 		queueName:                  queueName,
 		responseQueueName:          responseQueueName,
 		statusMux:                  &sync.Mutex{},
-		lastWorkerStatus:           schemas.WorkerStatus{},
+		lastWorkerStatus:           schemas.WorkersStatus{},
 		logger:                     log,
 	}
 	s.statusCond = sync.NewCond(s.statusMux)
@@ -247,18 +248,30 @@ func (qs *queueService) UpdateWorkerStatus(receivedStatus schemas.StatusResponse
 	qs.statusMux.Lock()
 	defer qs.statusMux.Unlock()
 
-	qs.lastWorkerStatus = schemas.WorkerStatus{
+	statuses := make([]schemas.WorkerStatus, 0, len(receivedStatus.WorkerStatus))
+	for _, ws := range receivedStatus.WorkerStatus {
+		statuses = append(statuses, schemas.WorkerStatus{
+			ID:                  ws.ID,
+			Status:              ws.Status.String(),
+			ProcessingMessageID: ws.ProcessingMessageID,
+		})
+	}
+	slices.SortFunc(statuses, func(a schemas.WorkerStatus, b schemas.WorkerStatus) int {
+		return a.ID - b.ID
+	})
+	qs.lastWorkerStatus = schemas.WorkersStatus{
 		BusyWorkers:  receivedStatus.BusyWorkers,
 		TotalWorkers: receivedStatus.TotalWorkers,
-		WorkerStatus: receivedStatus.WorkerStatus,
-		StatusTime:   time.Now(),
+		Statuses:     statuses,
+
+		StatusTime: time.Now(),
 	}
 
 	qs.statusCond.Broadcast()
 	return nil
 }
 
-func (qs *queueService) LastWorkerStatus() schemas.WorkerStatus {
+func (qs *queueService) LastWorkerStatus() schemas.WorkersStatus {
 	return qs.lastWorkerStatus
 }
 
