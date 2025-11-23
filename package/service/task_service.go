@@ -19,31 +19,31 @@ import (
 
 type TaskService interface {
 	// Create creates a new task.
-	Create(tx *gorm.DB, currentUser schemas.User, task *schemas.Task) (int64, error)
+	Create(tx *gorm.DB, currentUser *schemas.User, task *schemas.Task) (int64, error)
 	// CreateTestCase creates input and output files for a task.
 	CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error
 	// Delete deletes a task.
-	Delete(tx *gorm.DB, currentUser schemas.User, taskID int64) error
+	Delete(tx *gorm.DB, currentUser *schemas.User, taskID int64) error
 	// Edit edits an existing task.
-	Edit(tx *gorm.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error
+	Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error
 	// GetAll retrieves all tasks based on query parameters.
-	GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
+	GetAll(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
-	GetAllCreated(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
+	GetAllCreated(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
 	// Get retrieves a detailed view of a specific task.
-	Get(tx *gorm.DB, currentUser schemas.User, taskID int64) (*schemas.TaskDetailed, error)
+	Get(tx *gorm.DB, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error)
 	// GetByTitle retrieves a task by its title.
 	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
 	// GetLimits retrieves limits associated with each input/output
-	GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error)
+	GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error)
 	// GetMyLiveTasks retrieves live assigned tasks grouped by contests and non-contest tasks with submission statistics.
-	GetMyLiveTasks(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error)
+	GetMyLiveTasks(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error)
 	// ParseTestCase parses the input and output files from an archive.
 	ParseTestCase(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
-	ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error
+	ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, taskID int64, archivePath string) error
 	// PutLimits updates limits associated with each input/output.
-	PutLimits(tx *gorm.DB, currentUser schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
+	PutLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
 }
 
 const defaultTaskSort = "created_at:desc"
@@ -62,7 +62,7 @@ type taskService struct {
 	logger *zap.SugaredLogger
 }
 
-func (ts *taskService) Create(tx *gorm.DB, currentUser schemas.User, task *schemas.Task) (int64, error) {
+func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *schemas.Task) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -117,7 +117,7 @@ func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, err
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(tx *gorm.DB, _ *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
 	// if err != nil {
 	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -143,7 +143,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ schemas.User, paginationParams sche
 	return result, nil
 }
 
-func (ts *taskService) Get(tx *gorm.DB, _ schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) Get(tx *gorm.DB, _ *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
@@ -186,7 +186,7 @@ func (ts *taskService) Get(tx *gorm.DB, _ schemas.User, taskID int64) (*schemas.
 
 func (ts *taskService) GetAllCreated(
 	tx *gorm.DB,
-	currentUser schemas.User,
+	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (schemas.PaginatedResult[[]schemas.Task], error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
@@ -212,26 +212,12 @@ func (ts *taskService) GetAllCreated(
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
-func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int64) error {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
+// TODO: remove access control associated with the task
+func (ts *taskService) Delete(tx *gorm.DB, currentUser *schemas.User, taskID int64) error {
+	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionOwner)
 	if err != nil {
-		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return err
 	}
-
-	// Check permissions using collaborator system - only manage permission can delete
-	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionManage)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
-		}
-		ts.logger.Errorf("Error checking task permission: %v", err.Error())
-		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
-	}
-
 	err = ts.taskRepository.Delete(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -244,18 +230,10 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser schemas.User, taskID int6
 	return nil
 }
 
-func (ts *taskService) Edit(tx *gorm.DB, currentUser schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
-	// Check permissions using collaborator system - need edit permission
-	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
+func (ts *taskService) Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
+	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
-		}
-		ts.logger.Errorf("Error checking task permission: %v", err.Error())
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	currentTask, err := ts.taskRepository.Get(tx, taskID)
@@ -396,17 +374,11 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 	return nil
 }
 
-func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, taskID int64, archivePath string) error {
+func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, taskID int64, archivePath string) error {
 	// Check permissions using collaborator system - need edit permission
-	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
+	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
-		}
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	err = ts.filestorage.ValidateArchiveStructure(archivePath)
@@ -483,7 +455,7 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser schemas.User, t
 	return nil
 }
 
-func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID int64) ([]schemas.TestCase, error) {
+func (ts *taskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error) {
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -506,20 +478,14 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser schemas.User, taskID i
 
 func (ts *taskService) PutLimits(
 	tx *gorm.DB,
-	currentUser schemas.User,
+	currentUser *schemas.User,
 	taskID int64,
 	newLimits schemas.PutTestCaseLimitsRequest,
 ) error {
 	// Check permissions using collaborator system - need edit permission
-	hasPermission, err := ts.hasTaskPermission(tx, taskID, currentUser.ID, currentUser.Role, types.PermissionEdit)
+	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
-		}
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	for _, io := range newLimits.Limits {
@@ -577,7 +543,7 @@ func TestCaseToSchema(model *models.TestCase) *schemas.TestCase {
 
 func (ts *taskService) GetMyLiveTasks(
 	tx *gorm.DB,
-	currentUser schemas.User,
+	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.MyTasksResponse, error) {
 	// Get live tasks in contests
@@ -659,21 +625,23 @@ func (ts *taskService) enrichTaskWithAttempts(
 	}, nil
 }
 
-// hasTaskPermission checks if the user has the required permission for the task.
-func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, userID int64, userRole types.UserRole, requiredPermission types.Permission) (bool, error) {
-	// Get task to find creator
-	task, err := ts.taskRepository.Get(tx, taskID)
+// hasTaskPermission checks that task exists and if the user has the required permission for the task.
+func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, user *schemas.User, requiredPermission types.Permission) error {
+	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, myerrors.ErrNotFound
+			return myerrors.ErrNotFound
 		}
-		ts.logger.Errorf("Error getting task: %v", err.Error())
-		return false, err
+		return err
 	}
+	return ts.accessControlService.CanUserAccess(tx, models.ResourceTypeTask, taskID, user, requiredPermission)
+}
 
-	// Use AccessControlService to check permission
-	user := schemas.User{ID: userID, Role: userRole}
-	return ts.accessControlService.CanUserAccess(tx, models.ResourceTypeTask, taskID, user, task.CreatedBy, requiredPermission)
+func TaskToInfoSchema(model *models.Task) *schemas.TaskInfo {
+	return &schemas.TaskInfo{
+		ID:    model.ID,
+		Title: model.Title,
+	}
 }
 
 func NewTaskService(

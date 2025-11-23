@@ -21,6 +21,12 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	studentUser = &schemas.User{ID: 2, Role: types.UserRoleStudent}
+	teacherUser = &schemas.User{ID: 3, Role: types.UserRoleTeacher}
+	adminUser   = &schemas.User{ID: 1, Role: types.UserRoleAdmin}
+)
+
 func addDescription(t *testing.T, zipWriter *zip.Writer) {
 	// Create description.pdf
 	descriptionFile, err := zipWriter.Create("folder/description.pdf")
@@ -121,8 +127,6 @@ func TestCreateTask(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
-
 	t.Run("Success", func(t *testing.T) {
 		task := &schemas.Task{
 			Title:     "Test Task",
@@ -154,7 +158,6 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		taskID, err := ts.Create(tx, studentUser, &schemas.Task{
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
@@ -173,7 +176,6 @@ func TestGetTaskByTitle(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	t.Run("Success", func(t *testing.T) {
 		taskID := int64(1)
@@ -211,7 +213,6 @@ func TestGetAllTasks(t *testing.T) {
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
 	t.Run("No tasks", func(t *testing.T) {
@@ -226,37 +227,35 @@ func TestGetAllTasks(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		currentUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tasks := []models.Task{
 			{
 				ID:        1,
 				Title:     "Test Task",
-				CreatedBy: currentUser.ID,
+				CreatedBy: teacherUser.ID,
 				IsVisible: true,
 			},
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
 
-		resultTasks, err := ts.GetAll(tx, currentUser, paginationParams)
+		resultTasks, err := ts.GetAll(tx, studentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultTasks)
 		assert.True(t, resultTasks[0].IsVisible)
 	})
 
 	t.Run("Only globally visible tasks", func(t *testing.T) {
-		currentUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		// Repository should only return globally visible tasks
 		tasks := []models.Task{
 			{
 				ID:        1,
 				Title:     "Visible Task",
-				CreatedBy: currentUser.ID,
+				CreatedBy: teacherUser.ID,
 				IsVisible: true,
 			},
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
 
-		resultTasks, err := ts.GetAll(tx, currentUser, paginationParams)
+		resultTasks, err := ts.GetAll(tx, studentUser, paginationParams)
 		require.NoError(t, err)
 		assert.Len(t, resultTasks, 1)
 		assert.Equal(t, "Visible Task", resultTasks[0].Title)
@@ -277,7 +276,6 @@ func TestGetTask(t *testing.T) {
 	require.NoError(t, err)
 	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil, nil)
 
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	task := &schemas.Task{
 		Title:     "Test Task",
 		CreatedBy: adminUser.ID,
@@ -296,7 +294,6 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		tr.EXPECT().Get(gomock.Any(), task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
@@ -312,8 +309,6 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
-
 		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
@@ -327,7 +322,6 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Success with created task", func(t *testing.T) {
-		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
@@ -360,26 +354,34 @@ func TestDeleteTask(t *testing.T) {
 	fr := mock_repository.NewMockFile(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
 	t.Run("Success for admin", func(t *testing.T) {
 		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Get(gomock.Any(), taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
+			ID: taskID,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		err := ts.Delete(tx, adminUser, taskID)
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
-		tr.EXPECT().Get(gomock.Any(), int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		tr.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(gorm.ErrRecordNotFound).Times(1)
+		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
+			ID: taskID,
+		}, nil).Times(1)
 		err := ts.Delete(tx, adminUser, 0)
 		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		currentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
-		err := ts.Delete(tx, currentUser, taskID)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
+		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
+			ID: taskID,
+		}, nil).Times(1)
+		err := ts.Delete(tx, studentUser, taskID)
 		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 }
@@ -395,7 +397,6 @@ func TestEditTask(t *testing.T) {
 	fr := mock_repository.NewMockFile(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 
 	t.Run("Success", func(t *testing.T) {
@@ -409,7 +410,7 @@ func TestEditTask(t *testing.T) {
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(2)
 		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		err := ts.Edit(tx, adminUser, taskID, updatedTask)
@@ -420,7 +421,6 @@ func TestEditTask(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
 		tr.EXPECT().Get(tx, int64(0)).Return(nil, myerrors.ErrTaskNotFound).Times(1)
-		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
 	})
@@ -433,7 +433,7 @@ func TestEditTask(t *testing.T) {
 			IsVisible: true,
 		}
 		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(2)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
 			// Verify that IsVisible was updated
 			assert.False(t, updatedTask.IsVisible)
@@ -457,7 +457,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 	taskID := int64(1)
 	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
@@ -503,7 +502,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Success with teacher", func(t *testing.T) {
-		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		task := &schemas.Task{
 			Title:     "Teacher Task",
 			CreatedBy: teacherUser.ID,
@@ -531,7 +529,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Different teachers", func(t *testing.T) {
-		teacherUser := schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		task := &schemas.Task{
 			Title:     "Teacher Task 2",
 			CreatedBy: teacherUser.ID,
@@ -559,7 +556,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
 		result, err := ts.GetAllCreated(tx, studentUser, queryParams)
 		require.ErrorIs(t, err, myerrors.ErrForbidden)
 		assert.Empty(t, result.Items)
@@ -577,7 +573,6 @@ func TestCreateTestCase(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-	teacherUser := schemas.User{ID: 2}
 	task := &models.Task{
 		ID:        int64(1),
 		CreatedBy: teacherUser.ID,
@@ -706,7 +701,6 @@ func TestGetLimits(t *testing.T) {
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
 
-	teacherUser := schemas.User{ID: 2}
 	t.Run("Success", func(t *testing.T) {
 		io.EXPECT().GetByTask(tx, taskID).Return([]models.TestCase{{
 			ID:          1,
@@ -747,7 +741,6 @@ func TestPutLimit(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		teacherUser := schemas.User{ID: 2}
 		io.EXPECT().GetTestCaseID(tx, taskID, testCase.Order).Return(testCase.ID, nil).Times(1)
 		io.EXPECT().Get(tx, ioID).Return(testCase, nil).Times(1)
 		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
@@ -772,7 +765,7 @@ func TestPutLimit(t *testing.T) {
 			MemoryLimit: newLimits.Limits[0].MemoryLimit,
 		}
 		io.EXPECT().Put(tx, expectedModel).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		err := ts.PutLimits(tx, teacherUser, taskID, newLimits)
 		require.NoError(t, err)

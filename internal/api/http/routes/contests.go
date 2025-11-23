@@ -71,7 +71,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	contest, err := cr.contestService.Get(tx, currentUser, contestID)
 	if err != nil {
@@ -120,7 +120,7 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
 	status, ok := queryParams["status"]
@@ -195,7 +195,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.RegisterForContest(tx, currentUser, contestID)
 	if err != nil {
@@ -255,7 +255,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -307,7 +307,7 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	contests, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
@@ -349,7 +349,7 @@ func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
 		db.Rollback()
@@ -389,7 +389,7 @@ func (cr *ContestRouteImpl) GetMyPastContests(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
 		db.Rollback()
@@ -446,7 +446,7 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
@@ -456,7 +456,7 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	task, err := cr.contestService.GetContestTask(tx, &currentUser, contestID, taskID)
+	task, err := cr.contestService.GetContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

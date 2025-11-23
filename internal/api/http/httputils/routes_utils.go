@@ -295,3 +295,8 @@ func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParam
 		Sort:   sort,
 	}
 }
+
+func GetCurrentUser(r *http.Request) *schemas.User {
+	user := r.Context().Value(UserKey).(schemas.User)
+	return &user
+}

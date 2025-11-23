@@ -189,51 +189,6 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetUserTaskPermission(tx, tas
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTaskPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).GetUserTaskPermission), tx, taskID, userID)
 }
 
-// HasContestPermission mocks base method.
-func (m *MockAccessControlRepository) HasContestPermission(tx *gorm.DB, contestID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasContestPermission", tx, contestID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasContestPermission indicates an expected call of HasContestPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasContestPermission(tx, contestID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasContestPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasContestPermission), tx, contestID, userID, requiredPermission)
-}
-
-// HasPermission mocks base method.
-func (m *MockAccessControlRepository) HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasPermission", tx, resourceType, resourceID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasPermission indicates an expected call of HasPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasPermission(tx, resourceType, resourceID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasPermission), tx, resourceType, resourceID, userID, requiredPermission)
-}
-
-// HasTaskPermission mocks base method.
-func (m *MockAccessControlRepository) HasTaskPermission(tx *gorm.DB, taskID, userID int64, requiredPermission types.Permission) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasTaskPermission", tx, taskID, userID, requiredPermission)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasTaskPermission indicates an expected call of HasTaskPermission.
-func (mr *MockAccessControlRepositoryMockRecorder) HasTaskPermission(tx, taskID, userID, requiredPermission any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasTaskPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).HasTaskPermission), tx, taskID, userID, requiredPermission)
-}
-
 // RemoveAccess mocks base method.
 func (m *MockAccessControlRepository) RemoveAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) error {
 	m.ctrl.T.Helper()
@@ -654,6 +609,51 @@ func (m *MockSubmissionRepository) GetPendingSubmissions(tx *gorm.DB, limit int)
 func (mr *MockSubmissionRepositoryMockRecorder) GetPendingSubmissions(tx, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSubmissions", reflect.TypeOf((*MockSubmissionRepository)(nil).GetPendingSubmissions), tx, limit)
+}
+
+// GetTaskStatsForContest mocks base method.
+func (m *MockSubmissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]models.ContestTaskStatsModel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskStatsForContest", tx, contestID)
+	ret0, _ := ret[0].([]models.ContestTaskStatsModel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTaskStatsForContest indicates an expected call of GetTaskStatsForContest.
+func (mr *MockSubmissionRepositoryMockRecorder) GetTaskStatsForContest(tx, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatsForContest", reflect.TypeOf((*MockSubmissionRepository)(nil).GetTaskStatsForContest), tx, contestID)
+}
+
+// GetUserStatsForContest mocks base method.
+func (m *MockSubmissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStatsForContest", tx, contestID, userID)
+	ret0, _ := ret[0].([]models.UserContestStatsFull)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStatsForContest indicates an expected call of GetUserStatsForContest.
+func (mr *MockSubmissionRepositoryMockRecorder) GetUserStatsForContest(tx, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatsForContest", reflect.TypeOf((*MockSubmissionRepository)(nil).GetUserStatsForContest), tx, contestID, userID)
+}
+
+// GetUserStatsForContestTask mocks base method.
+func (m *MockSubmissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]models.TaskUserStatsModel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStatsForContestTask", tx, contestID, taskID)
+	ret0, _ := ret[0].([]models.TaskUserStatsModel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStatsForContestTask indicates an expected call of GetUserStatsForContestTask.
+func (mr *MockSubmissionRepositoryMockRecorder) GetUserStatsForContestTask(tx, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatsForContestTask", reflect.TypeOf((*MockSubmissionRepository)(nil).GetUserStatsForContestTask), tx, contestID, taskID)
 }
 
 // MarkEvaluated mocks base method.

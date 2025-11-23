@@ -16,6 +16,12 @@ type Task struct {
 	IsVisible bool      `json:"isVisible"`
 }
 
+// Struct to embed basic task info
+type TaskInfo struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+}
+
 type TaskDetailed struct {
 	ID             int64     `json:"id"`
 	Title          string    `json:"title"`

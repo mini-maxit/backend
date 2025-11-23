@@ -47,3 +47,40 @@ type TestResult struct {
 	Code               string `json:"code"`
 	ErrorMessage       string `json:"errorMessage"`
 }
+
+// ContestTaskStats contains aggregated statistics for a task in a contest
+type ContestTaskStats struct {
+	Task                 TaskInfo `json:"task"`
+	TotalParticipants    int64    `json:"totalParticipants"`
+	SubmittedCount       int64    `json:"submittedCount"`
+	FullySolvedCount     int64    `json:"fullySolvedCount"`
+	PartiallySolvedCount int64    `json:"partiallySolvedCount"`
+	SuccessRate          float64  `json:"successRate"`
+	AverageScore         float64  `json:"averageScore"`
+}
+
+// TaskUserStats contains statistics for a user on a specific task
+type TaskUserStats struct {
+	User             UserInfo `json:"user"`
+	SubmissionCount  int      `json:"submissionCount"`
+	BestScore        float64  `json:"bestScore"`
+	BestSubmissionID int64    `json:"bestSubmissionId"`
+}
+
+// UserContestStats contains overall performance statistics for a user in a contest
+type UserContestStats struct {
+	User                 UserInfo              `json:"user"`
+	TasksAttempted       int                   `json:"tasksAttempted"`
+	TasksSolved          int                   `json:"tasksSolved"`
+	TasksPartiallySolved int                   `json:"tasksPartiallySolved"`
+	TaskBreakdown        []UserTaskPerformance `json:"taskBreakdown"`
+}
+
+// UserTaskPerformance contains performance details for a user on a specific task
+type UserTaskPerformance struct {
+	TaskID       int64   `json:"taskId"`
+	TaskTitle    string  `json:"taskTitle"`
+	BestScore    float64 `json:"bestScore"`
+	AttemptCount int     `json:"attemptCount"`
+	IsSolved     bool    `json:"isSolved"`
+}

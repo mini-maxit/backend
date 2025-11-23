@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
-	"github.com/mini-maxit/backend/package/domain/schemas"
 	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -65,7 +64,7 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	response, err := tr.taskService.GetMyLiveTasks(tx, currentUser, paginationParams)
 	if err != nil {
@@ -102,7 +101,7 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	task, err := tr.taskService.GetAll(tx, currentUser, paginationParams)
@@ -159,7 +158,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	task, err := tr.taskService.Get(tx, currentUser, taskID)
 	if err != nil {

@@ -176,9 +176,9 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.Edit(tx, currentUser, userID, &request)
+	err = u.userService.Edit(tx, *currentUser, userID, &request)
 	if err != nil {
 		db.Rollback()
 		switch {
@@ -252,9 +252,9 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.ChangePassword(tx, currentUser, userID, request)
+	err = u.userService.ChangePassword(tx, *currentUser, userID, request)
 	if err != nil {
 		db.Rollback()
 

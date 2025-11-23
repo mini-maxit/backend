@@ -13,9 +13,9 @@ import (
 )
 
 type WorkerService interface {
-	GetStatus(currentUser schemas.User) (*schemas.WorkerStatus, error)
-	GetQueueStatus(currentUser schemas.User) (*schemas.QueueStatus, error)
-	ReconnectQueue(currentUser schemas.User) error
+	GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error)
+	GetQueueStatus(currentUser *schemas.User) (*schemas.QueueStatus, error)
+	ReconnectQueue(currentUser *schemas.User) error
 }
 
 type workerService struct {
@@ -24,7 +24,7 @@ type workerService struct {
 	db                   *gorm.DB
 }
 
-func (ws *workerService) GetStatus(currentUser schemas.User) (*schemas.WorkerStatus, error) {
+func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error) {
 	if err := utils.ValidateRoleAccess(
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher},
@@ -70,7 +70,7 @@ func NewWorkerService(queueService QueueService, submissionRepository repository
 	}
 }
 
-func (ws *workerService) GetQueueStatus(currentUser schemas.User) (*schemas.QueueStatus, error) {
+func (ws *workerService) GetQueueStatus(currentUser *schemas.User) (*schemas.QueueStatus, error) {
 	// Only admin can check queue status
 	if err := utils.ValidateRoleAccess(
 		currentUser.Role,
@@ -94,7 +94,7 @@ func (ws *workerService) GetQueueStatus(currentUser schemas.User) (*schemas.Queu
 	}, nil
 }
 
-func (ws *workerService) ReconnectQueue(currentUser schemas.User) error {
+func (ws *workerService) ReconnectQueue(currentUser *schemas.User) error {
 	// Only admin can trigger reconnection
 	if err := utils.ValidateRoleAccess(
 		currentUser.Role,

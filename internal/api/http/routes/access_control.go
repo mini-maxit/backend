@@ -90,9 +90,9 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.AddCollaborator(tx, &currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(tx, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -148,9 +148,9 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, &user, models.ResourceTypeContest, contestID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeContest, contestID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -232,9 +232,9 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, &user, models.ResourceTypeContest, contestID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeContest, contestID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -302,9 +302,9 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, &user, models.ResourceTypeContest, contestID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -376,9 +376,9 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.AddCollaborator(tx, &user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(tx, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -434,9 +434,9 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, &user, models.ResourceTypeTask, taskID)
+	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeTask, taskID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -518,9 +518,9 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, &user, models.ResourceTypeTask, taskID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeTask, taskID, userID, request.Permission)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -588,9 +588,9 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	user := r.Context().Value(httputils.UserKey).(schemas.User)
+	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, &user, models.ResourceTypeTask, taskID, userID)
+	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError

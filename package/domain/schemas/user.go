@@ -17,6 +17,14 @@ type User struct {
 	CreatedAt time.Time      `json:"createdAt"`
 }
 
+// Struct to embed basic user info
+type UserInfo struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Surname  string `json:"surname"`
+	Username string `json:"username"`
+}
+
 // UserCreate represents the user create request.
 type UserEdit struct {
 	Name     *string         `json:"name,omitempty"`

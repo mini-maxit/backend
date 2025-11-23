@@ -16,13 +16,9 @@ import (
 
 // AccessControlService handles all access control and permission management for resources.
 type AccessControlService interface {
-	// HasPermission checks if a user has the required permission for a resource.
-	// Returns true if the user has the permission or higher.
-	HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) (bool, error)
-
 	// CanUserAccess checks if a user can access a resource with the required permission.
-	// Checks in order: admin role → creator → collaborator permissions.
-	CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user schemas.User, creatorID int64, requiredPermission types.Permission) (bool, error)
+	// Checks in order: admin role → creator → required minimal permission
+	CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error
 
 	// AddCollaborator adds a collaborator with specified permission to a resource.
 	AddCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error
@@ -51,36 +47,24 @@ type accessControlService struct {
 	logger                  *zap.SugaredLogger
 }
 
-// HasPermission checks if a user has the required permission for a resource.
-func (acs *accessControlService) HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) (bool, error) {
-	if user.Role == types.UserRoleAdmin {
-		return true, nil
-	}
-	hasPermission, err := acs.accessControlRepository.HasPermission(tx, resourceType, resourceID, user.ID, requiredPermission)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", user.ID)
-		return false, err
-	}
-	return hasPermission, nil
-}
-
 // CanUserAccess checks if a user can access a resource with the required permission.
 // Checks in order: admin role → creator → collaborator permissions.
-func (acs *accessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user schemas.User, creatorID int64, requiredPermission types.Permission) (bool, error) {
-	// Admins have all permissions
+func (acs *accessControlService) CanUserAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
 	if user.Role == types.UserRoleAdmin {
-		return true, nil
+		return nil
 	}
-	// Check collaborator permissions
-	hasPermission, err := acs.HasPermission(tx, resourceType, resourceID, &user, requiredPermission)
+	permission, err := acs.accessControlRepository.GetUserPermission(tx, resourceType, resourceID, user.ID)
 	if err != nil {
-		return false, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return myerrors.ErrForbidden
+		}
+		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", user.ID)
+		return err
 	}
-
-	return hasPermission, nil
+	if permission.HasPermission(requiredPermission) {
+		return nil
+	}
+	return myerrors.ErrForbidden
 }
 
 // AddCollaborator adds a collaborator with specified permission to a resource.
@@ -90,15 +74,13 @@ func (acs *accessControlService) AddCollaborator(tx *gorm.DB, currentUser *schem
 		return myerrors.ErrForbidden
 	}
 
-	hasPermission, err := acs.HasPermission(tx, resourceType, resourceID, currentUser, types.PermissionManage)
+	err := acs.CanUserAccess(tx, resourceType, resourceID, currentUser, types.PermissionManage)
 	if err != nil {
-		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		if !errors.Is(err, myerrors.ErrForbidden) {
+			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		}
 		return err
 	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
-	}
-
 	// Check if resource Exists
 	exists, err := acs.checkResourceExists(tx, resourceType, resourceID)
 	if err != nil {
@@ -149,14 +131,14 @@ func (acs *accessControlService) AddCollaborator(tx *gorm.DB, currentUser *schem
 
 // GetCollaborators retrieves all collaborators for a resource and converts them to schema objects. Requires edit permission.
 func (acs *accessControlService) GetCollaborators(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
-	hasPermission, err := acs.HasPermission(tx, resourceType, resourceID, currentUser, types.PermissionEdit)
+	err := acs.CanUserAccess(tx, resourceType, resourceID, currentUser, types.PermissionEdit)
 	if err != nil {
-		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		if !errors.Is(err, myerrors.ErrForbidden) {
+			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		}
 		return nil, err
 	}
-	if !hasPermission {
-		return nil, myerrors.ErrForbidden
-	}
+
 	if _, err = acs.checkResourceExists(tx, resourceType, resourceID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, myerrors.ErrNotFound
@@ -164,6 +146,7 @@ func (acs *accessControlService) GetCollaborators(tx *gorm.DB, currentUser *sche
 		acs.logger.Errorw("Error getting resource", "error", err, "resourceType", resourceType, "resourceID", resourceID)
 		return nil, err
 	}
+
 	accesses, err := acs.accessControlRepository.GetResourceAccess(tx, resourceType, resourceID)
 	if err != nil {
 		acs.logger.Errorw("Error getting collaborators", "error", err, "resourceType", resourceType, "resourceID", resourceID)
@@ -180,16 +163,15 @@ func (acs *accessControlService) GetCollaborators(tx *gorm.DB, currentUser *sche
 func (acs *accessControlService) UpdateCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error {
 	// Cannot assign owner via update
 	if permission == types.PermissionOwner {
-		return myerrors.ErrForbidden
+		return myerrors.ErrCannotAssignOwner
 	}
 
-	hasPermission, err := acs.HasPermission(tx, resourceType, resourceID, currentUser, types.PermissionManage)
+	err := acs.CanUserAccess(tx, resourceType, resourceID, currentUser, types.PermissionManage)
 	if err != nil {
-		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		if !errors.Is(err, myerrors.ErrForbidden) {
+			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		}
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	// Check if collaborator exists
@@ -220,13 +202,12 @@ func (acs *accessControlService) UpdateCollaborator(tx *gorm.DB, currentUser *sc
 // RemoveCollaborator removes a collaborator from a resource.
 func (acs *accessControlService) RemoveCollaborator(tx *gorm.DB, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64) error {
 	// Actor must have manage permission on the resource
-	hasPermission, err := acs.HasPermission(tx, resourceType, resourceID, currentUser, types.PermissionManage)
+	err := acs.CanUserAccess(tx, resourceType, resourceID, currentUser, types.PermissionManage)
 	if err != nil {
-		acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "actorUserID", currentUser.ID)
+		if !errors.Is(err, myerrors.ErrForbidden) {
+			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "actorUserID", currentUser.ID)
+		}
 		return err
-	}
-	if !hasPermission {
-		return myerrors.ErrForbidden
 	}
 
 	// Fetch target access entry

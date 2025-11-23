@@ -181,7 +181,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -217,7 +217,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 	})
 
 	t.Run("repository error", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -251,7 +251,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -287,7 +287,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	})
 
 	t.Run("repository error", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -321,7 +321,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -352,7 +352,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -360,7 +360,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("successful approval by contest creator teacher", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   2,
 			Role: types.UserRoleTeacher,
 		}
@@ -391,7 +391,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -399,22 +399,25 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("unauthorized - student role", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
 		contestID := int64(10)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+			ID: contestID,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, myerrors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -430,21 +433,17 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("teacher not authorized - not contest creator", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   3,
 			Role: types.UserRoleTeacher,
 		}
 		contestID := int64(10)
 		userID := int64(5)
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2, // Different from current user
-		}
-
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(false, nil).Times(1)
+		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+			ID: contestID,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -453,7 +452,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("user not found", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -467,7 +466,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		ur.EXPECT().Get(tx, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
@@ -477,7 +476,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -507,7 +506,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(true, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().DeleteRegistrationRequest(tx, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -516,7 +515,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -538,7 +537,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -547,7 +546,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("error checking participant status", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -568,7 +567,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
 		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -577,7 +576,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("error checking pending registration", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -599,7 +598,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -608,7 +607,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("error updating registration status", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -638,7 +637,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -647,7 +646,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("error adding user as participant", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -678,7 +677,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -701,7 +700,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -731,7 +730,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -739,7 +738,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("successful rejection by contest creator teacher", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   2,
 			Role: types.UserRoleTeacher,
 		}
@@ -769,7 +768,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -777,21 +776,17 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("unauthorized - student role", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
 		contestID := int64(10)
 		userID := int64(5)
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-		}
-
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(false, myerrors.ErrForbidden).Times(1)
+		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+			ID: contestID,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
@@ -799,7 +794,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -814,22 +809,18 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		require.ErrorIs(t, err, myerrors.ErrNotFound)
 	})
 
-	t.Run("teacher not authorized - not contest creator", func(t *testing.T) {
-		currentUser := schemas.User{
+	t.Run("teacher not authorized", func(t *testing.T) {
+		currentUser := &schemas.User{
 			ID:   3,
 			Role: types.UserRoleTeacher,
 		}
 		contestID := int64(10)
 		userID := int64(5)
 
-		contest := &models.Contest{
-			ID:        contestID,
-			Name:      "Test Contest",
-			CreatedBy: 2,
-		}
-
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(false, nil).Times(1)
+		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+			ID: contestID,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -838,7 +829,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("user not found", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -853,7 +844,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
 		ur.EXPECT().Get(tx, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -862,7 +853,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -892,7 +883,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(true, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().DeleteRegistrationRequest(tx, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -901,7 +892,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -923,7 +914,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -932,7 +923,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("error updating registration status", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -962,7 +953,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, contest.CreatedBy, types.PermissionManage).Return(true, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
@@ -985,7 +976,7 @@ func TestContestService_Get(t *testing.T) {
 	tx := &gorm.DB{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -1012,7 +1003,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("successful retrieval - invisible contest by admin", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleAdmin,
 		}
@@ -1038,7 +1029,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("successful retrieval - invisible contest by creator teacher", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   2,
 			Role: types.UserRoleTeacher,
 		}
@@ -1054,7 +1045,9 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
+		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1064,7 +1057,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("unauthorized - student viewing invisible contest", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -1080,7 +1073,10 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
+		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1090,7 +1086,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("unauthorized - teacher viewing invisible contest not created by them", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   3,
 			Role: types.UserRoleTeacher,
 		}
@@ -1106,7 +1102,10 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
+		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
@@ -1116,7 +1115,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}
@@ -1132,7 +1131,7 @@ func TestContestService_Get(t *testing.T) {
 	})
 
 	t.Run("repository error", func(t *testing.T) {
-		currentUser := schemas.User{
+		currentUser := &schemas.User{
 			ID:   1,
 			Role: types.UserRoleStudent,
 		}

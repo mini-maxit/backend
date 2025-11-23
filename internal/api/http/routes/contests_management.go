@@ -30,6 +30,10 @@ type ContestsManagementRoute interface {
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 	GetManageableContests(w http.ResponseWriter, r *http.Request)
+	GetContestTaskStats(w http.ResponseWriter, r *http.Request)
+	GetContestTaskUserStats(w http.ResponseWriter, r *http.Request)
+	GetContestTaskUserSubmissions(w http.ResponseWriter, r *http.Request)
+	GetContestUserStats(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -78,7 +82,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	contestID, err := cr.contestService.Create(tx, currentUser, &request)
 	if err != nil {
@@ -149,7 +153,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	resp, err := cr.contestService.Edit(tx, currentUser, contestID, &request)
 	if err != nil {
@@ -208,7 +212,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.Delete(tx, currentUser, contestID)
 	if err != nil {
@@ -268,7 +272,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetAssignableTasks(tx, currentUser, contestID)
 	if err != nil {
@@ -309,7 +313,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -341,7 +345,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		return
 	}
 
-	err = cr.contestService.AddTaskToContest(tx, &currentUser, contestID, &request)
+	err = cr.contestService.AddTaskToContest(tx, currentUser, contestID, &request)
 	if err != nil {
 		db.Rollback()
 		status := http.StatusInternalServerError
@@ -399,7 +403,7 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	statusQuery := r.URL.Query().Get("status")
 	if statusQuery == "" {
 		statusQuery = "pending"
@@ -433,7 +437,7 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -501,7 +505,7 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 	tx, err := db.BeginTransaction()
 	if err != nil {
@@ -588,7 +592,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID)
 	if err != nil {
@@ -649,7 +653,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		return
 	}
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 
 	// Only teachers and admins can view all contest submissions
 	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
@@ -710,7 +714,7 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
 	if err != nil {
 		db.Rollback()
@@ -724,6 +728,247 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)
+}
+
+// GetContestTaskStats godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get task statistics for a contest
+//	@Description	Get aggregated statistics for each task in a contest (for contest creators or admins)
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.ContestTaskStats]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/task-stats [get]
+func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestIDStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	stats, err := cr.submissionService.GetTaskStatsForContest(tx, currentUser, contestID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrForbidden) {
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
+			return
+		}
+		cr.logger.Errorw("Failed to get task stats", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get task statistics")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, stats)
+}
+
+// GetContestTaskUserStats godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get user statistics for a specific task in a contest
+//	@Description	Get per-user statistics for a task in a contest (for contest/task creators or admins)
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			taskId	path		int	true	"Task ID"
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.TaskUserStats]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/tasks/{taskId}/user-stats [get]
+func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestIDStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskIDStr := httputils.GetPathValue(r, "taskId")
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	stats, err := cr.submissionService.GetUserStatsForContestTask(tx, currentUser, contestID, taskID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrForbidden) {
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
+			return
+		}
+		cr.logger.Errorw("Failed to get user stats for task", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get user statistics")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, stats)
+}
+
+// GetContestTaskUserSubmissions godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get submissions for a specific user, task, and contest
+//	@Description	Get all submissions for a user on a task in a contest with filtering (for contest/task creators or admins)
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			taskId	path		int		true	"Task ID"
+//	@Param			userId	path		int		true	"User ID"
+//	@Param			status	query		string	false	"Filter by submission status"
+//	@Param			limit	query		int		false	"Limit the number of returned submissions"
+//	@Param			offset	query		int		false	"Offset the returned submissions"
+//	@Param			sort	query		string	false	"Sort order"
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Submission]]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/tasks/{taskId}/users/{userId}/submissions [get]
+func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestIDStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskIDStr := httputils.GetPathValue(r, "taskId")
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	userIDStr := httputils.GetPathValue(r, "userId")
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+		return
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	// Use the existing GetAll with filters for contest, task, and user
+	submissions, err := cr.submissionService.GetAll(tx, currentUser, &userID, &taskID, &contestID, paginationParams)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrForbidden) {
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
+			return
+		}
+		cr.logger.Errorw("Failed to get submissions", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, submissions)
+}
+
+// GetContestUserStats godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get overall user statistics for a contest
+//	@Description	Get overall performance statistics for all users (or a specific user) in a contest (for contest creators or admins)
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			userId	query		int	false	"Filter by specific user ID"
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.UserContestStats]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/user-stats [get]
+func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestIDStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	// Optional user filter
+	var userID *int64
+	userIDStr := r.URL.Query().Get("userId")
+	if userIDStr != "" {
+		userIDVal, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
+			return
+		}
+		userID = &userIDVal
+	}
+
+	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	tx, err := db.BeginTransaction()
+	if err != nil {
+		cr.logger.Errorw("Failed to begin database transaction", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	stats, err := cr.submissionService.GetUserStatsForContest(tx, currentUser, contestID, userID)
+	if err != nil {
+		db.Rollback()
+		if errors.Is(err, myerrors.ErrForbidden) {
+			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
+			return
+		}
+		cr.logger.Errorw("Failed to get user stats", "error", err)
+		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get user statistics")
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, stats)
 }
 
 // GetManageableContests godoc
@@ -757,7 +1002,7 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	currentUser := r.Context().Value(httputils.UserKey).(schemas.User)
+	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetManagedContests(tx, currentUser.ID, paginationParams)
 	if err != nil {
 		db.Rollback()
@@ -771,18 +1016,6 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)
-}
-
-func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {
-	route := &contestsManagementRouteImpl{
-		contestService:    contestService,
-		submissionService: submissionService,
-		logger:            utils.NewNamedLogger("contests-management-route"),
-	}
-	if err := utils.ValidateStruct(*route); err != nil {
-		panic("Invalid contests management route parameters: " + err.Error())
-	}
-	return route
 }
 
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
@@ -841,4 +1074,22 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
+
+	// New statistics endpoints
+	mux.HandleFunc("/contests/{id}/task-stats", route.GetContestTaskStats)
+	mux.HandleFunc("/contests/{id}/user-stats", route.GetContestUserStats)
+	mux.HandleFunc("/contests/{id}/tasks/{taskId}/user-stats", route.GetContestTaskUserStats)
+	mux.HandleFunc("/contests/{id}/tasks/{taskId}/users/{userId}/submissions", route.GetContestTaskUserSubmissions)
+}
+
+func NewContestsManagementRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestsManagementRoute {
+	route := &contestsManagementRouteImpl{
+		contestService:    contestService,
+		submissionService: submissionService,
+		logger:            utils.NewNamedLogger("contests-management-route"),
+	}
+	if err := utils.ValidateStruct(*route); err != nil {
+		panic("Invalid contests management route parameters: " + err.Error())
+	}
+	return route
 }

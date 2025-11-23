@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"gorm.io/gorm"
@@ -16,13 +14,11 @@ type AccessControlRepository interface {
 	GetResourceAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error)
 	UpdatePermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error
 	RemoveAccess(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) error
-	HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, requiredPermission types.Permission) (bool, error)
 	GetUserPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error)
 
 	// Convenience methods for contests
 	AddContestCollaborator(tx *gorm.DB, contestID, userID int64, permission types.Permission) error
 	GetContestCollaborators(tx *gorm.DB, contestID int64) ([]models.AccessControl, error)
-	HasContestPermission(tx *gorm.DB, contestID, userID int64, requiredPermission types.Permission) (bool, error)
 	GetUserContestPermission(tx *gorm.DB, contestID, userID int64) (types.Permission, error)
 	UpdateContestCollaboratorPermission(tx *gorm.DB, contestID, userID int64, permission types.Permission) error
 	RemoveContestCollaborator(tx *gorm.DB, contestID, userID int64) error
@@ -30,7 +26,6 @@ type AccessControlRepository interface {
 	// Convenience methods for tasks
 	AddTaskCollaborator(tx *gorm.DB, taskID, userID int64, permission types.Permission) error
 	GetTaskCollaborators(tx *gorm.DB, taskID int64) ([]models.AccessControl, error)
-	HasTaskPermission(tx *gorm.DB, taskID, userID int64, requiredPermission types.Permission) (bool, error)
 	GetUserTaskPermission(tx *gorm.DB, taskID, userID int64) (types.Permission, error)
 	UpdateTaskCollaboratorPermission(tx *gorm.DB, taskID, userID int64, permission types.Permission) error
 	RemoveTaskCollaborator(tx *gorm.DB, taskID, userID int64) error
@@ -74,17 +69,6 @@ func (r *accessControlRepository) RemoveAccess(tx *gorm.DB, resourceType models.
 		Delete(&models.AccessControl{}).Error
 }
 
-func (r *accessControlRepository) HasPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64, requiredPermission types.Permission) (bool, error) {
-	permission, err := r.GetUserPermission(tx, resourceType, resourceID, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-	return permission.HasPermission(requiredPermission), nil
-}
-
 func (r *accessControlRepository) GetUserPermission(tx *gorm.DB, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error) {
 	var access models.AccessControl
 	err := tx.Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
@@ -110,10 +94,6 @@ func (r *accessControlRepository) AddContestCollaborator(tx *gorm.DB, contestID,
 
 func (r *accessControlRepository) GetContestCollaborators(tx *gorm.DB, contestID int64) ([]models.AccessControl, error) {
 	return r.GetResourceAccess(tx, models.ResourceTypeContest, contestID)
-}
-
-func (r *accessControlRepository) HasContestPermission(tx *gorm.DB, contestID, userID int64, requiredPermission types.Permission) (bool, error) {
-	return r.HasPermission(tx, models.ResourceTypeContest, contestID, userID, requiredPermission)
 }
 
 func (r *accessControlRepository) GetUserContestPermission(tx *gorm.DB, contestID, userID int64) (types.Permission, error) {
@@ -142,10 +122,6 @@ func (r *accessControlRepository) AddTaskCollaborator(tx *gorm.DB, taskID, userI
 
 func (r *accessControlRepository) GetTaskCollaborators(tx *gorm.DB, taskID int64) ([]models.AccessControl, error) {
 	return r.GetResourceAccess(tx, models.ResourceTypeTask, taskID)
-}
-
-func (r *accessControlRepository) HasTaskPermission(tx *gorm.DB, taskID, userID int64, requiredPermission types.Permission) (bool, error) {
-	return r.HasPermission(tx, models.ResourceTypeTask, taskID, userID, requiredPermission)
 }
 
 func (r *accessControlRepository) GetUserTaskPermission(tx *gorm.DB, taskID, userID int64) (types.Permission, error) {

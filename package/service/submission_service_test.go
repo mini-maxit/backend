@@ -54,10 +54,12 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 	taskService := mock_service.NewMockTaskService(ctrl)
 	userService := mock_service.NewMockUserService(ctrl)
 	queueService := mock_service.NewMockQueueService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
 	fs, err := filestorage.NewFileStorageService("dummy")
 	require.NoError(t, err)
 
 	svc := service.NewSubmissionService(
+		acs,
 		contestService,
 		fs,
 		fileRepository,
@@ -251,7 +253,7 @@ func TestGetAll(t *testing.T) {
 	defer setup.ctrl.Finish()
 	testCases := []struct {
 		name           string
-		user           schemas.User
+		user           *schemas.User
 		userID         *int64
 		expectedMethod func() *gomock.Call
 		expectedResult *schemas.PaginatedResult[[]schemas.Submission]
@@ -259,7 +261,7 @@ func TestGetAll(t *testing.T) {
 	}{
 		{
 			name:   "Admin retrieves all submissions",
-			user:   schemas.User{Role: "admin"},
+			user:   &schemas.User{Role: "admin"},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
 				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
@@ -283,7 +285,7 @@ func TestGetAll(t *testing.T) {
 		},
 		{
 			name:   "Teacher retrieves submissions for their tasks",
-			user:   schemas.User{Role: "teacher", ID: 1},
+			user:   &schemas.User{Role: "teacher", ID: 1},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
 				return setup.submissionRepository.EXPECT().GetAllForTeacher(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -308,7 +310,7 @@ func TestGetAll(t *testing.T) {
 		},
 		{
 			name:   "Student retrieves their own submissions",
-			user:   schemas.User{Role: "student", ID: 1},
+			user:   &schemas.User{Role: "student", ID: 1},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
 				return setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, "submitted_at:desc").Return(
@@ -331,7 +333,7 @@ func TestGetAll(t *testing.T) {
 		},
 		{
 			name:   "Error retrieving submissions",
-			user:   schemas.User{Role: "admin"},
+			user:   &schemas.User{Role: "admin"},
 			userID: nil,
 			expectedMethod: func() *gomock.Call {
 				return setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return(
@@ -366,25 +368,25 @@ func TestGet(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		user               schemas.User
+		user               *schemas.User
 		expectedSubmission *models.Submission
 		expectedErr        bool
 	}{
 		{
 			name:               "Admin retrieves a submission",
-			user:               schemas.User{Role: "admin"},
+			user:               &schemas.User{Role: "admin"},
 			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 			expectedErr:        false,
 		},
 		{
 			name:               "Student tries to access another user's submission",
-			user:               schemas.User{Role: "student", ID: 1},
+			user:               &schemas.User{Role: "student", ID: 1},
 			expectedSubmission: &models.Submission{ID: 1, TaskID: 1, UserID: 2, Status: types.SubmissionStatusReceived},
 			expectedErr:        true,
 		},
 		{
 			name: "Teacher tries to access a submission for a task they didn't create",
-			user: schemas.User{Role: "teacher", ID: 2},
+			user: &schemas.User{Role: "teacher", ID: 2},
 			expectedSubmission: &models.Submission{
 				ID:     1,
 				TaskID: 1,
@@ -395,7 +397,7 @@ func TestGet(t *testing.T) {
 		},
 		{
 			name: "Teacher retrieves a submission for a task they created",
-			user: schemas.User{Role: "teacher", ID: 2},
+			user: &schemas.User{Role: "teacher", ID: 2},
 			expectedSubmission: &models.Submission{
 				ID:     1,
 				TaskID: 1,
@@ -406,7 +408,7 @@ func TestGet(t *testing.T) {
 		},
 		{
 			name:               "Error retrieving submission",
-			user:               schemas.User{Role: "admin"},
+			user:               &schemas.User{Role: "admin"},
 			expectedSubmission: nil,
 			expectedErr:        true,
 		},
@@ -448,7 +450,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
+		user := &schemas.User{Role: "admin"}
 
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
@@ -466,7 +468,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "student", ID: 1}
+		user := &schemas.User{Role: "student", ID: 1}
 
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
@@ -475,7 +477,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 	})
 
 	t.Run("Student tries to retrieve another user's submissions", func(t *testing.T) {
-		user := schemas.User{Role: "student", ID: 2}
+		user := &schemas.User{Role: "student", ID: 2}
 		expectedSubmissions := []models.Submission{
 			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
@@ -501,7 +503,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
+		user := &schemas.User{Role: "teacher", ID: 2}
 
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
@@ -519,7 +521,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
+		user := &schemas.User{Role: "teacher", ID: 2}
 
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
@@ -533,7 +535,7 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
+		user := &schemas.User{Role: "admin"}
 
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
@@ -557,7 +559,7 @@ func TestGetAllForTask(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
+		user := &schemas.User{Role: "admin"}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -578,7 +580,7 @@ func TestGetAllForTask(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 2}
+		user := &schemas.User{Role: "teacher", ID: 2}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -590,7 +592,7 @@ func TestGetAllForTask(t *testing.T) {
 		expectedTask := &schemas.TaskDetailed{ID: 1, CreatedBy: 2}
 		setup.taskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 3}
+		user := &schemas.User{Role: "teacher", ID: 3}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -600,7 +602,7 @@ func TestGetAllForTask(t *testing.T) {
 	t.Run("Teacher tries to retrieve submissions for a task, but task get fails", func(t *testing.T) {
 		setup.taskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "teacher", ID: 3}
+		user := &schemas.User{Role: "teacher", ID: 3}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -619,7 +621,7 @@ func TestGetAllForTask(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "student", ID: 1}
+		user := &schemas.User{Role: "student", ID: 1}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -631,7 +633,7 @@ func TestGetAllForTask(t *testing.T) {
 		setup.userService.EXPECT().IsTaskAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, gorm.ErrRecordNotFound).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "student", ID: 1}
+		user := &schemas.User{Role: "student", ID: 1}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -642,7 +644,7 @@ func TestGetAllForTask(t *testing.T) {
 		setup.userService.EXPECT().IsTaskAssignedToUser(gomock.Any(), int64(1), int64(1)).Return(false, nil).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "student", ID: 1}
+		user := &schemas.User{Role: "student", ID: 1}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
@@ -656,7 +658,7 @@ func TestGetAllForTask(t *testing.T) {
 		).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "submitted_at:desc"}
-		user := schemas.User{Role: "admin"}
+		user := &schemas.User{Role: "admin"}
 
 		submissions, err := setup.service.GetAllForTask(nil, 1, user, paginationParams)
 
