@@ -68,7 +68,7 @@ type SubmissionRepository interface {
 	// GetUserStatsForContestTask returns per-user statistics for a specific task in a contest
 	GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]models.TaskUserStatsModel, error)
 	// GetUserStatsForContest returns overall statistics for each user in a contest
-	GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsModel, error)
+	GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error)
 }
 
 type submissionRepository struct{}
@@ -905,39 +905,24 @@ func (us *submissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestI
 	return results, nil
 }
 
-func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsModel, error) {
-	var results []models.UserContestStatsModel
-
+func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error) {
 	userFilter := ""
-	// Placeholders: best_scores (contest_id), attempt_counts (contest_id), main WHERE (contest_id)
-	args := []interface{}{contestID, contestID, contestID}
+	summaryArgs := []interface{}{contestID}
 	if userID != nil {
 		userFilter = " AND u.id = ?"
-		args = append(args, *userID)
+		summaryArgs = append(summaryArgs, *userID)
 	}
 
-	query := `
+	// First query: per-user aggregated counts (no JSON)
+	summaryQuery := `
 		SELECT
-			u.id as user_id,
-			u.username as user_username,
-			u.name as user_name,
-			u.surname as user_surname,
-			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN t.id END) as tasks_attempted,
-			COUNT(DISTINCT CASE
-				WHEN sr.code = 1 THEN t.id
-			END) as tasks_solved,
-			COUNT(DISTINCT CASE
-				WHEN sr.code != 1 AND sr.code > 0 THEN t.id
-			END) as tasks_partially_solved,
-			COALESCE(json_agg(
-				json_build_object(
-					'taskId', t.id,
-					'taskTitle', t.title,
-					'bestScore', COALESCE(best_scores.score, 0),
-					'attemptCount', COALESCE(attempt_counts.count, 0),
-					'isSolved', COALESCE(best_scores.is_solved, false)
-				) ORDER BY t.id
-			) FILTER (WHERE t.id IS NOT NULL), '[]') as task_breakdown
+			u.id AS user_id,
+			u.username AS user_username,
+			u.name AS user_name,
+			u.surname AS user_surname,
+			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN t.id END) AS tasks_attempted,
+			COUNT(DISTINCT CASE WHEN sr.code = 1 THEN t.id END) AS tasks_solved,
+			COUNT(DISTINCT CASE WHEN sr.code != 1 AND sr.code > 0 THEN t.id END) AS tasks_partially_solved
 		FROM ` + database.ResolveTableName(tx, &models.User{}) + ` u
 		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.user_id = u.id
 		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.contest_id = cp.contest_id
@@ -947,49 +932,121 @@ func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID in
 			AND s.contest_id = cp.contest_id
 			AND s.status = 'evaluated'
 		LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
-		LEFT JOIN LATERAL (
-			SELECT
-				MAX(CASE
-					WHEN tt.count > 0
-					THEN (pt.count * 100.0 / tt.count)
-					ELSE 0
-				END) as score,
-				bool_or(sr2.code = 1) as is_solved
-			FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2
-			LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr2 ON sr2.submission_id = s2.id
-			LEFT JOIN (
-				SELECT submission_result_id, COUNT(*) as count
-				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
-				GROUP BY submission_result_id
-			) as tt ON tt.submission_result_id = sr2.id
-			LEFT JOIN (
-				SELECT submission_result_id, COUNT(*) as count
-				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
-				WHERE passed = true
-				GROUP BY submission_result_id
-			) as pt ON pt.submission_result_id = sr2.id
-			WHERE s2.user_id = u.id
-			  AND s2.task_id = t.id
-			  AND s2.contest_id = ?
-			  AND s2.status = 'evaluated'
-		) as best_scores ON true
-		LEFT JOIN LATERAL (
-			SELECT COUNT(*) as count
-			FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s3
-			WHERE s3.user_id = u.id
-			  AND s3.task_id = t.id
-			  AND s3.contest_id = ?
-		) as attempt_counts ON true
 		WHERE cp.contest_id = ?` + userFilter + `
-		GROUP BY u.id, u.username
+		GROUP BY u.id, u.username, u.name, u.surname
 		ORDER BY tasks_solved DESC, tasks_attempted DESC, u.username
 	`
 
-	if err := tx.Raw(query, args...).Scan(&results).Error; err != nil {
+	var summaryRows []models.UserContestSummaryRow
+	if err := tx.Raw(summaryQuery, summaryArgs...).Scan(&summaryRows).Error; err != nil {
+		return nil, err
+	}
+	if len(summaryRows) == 0 {
+		return []models.UserContestStatsFull{}, nil
+	}
+
+	// Second query: per-user per-task performance rows
+	// Placeholders: best score contest_id, solved flag contest_id, attempts contest_id
+	performanceArgs := []interface{}{contestID, contestID, contestID}
+	// Same user filter applied if provided
+	if userID != nil {
+		performanceArgs = append(performanceArgs, *userID)
+	}
+
+	performanceQuery := `
+		SELECT
+			u.id AS user_id,
+			t.id AS task_id,
+			t.title AS task_title,
+			COALESCE((
+				SELECT MAX(
+					CASE WHEN total.count > 0
+						THEN (passed.count * 100.0 / total.count)
+						ELSE 0
+					END
+				)
+				FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s2
+				LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr2 ON sr2.submission_id = s2.id
+				LEFT JOIN (
+					SELECT submission_result_id, COUNT(*) AS count
+					FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+					GROUP BY submission_result_id
+				) total ON total.submission_result_id = sr2.id
+				LEFT JOIN (
+					SELECT submission_result_id, COUNT(*) AS count
+					FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+					WHERE passed = true
+					GROUP BY submission_result_id
+				) passed ON passed.submission_result_id = sr2.id
+				WHERE s2.user_id = u.id
+				  AND s2.task_id = t.id
+				  AND s2.contest_id = ?
+				  AND s2.status = 'evaluated'
+			), 0) AS best_score,
+			COALESCE((
+				SELECT bool_or(sr3.code = 1)
+				FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s3
+				LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr3 ON sr3.submission_id = s3.id
+				WHERE s3.user_id = u.id
+				  AND s3.task_id = t.id
+				  AND s3.contest_id = ?
+				  AND s3.status = 'evaluated'
+			), false) AS is_solved,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s4
+				WHERE s4.user_id = u.id
+				  AND s4.task_id = t.id
+				  AND s4.contest_id = ?
+			), 0) AS attempt_count
+		FROM ` + database.ResolveTableName(tx, &models.User{}) + ` u
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestParticipant{}) + ` cp ON cp.user_id = u.id
+		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.contest_id = cp.contest_id
+		INNER JOIN ` + database.ResolveTableName(tx, &models.Task{}) + ` t ON t.id = ct.task_id
+		WHERE cp.contest_id = ?` + userFilter + `
+		ORDER BY u.id, t.id
+	`
+
+	// Append contestID again for the WHERE cp.contest_id = ? part
+	performanceArgs = append(performanceArgs, contestID)
+
+	var performanceRows []models.UserTaskPerformanceRow
+	if err := tx.Raw(performanceQuery, performanceArgs...).Scan(&performanceRows).Error; err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	// Group task rows by user
+	perfMap := make(map[int64][]models.UserTaskPerformanceModel)
+	for _, pr := range performanceRows {
+		perfMap[pr.UserID] = append(perfMap[pr.UserID], models.UserTaskPerformanceModel{
+			TaskID:       pr.TaskID,
+			TaskTitle:    pr.TaskTitle,
+			BestScore:    pr.BestScore,
+			AttemptCount: int(pr.AttemptCount),
+			IsSolved:     pr.IsSolved,
+		})
+	}
+
+	// Merge summaries with breakdown
+	result := make([]models.UserContestStatsFull, 0, len(summaryRows))
+	for _, s := range summaryRows {
+		taskBreakdown := perfMap[s.UserID]
+		entry := models.UserContestStatsFull{
+			User: models.User{
+				ID:       s.UserID,
+				Username: s.UserUsername,
+				Name:     s.UserName,
+				Surname:  s.UserSurname,
+			},
+			TasksAttempted:       s.TasksAttempted,
+			TasksSolved:          s.TasksSolved,
+			TasksPartiallySolved: s.TasksPartiallySolved,
+			TaskBreakdown:        taskBreakdown,
+		}
+		result = append(result, entry)
+	}
+
+	return result, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {

@@ -627,10 +627,10 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetTaskStatsForContest(tx, conte
 }
 
 // GetUserStatsForContest mocks base method.
-func (m *MockSubmissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsModel, error) {
+func (m *MockSubmissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserStatsForContest", tx, contestID, userID)
-	ret0, _ := ret[0].([]models.UserContestStatsModel)
+	ret0, _ := ret[0].([]models.UserContestStatsFull)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

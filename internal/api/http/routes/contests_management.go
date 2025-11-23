@@ -767,7 +767,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter
 	stats, err := cr.submissionService.GetTaskStatsForContest(tx, currentUser, contestID)
 	if err != nil {
 		db.Rollback()
-		if errors.Is(err, myerrors.ErrPermissionDenied) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
 			return
 		}
@@ -824,7 +824,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWr
 	stats, err := cr.submissionService.GetUserStatsForContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
 		db.Rollback()
-		if errors.Is(err, myerrors.ErrPermissionDenied) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
 			return
 		}
@@ -897,7 +897,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.Resp
 	submissions, err := cr.submissionService.GetAll(tx, currentUser, &userID, &taskID, &contestID, paginationParams)
 	if err != nil {
 		db.Rollback()
-		if errors.Is(err, myerrors.ErrPermissionDenied) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
 			return
 		}
@@ -959,7 +959,7 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 	stats, err := cr.submissionService.GetUserStatsForContest(tx, currentUser, contestID, userID)
 	if err != nil {
 		db.Rollback()
-		if errors.Is(err, myerrors.ErrPermissionDenied) {
+		if errors.Is(err, myerrors.ErrForbidden) {
 			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
 			return
 		}

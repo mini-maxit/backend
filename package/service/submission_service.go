@@ -892,7 +892,7 @@ func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user *schemas.U
 	if err != nil {
 		return nil, err
 	}
-	// Repository now returns typed model slice instead of generic maps
+
 	rawStats, err := ss.submissionRepository.GetUserStatsForContest(tx, contestID, userID)
 	if err != nil {
 		ss.logger.Errorw("Error getting user stats for contest", "error", err)
@@ -906,26 +906,17 @@ func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user *schemas.U
 			TasksAttempted:       int(raw.TasksAttempted),
 			TasksSolved:          int(raw.TasksSolved),
 			TasksPartiallySolved: int(raw.TasksPartiallySolved),
-			TaskBreakdown:        []schemas.UserTaskPerformance{},
+			TaskBreakdown:        make([]schemas.UserTaskPerformance, 0, len(raw.TaskBreakdown)),
 		}
 
-		// Parse JSON breakdown into model structs, then convert
-		if raw.TaskBreakdownJson != "" && raw.TaskBreakdownJson != "null" {
-			var breakdownModels []models.UserTaskPerformanceModel
-			if err := json.Unmarshal([]byte(raw.TaskBreakdownJson), &breakdownModels); err != nil {
-				// Log and continue; do not fail whole request
-				ss.logger.Warnw("Failed to unmarshal task breakdown JSON", "userId", raw.User.ID, "error", err)
-			} else {
-				for _, bm := range breakdownModels {
-					stat.TaskBreakdown = append(stat.TaskBreakdown, schemas.UserTaskPerformance{
-						TaskID:       bm.TaskID,
-						TaskTitle:    bm.TaskTitle,
-						BestScore:    bm.BestScore,
-						AttemptCount: bm.AttemptCount,
-						IsSolved:     bm.IsSolved,
-					})
-				}
-			}
+		for _, bm := range raw.TaskBreakdown {
+			stat.TaskBreakdown = append(stat.TaskBreakdown, schemas.UserTaskPerformance{
+				TaskID:       bm.TaskID,
+				TaskTitle:    bm.TaskTitle,
+				BestScore:    bm.BestScore,
+				AttemptCount: bm.AttemptCount,
+				IsSolved:     bm.IsSolved,
+			})
 		}
 
 		stats = append(stats, stat)

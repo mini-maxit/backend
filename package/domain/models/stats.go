@@ -17,11 +17,11 @@ type UserContestStatsModel struct {
 // UserTaskPerformanceModel represents performance details for a user on a single task inside a contest.
 // This struct matches the JSON objects constructed in the repository SQL (json_build_object(...)).
 type UserTaskPerformanceModel struct {
-	TaskID       int64   `json:"taskId"`
-	TaskTitle    string  `json:"taskTitle"`
-	BestScore    float64 `json:"bestScore"`
-	AttemptCount int     `json:"attemptCount"`
-	IsSolved     bool    `json:"isSolved"`
+	TaskID       int64   `json:"taskId" gorm:"column:task_id"`
+	TaskTitle    string  `json:"taskTitle" gorm:"column:task_title"`
+	BestScore    float64 `json:"bestScore" gorm:"column:best_score"`
+	AttemptCount int     `json:"attemptCount" gorm:"column:attempt_count"`
+	IsSolved     bool    `json:"isSolved" gorm:"column:is_solved"`
 }
 
 // TaskUserStatsModel represents per-user statistics for a specific task within a contest.
@@ -42,4 +42,34 @@ type ContestTaskStatsModel struct {
 	FullySolvedCount     int64   `gorm:"column:fully_solved_count"`
 	PartiallySolvedCount int64   `gorm:"column:partially_solved_count"`
 	AverageScore         float64 `gorm:"column:average_score"`
+}
+
+// UserContestStatsFull is the structured form (no raw JSON) used by the two-query repository approach.
+type UserContestStatsFull struct {
+	User                 User
+	TasksAttempted       int64
+	TasksSolved          int64
+	TasksPartiallySolved int64
+	TaskBreakdown        []UserTaskPerformanceModel
+}
+
+// UserContestSummaryRow maps the first (summary) query result per user.
+type UserContestSummaryRow struct {
+	UserID               int64  `gorm:"column:user_id"`
+	UserUsername         string `gorm:"column:user_username"`
+	UserName             string `gorm:"column:user_name"`
+	UserSurname          string `gorm:"column:user_surname"`
+	TasksAttempted       int64  `gorm:"column:tasks_attempted"`
+	TasksSolved          int64  `gorm:"column:tasks_solved"`
+	TasksPartiallySolved int64  `gorm:"column:tasks_partially_solved"`
+}
+
+// UserTaskPerformanceRow maps the second query rows (one per (user, task)).
+type UserTaskPerformanceRow struct {
+	UserID       int64   `gorm:"column:user_id"`
+	TaskID       int64   `gorm:"column:task_id"`
+	TaskTitle    string  `gorm:"column:task_title"`
+	BestScore    float64 `gorm:"column:best_score"`
+	AttemptCount int64   `gorm:"column:attempt_count"`
+	IsSolved     bool    `gorm:"column:is_solved"`
 }
