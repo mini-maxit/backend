@@ -1,7 +1,8 @@
-//nolint:testpackage // Testing internal function getErrorMapping
+//nolint:testpackage // Testing internal function errorCodeToHTTPStatus
 package httputils
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestGetErrorMapping(t *testing.T) {
+func TestErrorCodeToHTTPStatus(t *testing.T) {
 	tests := []struct {
 		name           string
 		err            error
@@ -440,19 +441,25 @@ func TestGetErrorMapping(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mapping := getErrorMapping(tt.err)
-			if mapping.StatusCode != tt.expectedStatus {
-				t.Errorf("Expected status code %d, got %d", tt.expectedStatus, mapping.StatusCode)
+			// Convert the legacy error to a ServiceError
+			serviceErr := myerrors.ToServiceError(tt.err)
+
+			// Check the HTTP status mapping
+			httpStatus := errorCodeToHTTPStatus(serviceErr.Code)
+			if httpStatus != tt.expectedStatus {
+				t.Errorf("Expected status code %d, got %d", tt.expectedStatus, httpStatus)
 			}
-			if mapping.Message != tt.expectedMsg {
-				t.Errorf("Expected message %q, got %q", tt.expectedMsg, mapping.Message)
+
+			// Check the message
+			if serviceErr.Message != tt.expectedMsg {
+				t.Errorf("Expected message %q, got %q", tt.expectedMsg, serviceErr.Message)
 			}
 		})
 	}
 }
 
 func TestHandleServiceError(t *testing.T) {
-	t.Run("handles error and writes response", func(t *testing.T) {
+	t.Run("handles error and writes response with error code", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		logger := zap.NewNop().Sugar()
 
@@ -460,6 +467,22 @@ func TestHandleServiceError(t *testing.T) {
 
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status code %d, got %d", http.StatusNotFound, w.Code)
+		}
+
+		// Verify the response contains the error code
+		var response ServiceErrorResponse
+		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if response.Ok {
+			t.Error("Expected ok to be false")
+		}
+		if response.Data.Code != myerrors.CodeUserNotFound {
+			t.Errorf("Expected code %s, got %s", myerrors.CodeUserNotFound, response.Data.Code)
+		}
+		if response.Data.Message != "User not found" {
+			t.Errorf("Expected message 'User not found', got %s", response.Data.Message)
 		}
 	})
 
@@ -474,7 +497,7 @@ func TestHandleServiceError(t *testing.T) {
 		}
 	})
 
-	t.Run("handles unknown error with 500", func(t *testing.T) {
+	t.Run("handles unknown error with 500 and internal error code", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		logger := zap.NewNop().Sugar()
 		unknownErr := http.ErrServerClosed
@@ -483,6 +506,39 @@ func TestHandleServiceError(t *testing.T) {
 
 		if w.Code != http.StatusInternalServerError {
 			t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, w.Code)
+		}
+
+		// Verify the response contains the internal error code
+		var response ServiceErrorResponse
+		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if response.Data.Code != myerrors.CodeInternalError {
+			t.Errorf("Expected code %s, got %s", myerrors.CodeInternalError, response.Data.Code)
+		}
+	})
+
+	t.Run("handles ServiceError directly", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		logger := zap.NewNop().Sugar()
+
+		// Create a ServiceError directly
+		serviceErr := myerrors.ErrServiceForbidden
+
+		HandleServiceError(w, serviceErr, nil, logger)
+
+		if w.Code != http.StatusForbidden {
+			t.Errorf("Expected status code %d, got %d", http.StatusForbidden, w.Code)
+		}
+
+		var response ServiceErrorResponse
+		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if response.Data.Code != myerrors.CodeForbidden {
+			t.Errorf("Expected code %s, got %s", myerrors.CodeForbidden, response.Data.Code)
 		}
 	})
 }

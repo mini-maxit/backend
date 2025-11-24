@@ -85,7 +85,7 @@ func TestGetAll(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success with empty list", func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestGetByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Submission service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestGetAllForTask(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Submission service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Language service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {

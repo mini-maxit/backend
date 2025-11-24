@@ -204,7 +204,7 @@ func TestLogin(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -395,7 +395,7 @@ func TestRegister(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -585,7 +585,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {

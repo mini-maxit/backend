@@ -201,7 +201,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -309,7 +309,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
@@ -401,7 +401,7 @@ func TestGetAllGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 	t.Run("Not authorized", func(t *testing.T) {
 		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden).Times(1)
@@ -587,7 +587,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -784,7 +784,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -979,7 +979,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -1078,7 +1078,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
