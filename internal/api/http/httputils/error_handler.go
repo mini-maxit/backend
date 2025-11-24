@@ -21,6 +21,11 @@ type errorStruct struct {
 
 type APIError APIResponse[errorStruct]
 
+// ValidationError represents a single field validation error with code and parameters
+type ValidationError struct {
+	Code validationErrorCode `json:"code"`
+}
+
 type ValidationErrorResponse APIResponse[map[string]ValidationError]
 
 func httpToErrorCode(statusCode int) string {

@@ -164,11 +164,6 @@ func GetPathValue(r *http.Request, name string) string {
 	return ""
 }
 
-// ValidationError represents a single field validation error with code and parameters
-type ValidationError struct {
-	Code validationErrorCode `json:"code"`
-}
-
 func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParams {
 	limit, ok := queryParams["limit"].(int)
 	if !ok {
