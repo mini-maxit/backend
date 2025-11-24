@@ -1,5 +1,4 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mini-maxit/backend)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mini-maxit/backend)  [![codecov](https://codecov.io/gh/mini-maxit/backend/graph/badge.svg?token=AS7XEYOXBB)](https://codecov.io/gh/mini-maxit/backend)
 # Development
 
 ## Run
