@@ -27,10 +27,34 @@ type HandShakeResponsePayload struct {
 	} `json:"languages"`
 }
 
+type WorkerStatusEnum int
+
+const (
+	WorkerStatusIdle WorkerStatusEnum = iota
+	WorkerStatusBusy
+)
+
+func (ws WorkerStatusEnum) String() string {
+	switch ws {
+	case WorkerStatusIdle:
+		return "idle"
+	case WorkerStatusBusy:
+		return "busy"
+	default:
+		return "invalid"
+	}
+}
+
+type queueWorkerStatus struct {
+	ID                  int              `json:"worker_id"`
+	Status              WorkerStatusEnum `json:"status"`
+	ProcessingMessageID *string          `json:"processing_message_id,omitempty"`
+}
+
 type StatusResponsePayload struct {
-	BusyWorkers  int               `json:"busy_workers"`
-	TotalWorkers int               `json:"total_workers"`
-	WorkerStatus map[string]string `json:"worker_status"`
+	BusyWorkers  int                 `json:"busy_workers"`
+	TotalWorkers int                 `json:"total_workers"`
+	WorkerStatus []queueWorkerStatus `json:"worker_status"`
 }
 
 type QueueTestResult struct {

@@ -13,7 +13,7 @@ import (
 )
 
 type WorkerService interface {
-	GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error)
+	GetStatus(currentUser *schemas.User) (*schemas.WorkersStatus, error)
 	GetQueueStatus(currentUser *schemas.User) (*schemas.QueueStatus, error)
 	ReconnectQueue(currentUser *schemas.User) error
 }
@@ -24,7 +24,7 @@ type workerService struct {
 	db                   *gorm.DB
 }
 
-func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkerStatus, error) {
+func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersStatus, error) {
 	if err := utils.ValidateRoleAccess(
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher},
@@ -39,7 +39,7 @@ func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkerSt
 	// Set a timeout for waiting
 	timeout := time.After(10 * time.Second)
 	statusUpdated := make(chan bool, 1)
-	var result schemas.WorkerStatus
+	var result schemas.WorkersStatus
 
 	go func() {
 		ws.queueService.StatusMux().Lock()

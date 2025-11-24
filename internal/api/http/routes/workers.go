@@ -36,7 +36,7 @@ type workerRoute struct {
 //	@Failure		401	{object}	httputils.APIError	"Not authorized - requires teacher or admin role"
 //	@Failure		504	{object}	httputils.APIError	"Gateway timeout - worker status request timed out"
 //	@Failure		500	{object}	httputils.APIError	"Internal server error"
-//	@Success		200	{object}	httputils.APIResponse[schemas.WorkerStatus]
+//	@Success		200	{object}	httputils.APIResponse[schemas.WorkersStatus]
 //	@Router			/workers/status [get]
 func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
