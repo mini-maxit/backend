@@ -106,14 +106,14 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 
 	taskID, err := tr.taskService.Create(tx, currentUser, &task)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 
 	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{ID: taskID})
 }
@@ -170,8 +170,8 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 
 	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 
 	file, handler, err := r.FormFile("archive")
@@ -253,8 +253,8 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 
 	err = tr.taskService.Delete(tx, currentUser, taskID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task deleted successfully"))
@@ -368,8 +368,8 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 
 	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task limits updated successfully"))
@@ -409,8 +409,8 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 
 	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, tr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, response)

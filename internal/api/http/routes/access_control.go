@@ -528,9 +528,9 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 
 	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
- httputils.HandleServiceError(w, err, db, ac.logger)
- return
- }
+		httputils.HandleServiceError(w, err, db, ac.logger)
+		return
+	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
 }

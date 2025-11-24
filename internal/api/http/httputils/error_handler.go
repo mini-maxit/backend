@@ -17,6 +17,8 @@ type ErrorMapping struct {
 
 // getErrorMapping returns the HTTP status code and message for a given error
 // This function exhaustively handles all errors defined in the errors package
+//
+//nolint:gocyclo // This function intentionally checks all error types exhaustively
 func getErrorMapping(err error) ErrorMapping {
 	// Database and connection errors
 	if errors.Is(err, myerrors.ErrDatabaseConnection) {

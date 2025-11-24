@@ -173,7 +173,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Group creation failed")
+		assert.Contains(t, bodyString, "Not authorized to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -297,7 +297,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -321,7 +321,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -412,7 +412,7 @@ func TestGetAllGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group listing failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("No groups found", func(t *testing.T) {
@@ -567,7 +567,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group edit failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -722,7 +722,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -743,7 +743,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 	t.Run("Group not found", func(t *testing.T) {
 		body := schemas.UserIDs{
@@ -763,7 +763,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -916,7 +916,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -937,7 +937,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
@@ -958,7 +958,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -1066,7 +1066,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -1090,7 +1090,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("No users found", func(t *testing.T) {

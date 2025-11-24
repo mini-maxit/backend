@@ -134,7 +134,7 @@ func TestLogin(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -371,7 +371,7 @@ func TestRegister(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "user already exists")
+		assert.Contains(t, bodyString, "User already exists")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -526,7 +526,7 @@ func TestRefreshToken(t *testing.T) {
 		assert.Contains(t, bodyString, "Database connection error")
 	})
 
-	t.Run("Invalid or expired refresh token", func(t *testing.T) {
+	t.Run("Invalid token", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
@@ -554,7 +554,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Invalid or expired refresh token")
+		assert.Contains(t, bodyString, "Invalid token")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {

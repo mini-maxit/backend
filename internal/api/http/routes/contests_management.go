@@ -86,8 +86,8 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 
 	contestID, err := cr.contestService.Create(tx, currentUser, &request)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewIDResponse(contestID))
@@ -150,8 +150,8 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 
 	resp, err := cr.contestService.Edit(tx, currentUser, contestID, &request)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, resp)
@@ -200,8 +200,8 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 
 	err = cr.contestService.Delete(tx, currentUser, contestID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Contest deleted successfully"))
@@ -251,8 +251,8 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 
 	tasks, err := cr.contestService.GetAssignableTasks(tx, currentUser, contestID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
@@ -313,8 +313,8 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 
 	err = cr.contestService.AddTaskToContest(tx, currentUser, contestID, &request)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task added to contest successfully"))
@@ -373,8 +373,8 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 
 	requests, err := cr.contestService.GetRegistrationRequests(tx, currentUser, contestID, status)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, requests)
@@ -544,8 +544,8 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 
 	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
@@ -605,8 +605,8 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 
 	response, err := cr.submissionService.GetAllForContest(tx, contestID, currentUser, paginationParams)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, response)
@@ -647,8 +647,8 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
@@ -689,8 +689,8 @@ func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetTaskStatsForContest(tx, currentUser, contestID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, stats)
@@ -740,8 +740,8 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWr
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, stats)
@@ -807,8 +807,8 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.Resp
 	// Use the existing GetAll with filters for contest, task, and user
 	submissions, err := cr.submissionService.GetAll(tx, currentUser, &userID, &taskID, &contestID, paginationParams)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, submissions)
@@ -863,8 +863,8 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContest(tx, currentUser, contestID, userID)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, stats)
@@ -904,8 +904,8 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetManagedContests(tx, currentUser.ID, paginationParams)
 	if err != nil {
-	httputils.HandleServiceError(w, err, db, cr.logger)
-	return
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }

@@ -107,7 +107,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "User service temporarily unavailable")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -269,7 +269,7 @@ func TestGetUserByID(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "User service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -433,7 +433,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not authorized to edit this user")
+		assert.Contains(t, w.Body.String(), "Not authorized to perform this action")
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
@@ -454,7 +454,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not allowed to change user role")
+		assert.Contains(t, w.Body.String(), "Not allowed to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -474,7 +474,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "User edit service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -672,7 +672,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not authorized to edit this user")
+		assert.Contains(t, w.Body.String(), "Not authorized to perform this action")
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
@@ -696,7 +696,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not allowed to change user role")
+		assert.Contains(t, w.Body.String(), "Not allowed to perform this action")
 	})
 
 	t.Run("Invalid credentials", func(t *testing.T) {
@@ -719,8 +719,8 @@ func TestChangePassword(t *testing.T) {
 
 		handler.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid old password")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
 	})
 
 	t.Run("Invalid data - passwords don't match", func(t *testing.T) {
@@ -744,7 +744,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "New password and confirm password do not match")
+		assert.Contains(t, w.Body.String(), "Invalid data")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -768,7 +768,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Password change service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {

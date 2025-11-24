@@ -600,7 +600,7 @@ func TestSubmitSolution(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Task not found")
+		assert.Contains(t, string(bodyBytes), "Requested resource not found")
 	})
 
 	t.Run("Success", func(t *testing.T) {

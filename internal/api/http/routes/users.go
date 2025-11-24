@@ -61,9 +61,7 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	result, err := u.userService.GetAll(tx, paginationParams)
 	if err != nil {
-		db.Rollback()
-		u.logger.Errorw("Failed to get users", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "User service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, u.logger)
 		return
 	}
 
