@@ -309,7 +309,7 @@ func TestGetErrorMapping(t *testing.T) {
 		{
 			name:           "ErrTimeout",
 			err:            myerrors.ErrTimeout,
-			expectedStatus: http.StatusRequestTimeout,
+			expectedStatus: http.StatusGatewayTimeout,
 			expectedMsg:    "Operation timeout",
 		},
 

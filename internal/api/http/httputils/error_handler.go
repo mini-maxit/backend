@@ -181,7 +181,7 @@ func getErrorMapping(err error) ErrorMapping {
 
 	// Timeout errors
 	if errors.Is(err, myerrors.ErrTimeout) {
-		return ErrorMapping{http.StatusRequestTimeout, "Operation timeout"}
+		return ErrorMapping{http.StatusGatewayTimeout, "Operation timeout"}
 	}
 
 	// Token-related errors
