@@ -12,7 +12,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -88,14 +87,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 	groupID, err := gr.groupService.Create(tx, *currentUser, group)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			gr.logger.Errorw("Failed to create group", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group creation failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 
@@ -144,16 +136,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 	group, err := gr.groupService.Get(tx, *currentUser, groupID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrGroupNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			gr.logger.Errorw("Failed to get group", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group retrieval failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 
@@ -192,14 +175,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 
 	groups, err := gr.groupService.GetAll(tx, *currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			gr.logger.Errorw("Failed to list groups", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group listing failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 
@@ -262,14 +238,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := gr.groupService.Edit(tx, *currentUser, groupID, &request)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			gr.logger.Errorw("Failed to edit group", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group edit failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 
@@ -333,16 +302,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 
 	err = gr.groupService.AddUsers(tx, *currentUser, groupID, request.UserIDs)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
-			status = http.StatusNotFound
-		} else {
-			gr.logger.Errorw("Failed to add users to group", "error", err)
-		}
-		httputils.ReturnError(w, status, "User addition to group failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users added to group successfully"))
@@ -405,22 +365,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 
 	err = gr.groupService.DeleteUsers(tx, *currentUser, groupID, request.UserIDs)
 	if err != nil {
-		db.Rollback()
-		var status int
-		switch {
-		case errors.Is(err, myerrors.ErrForbidden):
-			status = http.StatusForbidden
-		case errors.Is(err, myerrors.ErrUserNotFound):
-			status = http.StatusBadRequest
-		case errors.Is(err, myerrors.ErrNotFound):
-			status = http.StatusNotFound
-		case errors.Is(err, myerrors.ErrGroupNotFound):
-			status = http.StatusNotFound
-		default:
-			status = http.StatusInternalServerError
-			gr.logger.Errorw("Failed to delete users from group", "error", err)
-		}
-		httputils.ReturnError(w, status, "User deletion from group failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Users deleted from group successfully"))
@@ -469,16 +414,7 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 
 	users, err := gr.groupService.GetUsers(tx, *currentUser, groupID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrGroupNotFound) {
-			status = http.StatusNotFound
-		} else {
-			gr.logger.Errorw("Failed to get group users", "error", err)
-		}
-		httputils.ReturnError(w, status, "Group users retrieval failed")
+		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
 	}
 

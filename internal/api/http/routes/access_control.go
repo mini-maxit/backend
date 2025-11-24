@@ -11,7 +11,6 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -94,16 +93,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 
 	err = ac.accessControlService.AddCollaborator(tx, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to add contest collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to add collaborator")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -152,16 +142,7 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 
 	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeContest, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to get contest collaborators", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get collaborators")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -236,16 +217,7 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 
 	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeContest, contestID, userID, request.Permission)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to update contest collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to update collaborator permission")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -306,16 +278,7 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 
 	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to remove contest collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, err.Error())
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -380,16 +343,7 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 
 	err = ac.accessControlService.AddCollaborator(tx, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to add task collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to add collaborator")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -438,16 +392,7 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 
 	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeTask, taskID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to get task collaborators", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get collaborators")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -522,16 +467,7 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 
 	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeTask, taskID, userID, request.Permission)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to update task collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to update collaborator permission")
+		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
@@ -592,18 +528,9 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 
 	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			ac.logger.Errorw("Failed to remove task collaborator", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to remove collaborator")
-		return
-	}
+ httputils.HandleServiceError(w, err, db, ac.logger)
+ return
+ }
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
 }

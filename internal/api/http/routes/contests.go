@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -75,16 +73,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 
 	contest, err := cr.contestService.Get(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Contest retrieval failed")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -199,24 +188,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 
 	err = cr.contestService.RegisterForContest(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		switch {
-		case errors.Is(err, myerrors.ErrForbidden):
-			status = http.StatusForbidden
-		case errors.Is(err, myerrors.ErrNotFound):
-			status = http.StatusNotFound
-		case errors.Is(err, myerrors.ErrContestRegistrationClosed):
-			status = http.StatusForbidden
-		case errors.Is(err, myerrors.ErrContestEnded):
-			status = http.StatusForbidden
-		case errors.Is(err, myerrors.ErrAlreadyRegistered) || errors.Is(err, myerrors.ErrAlreadyParticipant):
-			status = http.StatusConflict
-		}
-		if status == http.StatusInternalServerError {
-			cr.logger.Errorw("Failed to register for contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to register for contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -265,16 +237,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 	}
 	tasks, err := cr.contestService.GetTaskProgressForContest(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get task progress for contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get task progress for contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
@@ -311,13 +274,7 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 
 	contests, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		cr.logger.Errorw("Failed to get user contests", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -352,13 +309,7 @@ func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.R
 	currentUser := httputils.GetCurrentUser(r)
 	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		cr.logger.Errorw("Failed to get active contests", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, combined.Ongoing)
@@ -392,13 +343,7 @@ func (cr *ContestRouteImpl) GetMyPastContests(w http.ResponseWriter, r *http.Req
 	currentUser := httputils.GetCurrentUser(r)
 	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		cr.logger.Errorw("Failed to get past contests", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Contest service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, combined.Past)
@@ -458,18 +403,7 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 
 	task, err := cr.contestService.GetContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		switch {
-		case errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrTaskNotInContest):
-			status = http.StatusNotFound
-		case errors.Is(err, myerrors.ErrForbidden):
-			status = http.StatusForbidden
-		default:
-			cr.logger.Errorw("Failed to get contest task", "error", err)
-		}
-
-		httputils.ReturnError(w, status, "Failed to get contest task")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -113,13 +112,7 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.userService.Get(tx, userID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrUserNotFound) {
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		}
-		u.logger.Errorw("Failed to get user", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "User service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, u.logger)
 		return
 	}
 
@@ -180,21 +173,7 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 
 	err = u.userService.Edit(tx, *currentUser, userID, &request)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrNotAllowed):
-			httputils.ReturnError(w, http.StatusForbidden, "You are not allowed to change user role")
-			return
-		case errors.Is(err, myerrors.ErrUserNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "User not found")
-			return
-		case errors.Is(err, myerrors.ErrForbidden):
-			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this user")
-			return
-		default:
-			u.logger.Errorw("Failed to edit user", "error", err)
-		}
-		httputils.ReturnError(w, http.StatusInternalServerError, "User edit service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, u.logger)
 		return
 	}
 
@@ -256,36 +235,7 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	err = u.userService.ChangePassword(tx, *currentUser, userID, request)
 	if err != nil {
-		db.Rollback()
-
-		// Define mapping of myerrors to HTTP status codes and messages
-		errorResponses := map[error]struct {
-			code    int
-			message string
-		}{
-			myerrors.ErrNotAllowed:         {http.StatusForbidden, "You are not allowed to change user role"},
-			myerrors.ErrUserNotFound:       {http.StatusNotFound, "User not found"},
-			myerrors.ErrForbidden:          {http.StatusForbidden, "You are not authorized to edit this user"},
-			myerrors.ErrInvalidCredentials: {http.StatusBadRequest, "Invalid old password"},
-			myerrors.ErrInvalidData:        {http.StatusBadRequest, "New password and confirm password do not match"},
-		}
-
-		// Special handling for validation errors
-		var validationErrors validator.ValidationErrors
-		if errors.As(err, &validationErrors) {
-			httputils.ReturnError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		// Check if err exists in the errorResponses map
-		if resp, exists := errorResponses[err]; exists {
-			httputils.ReturnError(w, resp.code, resp.message)
-			return
-		}
-
-		// Default case
-		u.logger.Errorw("Failed to change password", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Password change service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, u.logger)
 		return
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -99,16 +98,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := ar.authService.Login(tx, request)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrUserNotFound):
-			httputils.ReturnError(w, http.StatusUnauthorized, "User not found. This email is not registered.")
-		case errors.Is(err, myerrors.ErrInvalidCredentials):
-			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid credentials.")
-		default:
-			ar.logger.Errorw("Login failed", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Authentication service temporarily unavailable")
-		}
+		httputils.HandleServiceError(w, err, db, ar.logger)
 		return
 	}
 
@@ -159,17 +149,8 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens, err := ar.authService.Register(tx, request)
-	switch {
-	case err == nil:
-		break
-	case errors.Is(err, myerrors.ErrUserAlreadyExists):
-		db.Rollback()
-		httputils.ReturnError(w, http.StatusConflict, err.Error())
-		return
-	default:
-		db.Rollback()
-		ar.logger.Errorw("Registration failed", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Registration service temporarily unavailable")
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, ar.logger)
 		return
 	}
 
@@ -218,15 +199,7 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := ar.authService.RefreshTokens(tx, request)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrInvalidToken) ||
-			errors.Is(err, myerrors.ErrTokenExpired) ||
-			errors.Is(err, myerrors.ErrInvalidTokenType) {
-			httputils.ReturnError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
-			return
-		}
-		ar.logger.Errorw("Token refresh failed", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Token refresh service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, ar.logger)
 		return
 	}
 

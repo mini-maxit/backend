@@ -106,23 +106,14 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 
 	taskID, err := tr.taskService.Create(tx, currentUser, &task)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			tr.logger.Errorw("Failed to upload task", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task upload service temporarily unavailable")
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 
 	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
 	if err != nil {
-		db.Rollback()
-		tr.logger.Errorw("Failed to process and upload task", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, schemas.TaskCreateResponse{ID: taskID})
 }
@@ -179,17 +170,8 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 
 	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrForbidden):
-			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to edit this task.")
-		case errors.Is(err, myerrors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		default:
-			tr.logger.Errorw("Failed to edit task", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
-		}
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 
 	file, handler, err := r.FormFile("archive")
@@ -271,15 +253,8 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 
 	err = tr.taskService.Delete(tx, currentUser, taskID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			tr.logger.Errorw("Failed to delete task", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task service temporarily unavailable")
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task deleted successfully"))
@@ -393,17 +368,8 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 
 	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		case errors.Is(err, myerrors.ErrForbidden):
-			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to update limits for this task.")
-		default:
-			tr.logger.Errorw("Failed to put task limits", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
-		}
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task limits updated successfully"))
@@ -443,15 +409,8 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 
 	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			tr.logger.Errorw("Failed to get created tasks", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task service temporarily unavailable")
-		return
+	httputils.HandleServiceError(w, err, db, tr.logger)
+	return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, response)
