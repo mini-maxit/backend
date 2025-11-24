@@ -228,10 +228,10 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-WorkerStatus:
+  APIResponse-WorkersStatus:
     properties:
       data:
-        $ref: '#/definitions/WorkerStatus'
+        $ref: '#/definitions/WorkersStatus'
       ok:
         type: boolean
     type: object
@@ -1139,6 +1139,15 @@ definitions:
     type: object
   WorkerStatus:
     properties:
+      id:
+        type: integer
+      processingMessageId:
+        type: string
+      status:
+        type: string
+    type: object
+  WorkersStatus:
+    properties:
       busyWorkers:
         type: integer
       statusTime:
@@ -1146,9 +1155,9 @@ definitions:
       totalWorkers:
         type: integer
       workerStatus:
-        additionalProperties:
-          type: string
-        type: object
+        items:
+          $ref: '#/definitions/WorkerStatus'
+        type: array
     type: object
   errorStruct:
     properties:
@@ -3551,7 +3560,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-WorkerStatus'
+            $ref: '#/definitions/APIResponse-WorkersStatus'
         "401":
           description: Not authorized - requires teacher or admin role
           schema:
