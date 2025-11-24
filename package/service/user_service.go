@@ -1,13 +1,11 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -45,7 +43,7 @@ func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, err
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -77,7 +75,7 @@ func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -87,19 +85,19 @@ func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
 
 func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	if currentUser.Role != types.UserRoleAdmin && currentUser.ID != userID {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
 	}
 	if updateInfo.Role != nil {
 		if currentUser.Role != types.UserRoleAdmin {
-			return myerrors.ErrNotAllowed
+			return errors.ErrNotAllowed
 		}
 	}
 
@@ -115,12 +113,12 @@ func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64,
 
 func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userID int64, role types.UserRole) error {
 	if currentUser.Role != types.UserRoleAdmin {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
@@ -141,12 +139,12 @@ func (us *userService) ChangePassword(
 	data *schemas.UserChangePassword,
 ) error {
 	if currentUser.ID != userID && currentUser.Role != types.UserRoleAdmin {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 	user, err := us.userRepository.Get(tx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		return err
@@ -165,11 +163,11 @@ func (us *userService) ChangePassword(
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(data.OldPassword)) != nil {
-		return myerrors.ErrInvalidCredentials
+		return errors.ErrInvalidCredentials
 	}
 
 	if data.NewPassword != data.NewPasswordConfirm {
-		return myerrors.ErrInvalidData
+		return errors.ErrInvalidData
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(data.NewPassword), bcrypt.DefaultCost)

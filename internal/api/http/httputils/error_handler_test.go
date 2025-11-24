@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"go.uber.org/zap"
 )
 
@@ -21,7 +21,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Database errors
 		{
 			name:           "ErrDatabaseConnection",
-			err:            myerrors.ErrDatabaseConnection,
+			err:            errors.ErrDatabaseConnection,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Database connection error",
 		},
@@ -29,57 +29,45 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Task errors
 		{
 			name:           "ErrTaskExists",
-			err:            myerrors.ErrTaskExists,
+			err:            errors.ErrTaskExists,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "Task with this title already exists",
 		},
 		{
 			name:           "ErrTaskNotFound",
-			err:            myerrors.ErrTaskNotFound,
+			err:            errors.ErrTaskNotFound,
 			expectedStatus: http.StatusNotFound,
 			expectedMsg:    "Task not found",
 		},
 		{
 			name:           "ErrTaskAlreadyAssigned",
-			err:            myerrors.ErrTaskAlreadyAssigned,
+			err:            errors.ErrTaskAlreadyAssigned,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "Task is already assigned to the user",
-		},
-		{
-			name:           "ErrTaskNotAssignedToUser",
-			err:            myerrors.ErrTaskNotAssignedToUser,
-			expectedStatus: http.StatusBadRequest,
-			expectedMsg:    "Task is not assigned to the user",
-		},
-		{
-			name:           "ErrTaskNotAssignedToGroup",
-			err:            myerrors.ErrTaskNotAssignedToGroup,
-			expectedStatus: http.StatusBadRequest,
-			expectedMsg:    "Task is not assigned to the group",
 		},
 
 		// Authorization errors
 		{
 			name:           "ErrForbidden",
-			err:            myerrors.ErrForbidden,
+			err:            errors.ErrForbidden,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Not authorized to perform this action",
 		},
 		{
 			name:           "ErrNotAuthorized",
-			err:            myerrors.ErrNotAuthorized,
+			err:            errors.ErrNotAuthorized,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Not authorized",
 		},
 		{
 			name:           "ErrNotAllowed",
-			err:            myerrors.ErrNotAllowed,
+			err:            errors.ErrNotAllowed,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Not allowed to perform this action",
 		},
 		{
 			name:           "ErrPermissionDenied",
-			err:            myerrors.ErrPermissionDenied,
+			err:            errors.ErrPermissionDenied,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Permission denied",
 		},
@@ -87,13 +75,13 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// User errors
 		{
 			name:           "ErrUserNotFound",
-			err:            myerrors.ErrUserNotFound,
+			err:            errors.ErrUserNotFound,
 			expectedStatus: http.StatusNotFound,
 			expectedMsg:    "User not found",
 		},
 		{
 			name:           "ErrUserAlreadyExists",
-			err:            myerrors.ErrUserAlreadyExists,
+			err:            errors.ErrUserAlreadyExists,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "User already exists",
 		},
@@ -101,7 +89,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Access control errors
 		{
 			name:           "ErrAccessAlreadyExists",
-			err:            myerrors.ErrAccessAlreadyExists,
+			err:            errors.ErrAccessAlreadyExists,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "Access already exists",
 		},
@@ -109,7 +97,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Authentication errors
 		{
 			name:           "ErrInvalidCredentials",
-			err:            myerrors.ErrInvalidCredentials,
+			err:            errors.ErrInvalidCredentials,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Invalid credentials",
 		},
@@ -117,21 +105,15 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Data validation errors
 		{
 			name:           "ErrInvalidData",
-			err:            myerrors.ErrInvalidData,
+			err:            errors.ErrInvalidData,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid data",
-		},
-		{
-			name:           "ErrInvalidInputOuput",
-			err:            myerrors.ErrInvalidInputOuput,
-			expectedStatus: http.StatusBadRequest,
-			expectedMsg:    "Invalid input or output",
 		},
 
 		// Generic not found
 		{
 			name:           "ErrNotFound",
-			err:            myerrors.ErrNotFound,
+			err:            errors.ErrNotFound,
 			expectedStatus: http.StatusNotFound,
 			expectedMsg:    "Requested resource not found",
 		},
@@ -139,61 +121,61 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// File operation errors
 		{
 			name:           "ErrFileOpen",
-			err:            myerrors.ErrFileOpen,
+			err:            errors.ErrFileOpen,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Failed to open file",
 		},
 		{
 			name:           "ErrTempDirCreate",
-			err:            myerrors.ErrTempDirCreate,
+			err:            errors.ErrTempDirCreate,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Failed to create temp directory",
 		},
 		{
 			name:           "ErrDecompressArchive",
-			err:            myerrors.ErrDecompressArchive,
+			err:            errors.ErrDecompressArchive,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Failed to decompress archive",
 		},
 		{
 			name:           "ErrNoInputDirectory",
-			err:            myerrors.ErrNoInputDirectory,
+			err:            errors.ErrNoInputDirectory,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "No input directory found",
 		},
 		{
 			name:           "ErrNoOutputDirectory",
-			err:            myerrors.ErrNoOutputDirectory,
+			err:            errors.ErrNoOutputDirectory,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "No output directory found",
 		},
 		{
 			name:           "ErrIOCountMismatch",
-			err:            myerrors.ErrIOCountMismatch,
+			err:            errors.ErrIOCountMismatch,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Input and output file count mismatch",
 		},
 		{
 			name:           "ErrInputContainsDir",
-			err:            myerrors.ErrInputContainsDir,
+			err:            errors.ErrInputContainsDir,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Input contains a directory",
 		},
 		{
 			name:           "ErrOutputContainsDir",
-			err:            myerrors.ErrOutputContainsDir,
+			err:            errors.ErrOutputContainsDir,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Output contains a directory",
 		},
 		{
 			name:           "ErrInvalidInExtention",
-			err:            myerrors.ErrInvalidInExtention,
+			err:            errors.ErrInvalidInExtention,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid input file extension",
 		},
 		{
 			name:           "ErrInvalidOutExtention",
-			err:            myerrors.ErrInvalidOutExtention,
+			err:            errors.ErrInvalidOutExtention,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid output file extension",
 		},
@@ -201,43 +183,43 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// FileStorage errors
 		{
 			name:           "ErrWriteTaskID",
-			err:            myerrors.ErrWriteTaskID,
+			err:            errors.ErrWriteTaskID,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error writing task ID to form",
 		},
 		{
 			name:           "ErrWriteOverwrite",
-			err:            myerrors.ErrWriteOverwrite,
+			err:            errors.ErrWriteOverwrite,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error writing overwrite to form",
 		},
 		{
 			name:           "ErrCreateFormFile",
-			err:            myerrors.ErrCreateFormFile,
+			err:            errors.ErrCreateFormFile,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error creating form file",
 		},
 		{
 			name:           "ErrCopyFile",
-			err:            myerrors.ErrCopyFile,
+			err:            errors.ErrCopyFile,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error copying file to form",
 		},
 		{
 			name:           "ErrSendRequest",
-			err:            myerrors.ErrSendRequest,
+			err:            errors.ErrSendRequest,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error sending request to FileStorage",
 		},
 		{
 			name:           "ErrReadResponse",
-			err:            myerrors.ErrReadResponse,
+			err:            errors.ErrReadResponse,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Error reading response from FileStorage",
 		},
 		{
 			name:           "ErrResponseFromFileStorage",
-			err:            myerrors.ErrResponseFromFileStorage,
+			err:            errors.ErrResponseFromFileStorage,
 			expectedStatus: http.StatusBadGateway,
 			expectedMsg:    "Error response from FileStorage",
 		},
@@ -245,7 +227,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Group errors
 		{
 			name:           "ErrGroupNotFound",
-			err:            myerrors.ErrGroupNotFound,
+			err:            errors.ErrGroupNotFound,
 			expectedStatus: http.StatusNotFound,
 			expectedMsg:    "Group not found",
 		},
@@ -253,13 +235,13 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Pagination errors
 		{
 			name:           "ErrInvalidLimitParam",
-			err:            myerrors.ErrInvalidLimitParam,
+			err:            errors.ErrInvalidLimitParam,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid limit parameter",
 		},
 		{
 			name:           "ErrInvalidOffsetParam",
-			err:            myerrors.ErrInvalidOffsetParam,
+			err:            errors.ErrInvalidOffsetParam,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid offset parameter",
 		},
@@ -267,25 +249,25 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Session errors
 		{
 			name:           "ErrSessionNotFound",
-			err:            myerrors.ErrSessionNotFound,
+			err:            errors.ErrSessionNotFound,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Session not found",
 		},
 		{
 			name:           "ErrSessionExpired",
-			err:            myerrors.ErrSessionExpired,
+			err:            errors.ErrSessionExpired,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Session expired",
 		},
 		{
 			name:           "ErrSessionUserNotFound",
-			err:            myerrors.ErrSessionUserNotFound,
+			err:            errors.ErrSessionUserNotFound,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Session user not found",
 		},
 		{
 			name:           "ErrSessionRefresh",
-			err:            myerrors.ErrSessionRefresh,
+			err:            errors.ErrSessionRefresh,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Session refresh failed",
 		},
@@ -293,7 +275,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Archive validation
 		{
 			name:           "ErrInvalidArchive",
-			err:            myerrors.ErrInvalidArchive,
+			err:            errors.ErrInvalidArchive,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid archive format",
 		},
@@ -301,7 +283,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Internal validation
 		{
 			name:           "ErrExpectedStruct",
-			err:            myerrors.ErrExpectedStruct,
+			err:            errors.ErrExpectedStruct,
 			expectedStatus: http.StatusInternalServerError,
 			expectedMsg:    "Expected struct parameter",
 		},
@@ -309,7 +291,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Timeout
 		{
 			name:           "ErrTimeout",
-			err:            myerrors.ErrTimeout,
+			err:            errors.ErrTimeout,
 			expectedStatus: http.StatusGatewayTimeout,
 			expectedMsg:    "Operation timeout",
 		},
@@ -317,25 +299,25 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Token errors
 		{
 			name:           "ErrInvalidToken",
-			err:            myerrors.ErrInvalidToken,
+			err:            errors.ErrInvalidToken,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Invalid token",
 		},
 		{
 			name:           "ErrTokenExpired",
-			err:            myerrors.ErrTokenExpired,
+			err:            errors.ErrTokenExpired,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Token expired",
 		},
 		{
 			name:           "ErrTokenUserNotFound",
-			err:            myerrors.ErrTokenUserNotFound,
+			err:            errors.ErrTokenUserNotFound,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Token user not found",
 		},
 		{
 			name:           "ErrInvalidTokenType",
-			err:            myerrors.ErrInvalidTokenType,
+			err:            errors.ErrInvalidTokenType,
 			expectedStatus: http.StatusUnauthorized,
 			expectedMsg:    "Invalid token type",
 		},
@@ -343,31 +325,31 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Contest registration errors
 		{
 			name:           "ErrContestRegistrationClosed",
-			err:            myerrors.ErrContestRegistrationClosed,
+			err:            errors.ErrContestRegistrationClosed,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Contest registration is closed",
 		},
 		{
 			name:           "ErrContestEnded",
-			err:            myerrors.ErrContestEnded,
+			err:            errors.ErrContestEnded,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Contest has ended",
 		},
 		{
 			name:           "ErrAlreadyRegistered",
-			err:            myerrors.ErrAlreadyRegistered,
+			err:            errors.ErrAlreadyRegistered,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "Already registered for this contest",
 		},
 		{
 			name:           "ErrAlreadyParticipant",
-			err:            myerrors.ErrAlreadyParticipant,
+			err:            errors.ErrAlreadyParticipant,
 			expectedStatus: http.StatusConflict,
 			expectedMsg:    "User is already a participant of this contest",
 		},
 		{
 			name:           "ErrNoPendingRegistration",
-			err:            myerrors.ErrNoPendingRegistration,
+			err:            errors.ErrNoPendingRegistration,
 			expectedStatus: http.StatusNotFound,
 			expectedMsg:    "No pending registration for this contest",
 		},
@@ -375,7 +357,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Contest task errors
 		{
 			name:           "ErrTaskNotInContest",
-			err:            myerrors.ErrTaskNotInContest,
+			err:            errors.ErrTaskNotInContest,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Task is not part of the contest",
 		},
@@ -383,7 +365,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Language validation
 		{
 			name:           "ErrInvalidLanguage",
-			err:            myerrors.ErrInvalidLanguage,
+			err:            errors.ErrInvalidLanguage,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    "Invalid language for the task",
 		},
@@ -391,13 +373,13 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Contest submission errors
 		{
 			name:           "ErrContestSubmissionClosed",
-			err:            myerrors.ErrContestSubmissionClosed,
+			err:            errors.ErrContestSubmissionClosed,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Contest submissions are closed",
 		},
 		{
 			name:           "ErrTaskSubmissionClosed",
-			err:            myerrors.ErrTaskSubmissionClosed,
+			err:            errors.ErrTaskSubmissionClosed,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Task submissions are closed for this contest task",
 		},
@@ -405,19 +387,19 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Contest timing errors
 		{
 			name:           "ErrContestNotStarted",
-			err:            myerrors.ErrContestNotStarted,
+			err:            errors.ErrContestNotStarted,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Contest has not started yet",
 		},
 		{
 			name:           "ErrTaskNotStarted",
-			err:            myerrors.ErrTaskNotStarted,
+			err:            errors.ErrTaskNotStarted,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Task submission period has not started yet",
 		},
 		{
 			name:           "ErrTaskSubmissionEnded",
-			err:            myerrors.ErrTaskSubmissionEnded,
+			err:            errors.ErrTaskSubmissionEnded,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Task submission period has ended",
 		},
@@ -425,7 +407,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Contest participation
 		{
 			name:           "ErrNotContestParticipant",
-			err:            myerrors.ErrNotContestParticipant,
+			err:            errors.ErrNotContestParticipant,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "User is not a participant of this contest",
 		},
@@ -433,7 +415,7 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 		// Role assignment
 		{
 			name:           "ErrCannotAssignOwner",
-			err:            myerrors.ErrCannotAssignOwner,
+			err:            errors.ErrCannotAssignOwner,
 			expectedStatus: http.StatusForbidden,
 			expectedMsg:    "Cannot assign owner role to another user",
 		},
@@ -442,7 +424,10 @@ func TestErrorCodeToHTTPStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Convert the legacy error to a ServiceError
-			serviceErr := myerrors.ToServiceError(tt.err)
+			serviceErr := new(errors.ServiceError)
+			if ok := errors.AsServiceError(tt.err, &serviceErr); !ok {
+				t.Fatalf("Failed to convert error to ServiceError")
+			}
 
 			// Check the HTTP status mapping
 			httpStatus := errorCodeToHTTPStatus(serviceErr.Code)
@@ -463,14 +448,14 @@ func TestHandleServiceError(t *testing.T) {
 		w := httptest.NewRecorder()
 		logger := zap.NewNop().Sugar()
 
-		HandleServiceError(w, myerrors.ErrUserNotFound, nil, logger)
+		HandleServiceError(w, errors.ErrUserNotFound, nil, logger)
 
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status code %d, got %d", http.StatusNotFound, w.Code)
 		}
 
 		// Verify the response contains the error code
-		var response ServiceErrorResponse
+		var response APIError
 		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
@@ -478,8 +463,8 @@ func TestHandleServiceError(t *testing.T) {
 		if response.Ok {
 			t.Error("Expected ok to be false")
 		}
-		if response.Data.Code != myerrors.CodeUserNotFound {
-			t.Errorf("Expected code %s, got %s", myerrors.CodeUserNotFound, response.Data.Code)
+		if response.Data.Code != string(errors.CodeUserNotFound) {
+			t.Errorf("Expected code %s, got %s", errors.CodeUserNotFound, response.Data.Code)
 		}
 		if response.Data.Message != "User not found" {
 			t.Errorf("Expected message 'User not found', got %s", response.Data.Message)
@@ -509,13 +494,13 @@ func TestHandleServiceError(t *testing.T) {
 		}
 
 		// Verify the response contains the internal error code
-		var response ServiceErrorResponse
+		var response APIError
 		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
 
-		if response.Data.Code != myerrors.CodeInternalError {
-			t.Errorf("Expected code %s, got %s", myerrors.CodeInternalError, response.Data.Code)
+		if response.Data.Code != string(errors.CodeInternalError) {
+			t.Errorf("Expected code %s, got %s", errors.CodeInternalError, response.Data.Code)
 		}
 	})
 
@@ -524,7 +509,7 @@ func TestHandleServiceError(t *testing.T) {
 		logger := zap.NewNop().Sugar()
 
 		// Create a ServiceError directly
-		serviceErr := myerrors.ErrServiceForbidden
+		serviceErr := errors.ErrForbidden
 
 		HandleServiceError(w, serviceErr, nil, logger)
 
@@ -532,13 +517,13 @@ func TestHandleServiceError(t *testing.T) {
 			t.Errorf("Expected status code %d, got %d", http.StatusForbidden, w.Code)
 		}
 
-		var response ServiceErrorResponse
+		var response APIError
 		if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
 			t.Fatalf("Failed to decode response: %v", err)
 		}
 
-		if response.Data.Code != myerrors.CodeForbidden {
-			t.Errorf("Expected code %s, got %s", myerrors.CodeForbidden, response.Data.Code)
+		if response.Data.Code != string(errors.CodeForbidden) {
+			t.Errorf("Expected code %s, got %s", errors.CodeForbidden, response.Data.Code)
 		}
 	})
 }

@@ -1,17 +1,15 @@
 package routes
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -65,12 +63,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 	var request schemas.CreateContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -118,12 +111,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 	var request schemas.EditContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -302,12 +290,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 	var request schemas.AddTaskToContest
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -410,15 +393,15 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 
 	err = cr.contestService.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		if !errors.Is(err, errors.ErrAlreadyParticipant) {
 			db.Rollback()
 		}
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
+		} else if errors.Is(err, errors.ErrForbidden) {
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
 		} else {
 			cr.logger.Errorw("Failed to approve registration request", "error", err)
@@ -478,15 +461,15 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 
 	err = cr.contestService.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		if !errors.Is(err, errors.ErrAlreadyParticipant) {
 			db.Rollback()
 		}
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
+		} else if errors.Is(err, errors.ErrForbidden) {
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
 		} else {
 			cr.logger.Errorw("Failed to reject registration request", "error", err)

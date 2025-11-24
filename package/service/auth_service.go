@@ -1,12 +1,10 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -47,15 +45,15 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 	user, err := as.userRepository.GetByEmail(tx, userLogin.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrUserNotFound
+			return nil, errors.ErrUserNotFound
 		}
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(userLogin.Password)) != nil {
-		as.logger.Errorf("Error comparing password hash: %v", myerrors.ErrInvalidCredentials.Error())
-		return nil, myerrors.ErrInvalidCredentials
+		as.logger.Errorf("Error comparing password hash: %v", errors.ErrInvalidCredentials.Error())
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	tokens, err := as.jwtService.GenerateTokens(tx, user.ID)
@@ -76,7 +74,7 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 
 	if user != nil {
 		as.logger.Errorf("User already exists")
-		return nil, myerrors.ErrUserAlreadyExists
+		return nil, errors.ErrUserAlreadyExists
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)

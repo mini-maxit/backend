@@ -1,12 +1,10 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -75,13 +73,13 @@ func (gs *groupService) Delete(tx *gorm.DB, currentUser schemas.User, groupID in
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrGroupNotFound
+			return errors.ErrGroupNotFound
 		}
 		return err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 
 	return gs.groupRepository.Delete(tx, groupID)
@@ -109,12 +107,12 @@ func (gs *groupService) Edit(
 	model, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrGroupNotFound
+			return nil, errors.ErrGroupNotFound
 		}
 		return nil, err
 	}
 	if currentUser.Role == types.UserRoleTeacher && model.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 
 	gs.updateModel(model, editInfo)
@@ -153,9 +151,9 @@ func (gs *groupService) GetAll(
 			return nil, err
 		}
 	case types.UserRoleStudent:
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	default:
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 	result := make([]schemas.Group, len(groups))
 	for i, group := range groups {
@@ -174,13 +172,13 @@ func (gs *groupService) Get(tx *gorm.DB, currentUser schemas.User, groupID int64
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrGroupNotFound
+			return nil, errors.ErrGroupNotFound
 		}
 		return nil, err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 
 	return GroupToSchemaDetailed(group), nil
@@ -195,13 +193,13 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrGroupNotFound
+			return errors.ErrGroupNotFound
 		}
 		return err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 
 	for _, userID := range userIDs {
@@ -235,19 +233,19 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrGroupNotFound
+			return errors.ErrGroupNotFound
 		}
 		return err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 
 	for _, userID := range userIDs {
 		_, err := gs.userRepository.Get(tx, userID)
 		if err != nil {
-			return myerrors.ErrUserNotFound
+			return errors.ErrUserNotFound
 		}
 		exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, userID)
 		if err != nil {
@@ -275,13 +273,13 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	group, err := gs.groupRepository.Get(tx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrGroupNotFound
+			return nil, errors.ErrGroupNotFound
 		}
 		return nil, err
 	}
 
 	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 
 	users, err := gs.groupRepository.GetUsers(tx, groupID)

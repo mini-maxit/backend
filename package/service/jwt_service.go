@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -9,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -74,22 +73,22 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 
 	if err != nil {
 		j.logger.Errorf("Error parsing token: %v", err)
-		return nil, myerrors.ErrInvalidToken
+		return nil, errors.ErrInvalidToken
 	}
 
 	if !token.Valid {
-		return nil, myerrors.ErrInvalidToken
+		return nil, errors.ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, myerrors.ErrInvalidToken
+		return nil, errors.ErrInvalidToken
 	}
 
 	// Check expiration
 	if exp, ok := claims["exp"].(float64); ok {
 		if time.Now().Unix() > int64(exp) {
-			return nil, myerrors.ErrTokenExpired
+			return nil, errors.ErrTokenExpired
 		}
 	}
 
@@ -108,7 +107,7 @@ func (j *jwtService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTToke
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrTokenUserNotFound
+			return nil, errors.ErrTokenUserNotFound
 		}
 		return nil, err
 	}
@@ -164,7 +163,7 @@ func (j *jwtService) validateAccessToken(tokenString string) (*schemas.JWTClaims
 	j.logger.Debugf("Parsed claims: %+v", claims)
 
 	if claims.Type != TokenTypeAccess {
-		return nil, myerrors.ErrInvalidTokenType
+		return nil, errors.ErrInvalidTokenType
 	}
 
 	return claims, nil
@@ -178,7 +177,7 @@ func (j *jwtService) validateRefreshToken(tokenString string) (*schemas.JWTClaim
 	}
 
 	if claims.Type != TokenTypeRefresh {
-		return nil, myerrors.ErrInvalidTokenType
+		return nil, errors.ErrInvalidTokenType
 	}
 
 	return claims, nil
@@ -207,12 +206,12 @@ func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schema
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrTokenUserNotFound
+			return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, errors.ErrTokenUserNotFound
 		}
 		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}
 	if user.Role != types.UserRole(claims.Role) {
-		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, myerrors.ErrNotAuthorized
+		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, errors.ErrNotAuthorized
 	}
 
 	return &schemas.ValidateTokenResponse{Valid: true, User: *UserToSchema(user)}, nil

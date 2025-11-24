@@ -1,11 +1,9 @@
 package routes
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -72,12 +70,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 	var request schemas.AddCollaborator
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -196,12 +189,7 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 	var request schemas.UpdateCollaborator
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -322,12 +310,7 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 	var request schemas.AddCollaborator
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -446,12 +429,7 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 	var request schemas.UpdateCollaborator
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 

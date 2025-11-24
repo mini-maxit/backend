@@ -1,12 +1,10 @@
 package routes
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -79,12 +77,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 	var request schemas.UserLoginRequest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -132,12 +125,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 	var request schemas.UserRegisterRequest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)

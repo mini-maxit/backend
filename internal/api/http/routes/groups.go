@@ -1,13 +1,11 @@
 package routes
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
@@ -55,16 +53,11 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	var request schemas.CreateGroup
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 	if request.Name == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. Group name cannot be empty")
+		httputils.ReturnError(w, http.StatusBadRequest, httputils.InvalidRequestBodyMessage)
 		return
 	}
 
@@ -206,12 +199,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	var request schemas.EditGroup
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -281,12 +269,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	request := &schemas.UserIDs{}
 	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -344,12 +327,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 	request := &schemas.UserIDs{}
 	err = httputils.ShouldBindJSON(r.Body, request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 

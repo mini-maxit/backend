@@ -13,7 +13,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,7 +78,7 @@ func TestLogin(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, httputils.InvalidRequestBodyMessage)
 		}
 	})
 
@@ -126,7 +126,7 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserNotFound).Times(1)
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, errors.ErrUserNotFound).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -158,7 +158,7 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidCredentials).Times(1)
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, errors.ErrInvalidCredentials).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -322,7 +322,7 @@ func TestRegister(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, httputils.InvalidRequestBodyMessage)
 		}
 	})
 
@@ -351,7 +351,7 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
-		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserAlreadyExists).Times(1)
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, errors.ErrUserAlreadyExists).Times(1)
 
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
@@ -538,7 +538,7 @@ func TestRefreshToken(t *testing.T) {
 			Value: "invalid_refresh_token",
 		})
 
-		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidToken).Times(1)
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, errors.ErrInvalidToken).Times(1)
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {

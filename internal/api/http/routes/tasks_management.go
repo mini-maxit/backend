@@ -1,17 +1,15 @@
 package routes
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -302,7 +300,7 @@ func (tr *tasksManagementRoute) GetLimits(w http.ResponseWriter, r *http.Request
 	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
 	if err != nil {
 		switch {
-		case errors.Is(err, myerrors.ErrNotFound):
+		case errors.Is(err, errors.ErrNotFound):
 			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
 		default:
 			tr.logger.Errorw("Failed to get task limits", "error", err)
@@ -357,12 +355,7 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body. "+err.Error())
+		httputils.HandleValidationError(w, err)
 		return
 	}
 

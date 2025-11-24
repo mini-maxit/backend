@@ -2,13 +2,12 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 )
 
@@ -42,16 +41,16 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 		tokenResponse, err := jwtService.AuthenticateToken(tx, token)
 		if err != nil {
 			tx.Rollback()
-			if errors.Is(err, myerrors.ErrInvalidToken) {
+			if errors.Is(err, errors.ErrInvalidToken) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Invalid token")
 				return
-			} else if errors.Is(err, myerrors.ErrTokenExpired) {
+			} else if errors.Is(err, errors.ErrTokenExpired) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Token expired")
 				return
-			} else if errors.Is(err, myerrors.ErrTokenUserNotFound) {
+			} else if errors.Is(err, errors.ErrTokenUserNotFound) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "User associated with token not found")
 				return
-			} else if errors.Is(err, myerrors.ErrNotAuthorized) {
+			} else if errors.Is(err, errors.ErrNotAuthorized) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Malformed or outdated token")
 				return
 			}

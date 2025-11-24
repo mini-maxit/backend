@@ -18,7 +18,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -588,7 +588,7 @@ func TestSubmitSolution(t *testing.T) {
 		require.NoError(t, err)
 		writer.Close()
 
-		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), nil, gomock.Any()).Return(int64(0), myerrors.ErrNotFound).Times(1)
+		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), nil, gomock.Any()).Return(int64(0), errors.ErrNotFound).Times(1)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL, body)
 		require.NoError(t, err)

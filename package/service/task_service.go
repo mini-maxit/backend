@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -9,7 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -70,11 +69,11 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *sche
 	}
 	// Create a new task
 	_, err = ts.GetByTitle(tx, task.Title)
-	if err != nil && !errors.Is(err, myerrors.ErrTaskNotFound) {
+	if err != nil && !errors.Is(err, errors.ErrTaskNotFound) {
 		ts.logger.Errorf("Error getting task by title: %v", err.Error())
 		return 0, err
 	} else if err == nil {
-		return 0, myerrors.ErrTaskExists
+		return 0, errors.ErrTaskExists
 	}
 
 	author, err := ts.userRepository.Get(tx, currentUser.ID)
@@ -108,7 +107,7 @@ func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, err
 	task, err := ts.taskRepository.GetByTitle(tx, title)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrTaskNotFound
+			return nil, errors.ErrTaskNotFound
 		}
 		ts.logger.Errorf("Error getting task by title: %v", err.Error())
 		return nil, err
@@ -149,7 +148,7 @@ func (ts *taskService) Get(tx *gorm.DB, _ *schemas.User, taskID int64) (*schemas
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrNotFound
+			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -221,7 +220,7 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser *schemas.User, taskID int
 	err = ts.taskRepository.Delete(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
+			return errors.ErrNotFound
 		}
 		ts.logger.Errorf("Error deleting task: %v", err.Error())
 		return err
@@ -260,18 +259,18 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 	// Count the number of input and output files
 	archive, err := os.Open(archivePath)
 	if err != nil {
-		return -1, myerrors.ErrFileOpen
+		return -1, errors.ErrFileOpen
 	}
 	defer archive.Close()
 	tempDir, err := os.MkdirTemp(os.TempDir(), "task-upload-archive")
 	if err != nil {
-		return -1, myerrors.ErrTempDirCreate
+		return -1, errors.ErrTempDirCreate
 	}
 	defer os.RemoveAll(tempDir)
 	err = utils.DecompressArchive(archive, tempDir)
 	if err != nil {
 		ts.logger.Errorf("Error decompressing archive %s: %v", archivePath, err)
-		return -1, myerrors.ErrDecompressArchive
+		return -1, errors.ErrDecompressArchive
 	}
 	entries, err := os.ReadDir(tempDir)
 	if err != nil {
@@ -282,24 +281,24 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 		if entries[0].IsDir() {
 			tempDir = tempDir + "/" + entries[0].Name()
 		} else {
-			return -1, myerrors.ErrInvalidArchive
+			return -1, errors.ErrInvalidArchive
 		}
 	}
 
 	inputFiles, err := os.ReadDir(tempDir + "/input")
 	if err != nil {
-		return -1, myerrors.ErrNoInputDirectory
+		return -1, errors.ErrNoInputDirectory
 	}
 	outputFiles, err := os.ReadDir(tempDir + "/output")
 	if err != nil {
-		return -1, myerrors.ErrNoOutputDirectory
+		return -1, errors.ErrNoOutputDirectory
 	}
 	if len(inputFiles) != len(outputFiles) {
-		return -1, myerrors.ErrIOCountMismatch
+		return -1, errors.ErrIOCountMismatch
 	}
 	for _, file := range inputFiles {
 		if file.IsDir() {
-			return -1, myerrors.ErrInputContainsDir
+			return -1, errors.ErrInputContainsDir
 		}
 		filenameList := strings.Split(file.Name(), ".")
 		if len(filenameList) != 2 {
@@ -311,12 +310,12 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 		filename := filenameList[0]
 		ext := filenameList[1]
 		if ext != "in" {
-			return -1, myerrors.ErrInvalidInExtention
+			return -1, errors.ErrInvalidInExtention
 		}
 		found := false
 		for _, outputFile := range outputFiles {
 			if file.IsDir() {
-				return -1, myerrors.ErrOutputContainsDir
+				return -1, errors.ErrOutputContainsDir
 			}
 			outputFilenameList := strings.Split(outputFile.Name(), ".")
 			if len(outputFilenameList) != 2 {
@@ -327,7 +326,7 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 			}
 			outputFilename := outputFilenameList[0]
 			if outputFilenameList[1] != "out" {
-				return -1, myerrors.ErrInvalidOutExtention
+				return -1, errors.ErrInvalidOutExtention
 			}
 			if filename == outputFilename {
 				found = true
@@ -345,7 +344,7 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
+			return errors.ErrNotFound
 		}
 		return err
 	}
@@ -405,7 +404,7 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, 
 	currentTask, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
+			return errors.ErrNotFound
 		}
 		return fmt.Errorf("failed to get task: %w", err)
 	}
@@ -459,7 +458,7 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID 
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, myerrors.ErrNotFound
+			return nil, errors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -630,7 +629,7 @@ func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, user *schema
 	_, err := ts.taskRepository.Get(tx, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return myerrors.ErrNotFound
+			return errors.ErrNotFound
 		}
 		return err
 	}
