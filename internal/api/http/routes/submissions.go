@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	_ "github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -113,13 +111,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 	submissions, err := s.submissionService.GetAll(tx, currentUser, userID, taskID, contestID, paginationParams)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrPermissionDenied) {
-			httputils.ReturnError(w, http.StatusForbidden, "You are not authorized to view these submissions")
-			return
-		}
-		s.logger.Errorw("Failed to get submissions", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, s.logger)
 		return
 	}
 
@@ -222,19 +214,7 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 
 	response, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w,
-				http.StatusForbidden,
-				"Permission denied. Current user is not allowed to view submissions for this user.",
-			)
-		default:
-			httputils.ReturnError(w,
-				http.StatusInternalServerError,
-				"Failed to get submissions. "+err.Error(),
-			)
-		}
+		httputils.HandleServiceError(w, err, db, s.logger)
 		return
 	}
 
@@ -423,37 +403,7 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	// Create the submission with the correct order
 	submissionID, err := s.submissionService.Submit(tx, currentUser, taskID, languageID, contestID, filePath)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found")
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. Current user is not allowed to submit solution to this task.")
-		case errors.Is(err, myerrors.ErrContestNotStarted):
-			httputils.ReturnError(w, http.StatusBadRequest, "Contest has not started yet.")
-		case errors.Is(err, myerrors.ErrContestEnded):
-			httputils.ReturnError(w, http.StatusBadRequest, "Contest has already ended.")
-		case errors.Is(err, myerrors.ErrNotContestParticipant):
-			httputils.ReturnError(w, http.StatusBadRequest, "User is not a participant of the contest.")
-		case errors.Is(err, myerrors.ErrContestSubmissionClosed):
-			httputils.ReturnError(w, http.StatusBadRequest, "Contest submissions are closed.")
-		case errors.Is(err, myerrors.ErrTaskSubmissionClosed):
-			httputils.ReturnError(w, http.StatusBadRequest, "Submissions for this task are closed.")
-		case errors.Is(err, myerrors.ErrTaskNotStarted):
-			httputils.ReturnError(w, http.StatusBadRequest, "Task submission period has not started yet.")
-		case errors.Is(err, myerrors.ErrTaskSubmissionEnded):
-			httputils.ReturnError(w, http.StatusBadRequest, "Submissions for this task have ended.")
-		case errors.Is(err, myerrors.ErrTaskNotInContest):
-			httputils.ReturnError(w, http.StatusBadRequest, "Task is not part of this contest.")
-		case errors.Is(err, myerrors.ErrInvalidLanguage):
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid language for the task.")
-		default:
-			s.logger.Errorw("Failed to create submission", "error", err)
-			httputils.ReturnError(w,
-				http.StatusInternalServerError,
-				"Submission service temporarily unavailable",
-			)
-		}
+		httputils.HandleServiceError(w, err, db, s.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, map[string]int64{"submissionId": submissionID})
@@ -497,19 +447,7 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 
 	response, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w,
-				http.StatusForbidden,
-				"Permission denied. Current user is not allowed to view submissions for this user.",
-			)
-		default:
-			httputils.ReturnError(w,
-				http.StatusInternalServerError,
-				"Failed to get submissions. "+err.Error(),
-			)
-		}
+		httputils.HandleServiceError(w, err, db, s.logger)
 		return
 	}
 

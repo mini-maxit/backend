@@ -1,17 +1,15 @@
 package routes
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -65,12 +63,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 	var request schemas.CreateContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -86,14 +79,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 
 	contestID, err := cr.contestService.Create(tx, currentUser, &request)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to create contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Contest creation failed")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -125,12 +111,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 	var request schemas.EditContest
 	err := httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
@@ -157,16 +138,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 
 	resp, err := cr.contestService.Edit(tx, currentUser, contestID, &request)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			cr.logger.Errorw("Failed to edit contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to edit contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -216,16 +188,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 
 	err = cr.contestService.Delete(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			cr.logger.Errorw("Failed to delete contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to delete contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -276,16 +239,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 
 	tasks, err := cr.contestService.GetAssignableTasks(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get available tasks for contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get available tasks for contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
@@ -336,27 +290,13 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 	var request schemas.AddTaskToContest
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
-		var valErrs validator.ValidationErrors
-		if errors.As(err, &valErrs) {
-			httputils.ReturnValidationError(w, valErrs)
-			return
-		}
-		httputils.ReturnError(w, http.StatusBadRequest, "Could not validate request data.")
+		httputils.HandleValidationError(w, err)
 		return
 	}
 
 	err = cr.contestService.AddTaskToContest(tx, currentUser, contestID, &request)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else {
-			cr.logger.Errorw("Failed to add task to contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to add task to contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -416,16 +356,7 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 
 	requests, err := cr.contestService.GetRegistrationRequests(tx, currentUser, contestID, status)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get registration requests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get registration requests")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -462,15 +393,15 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 
 	err = cr.contestService.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		if !errors.Is(err, errors.ErrAlreadyParticipant) {
 			db.Rollback()
 		}
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
+		} else if errors.Is(err, errors.ErrForbidden) {
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
 		} else {
 			cr.logger.Errorw("Failed to approve registration request", "error", err)
@@ -530,15 +461,15 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 
 	err = cr.contestService.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		if !errors.Is(err, errors.ErrAlreadyParticipant) {
 			db.Rollback()
 		}
 		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) || errors.Is(err, myerrors.ErrNoPendingRegistration) {
+		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
 			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
+		} else if errors.Is(err, errors.ErrForbidden) {
 			status = http.StatusForbidden
-		} else if errors.Is(err, myerrors.ErrAlreadyParticipant) {
+		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
 			status = http.StatusBadRequest
 		} else {
 			cr.logger.Errorw("Failed to reject registration request", "error", err)
@@ -596,16 +527,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 
 	tasks, err := cr.contestService.GetTasksForContest(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrNotFound) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get tasks for contest", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get tasks for contest")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
@@ -666,16 +588,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 
 	response, err := cr.submissionService.GetAllForContest(tx, contestID, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		switch {
-		case errors.Is(err, myerrors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Contest not found")
-		case errors.Is(err, myerrors.ErrPermissionDenied):
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied. You are not the creator of this contest.")
-		default:
-			cr.logger.Errorw("Failed to get contest submissions", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get contest submissions")
-		}
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -717,14 +630,7 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetContestsCreatedByUser(tx, currentUser.ID, paginationParams)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get created contests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get created contests")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)
@@ -766,13 +672,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetTaskStatsForContest(tx, currentUser, contestID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
-			return
-		}
-		cr.logger.Errorw("Failed to get task stats", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get task statistics")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -823,13 +723,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWr
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContestTask(tx, currentUser, contestID, taskID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
-			return
-		}
-		cr.logger.Errorw("Failed to get user stats for task", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get user statistics")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -896,13 +790,7 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.Resp
 	// Use the existing GetAll with filters for contest, task, and user
 	submissions, err := cr.submissionService.GetAll(tx, currentUser, &userID, &taskID, &contestID, paginationParams)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
-			return
-		}
-		cr.logger.Errorw("Failed to get submissions", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get submissions")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -958,13 +846,7 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 	currentUser := httputils.GetCurrentUser(r)
 	stats, err := cr.submissionService.GetUserStatsForContest(tx, currentUser, contestID, userID)
 	if err != nil {
-		db.Rollback()
-		if errors.Is(err, myerrors.ErrForbidden) {
-			httputils.ReturnError(w, http.StatusForbidden, "Permission denied")
-			return
-		}
-		cr.logger.Errorw("Failed to get user stats", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Failed to get user statistics")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -1005,14 +887,7 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetManagedContests(tx, currentUser.ID, paginationParams)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			cr.logger.Errorw("Failed to get manageable contests", "error", err)
-		}
-		httputils.ReturnError(w, status, "Failed to get manageable contests")
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, response)

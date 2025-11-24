@@ -13,7 +13,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,7 +78,7 @@ func TestLogin(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, httputils.InvalidRequestBodyMessage)
 		}
 	})
 
@@ -126,7 +126,7 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserNotFound).Times(1)
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, errors.ErrUserNotFound).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -134,7 +134,7 @@ func TestLogin(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -158,7 +158,7 @@ func TestLogin(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidCredentials).Times(1)
+		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(nil, errors.ErrInvalidCredentials).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -204,7 +204,7 @@ func TestLogin(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -322,7 +322,7 @@ func TestRegister(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, httputils.InvalidRequestBodyMessage)
 		}
 	})
 
@@ -351,7 +351,7 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("User already exists", func(t *testing.T) {
-		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrUserAlreadyExists).Times(1)
+		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, errors.ErrUserAlreadyExists).Times(1)
 
 		jsonBody, err := json.Marshal(correctRequest)
 		if err != nil {
@@ -371,7 +371,7 @@ func TestRegister(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "user already exists")
+		assert.Contains(t, bodyString, "User already exists")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -395,7 +395,7 @@ func TestRegister(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -526,7 +526,7 @@ func TestRefreshToken(t *testing.T) {
 		assert.Contains(t, bodyString, "Database connection error")
 	})
 
-	t.Run("Invalid or expired refresh token", func(t *testing.T) {
+	t.Run("Invalid token", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
@@ -538,7 +538,7 @@ func TestRefreshToken(t *testing.T) {
 			Value: "invalid_refresh_token",
 		})
 
-		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrInvalidToken).Times(1)
+		as.EXPECT().RefreshTokens(gomock.Any(), gomock.Any()).Return(nil, errors.ErrInvalidToken).Times(1)
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -554,7 +554,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Invalid or expired refresh token")
+		assert.Contains(t, bodyString, "Invalid token")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -585,7 +585,7 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {

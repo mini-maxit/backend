@@ -5,7 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
@@ -43,7 +43,7 @@ func TestRegister(t *testing.T) {
 			Password: "Password123!",
 		}
 		response, err := as.Register(tx, userRegister)
-		require.ErrorIs(t, err, myerrors.ErrUserAlreadyExists)
+		require.ErrorIs(t, err, errors.ErrUserAlreadyExists)
 		assert.Nil(t, response)
 	})
 
@@ -132,7 +132,7 @@ func TestLogin(t *testing.T) {
 		}
 
 		response, err := as.Login(tx, userLogin)
-		require.ErrorIs(t, err, myerrors.ErrUserNotFound)
+		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, response)
 	})
 
@@ -145,7 +145,7 @@ func TestLogin(t *testing.T) {
 		}
 
 		response, err := as.Login(tx, userLogin)
-		require.ErrorIs(t, err, myerrors.ErrInvalidCredentials)
+		require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 		assert.Nil(t, response)
 	})
 
@@ -203,7 +203,7 @@ func TestRefreshTokens(t *testing.T) {
 	})
 
 	t.Run("invalid refresh token", func(t *testing.T) {
-		js.EXPECT().RefreshTokens(tx, "invalid-refresh-token").Return(nil, myerrors.ErrInvalidTokenType).Times(1)
+		js.EXPECT().RefreshTokens(tx, "invalid-refresh-token").Return(nil, errors.ErrInvalidTokenType).Times(1)
 		refreshRequest := schemas.RefreshTokenRequest{
 			RefreshToken: "invalid-refresh-token",
 		}

@@ -1,12 +1,11 @@
 package service
 
 import (
-	"errors"
 	"time"
 
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersS
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher},
 	); err != nil {
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 
 	err := ws.queueService.PublishWorkerStatus()
@@ -58,7 +57,7 @@ func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersS
 	case <-statusUpdated:
 		return &result, nil
 	case <-timeout:
-		return nil, myerrors.ErrTimeout
+		return nil, errors.ErrTimeout
 	}
 }
 
@@ -76,7 +75,7 @@ func (ws *workerService) GetQueueStatus(currentUser *schemas.User) (*schemas.Que
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin},
 	); err != nil {
-		return nil, myerrors.ErrForbidden
+		return nil, errors.ErrForbidden
 	}
 
 	connected := ws.queueService.IsConnected()
@@ -100,12 +99,12 @@ func (ws *workerService) ReconnectQueue(currentUser *schemas.User) error {
 		currentUser.Role,
 		[]types.UserRole{types.UserRoleAdmin},
 	); err != nil {
-		return myerrors.ErrForbidden
+		return errors.ErrForbidden
 	}
 
 	// Check if queue is connected
 	if !ws.queueService.IsConnected() {
-		return errors.New("queue is not connected - automatic reconnection in progress")
+		return errors.ErrQueueNotConnected
 	}
 
 	// Process pending submissions

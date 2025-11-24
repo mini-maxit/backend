@@ -14,7 +14,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -82,7 +82,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotFound)
+		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -94,7 +94,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden)
+		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -172,7 +172,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotFound)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {
@@ -188,7 +188,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized - contest not visible", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {
@@ -204,7 +204,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Registration closed", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrContestRegistrationClosed)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrContestRegistrationClosed)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {
@@ -220,7 +220,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Contest ended", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrContestEnded)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrContestEnded)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {
@@ -236,7 +236,7 @@ func TestRegisterForContest(t *testing.T) {
 	})
 
 	t.Run("Already registered", func(t *testing.T) {
-		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrAlreadyRegistered)
+		cs.EXPECT().RegisterForContest(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrAlreadyRegistered)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL+"/1/register", nil)
 		if err != nil {
@@ -363,7 +363,7 @@ func TestGetOngoingContests(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.AvailableContest]{}, myerrors.ErrNotFound)
+		cs.EXPECT().GetOngoingContests(gomock.Any(), gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.AvailableContest]{}, errors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 		if err != nil {

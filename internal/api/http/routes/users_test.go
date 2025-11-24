@@ -15,7 +15,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -107,7 +107,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "User service temporarily unavailable")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestGetUserByID(t *testing.T) {
 		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().Get(gomock.Any(), int64(999)).Return(nil, myerrors.ErrUserNotFound).Times(1)
+		us.EXPECT().Get(gomock.Any(), int64(999)).Return(nil, errors.ErrUserNotFound).Times(1)
 
 		handler.ServeHTTP(w, req)
 
@@ -269,7 +269,7 @@ func TestGetUserByID(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "User service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -373,7 +373,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request body")
+		assert.Contains(t, w.Body.String(), httputils.InvalidRequestBodyMessage)
 	})
 
 	t.Run("Transaction was not started by middleware", func(t *testing.T) {
@@ -408,7 +408,7 @@ func TestEditUser(t *testing.T) {
 		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().Edit(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(myerrors.ErrUserNotFound).Times(1)
+		us.EXPECT().Edit(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(errors.ErrUserNotFound).Times(1)
 
 		handler.ServeHTTP(w, req)
 
@@ -428,12 +428,12 @@ func TestEditUser(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
+		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(errors.ErrForbidden).Times(1)
 
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not authorized to edit this user")
+		assert.Contains(t, w.Body.String(), "Not authorized to perform this action")
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
@@ -449,12 +449,12 @@ func TestEditUser(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAllowed).Times(1)
+		us.EXPECT().Edit(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(errors.ErrNotAllowed).Times(1)
 
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not allowed to change user role")
+		assert.Contains(t, w.Body.String(), "Not allowed to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -474,7 +474,7 @@ func TestEditUser(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "User edit service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -600,7 +600,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid request body")
+		assert.Contains(t, w.Body.String(), httputils.InvalidRequestBodyMessage)
 	})
 
 	t.Run("Transaction was not started by middleware", func(t *testing.T) {
@@ -643,7 +643,7 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(myerrors.ErrUserNotFound).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(999), gomock.Any()).Return(errors.ErrUserNotFound).Times(1)
 
 		handler.ServeHTTP(w, req)
 
@@ -667,12 +667,12 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(errors.ErrForbidden).Times(1)
 
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not authorized to edit this user")
+		assert.Contains(t, w.Body.String(), "Not authorized to perform this action")
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
@@ -691,12 +691,12 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "2")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(myerrors.ErrNotAllowed).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(2), gomock.Any()).Return(errors.ErrNotAllowed).Times(1)
 
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		assert.Contains(t, w.Body.String(), "You are not allowed to change user role")
+		assert.Contains(t, w.Body.String(), "Not allowed to perform this action")
 	})
 
 	t.Run("Invalid credentials", func(t *testing.T) {
@@ -715,12 +715,12 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(myerrors.ErrInvalidCredentials).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(errors.ErrInvalidCredentials).Times(1)
 
 		handler.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "Invalid old password")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid credentials")
 	})
 
 	t.Run("Invalid data - passwords don't match", func(t *testing.T) {
@@ -739,12 +739,12 @@ func TestChangePassword(t *testing.T) {
 		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
 
-		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(myerrors.ErrInvalidData).Times(1)
+		us.EXPECT().ChangePassword(gomock.Any(), currentUser, int64(1), gomock.Any()).Return(errors.ErrInvalidData).Times(1)
 
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Contains(t, w.Body.String(), "New password and confirm password do not match")
+		assert.Contains(t, w.Body.String(), "Invalid data")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -768,7 +768,7 @@ func TestChangePassword(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Password change service temporarily unavailable")
+		assert.Contains(t, w.Body.String(), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {

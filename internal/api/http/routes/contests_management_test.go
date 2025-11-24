@@ -16,7 +16,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -90,7 +90,7 @@ func TestCreateContest(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, "Invalid request body")
 		}
 	})
 
@@ -134,7 +134,7 @@ func TestCreateContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		cs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), myerrors.ErrForbidden)
+		cs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), errors.ErrForbidden)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -243,7 +243,7 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrNotFound)
+		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -268,7 +268,7 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden)
+		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
 		if err != nil {
@@ -370,7 +370,7 @@ func TestDeleteContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrNotFound)
+		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrNotFound)
 
 		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1", nil)
 		if err != nil {
@@ -386,7 +386,7 @@ func TestDeleteContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden)
+		cs.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrForbidden)
 
 		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1", nil)
 		if err != nil {
@@ -463,7 +463,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrNotFound)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, errors.ErrNotFound)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -475,7 +475,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, myerrors.ErrForbidden)
+		cs.EXPECT().GetRegistrationRequests(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(nil, errors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1/registration-requests")
 		if err != nil {
@@ -592,7 +592,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(myerrors.ErrNotFound)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(999), int64(2)).Return(errors.ErrNotFound)
 
 		resp, err := http.Post(server.URL+"/999/registration-requests/2/approve", "application/json", nil)
 		if err != nil {
@@ -604,7 +604,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(999)).Return(myerrors.ErrNotFound)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(999)).Return(errors.ErrNotFound)
 
 		resp, err := http.Post(server.URL+"/1/registration-requests/999/approve", "application/json", nil)
 		if err != nil {
@@ -616,7 +616,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrForbidden)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrForbidden)
 
 		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
 		if err != nil {
@@ -628,7 +628,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("No pending registration", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrNoPendingRegistration)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrNoPendingRegistration)
 
 		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
 		if err != nil {
@@ -640,7 +640,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	})
 
 	t.Run("User already participant", func(t *testing.T) {
-		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(myerrors.ErrAlreadyParticipant)
+		cs.EXPECT().ApproveRegistrationRequest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrAlreadyParticipant)
 
 		resp, err := http.Post(server.URL+"/1/registration-requests/2/approve", "application/json", nil)
 		if err != nil {

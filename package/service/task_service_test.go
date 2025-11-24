@@ -10,7 +10,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
@@ -153,7 +153,7 @@ func TestCreateTask(t *testing.T) {
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
 		taskID, err := ts.Create(tx, adminUser, task)
-		require.ErrorIs(t, err, myerrors.ErrTaskExists)
+		require.ErrorIs(t, err, errors.ErrTaskExists)
 		assert.Equal(t, int64(0), taskID)
 	})
 
@@ -162,7 +162,7 @@ func TestCreateTask(t *testing.T) {
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
 		})
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Equal(t, int64(0), taskID)
 	})
 }
@@ -196,9 +196,9 @@ func TestGetTaskByTitle(t *testing.T) {
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		taskTitle := "Nonexistent Task"
-		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, myerrors.ErrTaskNotFound).Times(1)
+		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, errors.ErrTaskNotFound).Times(1)
 		task, err := ts.GetByTitle(tx, taskTitle)
-		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
+		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
@@ -338,7 +338,7 @@ func TestGetTask(t *testing.T) {
 		taskID := int64(0)
 		tr.EXPECT().Get(tx, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		taskResp, err := ts.Get(tx, adminUser, taskID)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 		assert.Nil(t, taskResp)
 	})
 }
@@ -373,16 +373,16 @@ func TestDeleteTask(t *testing.T) {
 			ID: taskID,
 		}, nil).Times(1)
 		err := ts.Delete(tx, adminUser, 0)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrForbidden).Times(1)
 		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
 			ID: taskID,
 		}, nil).Times(1)
 		err := ts.Delete(tx, studentUser, taskID)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
@@ -420,9 +420,9 @@ func TestEditTask(t *testing.T) {
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		tr.EXPECT().Get(tx, int64(0)).Return(nil, myerrors.ErrTaskNotFound).Times(1)
+		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
 		err := ts.Edit(tx, adminUser, 0, updatedTask)
-		require.ErrorIs(t, err, myerrors.ErrTaskNotFound)
+		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 
 	t.Run("Update isVisible", func(t *testing.T) {
@@ -557,7 +557,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		result, err := ts.GetAllCreated(tx, studentUser, queryParams)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
 	})
@@ -592,7 +592,7 @@ func TestCreateTestCase(t *testing.T) {
 		defer os.Remove(pathToArchive)
 		tr.EXPECT().Get(tx, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
@@ -642,31 +642,31 @@ func TestParseTestCase(t *testing.T) {
 		caseType:      "nonexistent_file",
 		expected:      -1,
 		isError:       true,
-		expectedError: myerrors.ErrFileOpen,
+		expectedError: errors.ErrFileOpen,
 	}, {
 		name:          "Invalid archive",
 		caseType:      "invalid_archive",
 		expected:      -1,
 		isError:       true,
-		expectedError: myerrors.ErrDecompressArchive,
+		expectedError: errors.ErrDecompressArchive,
 	}, {
 		name:          "No output dir",
 		caseType:      "no_output",
 		expected:      -1,
 		isError:       true,
-		expectedError: myerrors.ErrNoOutputDirectory,
+		expectedError: errors.ErrNoOutputDirectory,
 	}, {
 		name:          "No input dir",
 		caseType:      "no_input",
 		expected:      -1,
 		isError:       true,
-		expectedError: myerrors.ErrNoInputDirectory,
+		expectedError: errors.ErrNoInputDirectory,
 	}, {
 		name:          "Input contains directories",
 		caseType:      "input_dir",
 		expected:      -1,
 		isError:       true,
-		expectedError: myerrors.ErrInputContainsDir,
+		expectedError: errors.ErrInputContainsDir,
 	},
 	}
 	for _, tt := range tests {

@@ -15,7 +15,7 @@ import (
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -107,7 +107,7 @@ func TestCreateGroup(t *testing.T) {
 			}
 			bodyString := string(bodyBytes)
 
-			assert.Contains(t, bodyString, "Could not validate request data")
+			assert.Contains(t, bodyString, httputils.InvalidRequestBodyMessage)
 		}
 	})
 
@@ -156,7 +156,7 @@ func TestCreateGroup(t *testing.T) {
 			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, expectedGroup.Name, group.Name)
 				assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
-				return 0, myerrors.ErrForbidden
+				return 0, errors.ErrForbidden
 			}).Times(1)
 
 		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
@@ -173,7 +173,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Group creation failed")
+		assert.Contains(t, bodyString, "Not authorized to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -201,7 +201,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 
-		assert.Contains(t, bodyString, "Internal Server Error")
+		assert.Contains(t, bodyString, "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -289,7 +289,7 @@ func TestGetGroup(t *testing.T) {
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
-		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(999)).Return(nil, myerrors.ErrGroupNotFound).Times(1)
+		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(999)).Return(nil, errors.ErrGroupNotFound).Times(1)
 
 		resp, err := http.Get(server.URL + "/999")
 		require.NoError(t, err)
@@ -297,7 +297,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -309,11 +309,11 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrForbidden).Times(1)
+		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(nil, errors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/1")
 		require.NoError(t, err)
@@ -321,7 +321,7 @@ func TestGetGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -401,10 +401,10 @@ func TestGetAllGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, myerrors.ErrForbidden).Times(1)
+		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/")
 		require.NoError(t, err)
@@ -412,7 +412,7 @@ func TestGetAllGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group listing failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("No groups found", func(t *testing.T) {
@@ -520,7 +520,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Could not validate request data")
+		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -556,7 +556,7 @@ func TestEditGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().Edit(gomock.Any(), gomock.Any(), int64(1), &body).
-			Return(nil, myerrors.ErrForbidden).Times(1)
+			Return(nil, errors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -567,7 +567,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group edit failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -587,7 +587,7 @@ func TestEditGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -669,7 +669,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Could not validate request data")
+		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -711,7 +711,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrForbidden).Times(1)
+			Return(errors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -722,7 +722,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -743,7 +743,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 	t.Run("Group not found", func(t *testing.T) {
 		body := schemas.UserIDs{
@@ -752,7 +752,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().AddUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrGroupNotFound).Times(1)
+			Return(errors.ErrGroupNotFound).Times(1)
 
 		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -763,7 +763,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User addition to group failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -784,7 +784,7 @@ func TestAddUsersToGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -863,7 +863,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Could not validate request data")
+		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
 	})
 
 	t.Run("Transaction not started", func(t *testing.T) {
@@ -905,7 +905,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrForbidden).Times(1)
+			Return(errors.ErrForbidden).Times(1)
 
 		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -916,7 +916,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("Invalid user IDs", func(t *testing.T) {
@@ -937,7 +937,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
@@ -947,7 +947,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		jsonBody, _ := json.Marshal(body)
 
 		gs.EXPECT().DeleteUsers(gomock.Any(), gomock.Any(), int64(1), body.UserIDs).
-			Return(myerrors.ErrGroupNotFound).Times(1)
+			Return(errors.ErrGroupNotFound).Times(1)
 
 		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -958,7 +958,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "User deletion from group failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -979,7 +979,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -1058,7 +1058,7 @@ func TestGetGroupUsers(t *testing.T) {
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
-		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(999)).Return(nil, myerrors.ErrGroupNotFound).Times(1)
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(999)).Return(nil, errors.ErrGroupNotFound).Times(1)
 
 		resp, err := http.Get(server.URL + "/999/users")
 		require.NoError(t, err)
@@ -1066,7 +1066,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Group not found")
 	})
 
 	t.Run("Database error", func(t *testing.T) {
@@ -1078,11 +1078,11 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, myerrors.ErrForbidden).Times(1)
+		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(nil, errors.ErrForbidden).Times(1)
 
 		resp, err := http.Get(server.URL + "/1/users")
 		require.NoError(t, err)
@@ -1090,7 +1090,7 @@ func TestGetGroupUsers(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Group users retrieval failed")
+		assert.Contains(t, string(bodyBytes), "Not authorized to perform this action")
 	})
 
 	t.Run("No users found", func(t *testing.T) {

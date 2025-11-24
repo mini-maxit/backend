@@ -1,14 +1,13 @@
 package service_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
@@ -227,7 +226,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.New("db error")).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
 		result, err := cs.GetPastContests(tx, currentUser, queryParams)
 
@@ -297,7 +296,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.New("db error")).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
 		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
 
@@ -409,11 +408,11 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -429,7 +428,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("teacher not authorized - not contest creator", func(t *testing.T) {
@@ -443,12 +442,12 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -472,7 +471,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
@@ -511,7 +510,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrAlreadyParticipant)
+		require.ErrorIs(t, err, errors.ErrAlreadyParticipant)
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
@@ -542,7 +541,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNoPendingRegistration)
+		require.ErrorIs(t, err, errors.ErrNoPendingRegistration)
 	})
 
 	t.Run("error checking participant status", func(t *testing.T) {
@@ -786,11 +785,11 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -806,7 +805,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("teacher not authorized", func(t *testing.T) {
@@ -820,12 +819,12 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
@@ -849,7 +848,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("user already participant", func(t *testing.T) {
@@ -888,7 +887,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrAlreadyParticipant)
+		require.ErrorIs(t, err, errors.ErrAlreadyParticipant)
 	})
 
 	t.Run("no pending registration", func(t *testing.T) {
@@ -919,7 +918,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
 
 		require.Error(t, err)
-		require.ErrorIs(t, err, myerrors.ErrNoPendingRegistration)
+		require.ErrorIs(t, err, errors.ErrNoPendingRegistration)
 	})
 
 	t.Run("error updating registration status", func(t *testing.T) {
@@ -1075,14 +1074,14 @@ func TestContestService_Get(t *testing.T) {
 
 		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("unauthorized - teacher viewing invisible contest not created by them", func(t *testing.T) {
@@ -1104,14 +1103,14 @@ func TestContestService_Get(t *testing.T) {
 
 		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(myerrors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		require.ErrorIs(t, err, myerrors.ErrForbidden)
+		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("contest not found", func(t *testing.T) {
@@ -1127,7 +1126,7 @@ func TestContestService_Get(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		require.ErrorIs(t, err, myerrors.ErrNotFound)
+		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("repository error", func(t *testing.T) {
@@ -1137,12 +1136,12 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(10)
 
-		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, errors.New("db error")).Times(1)
+		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
 
 		result, err := cs.Get(tx, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
-		assert.Equal(t, "db error", err.Error())
+		assert.Equal(t, errors.ErrDatabaseConnection.Message, err.Error())
 	})
 }

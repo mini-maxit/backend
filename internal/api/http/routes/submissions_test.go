@@ -18,7 +18,7 @@ import (
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +85,7 @@ func TestGetAll(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success with empty list", func(t *testing.T) {
@@ -205,7 +205,7 @@ func TestGetByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Submission service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestGetAllForTask(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Submission service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Internal Server Error")
+		assert.Contains(t, string(bodyBytes), "Language service temporarily unavailable")
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -588,7 +588,7 @@ func TestSubmitSolution(t *testing.T) {
 		require.NoError(t, err)
 		writer.Close()
 
-		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), nil, gomock.Any()).Return(int64(0), myerrors.ErrNotFound).Times(1)
+		ss.EXPECT().Submit(gomock.Any(), gomock.Any(), int64(999), int64(1), nil, gomock.Any()).Return(int64(0), errors.ErrNotFound).Times(1)
 
 		req, err := http.NewRequest(http.MethodPost, server.URL, body)
 		require.NoError(t, err)
@@ -600,7 +600,7 @@ func TestSubmitSolution(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Task not found")
+		assert.Contains(t, string(bodyBytes), "Requested resource not found")
 	})
 
 	t.Run("Success", func(t *testing.T) {

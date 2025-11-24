@@ -2,15 +2,13 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
-	"time"
-
 	"slices"
+	"time"
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	myerrors "github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -116,7 +114,7 @@ func (ss *submissionService) getFilteredSubmissions(
 	// Authorization check for students
 	if user.Role == types.UserRoleStudent && targetUserID != user.ID {
 		ss.logger.Errorf("Student %v is not allowed to view submissions for user %v", user.ID, targetUserID)
-		return nil, 0, myerrors.ErrPermissionDenied
+		return nil, 0, errors.ErrPermissionDenied
 	}
 
 	// Fetch submissions based on filters and user role
@@ -235,13 +233,13 @@ func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user *schemas.
 		// Student is only allowed to view their own submissions
 		if submissionModel.UserID != user.ID {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, myerrors.ErrPermissionDenied
+			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
 		if submissionModel.Task.CreatedBy != user.ID {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, myerrors.ErrPermissionDenied
+			return schemas.Submission{}, errors.ErrPermissionDenied
 		}
 	}
 
@@ -271,7 +269,7 @@ func (ss *submissionService) GetAllForUser(
 		// Student is only allowed to view their own submissions
 		if userID != currentUser.ID {
 			ss.logger.Errorf("User %v is not allowed to view submissions", currentUser.ID)
-			return nil, myerrors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
@@ -311,7 +309,7 @@ func (ss *submissionService) GetAllForGroup(
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
-		return nil, 0, myerrors.ErrPermissionDenied
+		return nil, 0, errors.ErrPermissionDenied
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
 		group, er := ss.groupRepository.Get(tx, groupID)
@@ -320,7 +318,7 @@ func (ss *submissionService) GetAllForGroup(
 			return nil, 0, er
 		}
 		if group.CreatedBy != user.ID {
-			return nil, 0, myerrors.ErrPermissionDenied
+			return nil, 0, errors.ErrPermissionDenied
 		}
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
@@ -361,7 +359,7 @@ func (ss *submissionService) GetAllForTask(
 			return nil, er
 		}
 		if task.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
@@ -370,7 +368,7 @@ func (ss *submissionService) GetAllForTask(
 			return nil, er
 		}
 		if !isAssigned {
-			return nil, myerrors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
@@ -414,12 +412,12 @@ func (ss *submissionService) GetAllForContest(
 			return nil, er
 		}
 		if contest.CreatedBy != user.ID {
-			return nil, myerrors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Students are not allowed to view all submissions for a contest
-		return nil, myerrors.ErrPermissionDenied
+		return nil, errors.ErrPermissionDenied
 	}
 
 	if err != nil {
@@ -862,7 +860,7 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schem
 	}
 	if !isInContest {
 		ss.logger.Errorw("Task is not in contest for contest task stats", "contestID", contestID, "taskID", taskID)
-		return nil, myerrors.ErrNotFound
+		return nil, errors.ErrNotFound
 	}
 
 	// Get raw stats from repository

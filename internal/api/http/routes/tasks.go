@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -9,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
-	myerrors "github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -106,14 +104,7 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	task, err := tr.taskService.GetAll(tx, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		if errors.Is(err, myerrors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else {
-			tr.logger.Errorw("Failed to get all tasks", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
@@ -162,17 +153,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := tr.taskService.Get(tx, currentUser, taskID)
 	if err != nil {
-		db.Rollback()
-		status := http.StatusInternalServerError
-		switch {
-		case errors.Is(err, myerrors.ErrForbidden):
-			status = http.StatusForbidden
-		case errors.Is(err, myerrors.ErrNotFound):
-			status = http.StatusNotFound
-		default:
-			tr.logger.Errorw("Failed to get task", "error", err)
-		}
-		httputils.ReturnError(w, status, "Task service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
