@@ -30,6 +30,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-ContestResults:
+    properties:
+      data:
+        $ref: '#/definitions/ContestResults'
+      ok:
+        type: boolean
+    type: object
   APIResponse-ContestTask:
     properties:
       data:
@@ -355,6 +362,21 @@ definitions:
       taskCount:
         type: integer
     type: object
+  BaseContest:
+    properties:
+      createdBy:
+        type: integer
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      startAt:
+        type: string
+    type: object
   Collaborator:
     properties:
       added_at:
@@ -391,6 +413,15 @@ definitions:
       taskCount:
         type: integer
     type: object
+  ContestResults:
+    properties:
+      contest:
+        $ref: '#/definitions/BaseContest'
+      taskResults:
+        items:
+          $ref: '#/definitions/TaskResult'
+        type: array
+    type: object
   ContestStatus:
     enum:
     - upcoming
@@ -403,26 +434,16 @@ definitions:
     - ContestStatusPast
   ContestTask:
     properties:
-      createdAt:
-        type: string
-      createdBy:
-        type: integer
       creatorName:
         type: string
       endAt:
         type: string
-      id:
-        type: integer
       isSubmissionOpen:
-        type: boolean
-      isVisible:
         type: boolean
       startAt:
         type: string
-      title:
-        type: string
-      updatedAt:
-        type: string
+      task:
+        $ref: '#/definitions/TaskInfo'
     type: object
   ContestTaskStats:
     properties:
@@ -891,6 +912,17 @@ definitions:
         type: integer
       title:
         type: string
+    type: object
+  TaskResult:
+    properties:
+      bestScore:
+        type: number
+      bestSubmissionId:
+        type: integer
+      submissionCount:
+        type: integer
+      task:
+        $ref: '#/definitions/TaskInfo'
     type: object
   TaskUserStats:
     properties:
@@ -2336,6 +2368,46 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Register for a contest
+      tags:
+      - contests
+  /contests/{id}/results/my:
+    get:
+      description: Get results of the current user for a given contest, including
+        attempt count, best result, and best submission ID for each task
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-ContestResults'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get user's results for a contest
       tags:
       - contests
   /contests/{id}/tasks/{task_id}:
