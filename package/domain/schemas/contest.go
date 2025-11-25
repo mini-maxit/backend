@@ -7,13 +7,12 @@ import (
 )
 
 type BaseContest struct {
-	ID            int64      `json:"id"`
-	Name          string     `json:"name"`
-	Description   string     `json:"description"`
-	CreatedBy     int64      `json:"createdBy"`
-	CreatedByName string     `json:"createdByName"`
-	StartAt       time.Time  `json:"startAt"`
-	EndAt         *time.Time `json:"endAt"`
+	ID          int64      `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	CreatedBy   int64      `json:"createdBy"`
+	StartAt     time.Time  `json:"startAt"`
+	EndAt       *time.Time `json:"endAt"`
 }
 
 type Contest struct {
@@ -109,9 +108,9 @@ type ContestTask struct {
 
 type TaskResult struct {
 	Task             TaskInfo `json:"task"`
-	AttemptCount     int      `json:"attemptCount"`
-	BestResult       float64  `json:"bestResult"`
-	BestSubmissionID *int64   `json:"bestSubmissionId,omitempty"`
+	SubmissionCount  int      `json:"submissionCount"`
+	BestScore        float64  `json:"bestScore"`
+	BestSubmissionID *int64   `json:"bestSubmissionId"`
 }
 
 type ContestResults struct {

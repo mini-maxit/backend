@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
@@ -980,21 +979,20 @@ func (cs *contestService) GetMyContestResults(db database.Database, currentUser 
 
 		taskResults = append(taskResults, schemas.TaskResult{
 			Task:             *TaskToInfoSchema(&task),
-			AttemptCount:     attemptCount,
-			BestResult:       bestScore,
+			SubmissionCount:  attemptCount,
+			BestScore:        bestScore,
 			BestSubmissionID: bestSubmissionID,
 		})
 	}
 
 	return &schemas.ContestResults{
 		Contest: schemas.BaseContest{
-			ID:            contest.ID,
-			Name:          contest.Name,
-			Description:   contest.Description,
-			CreatedBy:     contest.CreatedBy,
-			CreatedByName: fmt.Sprintf("%s %s", contest.Creator.Name, contest.Creator.Surname),
-			StartAt:       contest.StartAt,
-			EndAt:         contest.EndAt,
+			ID:          contest.ID,
+			Name:        contest.Name,
+			Description: contest.Description,
+			CreatedBy:   contest.CreatedBy,
+			StartAt:     contest.StartAt,
+			EndAt:       contest.EndAt,
 		},
 		TaskResults: taskResults,
 	}, nil

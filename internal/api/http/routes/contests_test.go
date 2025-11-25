@@ -458,16 +458,16 @@ func TestGetMyContestResults(t *testing.T) {
 					Task: schemas.TaskInfo{
 						ID: int64(1),
 					},
-					AttemptCount:     5,
-					BestResult:       80.5,
+					SubmissionCount:  5,
+					BestScore:        80.5,
 					BestSubmissionID: &submissionID,
 				},
 				{
 					Task: schemas.TaskInfo{
 						ID: int64(12),
 					},
-					AttemptCount:     3,
-					BestResult:       100.0,
+					SubmissionCount:  3,
+					BestScore:        100.0,
 					BestSubmissionID: &submissionID,
 				},
 			},
@@ -498,8 +498,8 @@ func TestGetMyContestResults(t *testing.T) {
 		assert.Equal(t, int64(1), response.Data.Contest.ID)
 		assert.Len(t, response.Data.TaskResults, 2)
 		assert.Equal(t, int64(1), response.Data.TaskResults[0].Task.ID)
-		assert.Equal(t, 5, response.Data.TaskResults[0].AttemptCount)
-		assert.InDelta(t, 80.5, response.Data.TaskResults[0].BestResult, 0.001)
+		assert.Equal(t, 5, response.Data.TaskResults[0].SubmissionCount)
+		assert.InDelta(t, 80.5, response.Data.TaskResults[0].BestScore, 0.001)
 		assert.NotNil(t, response.Data.TaskResults[0].BestSubmissionID)
 		assert.Equal(t, int64(10), *response.Data.TaskResults[0].BestSubmissionID)
 	})

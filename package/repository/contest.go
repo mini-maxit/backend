@@ -82,7 +82,7 @@ func (cr *contestRepository) Create(db database.Database, contest *models.Contes
 func (cr *contestRepository) Get(db database.Database, contestID int64) (*models.Contest, error) {
 	tx := db.GetInstance()
 	var contest models.Contest
-	err := tx.Preload("Creator").Where("id = ?", contestID).First(&contest).Error
+	err := tx.Where("id = ?", contestID).First(&contest).Error
 	if err != nil {
 		return nil, err
 	}
