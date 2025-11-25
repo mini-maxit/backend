@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -50,7 +49,6 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
@@ -63,6 +61,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	contest, err := cr.contestService.Get(db, currentUser, contestID)
@@ -94,8 +93,6 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	currentUser := httputils.GetCurrentUser(r)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
@@ -112,6 +109,7 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 	}
 	var response schemas.PaginatedResult[[]schemas.AvailableContest]
 	var err error
+	db := httputils.GetDatabase(r)
 	switch statusStr {
 	case "ongoing":
 		response, err = cr.contestService.GetOngoingContests(db, currentUser, paginationParams)
@@ -154,8 +152,6 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -167,6 +163,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.RegisterForContest(db, currentUser, contestID)
@@ -210,8 +207,9 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+
 	tasks, err := cr.contestService.GetTaskProgressForContest(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -239,8 +237,7 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	contests, err := cr.contestService.GetUserContests(db, currentUser.ID)
@@ -269,9 +266,9 @@ func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	combined, err := cr.contestService.GetUserContests(db, currentUser.ID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -297,9 +294,9 @@ func (cr *ContestRouteImpl) GetMyPastContests(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	combined, err := cr.contestService.GetUserContests(db, currentUser.ID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -350,9 +347,8 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
-
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 
 	task, err := cr.contestService.GetContestTask(db, currentUser, contestID, taskID)
 	if err != nil {

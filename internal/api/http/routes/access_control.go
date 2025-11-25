@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
@@ -74,8 +73,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.AddCollaborator(db, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
@@ -117,8 +115,7 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeContest, contestID)
@@ -181,8 +178,7 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeContest, contestID, userID, request.Permission)
@@ -236,8 +232,7 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeContest, contestID, userID)
@@ -290,8 +285,7 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.AddCollaborator(db, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
@@ -333,8 +327,7 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeTask, taskID)
@@ -397,8 +390,7 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeTask, taskID, userID, request.Permission)
@@ -452,8 +444,7 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
 	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeTask, taskID, userID)

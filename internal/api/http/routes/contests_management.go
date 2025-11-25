@@ -6,10 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
-	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -67,8 +65,7 @@ func (cr *contestsManagementRouteImpl) CreateContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	contestID, err := cr.contestService.Create(db, currentUser, &request)
@@ -109,8 +106,6 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -122,6 +117,7 @@ func (cr *contestsManagementRouteImpl) EditContest(w http.ResponseWriter, r *htt
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	resp, err := cr.contestService.Edit(db, currentUser, contestID, &request)
@@ -153,8 +149,6 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -166,6 +160,7 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.Delete(db, currentUser, contestID)
@@ -198,8 +193,6 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -211,6 +204,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetAssignableTasks(db, currentUser, contestID)
@@ -243,9 +237,6 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		return
 	}
 
-	currentUser := httputils.GetCurrentUser(r)
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -263,6 +254,9 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 		httputils.HandleValidationError(w, err)
 		return
 	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = cr.contestService.AddTaskToContest(db, currentUser, contestID, &request)
 	if err != nil {
@@ -294,8 +288,6 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -307,7 +299,6 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		return
 	}
 
-	currentUser := httputils.GetCurrentUser(r)
 	statusQuery := r.URL.Query().Get("status")
 	if statusQuery == "" {
 		statusQuery = "pending"
@@ -317,6 +308,9 @@ func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWr
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status value")
 		return
 	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
 
 	requests, err := cr.contestService.GetRegistrationRequests(db, currentUser, contestID, status)
 	if err != nil {
@@ -332,8 +326,6 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := httputils.GetCurrentUser(r)
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 
 	contestStr := httputils.GetPathValue(r, "id")
 	contestID, err := strconv.ParseInt(contestStr, 10, 64)
@@ -349,24 +341,13 @@ func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.Respons
 		return
 	}
 
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
 	err = cr.contestService.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, errors.ErrAlreadyParticipant) {
-			db.Rollback()
-		}
-		status := http.StatusInternalServerError
-		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, errors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
-			status = http.StatusBadRequest
-		} else {
-			cr.logger.Errorw("Failed to approve registration request", "error", err)
-			httputils.ReturnError(w, status, "Failed to approve registration request")
-			return
-		}
-		httputils.ReturnError(w, status, err.Error())
+		// Fix me. Previously we still commited on ErrAlreadyParticipant
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -394,8 +375,6 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	currentUser := httputils.GetCurrentUser(r)
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
 
 	contestStr := httputils.GetPathValue(r, "id")
 	contestID, err := strconv.ParseInt(contestStr, 10, 64)
@@ -411,24 +390,13 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 		return
 	}
 
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
 	err = cr.contestService.RejectRegistrationRequest(db, currentUser, contestID, userID)
 	if err != nil {
-		if !errors.Is(err, errors.ErrAlreadyParticipant) {
-			db.Rollback()
-		}
-		status := http.StatusInternalServerError
-		if errors.Is(err, errors.ErrNotFound) || errors.Is(err, errors.ErrNoPendingRegistration) {
-			status = http.StatusNotFound
-		} else if errors.Is(err, errors.ErrForbidden) {
-			status = http.StatusForbidden
-		} else if errors.Is(err, errors.ErrAlreadyParticipant) {
-			status = http.StatusBadRequest
-		} else {
-			cr.logger.Errorw("Failed to reject registration request", "error", err)
-			httputils.ReturnError(w, status, "Failed to reject registration request")
-			return
-		}
-		httputils.ReturnError(w, status, err.Error())
+		// Fix me. Previously we still commited on ErrAlreadyParticipant
+		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
@@ -456,8 +424,6 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -469,6 +435,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 		return
 	}
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	tasks, err := cr.contestService.GetTasksForContest(db, currentUser, contestID)
@@ -502,8 +469,6 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
@@ -515,17 +480,13 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		return
 	}
 
-	currentUser := httputils.GetCurrentUser(r)
-
-	// Only teachers and admins can view all contest submissions
-	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher}); err != nil {
-		httputils.ReturnError(w, http.StatusForbidden, "Only teachers and admins can view contest submissions")
-		return
-	}
-
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	// TODO: add role check for teacher/admin
 	response, err := cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -556,12 +517,12 @@ func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter,
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	response, err := cr.contestService.GetContestsCreatedByUser(db, currentUser.ID, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -595,9 +556,9 @@ func (cr *contestsManagementRouteImpl) GetContestTaskStats(w http.ResponseWriter
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	stats, err := cr.submissionService.GetTaskStatsForContest(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -640,9 +601,9 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserStats(w http.ResponseWr
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	stats, err := cr.submissionService.GetUserStatsForContestTask(db, currentUser, contestID, taskID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -697,10 +658,9 @@ func (cr *contestsManagementRouteImpl) GetContestTaskUserSubmissions(w http.Resp
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any) // TODO: create function to extract query params
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
 	// Use the existing GetAll with filters for contest, task, and user
@@ -751,9 +711,9 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 		userID = &userIDVal
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
 	stats, err := cr.submissionService.GetUserStatsForContest(db, currentUser, contestID, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
@@ -783,12 +743,11 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	currentUser := httputils.GetCurrentUser(r)
+	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	currentUser := httputils.GetCurrentUser(r)
 	response, err := cr.contestService.GetManagedContests(db, currentUser.ID, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)

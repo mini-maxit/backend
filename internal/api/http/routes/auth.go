@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -81,7 +80,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	db := httputils.GetDatabase(r)
 
 	tokens, err := ar.authService.Login(db, request)
 	if err != nil {
@@ -122,7 +121,8 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		httputils.HandleValidationError(w, err)
 		return
 	}
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+
+	db := httputils.GetDatabase(r)
 
 	tokens, err := ar.authService.Register(db, request)
 	if err != nil {
@@ -165,7 +165,7 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: refreshTokenCookie.Value,
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+	db := httputils.GetDatabase(r)
 
 	tokens, err := ar.authService.RefreshTokens(db, request)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
@@ -94,7 +93,8 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 		Title:     title,
 		CreatedBy: currentUser.ID,
 	}
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
+
+	db := httputils.GetDatabase(r)
 
 	taskID, err := tr.taskService.Create(db, currentUser, &task)
 	if err != nil {
@@ -144,15 +144,14 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
-	currentUser := httputils.GetCurrentUser(r)
-
 	request := schemas.EditTask{}
 	newTitle := r.FormValue("title")
 	if newTitle != "" {
 		request.Title = &newTitle
 	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = tr.taskService.Edit(db, currentUser, taskID, &request)
 	if err != nil {
@@ -189,9 +188,7 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 
 	// Process and upload
 	if err := tr.taskService.ProcessAndUpload(db, currentUser, taskID, filePath); err != nil {
-		db.Rollback()
-		tr.logger.Errorw("Failed to process and upload task", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task updated successfully"))
@@ -227,8 +224,7 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	err = tr.taskService.Delete(db, currentUser, taskID)
@@ -269,19 +265,12 @@ func (tr *tasksManagementRoute) GetLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	limits, err := tr.taskService.GetLimits(db, currentUser, taskID)
 	if err != nil {
-		switch {
-		case errors.Is(err, errors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		default:
-			tr.logger.Errorw("Failed to get task limits", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
-		}
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
@@ -318,16 +307,15 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
-	currentUser := httputils.GetCurrentUser(r)
-
 	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.HandleValidationError(w, err)
 		return
 	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
 
 	err = tr.taskService.PutLimits(db, currentUser, taskID, request)
 	if err != nil {
@@ -358,8 +346,7 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := httputils.GetCurrentUser(r)

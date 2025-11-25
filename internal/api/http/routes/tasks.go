@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -27,14 +26,6 @@ type taskRoute struct {
 	logger      *zap.SugaredLogger
 }
 
-type usersRequest struct {
-	UserIDs []int64 `json:"userIDs"`
-}
-
-type groupsRequest struct {
-	GroupIDs []int64 `json:"groupIDs"`
-}
-
 // GetMyTasks godoc
 //
 //	@Tags			tasks
@@ -52,17 +43,14 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := httputils.GetCurrentUser(r)
 
 	response, err := tr.taskService.GetMyLiveTasks(db, currentUser, paginationParams)
 	if err != nil {
-		db.Rollback()
-		tr.logger.Errorw("Failed to get live assigned tasks", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
@@ -85,8 +73,7 @@ func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
@@ -129,8 +116,7 @@ func (tr *taskRoute) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
 	task, err := tr.taskService.Get(db, currentUser, taskID)

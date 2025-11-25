@@ -801,6 +801,8 @@ func TestGetMe(t *testing.T) {
 		assert.Equal(t, types.UserRoleAdmin, response.Data.Role)
 	})
 
+	// TODO: rething this test. It is good to have it, but overall it relies on correct application of
+	// panic middleware. That is that panic is handled correctly
 	t.Run("Error - User context missing", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Don't set user context at all
@@ -810,14 +812,13 @@ func TestGetMe(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
 		w := httptest.NewRecorder()
 
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("The code did not panic, when it was expected to")
+			}
+		}()
+
 		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-
-		var response httputils.APIError
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
 	})
 
 	t.Run("Error - User context wrong type", func(t *testing.T) {
@@ -830,14 +831,13 @@ func TestGetMe(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/user/me", nil)
 		w := httptest.NewRecorder()
 
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("The code did not panic, when it was expected to")
+			}
+		}()
+
 		handler.ServeHTTP(w, req)
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-
-		var response httputils.APIError
-		err := json.Unmarshal(w.Body.Bytes(), &response)
-		require.NoError(t, err)
-		assert.Equal(t, "Could not retrieve user. Verify that you are logged in.", response.Data.Message)
 	})
 }
 
