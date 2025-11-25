@@ -174,24 +174,7 @@ func (cs *contestService) GetDetails(db database.Database, currentUser *schemas.
 		return nil, errors.ErrForbidden
 	}
 
-	return &schemas.ContestDetailed{
-		Contest: schemas.Contest{
-			BaseContest: schemas.BaseContest{
-				ID:          contest.ID,
-				Name:        contest.Name,
-				Description: contest.Description,
-				CreatedBy:   contest.CreatedBy,
-				StartAt:     contest.StartAt,
-				EndAt:       contest.EndAt,
-			},
-			ParticipantCount: contest.ParticipantCount,
-			TaskCount:        contest.TaskCount,
-			Status:           getContestStatus(contest.StartAt, contest.EndAt),
-		},
-		CreatorName:        creator.Name,
-		IsRegistrationOpen: contest.IsRegistrationOpen,
-		IsSubmissionOpen:   contest.IsSubmissionOpen,
-	}, nil
+	return ParticipantContestStatsToDetailedSchema(contest, creator), nil
 }
 
 func (cs *contestService) GetOngoingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
@@ -490,7 +473,7 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 		}
 
 		result = append(result, schemas.ContestTask{
-			Task:             *TaskToSchema(&rel.Task),
+			Task:             *TaskToInfoSchema(&rel.Task),
 			CreatorName:      rel.Task.Author.Name,
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
@@ -501,7 +484,10 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 	return result, nil
 }
 
-// getTaskStatus determines the status of a task based on its start and end times
+// getTaskStatus determines the status of a task based on its start and end times.
+// Note: This function takes `now` as a parameter to ensure consistent time comparison
+// when processing multiple tasks in a single request, unlike getContestStatus which
+// uses time.Now() internally.
 func getTaskStatus(startAt time.Time, endAt *time.Time, now time.Time) types.ContestStatus {
 	if now.Before(startAt) {
 		return types.ContestStatusUpcoming
@@ -765,6 +751,28 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 			Status:           status,
 		},
 		SolvedTaskCount: model.SolvedTaskCount,
+	}
+}
+
+// ParticipantContestStatsToDetailedSchema converts contest stats and creator to a ContestDetailed schema.
+func ParticipantContestStatsToDetailedSchema(model *models.ParticipantContestStats, creator *models.User) *schemas.ContestDetailed {
+	return &schemas.ContestDetailed{
+		Contest: schemas.Contest{
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
+			ParticipantCount: model.ParticipantCount,
+			TaskCount:        model.TaskCount,
+			Status:           getContestStatus(model.StartAt, model.EndAt),
+		},
+		CreatorName:        creator.Name,
+		IsRegistrationOpen: model.IsRegistrationOpen,
+		IsSubmissionOpen:   model.IsSubmissionOpen,
 	}
 }
 
