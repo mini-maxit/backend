@@ -950,38 +950,34 @@ func (cs *contestService) GetMyContestResults(db database.Database, currentUser 
 		return nil, err
 	}
 
-	// For each task, get the user's statistics
+	// Bulk fetch per-task stats for user to avoid N+1 queries
+	statsList, err := cs.submissionRepository.GetAllTaskStatsForContestUser(db, contestID, currentUser.ID)
+	if err != nil {
+		cs.logger.Warnf("Error fetching task stats for contest %d user %d: %v", contestID, currentUser.ID, err)
+		// Continue with empty stats map (defaults applied per task)
+	}
+	statsMap := make(map[int64]repository.TaskUserSubmissionStats, len(statsList))
+	for _, s := range statsList {
+		statsMap[s.TaskID] = s
+	}
+
+	// Assemble results
 	taskResults := make([]schemas.TaskResult, 0, len(tasks))
 	for _, task := range tasks {
-		// Get attempt count
-		attemptCount, err := cs.submissionRepository.GetAttemptCountForTaskByUser(db, task.ID, currentUser.ID)
-		if err != nil {
-			cs.logger.Warnf("Error getting attempt count for task %d, user %d: %v", task.ID, currentUser.ID, err)
-			// Continue with default values on error
-			attemptCount = 0
+		stat, ok := statsMap[task.ID]
+		if !ok {
+			// Default values if no stats (no submissions)
+			stat = repository.TaskUserSubmissionStats{
+				AttemptCount:     0,
+				BestScore:        0,
+				BestSubmissionID: nil,
+			}
 		}
-
-		// Get best score
-		bestScore, err := cs.submissionRepository.GetBestScoreForTaskByUser(db, task.ID, currentUser.ID)
-		if err != nil {
-			cs.logger.Warnf("Error getting best score for task %d, user %d: %v", task.ID, currentUser.ID, err)
-			// Continue with default values on error
-			bestScore = 0
-		}
-
-		// Get best submission ID
-		bestSubmissionID, err := cs.submissionRepository.GetBestSubmissionIDForTaskByUser(db, task.ID, currentUser.ID)
-		if err != nil {
-			cs.logger.Warnf("Error getting best submission ID for task %d, user %d: %v", task.ID, currentUser.ID, err)
-			// Continue with nil on error
-			bestSubmissionID = nil
-		}
-
 		taskResults = append(taskResults, schemas.TaskResult{
 			Task:             *TaskToInfoSchema(&task),
-			SubmissionCount:  attemptCount,
-			BestScore:        bestScore,
-			BestSubmissionID: bestSubmissionID,
+			SubmissionCount:  stat.AttemptCount,
+			BestScore:        stat.BestScore,
+			BestSubmissionID: stat.BestSubmissionID,
 		})
 	}
 

@@ -54,8 +54,6 @@ type SubmissionRepository interface {
 	GetBestScoreForTaskByUser(db database.Database, taskID, userID int64) (float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
 	GetAttemptCountForTaskByUser(db database.Database, taskID, userID int64) (int, error)
-	// GetBestSubmissionIDForTaskByUser returns the submission ID with the best score for a task by a user.
-	GetBestSubmissionIDForTaskByUser(db database.Database, taskID, userID int64) (*int64, error)
 	// MarkEvaluated marks a submission as evaluated.
 	MarkEvaluated(db database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed.
@@ -70,6 +68,7 @@ type SubmissionRepository interface {
 	GetUserStatsForContestTask(db database.Database, contestID, taskID int64) ([]models.TaskUserStatsModel, error)
 	// GetUserStatsForContest returns overall statistics for each user in a contest
 	GetUserStatsForContest(db database.Database, contestID int64, userID *int64) ([]models.UserContestStatsFull, error)
+	GetAllTaskStatsForContestUser(db database.Database, contestID, userID int64) ([]TaskUserSubmissionStats, error)
 }
 
 type submissionRepository struct{}
@@ -491,37 +490,6 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(db database.Databas
 	}
 
 	return int(count), nil
-}
-
-func (sr *submissionRepository) GetBestSubmissionIDForTaskByUser(db database.Database, taskID, userID int64) (*int64, error) {
-	tx := db.GetInstance()
-	var submissionID *int64
-
-	// Query to get the submission ID with the best score
-	err := tx.Model(&models.Submission{}).
-		Select("submissions.id").
-		Joins(fmt.Sprintf("LEFT JOIN %s ON submissions.id = submission_results.submission_id", database.ResolveTableName(tx, &models.SubmissionResult{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT submission_result_id, COUNT(*) as count
-			FROM %s
-			GROUP BY submission_result_id
-		) as total_tests ON submission_results.id = total_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT submission_result_id, COUNT(*) as count
-			FROM %s
-			WHERE passed = true
-			GROUP BY submission_result_id
-		) as passed_tests ON submission_results.id = passed_tests.submission_result_id`, database.ResolveTableName(tx, &models.TestResult{}))).
-		Where("submissions.task_id = ? AND submissions.user_id = ? AND submissions.status = ?", taskID, userID, types.SubmissionStatusEvaluated).
-		Order("CASE WHEN total_tests.count > 0 THEN (passed_tests.count * 100.0 / total_tests.count) ELSE 0 END DESC").
-		Limit(1).
-		Scan(&submissionID).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return submissionID, nil
 }
 
 func (us *submissionRepository) GetAllForContest(
@@ -1111,6 +1079,77 @@ func (us *submissionRepository) GetUserStatsForContest(db database.Database, con
 	}
 
 	return result, nil
+}
+
+// TaskUserSubmissionStats holds per-task aggregated stats for a single user within a contest.
+type TaskUserSubmissionStats struct {
+	TaskID           int64   `gorm:"column:task_id"`
+	AttemptCount     int     `gorm:"column:attempt_count"`
+	BestScore        float64 `gorm:"column:best_score"`
+	BestSubmissionID *int64  `gorm:"column:best_submission_id"`
+}
+
+// GetAllTaskStatsForContestUser retrieves aggregated stats (attempt count, best score, best submission id)
+// for all tasks in a contest for a specific user in a single query, avoiding the N+1 pattern.
+func (sr *submissionRepository) GetAllTaskStatsForContestUser(
+	db database.Database,
+	contestID, userID int64,
+) ([]TaskUserSubmissionStats, error) {
+	tx := db.GetInstance()
+
+	// Using a CTE with window function to rank submissions per task by score.
+	// Score is derived similarly to existing per-task methods:
+	// passed_tests.count * 100.0 / total_tests.count
+	sql := `
+		WITH ranked AS (
+			SELECT
+				s.id AS submission_id,
+				s.task_id,
+				CASE
+					WHEN total_tests.count > 0
+					THEN (passed_tests.count * 100.0 / total_tests.count)
+					ELSE 0
+				END AS score,
+				ROW_NUMBER() OVER (
+					PARTITION BY s.task_id
+					ORDER BY
+						CASE
+							WHEN total_tests.count > 0
+							THEN (passed_tests.count * 100.0 / total_tests.count)
+							ELSE 0
+						END DESC,
+						s.id ASC
+				) AS rn
+			FROM ` + database.ResolveTableName(tx, &models.Submission{}) + ` s
+			LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
+			LEFT JOIN (
+				SELECT submission_result_id, COUNT(*) AS count
+				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+				GROUP BY submission_result_id
+			) AS total_tests ON total_tests.submission_result_id = sr.id
+			LEFT JOIN (
+				SELECT submission_result_id, COUNT(*) AS count
+				FROM ` + database.ResolveTableName(tx, &models.TestResult{}) + `
+				WHERE passed = TRUE
+				GROUP BY submission_result_id
+			) AS passed_tests ON passed_tests.submission_result_id = sr.id
+			WHERE s.user_id = ? AND s.contest_id = ? AND s.status = ?
+		)
+		SELECT
+			task_id,
+			COUNT(*) AS attempt_count,
+			MAX(score) AS best_score,
+			MAX(CASE WHEN rn = 1 THEN submission_id ELSE NULL END) AS best_submission_id
+		FROM ranked
+		GROUP BY task_id
+	`
+
+	stats := []TaskUserSubmissionStats{}
+	if err := tx.Raw(sql, userID, contestID, types.SubmissionStatusEvaluated).Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {
