@@ -7,33 +7,33 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type TaskRepository interface {
 	// Create creates a new empty task and returns the task ID.
-	Create(tx *gorm.DB, task *models.Task) (int64, error)
+	Create(db database.Database, task *models.Task) (int64, error)
 	// Delete deletes a task. It does not actually delete the task from the database, but performs a soft delete.
-	Delete(tx *gorm.DB, taskID int64) error
+	Delete(db database.Database, taskID int64) error
 	// Edit edits a task, by setting the fields of the task to the fields of the function argument.
-	Edit(tx *gorm.DB, taskID int64, task *models.Task) error
+	Edit(db database.Database, taskID int64, task *models.Task) error
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
-	GetAllCreated(tx *gorm.DB, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
+	GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
 	// GetAll returns all tasks. The tasks are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, int64, error)
+	GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error)
 	// Get returns a task by its ID.
-	Get(tx *gorm.DB, taskID int64) (*models.Task, error)
+	Get(db database.Database, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
-	GetByTitle(tx *gorm.DB, title string) (*models.Task, error)
+	GetByTitle(db database.Database, title string) (*models.Task, error)
 	// GetLiveAssignedTasksGroupedByContest returns live assigned tasks grouped by contest for a user.
 	// Live tasks are those with start_at before now and (end_at null or end_at in future).
-	GetLiveAssignedTasksGroupedByContest(tx *gorm.DB, userID int64, limit, offset int) (map[int64][]models.Task, error)
+	GetLiveAssignedTasksGroupedByContest(db database.Database, userID int64, limit, offset int) (map[int64][]models.Task, error)
 }
 
 type taskRepository struct {
 }
 
-func (tr *taskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) {
+func (tr *taskRepository) Create(db database.Database, task *models.Task) (int64, error) {
+	tx := db.GetInstance()
 	err := tx.Model(models.Task{}).Create(&task).Error
 	if err != nil {
 		return 0, err
@@ -41,7 +41,8 @@ func (tr *taskRepository) Create(tx *gorm.DB, task *models.Task) (int64, error) 
 	return task.ID, nil
 }
 
-func (tr *taskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, error) {
+func (tr *taskRepository) GetByTitle(db database.Database, title string) (*models.Task, error) {
+	tx := db.GetInstance()
 	task := &models.Task{}
 	err := tx.Model(&models.Task{}).Where("title = ?", title).First(task).Error
 	if err != nil {
@@ -50,7 +51,8 @@ func (tr *taskRepository) GetByTitle(tx *gorm.DB, title string) (*models.Task, e
 	return task, nil
 }
 
-func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
+func (tr *taskRepository) Get(db database.Database, taskID int64) (*models.Task, error) {
+	tx := db.GetInstance()
 	task := &models.Task{}
 	err := tx.Preload("Author").Preload("DescriptionFile").Model(&models.Task{}).Where(
 		"id = ? AND deleted_at IS NULL",
@@ -63,11 +65,12 @@ func (tr *taskRepository) Get(tx *gorm.DB, taskID int64) (*models.Task, error) {
 }
 
 func (tr *taskRepository) GetAllCreated(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	offset, limit int,
 	sort string,
 ) ([]models.Task, int64, error) {
+	tx := db.GetInstance()
 	var tasks []models.Task
 	var totalCount int64
 
@@ -93,7 +96,8 @@ func (tr *taskRepository) GetAllCreated(
 	return tasks, totalCount, nil
 }
 
-func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Task, int64, error) {
+func (tr *taskRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error) {
+	tx := db.GetInstance()
 	tasks := []models.Task{}
 	var totalCount int64
 
@@ -114,7 +118,8 @@ func (tr *taskRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	return tasks, totalCount, nil
 }
 
-func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
+func (tr *taskRepository) GetTimeLimits(db database.Database, taskID int64) ([]int64, error) {
+	tx := db.GetInstance()
 	testCases := []models.TestCase{}
 	err := tx.Model(&models.TestCase{}).
 		Where("task_id = ?", taskID).
@@ -130,7 +135,8 @@ func (tr *taskRepository) GetTimeLimits(tx *gorm.DB, taskID int64) ([]int64, err
 	return timeLimits, nil
 }
 
-func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, error) {
+func (tr *taskRepository) GetMemoryLimits(db database.Database, taskID int64) ([]int64, error) {
+	tx := db.GetInstance()
 	testCases := []models.TestCase{}
 	err := tx.Model(&models.TestCase{}).Where("task_id = ?", taskID).Find(&testCases).Error
 	if err != nil {
@@ -144,7 +150,8 @@ func (tr *taskRepository) GetMemoryLimits(tx *gorm.DB, taskID int64) ([]int64, e
 	return memoryLimits, nil
 }
 
-func (tr *taskRepository) Edit(tx *gorm.DB, taskID int64, task *models.Task) error {
+func (tr *taskRepository) Edit(db database.Database, taskID int64, task *models.Task) error {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Updates(task).Error
 	if err != nil {
 		return err
@@ -152,7 +159,8 @@ func (tr *taskRepository) Edit(tx *gorm.DB, taskID int64, task *models.Task) err
 	return nil
 }
 
-func (tr *taskRepository) Delete(tx *gorm.DB, taskID int64) error {
+func (tr *taskRepository) Delete(db database.Database, taskID int64) error {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Update("deleted_at", time.Now()).Error
 	if err != nil {
 		return err
@@ -161,10 +169,11 @@ func (tr *taskRepository) Delete(tx *gorm.DB, taskID int64) error {
 }
 
 func (tr *taskRepository) GetLiveAssignedTasksGroupedByContest(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	limit, offset int,
 ) (map[int64][]models.Task, error) {
+	tx := db.GetInstance()
 	type TaskWithContest struct {
 		models.Task
 		ContestID   int64      `gorm:"column:contest_id"`

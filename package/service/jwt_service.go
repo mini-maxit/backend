@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -24,9 +26,9 @@ const (
 )
 
 type JWTService interface {
-	GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTTokens, error)
-	RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error)
-	AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error)
+	GenerateTokens(db database.Database, userId int64) (*schemas.JWTTokens, error)
+	RefreshTokens(db database.Database, refreshToken string) (*schemas.JWTTokens, error)
+	AuthenticateToken(db database.Database, tokenString string) (*schemas.ValidateTokenResponse, error)
 }
 
 type jwtService struct {
@@ -102,8 +104,8 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 }
 
 // GenerateTokens creates both access and refresh tokens for a user
-func (j *jwtService) GenerateTokens(tx *gorm.DB, userId int64) (*schemas.JWTTokens, error) {
-	user, err := j.userRepository.Get(tx, userId)
+func (j *jwtService) GenerateTokens(db database.Database, userId int64) (*schemas.JWTTokens, error) {
+	user, err := j.userRepository.Get(db, userId)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -184,25 +186,25 @@ func (j *jwtService) validateRefreshToken(tokenString string) (*schemas.JWTClaim
 }
 
 // RefreshTokens generates new tokens using a valid refresh token
-func (j *jwtService) RefreshTokens(tx *gorm.DB, refreshToken string) (*schemas.JWTTokens, error) {
+func (j *jwtService) RefreshTokens(db database.Database, refreshToken string) (*schemas.JWTTokens, error) {
 	claims, err := j.validateRefreshToken(refreshToken)
 	if err != nil {
 		j.logger.Errorf("Error validating refresh token: %v", err)
 		return nil, err
 	}
 
-	return j.GenerateTokens(tx, claims.UserID)
+	return j.GenerateTokens(db, claims.UserID)
 }
 
 // AuthenticateToken validates a token and returns user information
-func (j *jwtService) AuthenticateToken(tx *gorm.DB, tokenString string) (*schemas.ValidateTokenResponse, error) {
+func (j *jwtService) AuthenticateToken(db database.Database, tokenString string) (*schemas.ValidateTokenResponse, error) {
 	claims, err := j.validateAccessToken(tokenString)
 	if err != nil {
 		j.logger.Errorf("Error validating access token: %v", err)
 		return &schemas.ValidateTokenResponse{Valid: false, User: InvalidUser}, err
 	}
 
-	user, err := j.userRepository.Get(tx, claims.UserID)
+	user, err := j.userRepository.Get(db, claims.UserID)
 	if err != nil {
 		j.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {

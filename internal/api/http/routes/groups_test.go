@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -111,33 +112,6 @@ func TestCreateGroup(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		body := schemas.CreateGroup{
-			Name: "Test Group",
-		}
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		db.Invalidate()
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
-	})
-
 	t.Run("Not authorized", func(t *testing.T) {
 		body := schemas.CreateGroup{
 			Name: "Test Group",
@@ -153,7 +127,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 
 		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+			func(db database.Database, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, expectedGroup.Name, group.Name)
 				assert.Equal(t, expectedGroup.CreatedBy, group.CreatedBy)
 				return 0, errors.ErrForbidden
@@ -214,7 +188,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 
 		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, group *schemas.Group) (int64, error) {
+			func(db database.Database, user schemas.User, group *schemas.Group) (int64, error) {
 				assert.Equal(t, "Test Group", group.Name)
 				assert.Equal(t, int64(1), group.CreatedBy)
 				return 1, nil
@@ -432,7 +406,7 @@ func TestGetAllGroup(t *testing.T) {
 
 	t.Run("Limit and offset query params", func(t *testing.T) {
 		gs.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-			func(tx *gorm.DB, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error) {
+			func(db database.Database, user schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error) {
 				assert.Equal(t, 2, paginationParams.Limit)
 				assert.Equal(t, 0, paginationParams.Offset)
 				return []schemas.Group{}, nil
@@ -521,25 +495,6 @@ func TestEditGroup(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
 		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
-	})
-
-	t.Run("Transaction not started", func(t *testing.T) {
-		db.Invalidate()
-
-		updatedName := "Updated Name"
-		body := schemas.EditGroup{Name: &updatedName}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-
-		res, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		db.Validate()
-		defer res.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {
@@ -670,26 +625,6 @@ func TestAddUsersToGroup(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
 		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
-	})
-
-	t.Run("Transaction not started", func(t *testing.T) {
-		db.Invalidate()
-
-		body := schemas.UserIDs{
-			UserIDs: []int64{1, 2, 3},
-		}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest(http.MethodPost, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-
-		res, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		db.Validate()
-		defer res.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {
@@ -864,26 +799,6 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, res.StatusCode)
 		bodyBytes, _ := io.ReadAll(res.Body)
 		assert.Contains(t, string(bodyBytes), httputils.InvalidRequestBodyMessage)
-	})
-
-	t.Run("Transaction not started", func(t *testing.T) {
-		db.Invalidate()
-
-		body := schemas.UserIDs{
-			UserIDs: []int64{1, 2, 3},
-		}
-		jsonBody, _ := json.Marshal(body)
-		req, _ := http.NewRequest(http.MethodDelete, server.URL+"/1/users", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-
-		res, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		db.Validate()
-		defer res.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
-		bodyBytes, _ := io.ReadAll(res.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Invalid group ID in path", func(t *testing.T) {

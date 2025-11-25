@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -118,7 +119,7 @@ func createTestArchive(t *testing.T, caseType string) string {
 }
 
 func TestCreateTask(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
@@ -133,11 +134,11 @@ func TestCreateTask(t *testing.T) {
 			CreatedBy: adminUser.ID,
 		}
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
-		tr.EXPECT().GetByTitle(tx, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-		taskID, err := ts.Create(tx, adminUser, task)
+		taskID, err := ts.Create(db, adminUser, task)
 		require.NoError(t, err)
 		assert.NotEqual(t, 0, taskID)
 	})
@@ -147,18 +148,18 @@ func TestCreateTask(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
 		}
-		tr.EXPECT().GetByTitle(tx, task.Title).Return(&models.Task{
+		tr.EXPECT().GetByTitle(db, task.Title).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
-		taskID, err := ts.Create(tx, adminUser, task)
+		taskID, err := ts.Create(db, adminUser, task)
 		require.ErrorIs(t, err, errors.ErrTaskExists)
 		assert.Equal(t, int64(0), taskID)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		taskID, err := ts.Create(tx, studentUser, &schemas.Task{
+		taskID, err := ts.Create(db, studentUser, &schemas.Task{
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
 		})
@@ -168,7 +169,7 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestGetTaskByTitle(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -183,12 +184,12 @@ func TestGetTaskByTitle(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
 		}
-		tr.EXPECT().GetByTitle(tx, task.Title).Return(&models.Task{
+		tr.EXPECT().GetByTitle(db, task.Title).Return(&models.Task{
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
-		taskResp, err := ts.GetByTitle(tx, task.Title)
+		taskResp, err := ts.GetByTitle(db, task.Title)
 		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -196,15 +197,15 @@ func TestGetTaskByTitle(t *testing.T) {
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		taskTitle := "Nonexistent Task"
-		tr.EXPECT().GetByTitle(tx, taskTitle).Return(nil, errors.ErrTaskNotFound).Times(1)
-		task, err := ts.GetByTitle(tx, taskTitle)
+		tr.EXPECT().GetByTitle(db, taskTitle).Return(nil, errors.ErrTaskNotFound).Times(1)
+		task, err := ts.GetByTitle(db, taskTitle)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 		assert.Nil(t, task)
 	})
 }
 
 func TestGetAllTasks(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -216,12 +217,12 @@ func TestGetAllTasks(t *testing.T) {
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 
 	t.Run("No tasks", func(t *testing.T) {
-		tr.EXPECT().GetAll(tx,
+		tr.EXPECT().GetAll(db,
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
 		).Return([]models.Task{}, int64(0), nil).Times(1)
-		tasks, err := ts.GetAll(tx, adminUser, paginationParams)
+		tasks, err := ts.GetAll(db, adminUser, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, tasks)
 	})
@@ -237,7 +238,7 @@ func TestGetAllTasks(t *testing.T) {
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
 
-		resultTasks, err := ts.GetAll(tx, studentUser, paginationParams)
+		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, resultTasks)
 		assert.True(t, resultTasks[0].IsVisible)
@@ -255,7 +256,7 @@ func TestGetAllTasks(t *testing.T) {
 		}
 		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
 
-		resultTasks, err := ts.GetAll(tx, studentUser, paginationParams)
+		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
 		require.NoError(t, err)
 		assert.Len(t, resultTasks, 1)
 		assert.Equal(t, "Visible Task", resultTasks[0].Title)
@@ -264,7 +265,7 @@ func TestGetAllTasks(t *testing.T) {
 }
 
 func TestGetTask(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -282,12 +283,12 @@ func TestGetTask(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
-		taskResp, err := ts.Get(tx, adminUser, task.ID)
+		taskResp, err := ts.Get(db, adminUser, task.ID)
 		require.NoError(t, err)
 		assert.Equal(t, task.Title, taskResp.Title)
 		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
@@ -300,8 +301,8 @@ func TestGetTask(t *testing.T) {
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
 
-		// tr.EXPECT().IsAssignedToUser(tx, task.ID, studentUser.ID).Return(true, nil).Times(1)
-		taskResp, err := ts.Get(tx, studentUser, task.ID)
+		// tr.EXPECT().IsAssignedToUser(db, task.ID, studentUser.ID).Return(true, nil).Times(1)
+		taskResp, err := ts.Get(db, studentUser, task.ID)
 		require.NoError(t, err)
 		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
@@ -309,25 +310,25 @@ func TestGetTask(t *testing.T) {
 	})
 
 	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
 
-		taskResp, err := ts.Get(tx, studentUser, task.ID)
+		taskResp, err := ts.Get(db, studentUser, task.ID)
 		require.NoError(t, err)
 		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
 	})
 
 	t.Run("Success with created task", func(t *testing.T) {
-		tr.EXPECT().Get(tx, task.ID).Return(&models.Task{
+		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
 			ID:        task.ID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
 		}, nil).Times(1)
-		taskResp, err := ts.Get(tx, teacherUser, task.ID)
+		taskResp, err := ts.Get(db, teacherUser, task.ID)
 		require.NoError(t, err)
 		assert.Equal(t, task.ID, taskResp.ID)
 		assert.Equal(t, task.Title, taskResp.Title)
@@ -336,15 +337,15 @@ func TestGetTask(t *testing.T) {
 
 	t.Run("Fail with non existent task", func(t *testing.T) {
 		taskID := int64(0)
-		tr.EXPECT().Get(tx, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		taskResp, err := ts.Get(tx, adminUser, taskID)
+		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		taskResp, err := ts.Get(db, adminUser, taskID)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 		assert.Nil(t, taskResp)
 	})
 }
 
 func TestDeleteTask(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -362,7 +363,7 @@ func TestDeleteTask(t *testing.T) {
 			ID: taskID,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		err := ts.Delete(tx, adminUser, taskID)
+		err := ts.Delete(db, adminUser, taskID)
 		require.NoError(t, err)
 	})
 
@@ -372,7 +373,7 @@ func TestDeleteTask(t *testing.T) {
 		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
 			ID: taskID,
 		}, nil).Times(1)
-		err := ts.Delete(tx, adminUser, 0)
+		err := ts.Delete(db, adminUser, 0)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
@@ -381,13 +382,13 @@ func TestDeleteTask(t *testing.T) {
 		tr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.Task{
 			ID: taskID,
 		}, nil).Times(1)
-		err := ts.Delete(tx, studentUser, taskID)
+		err := ts.Delete(db, studentUser, taskID)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
 func TestEditTask(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -404,7 +405,7 @@ func TestEditTask(t *testing.T) {
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
 		}
-		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
@@ -413,15 +414,15 @@ func TestEditTask(t *testing.T) {
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		err := ts.Edit(tx, adminUser, taskID, updatedTask)
+		err := ts.Edit(db, adminUser, taskID, updatedTask)
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		newTitle := "Updated Task"
 		updatedTask := &schemas.EditTask{Title: &newTitle}
-		tr.EXPECT().Get(tx, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
-		err := ts.Edit(tx, adminUser, 0, updatedTask)
+		tr.EXPECT().Get(db, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
+		err := ts.Edit(db, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
 	})
 
@@ -432,9 +433,9 @@ func TestEditTask(t *testing.T) {
 			CreatedBy: adminUser.ID,
 			IsVisible: true,
 		}
-		tr.EXPECT().Get(tx, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Edit(tx, taskID, gomock.Any()).DoAndReturn(func(tx *gorm.DB, id int64, updatedTask *models.Task) error {
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).DoAndReturn(func(db database.Database, id int64, updatedTask *models.Task) error {
 			// Verify that IsVisible was updated
 			assert.False(t, updatedTask.IsVisible)
 			return nil
@@ -442,13 +443,13 @@ func TestEditTask(t *testing.T) {
 
 		isVisible := false
 		updatedTask := &schemas.EditTask{IsVisible: &isVisible}
-		err := ts.Edit(tx, adminUser, taskID, updatedTask)
+		err := ts.Edit(db, adminUser, taskID, updatedTask)
 		require.NoError(t, err)
 	})
 }
 
 func TestGetAllCreatedTasks(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -462,13 +463,13 @@ func TestGetAllCreatedTasks(t *testing.T) {
 
 	t.Run("No tasks", func(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
-			tx,
+			db,
 			adminUser.ID,
 			queryParams.Offset,
 			queryParams.Limit,
 			queryParams.Sort,
 		).Return([]models.Task{}, int64(0), nil).Times(1)
-		result, err := ts.GetAllCreated(tx, adminUser, queryParams)
+		result, err := ts.GetAllCreated(db, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -480,7 +481,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetAllCreated(
-			tx,
+			db,
 			adminUser.ID,
 			queryParams.Offset,
 			queryParams.Limit,
@@ -492,7 +493,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				CreatedBy: task.CreatedBy,
 			},
 		}, int64(1), nil).Times(1)
-		result, err := ts.GetAllCreated(tx, adminUser, queryParams)
+		result, err := ts.GetAllCreated(db, adminUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, result.Items)
 		assert.Len(t, result.Items, 1)
@@ -507,7 +508,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 			CreatedBy: teacherUser.ID,
 		}
 		tr.EXPECT().GetAllCreated(
-			tx,
+			db,
 			teacherUser.ID,
 			queryParams.Offset,
 			queryParams.Limit,
@@ -519,7 +520,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				CreatedBy: task.CreatedBy,
 			},
 		}, int64(1), nil).Times(1)
-		result, err := ts.GetAllCreated(tx, teacherUser, queryParams)
+		result, err := ts.GetAllCreated(db, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, result.Items)
 		assert.Len(t, result.Items, 1)
@@ -534,7 +535,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 			CreatedBy: teacherUser.ID,
 		}
 		tr.EXPECT().GetAllCreated(
-			tx,
+			db,
 			teacherUser.ID,
 			queryParams.Offset,
 			queryParams.Limit,
@@ -546,7 +547,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				CreatedBy: task.CreatedBy,
 			},
 		}, int64(1), nil).Times(1)
-		result, err := ts.GetAllCreated(tx, teacherUser, queryParams)
+		result, err := ts.GetAllCreated(db, teacherUser, queryParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, result.Items)
 		assert.Len(t, result.Items, 1)
@@ -556,7 +557,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		result, err := ts.GetAllCreated(tx, studentUser, queryParams)
+		result, err := ts.GetAllCreated(db, studentUser, queryParams)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -564,7 +565,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 }
 
 func TestCreateTestCase(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	ur := mock_repository.NewMockUserRepository(ctrl)
@@ -579,26 +580,26 @@ func TestCreateTestCase(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		io.EXPECT().DeleteAll(tx, task.ID).Return(nil).Times(1)
-		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+		io.EXPECT().DeleteAll(db, task.ID).Return(nil).Times(1)
+		tr.EXPECT().Get(db, task.ID).Return(task, nil).Times(1)
 		io.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(4)
 		pathToArchive := createTestArchive(t, "valid")
-		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
+		err := ts.CreateTestCase(db, task.ID, pathToArchive)
 		require.NoError(t, err)
 	})
 
 	t.Run("Nonexistent task", func(t *testing.T) {
 		pathToArchive := createTestArchive(t, "valid")
 		defer os.Remove(pathToArchive)
-		tr.EXPECT().Get(tx, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := ts.CreateTestCase(tx, task.ID, pathToArchive)
+		tr.EXPECT().Get(db, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := ts.CreateTestCase(db, task.ID, pathToArchive)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 
 	t.Run("Invalid archive path", func(t *testing.T) {
-		tr.EXPECT().Get(tx, task.ID).Return(task, nil).Times(1)
+		tr.EXPECT().Get(db, task.ID).Return(task, nil).Times(1)
 
-		err := ts.CreateTestCase(tx, task.ID, "INVALIDPATH")
+		err := ts.CreateTestCase(db, task.ID, "INVALIDPATH")
 		require.Error(t, err)
 	})
 }
@@ -697,23 +698,23 @@ func TestGetLimits(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
 
 	t.Run("Success", func(t *testing.T) {
-		io.EXPECT().GetByTask(tx, taskID).Return([]models.TestCase{{
+		io.EXPECT().GetByTask(db, taskID).Return([]models.TestCase{{
 			ID:          1,
 			TaskID:      taskID,
 			Order:       1,
 			TimeLimit:   10,
 			MemoryLimit: 10,
 		}}, nil).Times(1)
-		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{
 			ID: 1,
 		}, nil).Times(1)
 
-		result, err := ts.GetLimits(tx, teacherUser, taskID)
+		result, err := ts.GetLimits(db, teacherUser, taskID)
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 	})
@@ -728,7 +729,7 @@ func TestPutLimit(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	taskID := int64(1)
 	ioID := int64(1)
@@ -741,9 +742,9 @@ func TestPutLimit(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		io.EXPECT().GetTestCaseID(tx, taskID, testCase.Order).Return(testCase.ID, nil).Times(1)
-		io.EXPECT().Get(tx, ioID).Return(testCase, nil).Times(1)
-		tr.EXPECT().Get(tx, taskID).Return(&models.Task{
+		io.EXPECT().GetTestCaseID(db, taskID, testCase.Order).Return(testCase.ID, nil).Times(1)
+		io.EXPECT().Get(db, ioID).Return(testCase, nil).Times(1)
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{
 			ID:        taskID,
 			CreatedBy: teacherUser.ID,
 		}, nil).Times(1)
@@ -764,10 +765,10 @@ func TestPutLimit(t *testing.T) {
 			TimeLimit:   newLimits.Limits[0].TimeLimit,
 			MemoryLimit: newLimits.Limits[0].MemoryLimit,
 		}
-		io.EXPECT().Put(tx, expectedModel).Return(nil).Times(1)
+		io.EXPECT().Put(db, expectedModel).Return(nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-		err := ts.PutLimits(tx, teacherUser, taskID, newLimits)
+		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
 		require.NoError(t, err)
 	})
 }

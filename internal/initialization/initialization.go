@@ -133,7 +133,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		userService,
 		queueService,
 	)
-	workerService := service.NewWorkerService(queueService, submissionRepository, db.DB())
+	workerService := service.NewWorkerService(queueService, submissionRepository, db)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)

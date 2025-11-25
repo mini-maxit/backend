@@ -82,37 +82,6 @@ func TestLogin(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		body := struct {
-			Email    string `json:"email"`
-			Password string `json:"password"`
-		}{
-			Email:    "email@email.com",
-			Password: "password",
-		}
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		db.Invalidate()
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
-	})
-
 	t.Run("User not found", func(t *testing.T) {
 		reqBody := struct {
 			Email    string `json:"email"`
@@ -326,30 +295,6 @@ func TestRegister(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		jsonBody, err := json.Marshal(correctRequest)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		db.Invalidate()
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
-	})
-
 	t.Run("User already exists", func(t *testing.T) {
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(nil, errors.ErrUserAlreadyExists).Times(1)
 
@@ -493,37 +438,6 @@ func TestRefreshToken(t *testing.T) {
 		}
 		bodyString := string(bodyBytes)
 		assert.Contains(t, bodyString, "Refresh token cookie not found")
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodPost, server.URL, nil)
-		if err != nil {
-			t.Fatalf("Failed to create request: %v", err)
-		}
-
-		// Add refresh token cookie
-		req.AddCookie(&http.Cookie{
-			Name:  refreshTokenCookieName,
-			Value: "valid_refresh_token",
-		})
-
-		db.Invalidate()
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
 	})
 
 	t.Run("Invalid token", func(t *testing.T) {

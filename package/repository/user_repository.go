@@ -1,28 +1,29 @@
 package repository
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type UserRepository interface {
 	// Create creates a new user and returns the user ID
-	Create(tx *gorm.DB, user *models.User) (int64, error)
+	Create(db database.Database, user *models.User) (int64, error)
 	// Edit updates the user information by setting the new values
-	Edit(tx *gorm.DB, user *models.User) error
+	Edit(db database.Database, user *models.User) error
 	// GetAll returns all users with pagination and sorting and total count
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, int64, error)
+	GetAll(db database.Database, limit, offset int, sort string) ([]models.User, int64, error)
 	// Get returns a user by ID
-	Get(tx *gorm.DB, userID int64) (*models.User, error)
+	Get(db database.Database, userID int64) (*models.User, error)
 	// GetByEmail returns a user by email
-	GetByEmail(tx *gorm.DB, email string) (*models.User, error)
+	GetByEmail(db database.Database, email string) (*models.User, error)
 }
 
 type userRepository struct {
 }
 
-func (ur *userRepository) Create(tx *gorm.DB, user *models.User) (int64, error) {
+func (ur *userRepository) Create(db database.Database, user *models.User) (int64, error) {
+	tx := db.GetInstance()
 	err := tx.Model(&models.User{}).Create(user).Error
 	if err != nil {
 		return 0, err
@@ -30,7 +31,8 @@ func (ur *userRepository) Create(tx *gorm.DB, user *models.User) (int64, error) 
 	return user.ID, nil
 }
 
-func (ur *userRepository) Get(tx *gorm.DB, userID int64) (*models.User, error) {
+func (ur *userRepository) Get(db database.Database, userID int64) (*models.User, error) {
+	tx := db.GetInstance()
 	user := &models.User{}
 	err := tx.Model(&models.User{}).Where("id = ?", userID).Take(user).Error
 	if err != nil {
@@ -39,7 +41,8 @@ func (ur *userRepository) Get(tx *gorm.DB, userID int64) (*models.User, error) {
 	return user, nil
 }
 
-func (ur *userRepository) GetByEmail(tx *gorm.DB, email string) (*models.User, error) {
+func (ur *userRepository) GetByEmail(db database.Database, email string) (*models.User, error) {
+	tx := db.GetInstance()
 	user := &models.User{}
 	err := tx.Model(&models.User{}).Where("email = ?", email).First(user).Error
 	if err != nil {
@@ -48,7 +51,8 @@ func (ur *userRepository) GetByEmail(tx *gorm.DB, email string) (*models.User, e
 	return user, nil
 }
 
-func (ur *userRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.User, int64, error) {
+func (ur *userRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.User, int64, error) {
+	tx := db.GetInstance()
 	users := &[]models.User{}
 	var totalCount int64
 
@@ -69,7 +73,8 @@ func (ur *userRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([
 	return *users, totalCount, nil
 }
 
-func (ur *userRepository) Edit(tx *gorm.DB, user *models.User) error {
+func (ur *userRepository) Edit(db database.Database, user *models.User) error {
+	tx := db.GetInstance()
 	return tx.Save(user).Error
 }
 

@@ -8,72 +8,72 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type SubmissionRepository interface {
 	// Create creates a new submission and returns the submission ID.
-	Create(tx *gorm.DB, submission *models.Submission) (int64, error)
+	Create(db database.Database, submission *models.Submission) (int64, error)
 	// GetAll returns all submissions. The submissions are paginated.
-	GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAll(db database.Database, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUser returns all submissions by a user. The submissions are paginated.
-	GetAllByUser(tx *gorm.DB, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUser(db database.Database, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
-	GetAllForGroup(tx *gorm.DB, groupID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllForGroup(db database.Database, groupID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTask returns all submissions for a task. The submissions are paginated.
-	GetAllForTask(tx *gorm.DB, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllForTask(db database.Database, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
-	GetAllForTaskByUser(tx *gorm.DB, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllForTaskByUser(db database.Database, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
-	GetAllForContest(tx *gorm.DB, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllForContest(db database.Database, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
-	GetAllByUserForContest(tx *gorm.DB, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForContest(db database.Database, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
-	GetAllByUserForTask(tx *gorm.DB, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForTask(db database.Database, userID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestAndTask returns all submissions by a user for a specific contest and task. The submissions are paginated.
-	GetAllByUserForContestAndTask(tx *gorm.DB, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForContestAndTask(db database.Database, userID, contestID, taskID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTeacher returns all submissions for a teacher, this includes submissions for tasks created by this teacher.
 	// The submissions are paginated.
-	GetAllForTeacher(tx *gorm.DB, currentUserID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllForTeacher(db database.Database, currentUserID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTeacher returns all submissions by a specific user, filtered to only include submissions
 	// for tasks created by the teacher. The submissions are paginated.
-	GetAllByUserForTeacher(tx *gorm.DB, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForTeacher(db database.Database, userID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTaskByTeacher returns all submissions by a user for a specific task,
 	// filtered to only include submissions where the teacher created the task. The submissions are paginated.
-	GetAllByUserForTaskByTeacher(tx *gorm.DB, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForTaskByTeacher(db database.Database, userID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestByTeacher returns all submissions by a user for a specific contest,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestByTeacher(tx *gorm.DB, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForContestByTeacher(db database.Database, userID, contestID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForContestAndTaskByTeacher returns all submissions by a user for a specific contest and task,
 	// filtered to only include submissions where the teacher created the contest or the task. The submissions are paginated.
-	GetAllByUserForContestAndTaskByTeacher(tx *gorm.DB, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	GetAllByUserForContestAndTaskByTeacher(db database.Database, userID, contestID, taskID, teacherID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetLatestSubmissionForTaskByUser returns the latest submission for a task by a user.
-	GetLatestForTaskByUser(tx *gorm.DB, taskID, userID int64) (*models.Submission, error)
+	GetLatestForTaskByUser(db database.Database, taskID, userID int64) (*models.Submission, error)
 	// Get returns a submission by its ID.
-	Get(tx *gorm.DB, submissionID int64) (*models.Submission, error)
+	Get(db database.Database, submissionID int64) (*models.Submission, error)
 	// GetBestScoreForTaskByUser returns the best score (percentage of passed tests) for a task by a user.
-	GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (float64, error)
+	GetBestScoreForTaskByUser(db database.Database, taskID, userID int64) (float64, error)
 	// GetAttemptCountForTaskByUser returns the number of submission attempts for a task by a user.
-	GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error)
+	GetAttemptCountForTaskByUser(db database.Database, taskID, userID int64) (int, error)
 	// MarkEvaluated marks a submission as evaluated.
-	MarkEvaluated(tx *gorm.DB, submissionID int64) error
+	MarkEvaluated(db database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed.
-	MarkFailed(db *gorm.DB, submissionID int64, errorMsg string) error
+	MarkFailed(db database.Database, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
-	MarkProcessing(tx *gorm.DB, submissionID int64) error
+	MarkProcessing(db database.Database, submissionID int64) error
 	// GetPendingSubmissions returns submissions that are in "received" status (not yet sent for evaluation).
-	GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error)
+	GetPendingSubmissions(db database.Database, limit int) ([]models.Submission, error)
 	// GetTaskStatsForContest returns aggregated statistics for each task in a contest
-	GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]models.ContestTaskStatsModel, error)
+	GetTaskStatsForContest(db database.Database, contestID int64) ([]models.ContestTaskStatsModel, error)
 	// GetUserStatsForContestTask returns per-user statistics for a specific task in a contest
-	GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]models.TaskUserStatsModel, error)
+	GetUserStatsForContestTask(db database.Database, contestID, taskID int64) ([]models.TaskUserStatsModel, error)
 	// GetUserStatsForContest returns overall statistics for each user in a contest
-	GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error)
+	GetUserStatsForContest(db database.Database, contestID int64, userID *int64) ([]models.UserContestStatsFull, error)
 }
 
 type submissionRepository struct{}
 
-func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort string) ([]models.Submission, int64, error) {
+func (us *submissionRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -102,11 +102,12 @@ func (us *submissionRepository) GetAll(tx *gorm.DB, limit, offset int, sort stri
 }
 
 func (us *submissionRepository) GetAllForTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -144,7 +145,8 @@ func (us *submissionRepository) GetAllForTeacher(
 	return submissions, totalCount, nil
 }
 
-func (us *submissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Submission, error) {
+func (us *submissionRepository) Get(db database.Database, submissionID int64) (*models.Submission, error) {
+	tx := db.GetInstance()
 	var submission models.Submission
 	err := tx.Where("id = ?", submissionID).
 		Preload("Language").
@@ -161,11 +163,12 @@ func (us *submissionRepository) Get(tx *gorm.DB, submissionID int64) (*models.Su
 }
 
 func (us *submissionRepository) GetAllByUser(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -195,11 +198,12 @@ func (us *submissionRepository) GetAllByUser(
 }
 
 func (us *submissionRepository) GetAllForGroup(
-	tx *gorm.DB,
+	db database.Database,
 	groupID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -237,11 +241,12 @@ func (us *submissionRepository) GetAllForGroup(
 }
 
 func (us *submissionRepository) GetAllForTask(
-	tx *gorm.DB,
+	db database.Database,
 	taskID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -272,11 +277,12 @@ func (us *submissionRepository) GetAllForTask(
 }
 
 func (us *submissionRepository) GetAllForTaskTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	taskID, userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -300,11 +306,12 @@ func (us *submissionRepository) GetAllForTaskTeacher(
 }
 
 func (us *submissionRepository) GetAllForTaskStudent(
-	tx *gorm.DB,
+	db database.Database,
 	taskID, studentID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
@@ -326,7 +333,8 @@ func (us *submissionRepository) GetAllForTaskStudent(
 	return submissions, nil
 }
 
-func (us *submissionRepository) Create(tx *gorm.DB, submission *models.Submission) (int64, error) {
+func (us *submissionRepository) Create(db database.Database, submission *models.Submission) (int64, error) {
+	tx := db.GetInstance()
 	err := tx.Create(submission).Error
 	if err != nil {
 		return 0, err
@@ -334,17 +342,20 @@ func (us *submissionRepository) Create(tx *gorm.DB, submission *models.Submissio
 	return submission.ID, nil
 }
 
-func (us *submissionRepository) MarkProcessing(tx *gorm.DB, submissionID int64) error {
+func (us *submissionRepository) MarkProcessing(db database.Database, submissionID int64) error {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusSentForEvaluation}).Error
 	return err
 }
 
-func (us *submissionRepository) MarkEvaluated(tx *gorm.DB, submissionID int64) error {
+func (us *submissionRepository) MarkEvaluated(db database.Database, submissionID int64) error {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{Status: types.SubmissionStatusEvaluated, CheckedAt: time.Now()}).Error
 	return err
 }
 
-func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
+func (us *submissionRepository) MarkFailed(db database.Database, submissionID int64, errorMsg string) error {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Submission{}).Where("id = ?", submissionID).Updates(&models.Submission{
 		Status:        types.SubmissionStatusEvaluated,
 		StatusMessage: errorMsg,
@@ -353,7 +364,8 @@ func (us *submissionRepository) MarkFailed(tx *gorm.DB, submissionID int64, erro
 	return err
 }
 
-func (us *submissionRepository) GetPendingSubmissions(tx *gorm.DB, limit int) ([]models.Submission, error) {
+func (us *submissionRepository) GetPendingSubmissions(db database.Database, limit int) ([]models.Submission, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	err := tx.Model(&models.Submission{}).
 		Where("status = ?", types.SubmissionStatusReceived).
@@ -379,11 +391,12 @@ func (us *submissionRepository) GetPendingSubmissions(tx *gorm.DB, limit int) ([
 }
 
 func (us *submissionRepository) GetAllForTaskByUser(
-	tx *gorm.DB,
+	db database.Database,
 	taskID, userID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -415,9 +428,10 @@ func (us *submissionRepository) GetAllForTaskByUser(
 }
 
 func (sr *submissionRepository) GetLatestForTaskByUser(
-	tx *gorm.DB,
+	db database.Database,
 	taskID, userID int64,
 ) (*models.Submission, error) {
+	tx := db.GetInstance()
 	submission := models.Submission{}
 	err := tx.Model(&models.Submission{}).
 		Where("task_id = ? AND user_id = ?", taskID, userID).
@@ -429,7 +443,8 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 	return &submission, nil
 }
 
-func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, userID int64) (float64, error) {
+func (sr *submissionRepository) GetBestScoreForTaskByUser(db database.Database, taskID, userID int64) (float64, error) {
+	tx := db.GetInstance()
 	var bestScore *float64
 
 	// Query to get the best score (highest percentage of passed tests)
@@ -461,7 +476,8 @@ func (sr *submissionRepository) GetBestScoreForTaskByUser(tx *gorm.DB, taskID, u
 	return *bestScore, nil
 }
 
-func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID, userID int64) (int, error) {
+func (sr *submissionRepository) GetAttemptCountForTaskByUser(db database.Database, taskID, userID int64) (int, error) {
+	tx := db.GetInstance()
 	var count int64
 
 	err := tx.Model(&models.Submission{}).
@@ -476,11 +492,12 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(tx *gorm.DB, taskID
 }
 
 func (us *submissionRepository) GetAllForContest(
-	tx *gorm.DB,
+	db database.Database,
 	contestID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -511,11 +528,12 @@ func (us *submissionRepository) GetAllForContest(
 }
 
 func (us *submissionRepository) GetAllByUserForContest(
-	tx *gorm.DB,
+	db database.Database,
 	userID, contestID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -549,11 +567,12 @@ func (us *submissionRepository) GetAllByUserForContest(
 }
 
 func (us *submissionRepository) GetAllByUserForTask(
-	tx *gorm.DB,
+	db database.Database,
 	userID, taskID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -587,11 +606,12 @@ func (us *submissionRepository) GetAllByUserForTask(
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTask(
-	tx *gorm.DB,
+	db database.Database,
 	userID, contestID, taskID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -625,11 +645,12 @@ func (us *submissionRepository) GetAllByUserForContestAndTask(
 }
 
 func (us *submissionRepository) GetAllByUserForTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID, teacherID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -667,11 +688,12 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForTaskByTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -707,11 +729,12 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForContestByTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID, contestID, teacherID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -749,11 +772,12 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 }
 
 func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID, contestID, taskID, teacherID int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
+	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
@@ -790,7 +814,8 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 	return submissions, totalCount, nil
 }
 
-func (us *submissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID int64) ([]models.ContestTaskStatsModel, error) {
+func (us *submissionRepository) GetTaskStatsForContest(db database.Database, contestID int64) ([]models.ContestTaskStatsModel, error) {
+	tx := db.GetInstance()
 	var results []models.ContestTaskStatsModel
 
 	query := `
@@ -842,7 +867,8 @@ func (us *submissionRepository) GetTaskStatsForContest(tx *gorm.DB, contestID in
 	return results, nil
 }
 
-func (us *submissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestID, taskID int64) ([]models.TaskUserStatsModel, error) {
+func (us *submissionRepository) GetUserStatsForContestTask(db database.Database, contestID, taskID int64) ([]models.TaskUserStatsModel, error) {
+	tx := db.GetInstance()
 	var results []models.TaskUserStatsModel
 
 	query := `
@@ -905,7 +931,8 @@ func (us *submissionRepository) GetUserStatsForContestTask(tx *gorm.DB, contestI
 	return results, nil
 }
 
-func (us *submissionRepository) GetUserStatsForContest(tx *gorm.DB, contestID int64, userID *int64) ([]models.UserContestStatsFull, error) {
+func (us *submissionRepository) GetUserStatsForContest(db database.Database, contestID int64, userID *int64) ([]models.UserContestStatsFull, error) {
+	tx := db.GetInstance()
 	userFilter := ""
 	summaryArgs := []interface{}{contestID}
 	if userID != nil {

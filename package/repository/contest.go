@@ -12,65 +12,66 @@ import (
 
 type ContestRepository interface {
 	// Create creates a new contest
-	Create(tx *gorm.DB, contest *models.Contest) (int64, error)
+	Create(db database.Database, contest *models.Contest) (int64, error)
 	// Get retrieves a contest by ID
-	Get(tx *gorm.DB, contestID int64) (*models.Contest, error)
+	Get(db database.Database, contestID int64) (*models.Contest, error)
 	// Get retrieves a contest by ID with participant and task counts
-	GetWithCount(tx *gorm.DB, contestID int64) (*models.ParticipantContestStats, error)
+	GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error)
 	// GetAll retrieves all contests with pagination and sorting
-	GetAll(tx *gorm.DB, offset int, limit int, sort string) ([]models.Contest, error)
+	GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error)
 	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
-	GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
+	GetOngoingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetPastContestsWithStats retrieves contests that have ended with stats
-	GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
+	GetPastContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
-	GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
+	GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
+	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
 	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
-	GetAllForCollaborator(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
+	GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
-	Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error)
+	Edit(db database.Database, contestID int64, contest *models.Contest) (*models.Contest, error)
 	// EditWithStats updates a contest and returns it with participant and task counts
-	EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error)
+	EditWithStats(db database.Database, contestID int64, contest *models.Contest) (*models.ContestWithStats, error)
 	// Delete removes a contest
-	Delete(tx *gorm.DB, contestID int64) error
+	Delete(db database.Database, contestID int64) error
 	// CreatePendingRegistration creates a pending registration request
-	CreatePendingRegistration(tx *gorm.DB, registration *models.ContestRegistrationRequests) (int64, error)
+	CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error)
 	// IsPendingRegistrationExists checks if pending registration already exists
-	IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error)
+	IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
-	IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error)
+	IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
-	GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error)
+	GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task
-	GetContestTasksWithSettings(tx *gorm.DB, contestID int64) ([]models.ContestTask, error)
+	GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
-	GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error)
+	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest
-	GetAssignableTasks(tx *gorm.DB, contestID int64) ([]models.Task, error)
+	GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
-	GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error)
+	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
-	AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error
+	AddTaskToContest(db database.Database, taskContest models.ContestTask) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
-	GetRegistrationRequests(tx *gorm.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
+	GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
 	// DeleteRegistrationRequest deletes a pending registration request
-	DeleteRegistrationRequest(tx *gorm.DB, requestID int64) error
+	DeleteRegistrationRequest(db database.Database, requestID int64) error
 	// CreateContestParticipant adds a user as a participant to a contest
-	CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error
+	CreateContestParticipant(db database.Database, contestID, userID int64) error
 	// RejectRegistrationRequest rejects a pending registration request
-	UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error
+	UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error
 	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
-	GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error)
+	GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 	// GetContestTask retrieves the ContestTask relationship for validation
-	GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error)
-	GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error)
+	GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error)
+	GetTaskContests(db database.Database, taskID int64) ([]int64, error)
 }
 
 type contestRepository struct{}
 
-func (cr *contestRepository) Create(tx *gorm.DB, contest *models.Contest) (int64, error) {
+func (cr *contestRepository) Create(db database.Database, contest *models.Contest) (int64, error) {
+	tx := db.GetInstance()
 	err := tx.Create(contest).Error
 	if err != nil {
 		return 0, err
@@ -78,7 +79,8 @@ func (cr *contestRepository) Create(tx *gorm.DB, contest *models.Contest) (int64
 	return contest.ID, nil
 }
 
-func (cr *contestRepository) Get(tx *gorm.DB, contestID int64) (*models.Contest, error) {
+func (cr *contestRepository) Get(db database.Database, contestID int64) (*models.Contest, error) {
+	tx := db.GetInstance()
 	var contest models.Contest
 	err := tx.Where("id = ?", contestID).First(&contest).Error
 	if err != nil {
@@ -87,7 +89,8 @@ func (cr *contestRepository) Get(tx *gorm.DB, contestID int64) (*models.Contest,
 	return &contest, nil
 }
 
-func (cr *contestRepository) GetAll(tx *gorm.DB, offset int, limit int, sort string) ([]models.Contest, error) {
+func (cr *contestRepository) GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error) {
+	tx := db.GetInstance()
 	var contests []models.Contest
 	tx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
 	if err != nil {
@@ -100,7 +103,8 @@ func (cr *contestRepository) GetAll(tx *gorm.DB, offset int, limit int, sort str
 	return contests, nil
 }
 
-func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error) {
+func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error) {
+	tx := db.GetInstance()
 	var contests []models.Contest
 	var totalCount int64
 
@@ -125,7 +129,8 @@ func (cr *contestRepository) GetAllForCreator(tx *gorm.DB, creatorID int64, offs
 
 // GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator)
 // It returns contests with pagination and total count.
-func (cr *contestRepository) GetAllForCollaborator(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
+func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
+	tx := db.GetInstance()
 	var contests []models.ManagedContest
 	var totalCount int64
 
@@ -158,7 +163,8 @@ func (cr *contestRepository) GetAllForCollaborator(tx *gorm.DB, userID int64, of
 	return contests, totalCount, nil
 }
 
-func (cr *contestRepository) GetAllForCreatorWithStats(tx *gorm.DB, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetAllForCreatorWithStats(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+	tx := db.GetInstance()
 	var contests []models.ContestWithStats
 
 	// Build a query that calculates participant counts and task counts for contests created by a specific user.
@@ -201,7 +207,8 @@ func (cr *contestRepository) GetAllForCreatorWithStats(tx *gorm.DB, creatorID in
 	return contests, nil
 }
 
-func (cr *contestRepository) Edit(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.Contest, error) {
+func (cr *contestRepository) Edit(db database.Database, contestID int64, contest *models.Contest) (*models.Contest, error) {
+	tx := db.GetInstance()
 	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
 	if err != nil {
 		return nil, err
@@ -211,7 +218,8 @@ func (cr *contestRepository) Edit(tx *gorm.DB, contestID int64, contest *models.
 	return &updatedContest, err
 }
 
-func (cr *contestRepository) EditWithStats(tx *gorm.DB, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+func (cr *contestRepository) EditWithStats(db database.Database, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+	tx := db.GetInstance()
 	// First update the contest
 	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
 	if err != nil {
@@ -252,7 +260,8 @@ func (cr *contestRepository) EditWithStats(tx *gorm.DB, contestID int64, contest
 	return &contestWithStats, nil
 }
 
-func (cr *contestRepository) Delete(tx *gorm.DB, contestID int64) error {
+func (cr *contestRepository) Delete(db database.Database, contestID int64) error {
+	tx := db.GetInstance()
 	err := tx.Where("id = ?", contestID).Delete(&models.Contest{}).Error
 	if err != nil {
 		return err
@@ -260,7 +269,8 @@ func (cr *contestRepository) Delete(tx *gorm.DB, contestID int64) error {
 	return nil
 }
 
-func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration *models.ContestRegistrationRequests) (int64, error) {
+func (cr *contestRepository) CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error) {
+	tx := db.GetInstance()
 	err := tx.Create(registration).Error
 	if err != nil {
 		return 0, err
@@ -268,7 +278,8 @@ func (cr *contestRepository) CreatePendingRegistration(tx *gorm.DB, registration
 	return registration.ID, nil
 }
 
-func (cr *contestRepository) IsPendingRegistrationExists(tx *gorm.DB, contestID int64, userID int64) (bool, error) {
+func (cr *contestRepository) IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error) {
+	tx := db.GetInstance()
 	var count int64
 	err := tx.Model(&models.ContestRegistrationRequests{}).
 		Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).
@@ -279,7 +290,8 @@ func (cr *contestRepository) IsPendingRegistrationExists(tx *gorm.DB, contestID 
 	return count > 0, nil
 }
 
-func (cr *contestRepository) IsUserParticipant(tx *gorm.DB, contestID int64, userID int64) (bool, error) {
+func (cr *contestRepository) IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error) {
+	tx := db.GetInstance()
 	var userCount int64
 	err := tx.Model(&models.ContestParticipant{}).
 		Where("contest_id = ? AND user_id = ?", contestID, userID).
@@ -298,7 +310,8 @@ func (cr *contestRepository) IsUserParticipant(tx *gorm.DB, contestID int64, use
 	return userCount > 0 || groupCount > 0, nil
 }
 
-func (cr *contestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+func (cr *contestRepository) GetAllWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
+	tx := db.GetInstance()
 	var contests []models.ContestWithStats
 
 	// Build an efficient query that calculates participant counts and user registration status
@@ -354,7 +367,8 @@ func (cr *contestRepository) GetAllWithStats(tx *gorm.DB, userID int64, offset i
 	return contests, nil
 }
 
-func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+func (cr *contestRepository) GetOngoingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+	tx := db.GetInstance()
 	var contests []models.ContestWithStats
 	var totalCount int64
 
@@ -417,7 +431,8 @@ func (cr *contestRepository) GetOngoingContestsWithStats(tx *gorm.DB, userID int
 	return contests, totalCount, nil
 }
 
-func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+func (cr *contestRepository) GetPastContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+	tx := db.GetInstance()
 	var contests []models.ContestWithStats
 	var totalCount int64
 
@@ -476,7 +491,8 @@ func (cr *contestRepository) GetPastContestsWithStats(tx *gorm.DB, userID int64,
 	return contests, totalCount, nil
 }
 
-func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+func (cr *contestRepository) GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+	tx := db.GetInstance()
 	var contests []models.ContestWithStats
 	var totalCount int64
 
@@ -536,7 +552,8 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(tx *gorm.DB, userID in
 }
 
 // GetContestTasksWithSettings retrieves contest-task relations (with timing flags) and preloads the associated Task
-func (cr *contestRepository) GetContestTasksWithSettings(tx *gorm.DB, contestID int64) ([]models.ContestTask, error) {
+func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+	tx := db.GetInstance()
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).
 		Where("contest_id = ?", contestID).
@@ -549,7 +566,8 @@ func (cr *contestRepository) GetContestTasksWithSettings(tx *gorm.DB, contestID 
 	return relations, nil
 }
 
-func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error) {
+	tx := db.GetInstance()
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
@@ -561,7 +579,8 @@ func (cr *contestRepository) GetTasksForContest(tx *gorm.DB, contestID int64) ([
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID, userID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error) {
+	tx := db.GetInstance()
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
@@ -573,7 +592,8 @@ func (cr *contestRepository) GetTasksForContestWithStats(tx *gorm.DB, contestID,
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetAssignableTasks(tx *gorm.DB, contestID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error) {
+	tx := db.GetInstance()
 	var tasks []models.Task
 	err := tx.Model(&models.Task{}).
 		Where("id NOT IN (?)",
@@ -588,7 +608,8 @@ func (cr *contestRepository) GetAssignableTasks(tx *gorm.DB, contestID int64) ([
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int64) ([]models.ParticipantContestStats, error) {
+func (cr *contestRepository) GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error) {
+	tx := db.GetInstance()
 	var contests []models.ParticipantContestStats
 
 	// Build query to get contests where user is a participant with statistics.
@@ -707,7 +728,8 @@ func (cr *contestRepository) GetContestsForUserWithStats(tx *gorm.DB, userID int
 	return contests, nil
 }
 
-func (cr *contestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.ContestTask) error {
+func (cr *contestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
+	tx := db.GetInstance()
 	err := tx.Create(&taskContest).Error
 	if err != nil {
 		return err
@@ -715,7 +737,8 @@ func (cr *contestRepository) AddTaskToContest(tx *gorm.DB, taskContest models.Co
 	return nil
 }
 
-func (cr *contestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
+func (cr *contestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
+	tx := db.GetInstance()
 	var requests []models.ContestRegistrationRequests
 	err := tx.Preload("User").Where("contest_id = ? AND status = ?", contestID, status).Find(&requests).Error
 	if err != nil {
@@ -724,15 +747,18 @@ func (cr *contestRepository) GetRegistrationRequests(tx *gorm.DB, contestID int6
 	return requests, nil
 }
 
-func (cr *contestRepository) UpdateRegistrationRequestStatus(tx *gorm.DB, requestID int64, status types.RegistrationRequestStatus) error {
+func (cr *contestRepository) UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error {
+	tx := db.GetInstance()
 	return tx.Model(models.ContestRegistrationRequests{}).Where("id = ?", requestID).Updates(models.ContestRegistrationRequests{Status: status}).Error
 }
 
-func (cr *contestRepository) DeleteRegistrationRequest(tx *gorm.DB, requestID int64) error {
+func (cr *contestRepository) DeleteRegistrationRequest(db database.Database, requestID int64) error {
+	tx := db.GetInstance()
 	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error
 }
 
-func (cr *contestRepository) CreateContestParticipant(tx *gorm.DB, contestID, userID int64) error {
+func (cr *contestRepository) CreateContestParticipant(db database.Database, contestID, userID int64) error {
+	tx := db.GetInstance()
 	participant := &models.ContestParticipant{
 		ContestID: contestID,
 		UserID:    userID,
@@ -744,7 +770,8 @@ func (cr *contestRepository) CreateContestParticipant(tx *gorm.DB, contestID, us
 	return nil
 }
 
-func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
+func (cr *contestRepository) GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
+	tx := db.GetInstance()
 	var request []*models.ContestRegistrationRequests
 	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).Limit(1).Find(&request).Error
 	if err != nil {
@@ -757,7 +784,8 @@ func (cr *contestRepository) GetPendingRegistrationRequest(tx *gorm.DB, contestI
 	return request[0], nil
 }
 
-func (cr *contestRepository) GetContestTask(tx *gorm.DB, contestID, taskID int64) (*models.ContestTask, error) {
+func (cr *contestRepository) GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error) {
+	tx := db.GetInstance()
 	var contestTask models.ContestTask
 	err := tx.Where("contest_id = ? AND task_id = ?", contestID, taskID).First(&contestTask).Error
 	if err != nil {
@@ -766,7 +794,8 @@ func (cr *contestRepository) GetContestTask(tx *gorm.DB, contestID, taskID int64
 	return &contestTask, nil
 }
 
-func (cr *contestRepository) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64, error) {
+func (cr *contestRepository) GetTaskContests(db database.Database, taskID int64) ([]int64, error) {
+	tx := db.GetInstance()
 	var contestIDs []int64
 	err := tx.Model(&models.ContestTask{}).Where("task_id = ?", taskID).Pluck("contest_id", &contestIDs).Error
 	if err != nil {
@@ -775,7 +804,8 @@ func (cr *contestRepository) GetTaskContests(tx *gorm.DB, taskID int64) ([]int64
 	return contestIDs, nil
 }
 
-func (cr *contestRepository) GetWithCount(tx *gorm.DB, contestID int64) (*models.ParticipantContestStats, error) {
+func (cr *contestRepository) GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error) {
+	tx := db.GetInstance()
 	var contest models.ParticipantContestStats
 	err := tx.Model(&models.Contest{}).
 		Select(`

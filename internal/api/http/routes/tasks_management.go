@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/service"
@@ -94,21 +93,16 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 		Title:     title,
 		CreatedBy: currentUser.ID,
 	}
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
-	taskID, err := tr.taskService.Create(tx, currentUser, &task)
+	db := httputils.GetDatabase(r)
+
+	taskID, err := tr.taskService.Create(db, currentUser, &task)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
-	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
+	err = tr.taskService.ProcessAndUpload(db, currentUser, taskID, filePath)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -150,23 +144,16 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := httputils.GetCurrentUser(r)
-
 	request := schemas.EditTask{}
 	newTitle := r.FormValue("title")
 	if newTitle != "" {
 		request.Title = &newTitle
 	}
 
-	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	err = tr.taskService.Edit(db, currentUser, taskID, &request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -200,10 +187,8 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Process and upload
-	if err := tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath); err != nil {
-		db.Rollback()
-		tr.logger.Errorw("Failed to process and upload task", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
+	if err := tr.taskService.ProcessAndUpload(db, currentUser, taskID, filePath); err != nil {
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task updated successfully"))
@@ -239,17 +224,10 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = tr.taskService.Delete(tx, currentUser, taskID)
+	err = tr.taskService.Delete(db, currentUser, taskID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -287,25 +265,12 @@ func (tr *tasksManagementRoute) GetLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
+	limits, err := tr.taskService.GetLimits(db, currentUser, taskID)
 	if err != nil {
-		switch {
-		case errors.Is(err, errors.ErrNotFound):
-			httputils.ReturnError(w, http.StatusNotFound, "Task not found.")
-		default:
-			tr.logger.Errorw("Failed to get task limits", "error", err)
-			httputils.ReturnError(w, http.StatusInternalServerError, "Task service temporarily unavailable")
-		}
+		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
@@ -342,16 +307,6 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	currentUser := httputils.GetCurrentUser(r)
-
 	request := schemas.PutTestCaseLimitsRequest{}
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
@@ -359,7 +314,10 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	err = tr.taskService.PutLimits(db, currentUser, taskID, request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -388,19 +346,12 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := httputils.GetCurrentUser(r)
 
-	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
+	response, err := tr.taskService.GetAllCreated(db, currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return

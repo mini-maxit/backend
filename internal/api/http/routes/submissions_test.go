@@ -64,18 +64,6 @@ func TestGetAll(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		db.Invalidate()
-		resp, err := http.Get(server.URL)
-		require.NoError(t, err)
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
-	})
-
 	t.Run("Internal server error", func(t *testing.T) {
 		ss.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
 
@@ -182,18 +170,6 @@ func TestGetByID(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		assert.Contains(t, string(bodyBytes), "Invalid submission id")
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		db.Invalidate()
-		resp, err := http.Get(server.URL + "/1")
-		require.NoError(t, err)
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
@@ -326,18 +302,6 @@ func TestGetAvailableLanguages(t *testing.T) {
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		db.Invalidate()
-		resp, err := http.Get(server.URL)
-		require.NoError(t, err)
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
-	})
 
 	t.Run("Internal server error", func(t *testing.T) {
 		ss.EXPECT().GetAvailableLanguages(gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
@@ -529,42 +493,6 @@ func TestSubmitSolution(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		assert.Contains(t, string(bodyBytes), "Invalid language ID")
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		tmpFile := filepath.Join(tmpDir, "solution.go")
-		err := os.WriteFile(tmpFile, []byte("package main\nfunc main() {}"), 0644)
-		require.NoError(t, err)
-
-		body := &bytes.Buffer{}
-		writer := multipart.NewWriter(body)
-		writer.WriteField("taskID", "1")
-		writer.WriteField("languageID", "1")
-
-		file, err := os.Open(tmpFile)
-		require.NoError(t, err)
-		defer file.Close()
-
-		part, err := writer.CreateFormFile("solution", filepath.Base(tmpFile))
-		require.NoError(t, err)
-		_, err = io.Copy(part, file)
-		require.NoError(t, err)
-		writer.Close()
-
-		db.Invalidate()
-		req, err := http.NewRequest(http.MethodPost, server.URL, body)
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", writer.FormDataContentType())
-
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Database connection error")
 	})
 
 	t.Run("Task not found", func(t *testing.T) {

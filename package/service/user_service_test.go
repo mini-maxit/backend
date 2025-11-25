@@ -3,6 +3,8 @@ package service_test
 import (
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/testutils"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -19,14 +21,14 @@ import (
 
 func TestGetUserByEmail(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
 	us := service.NewUserService(ur, cs)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "nonexistentemail").Return(nil, gorm.ErrRecordNotFound).Times(1)
-		user, err := us.GetByEmail(tx, "nonexistentemail")
+		ur.EXPECT().GetByEmail(db, "nonexistentemail").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		user, err := us.GetByEmail(db, "nonexistentemail")
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
@@ -40,8 +42,8 @@ func TestGetUserByEmail(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		ur.EXPECT().GetByEmail(tx, user.Email).Return(user, nil).Times(1)
-		userResp, err := us.GetByEmail(tx, user.Email)
+		ur.EXPECT().GetByEmail(db, user.Email).Return(user, nil).Times(1)
+		userResp, err := us.GetByEmail(db, user.Email)
 		require.NoError(t, err)
 		assert.NotNil(t, userResp)
 		assert.Equal(t, user.ID, userResp.ID)
@@ -53,15 +55,15 @@ func TestGetUserByEmail(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
 	us := service.NewUserService(ur, cs)
 
 	t.Run("User does not exist", func(t *testing.T) {
-		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		user, err := us.Get(tx, int64(1))
+		ur.EXPECT().Get(db, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		user, err := us.Get(db, int64(1))
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, user)
 	})
@@ -75,8 +77,8 @@ func TestGetUserByID(t *testing.T) {
 			Username:     "testuser",
 			PasswordHash: "password",
 		}
-		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
-		userResp, err := us.Get(tx, user.ID)
+		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
+		userResp, err := us.Get(db, user.ID)
 		require.NoError(t, err)
 		assert.NotNil(t, userResp)
 		assert.Equal(t, user.ID, userResp.ID)
@@ -88,7 +90,7 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestEditUser(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -104,24 +106,24 @@ func TestEditUser(t *testing.T) {
 	}
 
 	t.Run("User does not exist", func(t *testing.T) {
-		ur.EXPECT().Get(tx, studentUser.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := us.Edit(tx, adminUser, studentUser.ID, &schemas.UserEdit{})
+		ur.EXPECT().Get(db, studentUser.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.Edit(db, adminUser, studentUser.ID, &schemas.UserEdit{})
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := us.Edit(tx, studentUser, adminUser.ID, &schemas.UserEdit{})
+		err := us.Edit(db, studentUser, adminUser.ID, &schemas.UserEdit{})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Not allowed", func(t *testing.T) {
 		role := types.UserRoleAdmin
-		ur.EXPECT().Get(tx, studentUser.ID).Return(&models.User{
+		ur.EXPECT().Get(db, studentUser.ID).Return(&models.User{
 			ID:   studentUser.ID,
 			Role: types.UserRoleStudent,
 		}, nil).Times(1)
 		err := us.Edit(
-			tx,
+			db,
 			studentUser,
 			studentUser.ID,
 			&schemas.UserEdit{Role: &role})
@@ -141,15 +143,15 @@ func TestEditUser(t *testing.T) {
 		updatedUser := &schemas.UserEdit{
 			Name: &newName,
 		}
-		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
-		ur.EXPECT().Edit(tx, user).Return(nil).Times(1)
-		err := us.Edit(tx, adminUser, user.ID, updatedUser)
+		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
+		ur.EXPECT().Edit(db, user).Return(nil).Times(1)
+		err := us.Edit(db, adminUser, user.ID, updatedUser)
 		require.NoError(t, err)
 	})
 }
 
 func TestGetAllUsers(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -158,12 +160,12 @@ func TestGetAllUsers(t *testing.T) {
 
 	t.Run("No users", func(t *testing.T) {
 		ur.EXPECT().GetAll(
-			tx,
+			db,
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
 		).Return([]models.User{}, int64(0), nil).Times(1)
-		result, err := us.GetAll(tx, paginationParams)
+		result, err := us.GetAll(db, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -178,12 +180,12 @@ func TestGetAllUsers(t *testing.T) {
 			PasswordHash: "password",
 		}
 		ur.EXPECT().GetAll(
-			tx,
+			db,
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
 		).Return([]models.User{*user}, int64(1), nil).Times(1)
-		result, err := us.GetAll(tx, paginationParams)
+		result, err := us.GetAll(db, paginationParams)
 		require.NoError(t, err)
 		assert.Len(t, result.Items, 1)
 		assert.Equal(t, user.Email, result.Items[0].Email)
@@ -198,7 +200,7 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestChangeRole(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -214,32 +216,32 @@ func TestChangeRole(t *testing.T) {
 	}
 
 	t.Run("User does not exist", func(t *testing.T) {
-		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := us.ChangeRole(tx, adminUser, int64(1), types.UserRoleAdmin)
+		ur.EXPECT().Get(db, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.ChangeRole(db, adminUser, int64(1), types.UserRoleAdmin)
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := us.ChangeRole(tx, studentUser, adminUser.ID, types.UserRoleAdmin)
+		err := us.ChangeRole(db, studentUser, adminUser.ID, types.UserRoleAdmin)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		ur.EXPECT().Get(tx, studentUser.ID).Return(&models.User{
+		ur.EXPECT().Get(db, studentUser.ID).Return(&models.User{
 			ID:   studentUser.ID,
 			Role: types.UserRoleStudent,
 		}, nil).Times(1)
-		ur.EXPECT().Edit(tx, &models.User{
+		ur.EXPECT().Edit(db, &models.User{
 			ID:   studentUser.ID,
 			Role: types.UserRoleTeacher,
 		}).Times(1)
-		err := us.ChangeRole(tx, adminUser, studentUser.ID, types.UserRoleTeacher)
+		err := us.ChangeRole(db, adminUser, studentUser.ID, types.UserRoleTeacher)
 		require.NoError(t, err)
 	})
 }
 
 func TestChangePassword(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -263,19 +265,19 @@ func TestChangePassword(t *testing.T) {
 		Role: types.UserRoleStudent,
 	}
 	t.Run("User does not exist", func(t *testing.T) {
-		ur.EXPECT().Get(tx, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := us.ChangePassword(tx, adminUser, 1, &schemas.UserChangePassword{})
+		ur.EXPECT().Get(db, int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		err := us.ChangePassword(db, adminUser, 1, &schemas.UserChangePassword{})
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		err := us.ChangePassword(tx, randomUser, user.ID, &schemas.UserChangePassword{})
+		err := us.ChangePassword(db, randomUser, user.ID, &schemas.UserChangePassword{})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
 	t.Run("Invalid old password", func(t *testing.T) {
-		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
-		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
+		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
+		err := us.ChangePassword(db, adminUser, user.ID, &schemas.UserChangePassword{
 			OldPassword:        "invalidpassword",
 			NewPassword:        newPassword,
 			NewPasswordConfirm: newPassword})
@@ -283,8 +285,8 @@ func TestChangePassword(t *testing.T) {
 	})
 
 	t.Run("Invalid data", func(t *testing.T) {
-		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
-		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
+		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
+		err := us.ChangePassword(db, adminUser, user.ID, &schemas.UserChangePassword{
 			OldPassword:        password,
 			NewPassword:        newPassword,
 			NewPasswordConfirm: newPassword + "123"})
@@ -292,9 +294,9 @@ func TestChangePassword(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		ur.EXPECT().Get(tx, user.ID).Return(user, nil).Times(1)
-		ur.EXPECT().Edit(tx, gomock.Any()).Return(nil).Times(1)
-		err := us.ChangePassword(tx, adminUser, user.ID, &schemas.UserChangePassword{
+		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
+		ur.EXPECT().Edit(db, gomock.Any()).Return(nil).Times(1)
+		err := us.ChangePassword(db, adminUser, user.ID, &schemas.UserChangePassword{
 			OldPassword:        password,
 			NewPassword:        newPassword,
 			NewPasswordConfirm: newPassword})
@@ -303,7 +305,7 @@ func TestChangePassword(t *testing.T) {
 }
 
 func TestIsTaskAssignedToUser(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -313,77 +315,77 @@ func TestIsTaskAssignedToUser(t *testing.T) {
 	taskID := int64(100)
 
 	t.Run("Error getting task contests", func(t *testing.T) {
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(nil, assert.AnError).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(nil, assert.AnError).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.Error(t, err)
 		assert.False(t, isAssigned)
 	})
 
 	t.Run("Task not assigned to any contest", func(t *testing.T) {
-		cs.EXPECT().GetTaskContests(tx, taskID).Return([]int64{}, nil).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return([]int64{}, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.False(t, isAssigned)
 	})
 
 	t.Run("Task assigned to contests but user not participant", func(t *testing.T) {
 		contestIDs := []int64{1, 2, 3}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(3), userID).Return(false, nil).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(2), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(3), userID).Return(false, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.False(t, isAssigned)
 	})
 
 	t.Run("Error checking user participation", func(t *testing.T) {
 		contestIDs := []int64{1, 2}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, assert.AnError).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(2), userID).Return(false, assert.AnError).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.Error(t, err)
 		assert.False(t, isAssigned)
 	})
 
 	t.Run("User is participant in first contest", func(t *testing.T) {
 		contestIDs := []int64{1, 2, 3}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(true, nil).Times(1)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(1), userID).Return(true, nil).Times(1)
 		// Should return immediately after finding first match, no more calls
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.True(t, isAssigned)
 	})
 
 	t.Run("User is participant in middle contest", func(t *testing.T) {
 		contestIDs := []int64{1, 2, 3}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(true, nil).Times(1)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(2), userID).Return(true, nil).Times(1)
 		// Should return immediately after finding match, no call for contest 3
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.True(t, isAssigned)
 	})
 
 	t.Run("User is participant in last contest", func(t *testing.T) {
 		contestIDs := []int64{1, 2, 3}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(1), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(2), userID).Return(false, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(3), userID).Return(true, nil).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(1), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(2), userID).Return(false, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(3), userID).Return(true, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.True(t, isAssigned)
 	})
 
 	t.Run("Task in single contest and user is participant", func(t *testing.T) {
 		contestIDs := []int64{5}
-		cs.EXPECT().GetTaskContests(tx, taskID).Return(contestIDs, nil).Times(1)
-		cs.EXPECT().IsUserParticipant(tx, int64(5), userID).Return(true, nil).Times(1)
-		isAssigned, err := us.IsTaskAssignedToUser(tx, userID, taskID)
+		cs.EXPECT().GetTaskContests(db, taskID).Return(contestIDs, nil).Times(1)
+		cs.EXPECT().IsUserParticipant(db, int64(5), userID).Return(true, nil).Times(1)
+		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.True(t, isAssigned)
 	})

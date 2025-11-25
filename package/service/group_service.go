@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -12,21 +13,21 @@ import (
 
 type GroupService interface {
 	// AddUsers adds users to a group.
-	AddUsers(tx *gorm.DB, currentUser schemas.User, groupID int64, userIDs []int64) error
+	AddUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error
 	// Create creates a new group.
-	Create(tx *gorm.DB, currentUser schemas.User, group *schemas.Group) (int64, error)
+	Create(db database.Database, currentUser schemas.User, group *schemas.Group) (int64, error)
 	// Delete removes a group by its ID.
-	Delete(tx *gorm.DB, currentUser schemas.User, groupID int64) error
+	Delete(db database.Database, currentUser schemas.User, groupID int64) error
 	// DeleteUsers removes users from a group.
-	DeleteUsers(tx *gorm.DB, currentUser schemas.User, groupID int64, userIDs []int64) error
+	DeleteUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error
 	// Edit updates the information of a group.
-	Edit(tx *gorm.DB, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
+	Edit(db database.Database, currentUser schemas.User, groupID int64, editInfo *schemas.EditGroup) (*schemas.Group, error)
 	// Get retrieves detailed information about a group by its ID.
-	Get(tx *gorm.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
+	Get(db database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error)
 	// GetAll retrieves all groups based on query parameters.
-	GetAll(tx *gorm.DB, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error)
+	GetAll(db database.Database, currentUser schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Group, error)
 	// GetUsers retrieves all users associated with a group.
-	GetUsers(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error)
+	GetUsers(db database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error)
 }
 
 const defaultGroupSort = "created_at:desc"
@@ -37,7 +38,7 @@ type groupService struct {
 	userService     UserService
 }
 
-func (gs *groupService) Create(tx *gorm.DB, currentUser schemas.User, group *schemas.Group) (int64, error) {
+func (gs *groupService) Create(db database.Database, currentUser schemas.User, group *schemas.Group) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return 0, err
@@ -56,7 +57,7 @@ func (gs *groupService) Create(tx *gorm.DB, currentUser schemas.User, group *sch
 		CreatedBy: group.CreatedBy,
 	}
 
-	groupID, err := gs.groupRepository.Create(tx, model)
+	groupID, err := gs.groupRepository.Create(db, model)
 	if err != nil {
 		return -1, err
 	}
@@ -64,13 +65,13 @@ func (gs *groupService) Create(tx *gorm.DB, currentUser schemas.User, group *sch
 	return groupID, nil
 }
 
-func (gs *groupService) Delete(tx *gorm.DB, currentUser schemas.User, groupID int64) error {
+func (gs *groupService) Delete(db database.Database, currentUser schemas.User, groupID int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.Get(tx, groupID)
+	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -82,11 +83,11 @@ func (gs *groupService) Delete(tx *gorm.DB, currentUser schemas.User, groupID in
 		return errors.ErrForbidden
 	}
 
-	return gs.groupRepository.Delete(tx, groupID)
+	return gs.groupRepository.Delete(db, groupID)
 }
 
 func (gs *groupService) Edit(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser schemas.User,
 	groupID int64,
 	editInfo *schemas.EditGroup,
@@ -104,7 +105,7 @@ func (gs *groupService) Edit(
 		return nil, err
 	}
 
-	model, err := gs.groupRepository.Get(tx, groupID)
+	model, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrGroupNotFound
@@ -117,7 +118,7 @@ func (gs *groupService) Edit(
 
 	gs.updateModel(model, editInfo)
 
-	newModel, err := gs.groupRepository.Edit(tx, groupID, model)
+	newModel, err := gs.groupRepository.Edit(db, groupID, model)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (gs *groupService) Edit(
 }
 
 func (gs *groupService) GetAll(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser schemas.User,
 	paginationParams schemas.PaginationParams,
 ) ([]schemas.Group, error) {
@@ -141,12 +142,12 @@ func (gs *groupService) GetAll(
 
 	switch currentUser.Role {
 	case types.UserRoleAdmin:
-		groups, err = gs.groupRepository.GetAll(tx, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+		groups, err = gs.groupRepository.GetAll(db, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 		if err != nil {
 			return nil, err
 		}
 	case types.UserRoleTeacher:
-		groups, err = gs.groupRepository.GetAllForTeacher(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+		groups, err = gs.groupRepository.GetAllForTeacher(db, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 		if err != nil {
 			return nil, err
 		}
@@ -163,13 +164,13 @@ func (gs *groupService) GetAll(
 	return result, nil
 }
 
-func (gs *groupService) Get(tx *gorm.DB, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
+func (gs *groupService) Get(db database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := gs.groupRepository.Get(tx, groupID)
+	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrGroupNotFound
@@ -184,13 +185,13 @@ func (gs *groupService) Get(tx *gorm.DB, currentUser schemas.User, groupID int64
 	return GroupToSchemaDetailed(group), nil
 }
 
-func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (gs *groupService) AddUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.Get(tx, groupID)
+	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -203,11 +204,11 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	}
 
 	for _, userID := range userIDs {
-		_, err := gs.userRepository.Get(tx, userID)
+		_, err := gs.userRepository.Get(db, userID)
 		if err != nil {
 			return err
 		}
-		exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, userID)
+		exists, err := gs.groupRepository.UserBelongsTo(db, groupID, userID)
 		if err != nil {
 			return err
 		}
@@ -215,7 +216,7 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 			continue
 		}
 
-		err = gs.groupRepository.AddUser(tx, groupID, userID)
+		err = gs.groupRepository.AddUser(db, groupID, userID)
 		if err != nil {
 			return err
 		}
@@ -224,13 +225,13 @@ func (gs *groupService) AddUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 	return nil
 }
 
-func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, groupID int64, userIDs []int64) error {
+func (gs *groupService) DeleteUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return err
 	}
 
-	group, err := gs.groupRepository.Get(tx, groupID)
+	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -243,11 +244,11 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 	}
 
 	for _, userID := range userIDs {
-		_, err := gs.userRepository.Get(tx, userID)
+		_, err := gs.userRepository.Get(db, userID)
 		if err != nil {
 			return errors.ErrUserNotFound
 		}
-		exists, err := gs.groupRepository.UserBelongsTo(tx, groupID, userID)
+		exists, err := gs.groupRepository.UserBelongsTo(db, groupID, userID)
 		if err != nil {
 			return err
 		}
@@ -255,7 +256,7 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 			continue
 		}
 
-		err = gs.groupRepository.DeleteUser(tx, groupID, userID)
+		err = gs.groupRepository.DeleteUser(db, groupID, userID)
 		if err != nil {
 			return err
 		}
@@ -264,13 +265,13 @@ func (gs *groupService) DeleteUsers(tx *gorm.DB, currentUser schemas.User, group
 	return nil
 }
 
-func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
+func (gs *groupService) GetUsers(db database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
 	if err != nil {
 		return nil, err
 	}
 
-	group, err := gs.groupRepository.Get(tx, groupID)
+	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrGroupNotFound
@@ -282,7 +283,7 @@ func (gs *groupService) GetUsers(tx *gorm.DB, currentUser schemas.User, groupID 
 		return nil, errors.ErrForbidden
 	}
 
-	users, err := gs.groupRepository.GetUsers(tx, groupID)
+	users, err := gs.groupRepository.GetUsers(db, groupID)
 	if err != nil {
 		return nil, err
 	}

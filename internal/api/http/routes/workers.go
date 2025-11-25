@@ -40,6 +40,7 @@ func (wr *workerRoute) GetStatus(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+
 	currentUser := httputils.GetCurrentUser(r)
 
 	status, err := wr.workserService.GetStatus(currentUser)
@@ -66,6 +67,7 @@ func (wr *workerRoute) GetQueueStatus(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+
 	currentUser := httputils.GetCurrentUser(r)
 
 	status, err := wr.workserService.GetQueueStatus(currentUser)
@@ -92,6 +94,7 @@ func (wr *workerRoute) ReconnectQueue(w http.ResponseWriter, r *http.Request) {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+
 	currentUser := httputils.GetCurrentUser(r)
 
 	err := wr.workserService.ReconnectQueue(currentUser)

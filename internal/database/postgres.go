@@ -87,3 +87,10 @@ func (p *PostgresDB) Commit() error {
 	p.tx = nil
 	return nil
 }
+
+func (p *PostgresDB) GetInstance() *gorm.DB {
+	if p.tx != nil {
+		return p.tx
+	}
+	return p.db
+}

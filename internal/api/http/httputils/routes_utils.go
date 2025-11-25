@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/gorilla/mux"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/utils"
 )
@@ -185,6 +186,14 @@ func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParam
 }
 
 func GetCurrentUser(r *http.Request) *schemas.User {
-	user := r.Context().Value(UserKey).(schemas.User)
-	return &user
+	userAny := r.Context().Value(UserKey)
+	if user, ok := userAny.(schemas.User); ok {
+		return &user
+	}
+	panic("should not happen")
+}
+
+func GetDatabase(r *http.Request) database.Database {
+	db := r.Context().Value(DatabaseKey).(database.Database)
+	return db
 }

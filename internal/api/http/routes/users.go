@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
@@ -47,17 +46,10 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	result, err := u.userService.GetAll(tx, paginationParams)
+	result, err := u.userService.GetAll(db, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -98,15 +90,8 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
-	user, err := u.userService.Get(tx, userID)
+	db := httputils.GetDatabase(r)
+	user, err := u.userService.Get(db, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -136,8 +121,6 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request schemas.UserEdit
-
 	userIDStr := httputils.GetPathValue(r, "id")
 
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
@@ -146,23 +129,17 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var request schemas.UserEdit
 	err = httputils.ShouldBindJSON(r.Body, &request)
 	if err != nil {
 		httputils.HandleValidationError(w, err)
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.Edit(tx, *currentUser, userID, &request)
+	err = u.userService.Edit(db, *currentUser, userID, &request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -209,17 +186,10 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-
+	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.ChangePassword(tx, *currentUser, userID, request)
+	err = u.userService.ChangePassword(db, *currentUser, userID, request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -250,12 +220,8 @@ func (u *UserRouteImpl) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userVal := r.Context().Value(httputils.UserKey)
-	currentUser, ok := userVal.(schemas.User)
-	if !ok {
-		httputils.ReturnError(w, http.StatusInternalServerError, "Could not retrieve user. Verify that you are logged in.")
-		return
-	}
+	currentUser := httputils.GetCurrentUser(r)
+
 	httputils.ReturnSuccess(w, http.StatusOK, currentUser)
 }
 

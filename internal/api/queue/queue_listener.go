@@ -14,7 +14,6 @@ import (
 	"github.com/mini-maxit/backend/package/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const (
@@ -169,7 +168,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	ql.logger.Infof("Received message: %s of type %s", queueMessage.MessageID, queueMessage.Type)
 
 	session := ql.database.NewSession()
-	tx, err := session.BeginTransaction()
+	_, err = session.BeginTransaction()
 	if err != nil {
 		ql.logger.Errorf("Failed to begin transaction: %s", err)
 		_ = msg.Nack(false, false)
@@ -178,9 +177,9 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 
 	switch queueMessage.Type {
 	case MessageTypeTask:
-		ql.handleTaskMessage(session, tx, msg, queueMessage)
+		ql.handleTaskMessage(session, msg, queueMessage)
 	case MessageTypeHandshake:
-		ql.handleHandshakeMessage(session, tx, msg, queueMessage)
+		ql.handleHandshakeMessage(session, msg, queueMessage)
 	case MessageTypeStatus:
 		ql.handleStatusMessage(session, msg, queueMessage)
 	default:
@@ -190,7 +189,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	}
 }
 
-func (ql *listener) handleTaskMessage(session database.Database, tx *gorm.DB, msg amqp.Delivery, queueMessage schemas.QueueResponseMessage) {
+func (ql *listener) handleTaskMessage(session database.Database, msg amqp.Delivery, queueMessage schemas.QueueResponseMessage) {
 	submissionID, err := strconv.ParseInt(queueMessage.MessageID, 10, 64)
 	if err != nil {
 		ql.logger.Errorf("Failed to parse submission ID: %s", err)
@@ -200,7 +199,7 @@ func (ql *listener) handleTaskMessage(session database.Database, tx *gorm.DB, ms
 	}
 	ql.logger.Infof("Received task message for submission %d", submissionID)
 
-	_, err = ql.submissionService.CreateSubmissionResult(tx, submissionID, queueMessage)
+	_, err = ql.submissionService.CreateSubmissionResult(session, submissionID, queueMessage)
 	if err != nil {
 		ql.logger.Errorf("Failed to create submission result: %s", err)
 		session.Rollback()
@@ -214,7 +213,7 @@ func (ql *listener) handleTaskMessage(session database.Database, tx *gorm.DB, ms
 	ql.logger.Infof("Successfully processed message: %s", queueMessage.MessageID)
 }
 
-func (ql *listener) handleHandshakeMessage(session database.Database, tx *gorm.DB, msg amqp.Delivery, queueMessage schemas.QueueResponseMessage) {
+func (ql *listener) handleHandshakeMessage(session database.Database, msg amqp.Delivery, queueMessage schemas.QueueResponseMessage) {
 	ql.logger.Info("Handshake message received")
 
 	handshakeResponse := schemas.HandShakeResponsePayload{}
@@ -226,7 +225,7 @@ func (ql *listener) handleHandshakeMessage(session database.Database, tx *gorm.D
 		return
 	}
 
-	err = ql.languageService.Init(tx, handshakeResponse)
+	err = ql.languageService.Init(session, handshakeResponse)
 	if err != nil {
 		ql.logger.Errorf("Failed to initialize languages: %s", err)
 		session.Rollback()

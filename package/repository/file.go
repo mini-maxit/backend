@@ -1,18 +1,19 @@
 package repository
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
-	"gorm.io/gorm"
 )
 
 type File interface {
-	Create(tx *gorm.DB, file *models.File) error
+	Create(db database.Database, file *models.File) error
 }
 
 type file struct {
 }
 
-func (f *file) Create(tx *gorm.DB, file *models.File) error {
+func (f *file) Create(db database.Database, file *models.File) error {
+	tx := db.GetInstance()
 	err := tx.Model(models.File{}).Create(&file).Error
 	if err != nil {
 		return err
