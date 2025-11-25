@@ -98,6 +98,18 @@ func TestNewPaginationMetadata(t *testing.T) {
 				TotalPages:  10,
 			},
 		},
+		{
+			name:       "Total is zero with non-zero offset and limit",
+			offset:     10,
+			limit:      10,
+			totalItems: 0,
+			want: schemas.PaginationMetadata{
+				CurrentPage: 1,
+				PageSize:    10,
+				TotalItems:  0,
+				TotalPages:  0,
+			},
+		},
 	}
 
 	for _, tt := range tests {

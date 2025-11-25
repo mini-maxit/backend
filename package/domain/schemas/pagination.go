@@ -22,14 +22,36 @@ type PaginatedResult[T any] struct {
 
 // NewPaginationMetadata creates pagination metadata from offset, limit, and total count
 func NewPaginationMetadata(offset, limit, totalItems int) PaginationMetadata {
-	currentPage := 1
-	if limit > 0 {
-		currentPage = (offset / limit) + 1
+	// Defensive defaults
+	if limit <= 0 {
+		// No paging (or invalid page size) — treat as single page
+		return PaginationMetadata{
+			CurrentPage: 1,
+			PageSize:    limit,
+			TotalItems:  totalItems,
+			TotalPages:  0,
+		}
 	}
 
+	if offset < 0 {
+		offset = 0
+	}
+
+	// totalPages first (ceiling division)
 	totalPages := 0
-	if limit > 0 && totalItems > 0 {
-		totalPages = (totalItems + limit - 1) / limit // Ceiling division
+	if totalItems > 0 {
+		totalPages = (totalItems + limit - 1) / limit
+	}
+
+	// derive current page from offset
+	currentPage := (offset / limit) + 1
+
+	// if there are no items, ensure currentPage stays 1
+	if totalPages == 0 {
+		currentPage = 1
+	} else if currentPage > totalPages {
+		// clamp to the last page if offset points past the end
+		currentPage = totalPages
 	}
 
 	return PaginationMetadata{
