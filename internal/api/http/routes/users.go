@@ -48,16 +48,10 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	result, err := u.userService.GetAll(tx, paginationParams)
+	result, err := u.userService.GetAll(db, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -99,14 +93,8 @@ func (u *UserRouteImpl) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
-	user, err := u.userService.Get(tx, userID)
+	user, err := u.userService.Get(db, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -153,16 +141,10 @@ func (u *UserRouteImpl) EditUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.Edit(tx, *currentUser, userID, &request)
+	err = u.userService.Edit(db, *currentUser, userID, &request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
@@ -210,16 +192,10 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		u.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = u.userService.ChangePassword(tx, *currentUser, userID, request)
+	err = u.userService.ChangePassword(db, *currentUser, userID, request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return

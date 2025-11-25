@@ -46,6 +46,11 @@ func (db *MockDatabase) Validate() {
 func (db *MockDatabase) DB() *gorm.DB {
 	return &gorm.DB{}
 }
+
+func (db *MockDatabase) GetInstance() *gorm.DB {
+	return &gorm.DB{}
+}
+
 func (db *MockDatabase) ResolveTableName(model interface{}) string {
 	return "mock_table"
 }

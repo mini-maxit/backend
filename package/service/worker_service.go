@@ -3,12 +3,12 @@ package service
 import (
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type WorkerService interface {
@@ -20,7 +20,7 @@ type WorkerService interface {
 type workerService struct {
 	queueService         QueueService
 	submissionRepository repository.SubmissionRepository
-	db                   *gorm.DB
+	db                   database.Database
 }
 
 func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersStatus, error) {
@@ -61,7 +61,7 @@ func (ws *workerService) GetStatus(currentUser *schemas.User) (*schemas.WorkersS
 	}
 }
 
-func NewWorkerService(queueService QueueService, submissionRepository repository.SubmissionRepository, db *gorm.DB) WorkerService {
+func NewWorkerService(queueService QueueService, submissionRepository repository.SubmissionRepository, db database.Database) WorkerService {
 	return &workerService{
 		queueService:         queueService,
 		submissionRepository: submissionRepository,

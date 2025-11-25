@@ -51,12 +51,6 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
@@ -71,7 +65,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	contest, err := cr.contestService.Get(tx, currentUser, contestID)
+	contest, err := cr.contestService.Get(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -101,12 +95,6 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	currentUser := httputils.GetCurrentUser(r)
@@ -123,13 +111,14 @@ func (cr *ContestRouteImpl) GetContests(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var response schemas.PaginatedResult[[]schemas.AvailableContest]
+	var err error
 	switch statusStr {
 	case "ongoing":
-		response, err = cr.contestService.GetOngoingContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetOngoingContests(db, currentUser, paginationParams)
 	case "upcoming":
-		response, err = cr.contestService.GetUpcomingContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetUpcomingContests(db, currentUser, paginationParams)
 	case "past":
-		response, err = cr.contestService.GetPastContests(tx, currentUser, paginationParams)
+		response, err = cr.contestService.GetPastContests(db, currentUser, paginationParams)
 	default:
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status query parameter")
 		return
@@ -166,12 +155,6 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	contestStr := httputils.GetPathValue(r, "id")
 	if contestStr == "" {
@@ -186,7 +169,7 @@ func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Re
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = cr.contestService.RegisterForContest(tx, currentUser, contestID)
+	err = cr.contestService.RegisterForContest(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -229,13 +212,7 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 
 	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-	tasks, err := cr.contestService.GetTaskProgressForContest(tx, currentUser, contestID)
+	tasks, err := cr.contestService.GetTaskProgressForContest(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -263,16 +240,10 @@ func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	contests, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	contests, err := cr.contestService.GetUserContests(db, currentUser.ID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -299,15 +270,9 @@ func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.R
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
-	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	combined, err := cr.contestService.GetUserContests(db, currentUser.ID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -333,15 +298,9 @@ func (cr *ContestRouteImpl) GetMyPastContests(w http.ResponseWriter, r *http.Req
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
-	combined, err := cr.contestService.GetUserContests(tx, currentUser.ID)
+	combined, err := cr.contestService.GetUserContests(db, currentUser.ID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -394,14 +353,8 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 	currentUser := httputils.GetCurrentUser(r)
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		cr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
-	task, err := cr.contestService.GetContestTask(tx, currentUser, contestID, taskID)
+	task, err := cr.contestService.GetContestTask(db, currentUser, contestID, taskID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return

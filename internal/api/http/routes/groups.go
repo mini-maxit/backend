@@ -62,12 +62,6 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
@@ -78,7 +72,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	groupID, err := gr.groupService.Create(tx, *currentUser, group)
+	groupID, err := gr.groupService.Create(db, *currentUser, group)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -107,12 +101,6 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	groupStr := httputils.GetPathValue(r, "id")
 	if groupStr == "" {
@@ -127,7 +115,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	group, err := gr.groupService.Get(tx, *currentUser, groupID)
+	group, err := gr.groupService.Get(db, *currentUser, groupID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -155,18 +143,12 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := httputils.GetCurrentUser(r)
 
-	groups, err := gr.groupService.GetAll(tx, *currentUser, paginationParams)
+	groups, err := gr.groupService.GetAll(db, *currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -204,12 +186,6 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	groupStr := httputils.GetPathValue(r, "id")
 	if groupStr == "" {
@@ -224,7 +200,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	resp, err := gr.groupService.Edit(tx, *currentUser, groupID, &request)
+	resp, err := gr.groupService.Edit(db, *currentUser, groupID, &request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -274,16 +250,10 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = gr.groupService.AddUsers(tx, *currentUser, groupID, request.UserIDs)
+	err = gr.groupService.AddUsers(db, *currentUser, groupID, request.UserIDs)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -332,16 +302,10 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = gr.groupService.DeleteUsers(tx, *currentUser, groupID, request.UserIDs)
+	err = gr.groupService.DeleteUsers(db, *currentUser, groupID, request.UserIDs)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return
@@ -381,16 +345,10 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		gr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	users, err := gr.groupService.GetUsers(tx, *currentUser, groupID)
+	users, err := gr.groupService.GetUsers(db, *currentUser, groupID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, gr.logger)
 		return

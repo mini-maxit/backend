@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.AuthService, userRepository repository.UserRepository) {
-	tx, err := db.BeginTransaction()
+func dump(db database.Database, log *zap.SugaredLogger, authService service.AuthService, userRepository repository.UserRepository) {
+	_, err := db.BeginTransaction()
 	if err != nil {
 		log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 	}
@@ -49,7 +49,7 @@ func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.A
 		},
 	}
 	for _, user := range users {
-		_, err = authService.Register(tx, schemas.UserRegisterRequest{
+		_, err = authService.Register(db, schemas.UserRegisterRequest{
 			Name:     user.Name,
 			Surname:  user.Surname,
 			Email:    user.Email,
@@ -59,12 +59,12 @@ func dump(db *database.PostgresDB, log *zap.SugaredLogger, authService service.A
 		if err != nil {
 			log.Warnf("Failed to create %s: %s", user.Username, err.Error())
 		}
-		registeredUser, err := userRepository.GetByEmail(tx, user.Email)
+		registeredUser, err := userRepository.GetByEmail(db, user.Email)
 		if err != nil {
 			log.Warnf("Failed to get %s user: %s", user.Username, err.Error())
 		}
 		registeredUser.Role = user.Role
-		err = userRepository.Edit(tx, registeredUser)
+		err = userRepository.Edit(db, registeredUser)
 		if err != nil {
 			log.Warnf("Failed to set %s role: %s", user.Username, err.Error())
 		}

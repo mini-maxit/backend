@@ -54,34 +54,6 @@ func TestGetAllUsers(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.QueryParamsKey, map[string]any{})
-			ctx = context.WithValue(ctx, httputils.DatabaseKey, db)
-			route.GetAllUsers(w, r.WithContext(ctx))
-		})
-		server := httptest.NewServer(handler)
-		defer server.Close()
-
-		db.Invalidate()
-		resp, err := http.Get(server.URL)
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
-	})
-
 	t.Run("Internal server error", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
@@ -230,20 +202,6 @@ func TestGetUserByID(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Invalid userID")
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
-		req := httptest.NewRequest(http.MethodGet, "/1", nil)
-		req = SetPathValue(req, "id", "1")
-		w := httptest.NewRecorder()
-
-		db.Invalidate()
-		handler.ServeHTTP(w, req)
-		db.Validate()
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Database connection error")
-	})
-
 	t.Run("User not found", func(t *testing.T) {
 		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/999", nil)
@@ -374,26 +332,6 @@ func TestEditUser(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), httputils.InvalidRequestBodyMessage)
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.UserKey, currentUser)
-			route.EditUser(w, r.WithContext(ctx))
-		})
-		reqBody := schemas.UserEdit{Name: stringPtr("NewName")}
-		jsonBody, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest(http.MethodPatch, "/1", bytes.NewBuffer(jsonBody))
-		req = SetPathValue(req, "id", "1")
-		w := httptest.NewRecorder()
-
-		db.Invalidate()
-		handler.ServeHTTP(w, req)
-		db.Validate()
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -601,30 +539,6 @@ func TestChangePassword(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), httputils.InvalidRequestBodyMessage)
-	})
-
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-			ctx = context.WithValue(ctx, httputils.UserKey, currentUser)
-			route.ChangePassword(w, r.WithContext(ctx))
-		})
-		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
-		}
-		jsonBody, _ := json.Marshal(reqBody)
-		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
-		req = SetPathValue(req, "id", "1")
-		w := httptest.NewRecorder()
-
-		db.Invalidate()
-		handler.ServeHTTP(w, req)
-		db.Validate()
-
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
-		assert.Contains(t, w.Body.String(), "Database connection error")
 	})
 
 	t.Run("User not found", func(t *testing.T) {

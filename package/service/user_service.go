@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -15,21 +16,21 @@ import (
 
 type UserService interface {
 	// ChangePassword changes the password of a user.
-	ChangePassword(tx *gorm.DB, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error
+	ChangePassword(db database.Database, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error
 	// ChangeRole changes the role of a user.
-	ChangeRole(tx *gorm.DB, currentUser schemas.User, userID int64, role types.UserRole) error
+	ChangeRole(db database.Database, currentUser schemas.User, userID int64, role types.UserRole) error
 	// Edit updates the information of a user.
-	Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
+	Edit(db database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
 	// GetAll retrieves all users based on the provided query parameters.
-	GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
+	GetAll(db database.Database, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
 	// GetByEmail retrieves a user by their email.
-	GetByEmail(tx *gorm.DB, email string) (*schemas.User, error)
+	GetByEmail(db database.Database, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
-	Get(tx *gorm.DB, userID int64) (*schemas.User, error)
+	Get(db database.Database, userID int64) (*schemas.User, error)
 	// IsTaskAssignedToUser checks if a user has access to a specific task.
 	// Currently, a user has access if the task is assigned to a contest and the user is a participant in that contest.
 	// Future: may support direct task-to-user assignments.
-	IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (bool, error)
+	IsTaskAssignedToUser(db database.Database, userID, taskID int64) (bool, error)
 }
 
 type userService struct {
@@ -38,8 +39,8 @@ type userService struct {
 	logger         *zap.SugaredLogger
 }
 
-func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, error) {
-	userModel, err := us.userRepository.GetByEmail(tx, email)
+func (us *userService) GetByEmail(db database.Database, email string) (*schemas.User, error) {
+	userModel, err := us.userRepository.GetByEmail(db, email)
 	if err != nil {
 		us.logger.Errorf("Error getting user by email: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -51,12 +52,12 @@ func (us *userService) GetByEmail(tx *gorm.DB, email string) (*schemas.User, err
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+func (us *userService) GetAll(db database.Database, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = "role:desc"
 	}
 
-	userModels, totalCount, err := us.userRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	userModels, totalCount, err := us.userRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return schemas.PaginatedResult[[]schemas.User]{}, err
@@ -70,8 +71,8 @@ func (us *userService) GetAll(tx *gorm.DB, paginationParams schemas.PaginationPa
 	return schemas.NewPaginatedResult(users, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
-func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
-	userModel, err := us.userRepository.Get(tx, userID)
+func (us *userService) Get(db database.Database, userID int64) (*schemas.User, error) {
+	userModel, err := us.userRepository.Get(db, userID)
 	if err != nil {
 		us.logger.Errorf("Error getting user by id: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -83,11 +84,11 @@ func (us *userService) Get(tx *gorm.DB, userID int64) (*schemas.User, error) {
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
+func (us *userService) Edit(db database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	if currentUser.Role != types.UserRoleAdmin && currentUser.ID != userID {
 		return errors.ErrForbidden
 	}
-	user, err := us.userRepository.Get(tx, userID)
+	user, err := us.userRepository.Get(db, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrUserNotFound
@@ -103,7 +104,7 @@ func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64,
 
 	us.updateModel(user, updateInfo)
 
-	err = us.userRepository.Edit(tx, user)
+	err = us.userRepository.Edit(db, user)
 	if err != nil {
 		us.logger.Errorf("Error editing user: %v", err.Error())
 		return err
@@ -111,11 +112,11 @@ func (us *userService) Edit(tx *gorm.DB, currentUser schemas.User, userID int64,
 	return nil
 }
 
-func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userID int64, role types.UserRole) error {
+func (us *userService) ChangeRole(db database.Database, currentUser schemas.User, userID int64, role types.UserRole) error {
 	if currentUser.Role != types.UserRoleAdmin {
 		return errors.ErrForbidden
 	}
-	user, err := us.userRepository.Get(tx, userID)
+	user, err := us.userRepository.Get(db, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrUserNotFound
@@ -124,7 +125,7 @@ func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userID 
 		return err
 	}
 	user.Role = role
-	err = us.userRepository.Edit(tx, user)
+	err = us.userRepository.Edit(db, user)
 	if err != nil {
 		us.logger.Errorf("Error changing user role: %v", err.Error())
 		return err
@@ -133,7 +134,7 @@ func (us *userService) ChangeRole(tx *gorm.DB, currentUser schemas.User, userID 
 }
 
 func (us *userService) ChangePassword(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser schemas.User,
 	userID int64,
 	data *schemas.UserChangePassword,
@@ -141,7 +142,7 @@ func (us *userService) ChangePassword(
 	if currentUser.ID != userID && currentUser.Role != types.UserRoleAdmin {
 		return errors.ErrForbidden
 	}
-	user, err := us.userRepository.Get(tx, userID)
+	user, err := us.userRepository.Get(db, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrUserNotFound
@@ -175,7 +176,7 @@ func (us *userService) ChangePassword(
 		return err
 	}
 	user.PasswordHash = string(hash)
-	err = us.userRepository.Edit(tx, user)
+	err = us.userRepository.Edit(db, user)
 	if err != nil {
 		us.logger.Errorf("Error changing user password: %v", err.Error())
 		return err
@@ -225,12 +226,12 @@ func (us *userService) updateModel(currentModel *models.User, updateInfo *schema
 	}
 }
 
-func (us *userService) IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (bool, error) {
+func (us *userService) IsTaskAssignedToUser(db database.Database, userID, taskID int64) (bool, error) {
 	// TODO: In the future, this should also check for direct task-to-user assignments
 	// For now, check if task is assigned to any contest that the user participates in
 
 	// Get all contests that this task is assigned to
-	contestIDs, err := us.contestService.GetTaskContests(tx, taskID)
+	contestIDs, err := us.contestService.GetTaskContests(db, taskID)
 	if err != nil {
 		us.logger.Errorf("Error getting task contests: %v", err.Error())
 		return false, err
@@ -243,7 +244,7 @@ func (us *userService) IsTaskAssignedToUser(tx *gorm.DB, userID, taskID int64) (
 
 	// Check if user is a participant in any of the contests
 	for _, contestID := range contestIDs {
-		isParticipant, err := us.contestService.IsUserParticipant(tx, contestID, userID)
+		isParticipant, err := us.contestService.IsUserParticipant(db, contestID, userID)
 		if err != nil {
 			us.logger.Errorf("Error checking user participation in contest: %v", err.Error())
 			return false, err

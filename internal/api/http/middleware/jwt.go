@@ -32,15 +32,15 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 		}
 
 		session := db.NewSession()
-		tx, err := session.BeginTransaction()
+		_, err := session.BeginTransaction()
 		if err != nil {
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
 			return
 		}
 
-		tokenResponse, err := jwtService.AuthenticateToken(tx, token)
+		tokenResponse, err := jwtService.AuthenticateToken(session, token)
 		if err != nil {
-			tx.Rollback()
+			session.Rollback()
 			if errors.Is(err, errors.ErrInvalidToken) {
 				httputils.ReturnError(w, http.StatusUnauthorized, "Invalid token")
 				return
@@ -58,7 +58,7 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to validate token. "+err.Error())
 			return
 		}
-		tx.Rollback()
+		session.Rollback()
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.TokenKey, token)

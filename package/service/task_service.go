@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mini-maxit/backend/internal/database"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -18,31 +20,31 @@ import (
 
 type TaskService interface {
 	// Create creates a new task.
-	Create(tx *gorm.DB, currentUser *schemas.User, task *schemas.Task) (int64, error)
+	Create(db database.Database, currentUser *schemas.User, task *schemas.Task) (int64, error)
 	// CreateTestCase creates input and output files for a task.
-	CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error
+	CreateTestCase(db database.Database, taskID int64, archivePath string) error
 	// Delete deletes a task.
-	Delete(tx *gorm.DB, currentUser *schemas.User, taskID int64) error
+	Delete(db database.Database, currentUser *schemas.User, taskID int64) error
 	// Edit edits an existing task.
-	Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error
+	Edit(db database.Database, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error
 	// GetAll retrieves all tasks based on query parameters.
-	GetAll(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
+	GetAll(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
-	GetAllCreated(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
+	GetAllCreated(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
 	// Get retrieves a detailed view of a specific task.
-	Get(tx *gorm.DB, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error)
+	Get(db database.Database, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error)
 	// GetByTitle retrieves a task by its title.
-	GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error)
+	GetByTitle(db database.Database, title string) (*schemas.Task, error)
 	// GetLimits retrieves limits associated with each input/output
-	GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error)
+	GetLimits(db database.Database, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error)
 	// GetMyLiveTasks retrieves live assigned tasks grouped by contests and non-contest tasks with submission statistics.
-	GetMyLiveTasks(tx *gorm.DB, currentUser *schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error)
+	GetMyLiveTasks(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (*schemas.MyTasksResponse, error)
 	// ParseTestCase parses the input and output files from an archive.
 	ParseTestCase(archivePath string) (int, error)
 	// ProcessAndUpload processes and uploads input and output files for a task.
-	ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, taskID int64, archivePath string) error
+	ProcessAndUpload(db database.Database, currentUser *schemas.User, taskID int64, archivePath string) error
 	// PutLimits updates limits associated with each input/output.
-	PutLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
+	PutLimits(db database.Database, currentUser *schemas.User, taskID int64, limits schemas.PutTestCaseLimitsRequest) error
 }
 
 const defaultTaskSort = "created_at:desc"
@@ -61,14 +63,14 @@ type taskService struct {
 	logger *zap.SugaredLogger
 }
 
-func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *schemas.Task) (int64, error) {
+func (ts *taskService) Create(db database.Database, currentUser *schemas.User, task *schemas.Task) (int64, error) {
 	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
 	if err != nil {
 		ts.logger.Errorf("Error validating user role: %v", err.Error())
 		return 0, err
 	}
 	// Create a new task
-	_, err = ts.GetByTitle(tx, task.Title)
+	_, err = ts.GetByTitle(db, task.Title)
 	if err != nil && !errors.Is(err, errors.ErrTaskNotFound) {
 		ts.logger.Errorf("Error getting task by title: %v", err.Error())
 		return 0, err
@@ -76,7 +78,7 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *sche
 		return 0, errors.ErrTaskExists
 	}
 
-	author, err := ts.userRepository.Get(tx, currentUser.ID)
+	author, err := ts.userRepository.Get(db, currentUser.ID)
 	if err != nil {
 		ts.logger.Errorf("Error getting user: %v", err.Error())
 		return 0, err
@@ -88,14 +90,14 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *sche
 		Author:    *author,
 		IsVisible: true, // Default to globally visible
 	}
-	taskID, err := ts.taskRepository.Create(tx, &model)
+	taskID, err := ts.taskRepository.Create(db, &model)
 	if err != nil {
 		ts.logger.Errorf("Error creating task: %v", err.Error())
 		return 0, err
 	}
 
 	// Automatically grant owner permission to the creator (immutable highest level)
-	if err := ts.accessControlService.GrantOwnerAccess(tx, models.ResourceTypeTask, taskID, currentUser.ID); err != nil {
+	if err := ts.accessControlService.GrantOwnerAccess(db, models.ResourceTypeTask, taskID, currentUser.ID); err != nil {
 		ts.logger.Warnf("Failed to grant owner permission: %v", err)
 		// Don't fail the creation if we can't add owner permission entry
 	}
@@ -103,8 +105,8 @@ func (ts *taskService) Create(tx *gorm.DB, currentUser *schemas.User, task *sche
 	return taskID, nil
 }
 
-func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, error) {
-	task, err := ts.taskRepository.GetByTitle(tx, title)
+func (ts *taskService) GetByTitle(db database.Database, title string) (*schemas.Task, error) {
+	task, err := ts.taskRepository.GetByTitle(db, title)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrTaskNotFound
@@ -116,7 +118,7 @@ func (ts *taskService) GetByTitle(tx *gorm.DB, title string) (*schemas.Task, err
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(tx *gorm.DB, _ *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
+func (ts *taskService) GetAll(db database.Database, _ *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
 	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
 	// if err != nil {
 	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
@@ -127,7 +129,7 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ *schemas.User, paginationParams sch
 	}
 
 	// Get all tasks
-	tasks, _, err := ts.taskRepository.GetAll(tx, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	tasks, _, err := ts.taskRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
 		return nil, err
@@ -142,9 +144,9 @@ func (ts *taskService) GetAll(tx *gorm.DB, _ *schemas.User, paginationParams sch
 	return result, nil
 }
 
-func (ts *taskService) Get(tx *gorm.DB, _ *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) Get(db database.Database, _ *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	// Get the task
-	task, err := ts.taskRepository.Get(tx, taskID)
+	task, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -156,7 +158,7 @@ func (ts *taskService) Get(tx *gorm.DB, _ *schemas.User, taskID int64) (*schemas
 	// switch types.UserRole(currentUser.Role) {
 	// case types.UserRoleStudent:
 	// 	// Check if the task is assigned to the user
-	// 	isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(tx, taskID, currentUser.ID)
+	// 	isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(db, taskID, currentUser.ID)
 	// 	if err != nil {
 	// 		ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
 	// 		return nil, err
@@ -184,7 +186,7 @@ func (ts *taskService) Get(tx *gorm.DB, _ *schemas.User, taskID int64) (*schemas
 }
 
 func (ts *taskService) GetAllCreated(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (schemas.PaginatedResult[[]schemas.Task], error) {
@@ -197,7 +199,7 @@ func (ts *taskService) GetAllCreated(
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = defaultTaskSort
 	}
-	tasks, totalCount, err := ts.taskRepository.GetAllCreated(tx, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	tasks, totalCount, err := ts.taskRepository.GetAllCreated(db, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		ts.logger.Errorf("Error getting all created tasks: %v", err.Error())
 		return schemas.PaginatedResult[[]schemas.Task]{}, err
@@ -212,12 +214,12 @@ func (ts *taskService) GetAllCreated(
 }
 
 // TODO: remove access control associated with the task
-func (ts *taskService) Delete(tx *gorm.DB, currentUser *schemas.User, taskID int64) error {
-	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionOwner)
+func (ts *taskService) Delete(db database.Database, currentUser *schemas.User, taskID int64) error {
+	err := ts.hasTaskPermission(db, taskID, currentUser, types.PermissionOwner)
 	if err != nil {
 		return err
 	}
-	err = ts.taskRepository.Delete(tx, taskID)
+	err = ts.taskRepository.Delete(db, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
@@ -229,13 +231,13 @@ func (ts *taskService) Delete(tx *gorm.DB, currentUser *schemas.User, taskID int
 	return nil
 }
 
-func (ts *taskService) Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
-	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
+func (ts *taskService) Edit(db database.Database, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error {
+	err := ts.hasTaskPermission(db, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
 	}
 
-	currentTask, err := ts.taskRepository.Get(tx, taskID)
+	currentTask, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		ts.logger.Errorf("Error getting task: %v", err.Error())
 		return err
@@ -244,7 +246,7 @@ func (ts *taskService) Edit(tx *gorm.DB, currentUser *schemas.User, taskID int64
 	ts.updateModel(currentTask, updateInfo)
 
 	// Update the task
-	err = ts.taskRepository.Edit(tx, taskID, currentTask)
+	err = ts.taskRepository.Edit(db, taskID, currentTask)
 	if err != nil {
 		ts.logger.Errorf("Error updating task: %v", err.Error())
 		return err
@@ -340,8 +342,8 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 	return len(inputFiles), nil
 }
 
-func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath string) error {
-	_, err := ts.taskRepository.Get(tx, taskID)
+func (ts *taskService) CreateTestCase(db database.Database, taskID int64, archivePath string) error {
+	_, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
@@ -353,7 +355,7 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 		return fmt.Errorf("failed to parse input and output files: %w", err)
 	}
 	// Remove existing input output files
-	err = ts.testCaseRepository.DeleteAll(tx, taskID)
+	err = ts.testCaseRepository.DeleteAll(db, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to delete existing input output files: %w", err)
 	}
@@ -365,7 +367,7 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 			TimeLimit:   1, // Hardcode for now
 			MemoryLimit: 1, // Hardcode for now
 		}
-		err = ts.testCaseRepository.Create(tx, io)
+		err = ts.testCaseRepository.Create(db, io)
 		if err != nil {
 			return fmt.Errorf("failed to create input output: %w", err)
 		}
@@ -373,9 +375,9 @@ func (ts *taskService) CreateTestCase(tx *gorm.DB, taskID int64, archivePath str
 	return nil
 }
 
-func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, taskID int64, archivePath string) error {
+func (ts *taskService) ProcessAndUpload(db database.Database, currentUser *schemas.User, taskID int64, archivePath string) error {
 	// Check permissions using collaborator system - need edit permission
-	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
+	err := ts.hasTaskPermission(db, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
 	}
@@ -397,11 +399,11 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, 
 		Bucket:     uploadedTaskFiles.DescriptionFile.Bucket,
 		ServerType: uploadedTaskFiles.DescriptionFile.ServerType,
 	}
-	err = ts.fileRepository.Create(tx, descriptionFile)
+	err = ts.fileRepository.Create(db, descriptionFile)
 	if err != nil {
 		return fmt.Errorf("failed to save description file: %w", err)
 	}
-	currentTask, err := ts.taskRepository.Get(tx, taskID)
+	currentTask, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
@@ -409,7 +411,7 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, 
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 	currentTask.DescriptionFileID = descriptionFile.ID
-	err = ts.taskRepository.Edit(tx, taskID, currentTask)
+	err = ts.taskRepository.Edit(db, taskID, currentTask)
 	if err != nil {
 		return fmt.Errorf("failed to update task with description file: %w", err)
 	}
@@ -430,15 +432,15 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, 
 			Bucket:     output.Bucket,
 			ServerType: output.ServerType,
 		}
-		err = ts.fileRepository.Create(tx, inputFile)
+		err = ts.fileRepository.Create(db, inputFile)
 		if err != nil {
 			return fmt.Errorf("failed to save input file: %w", err)
 		}
-		err = ts.fileRepository.Create(tx, outputFile)
+		err = ts.fileRepository.Create(db, outputFile)
 		if err != nil {
 			return fmt.Errorf("failed to save output file: %w", err)
 		}
-		err = ts.testCaseRepository.Create(tx, &models.TestCase{
+		err = ts.testCaseRepository.Create(db, &models.TestCase{
 			TaskID:       taskID,
 			InputFileID:  inputFile.ID,
 			OutputFileID: outputFile.ID,
@@ -454,8 +456,8 @@ func (ts *taskService) ProcessAndUpload(tx *gorm.DB, currentUser *schemas.User, 
 	return nil
 }
 
-func (ts *taskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error) {
-	_, err := ts.taskRepository.Get(tx, taskID)
+func (ts *taskService) GetLimits(db database.Database, currentUser *schemas.User, taskID int64) ([]schemas.TestCase, error) {
+	_, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrNotFound
@@ -463,7 +465,7 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID 
 		return nil, err
 	}
 
-	testCase, err := ts.testCaseRepository.GetByTask(tx, taskID)
+	testCase, err := ts.testCaseRepository.GetByTask(db, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -476,24 +478,24 @@ func (ts *taskService) GetLimits(tx *gorm.DB, currentUser *schemas.User, taskID 
 }
 
 func (ts *taskService) PutLimits(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser *schemas.User,
 	taskID int64,
 	newLimits schemas.PutTestCaseLimitsRequest,
 ) error {
 	// Check permissions using collaborator system - need edit permission
-	err := ts.hasTaskPermission(tx, taskID, currentUser, types.PermissionEdit)
+	err := ts.hasTaskPermission(db, taskID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
 	}
 
 	for _, io := range newLimits.Limits {
-		ioID, err := ts.testCaseRepository.GetTestCaseID(tx, taskID, io.Order)
+		ioID, err := ts.testCaseRepository.GetTestCaseID(db, taskID, io.Order)
 		if err != nil {
 			return err
 		}
 
-		current, err := ts.testCaseRepository.Get(tx, ioID)
+		current, err := ts.testCaseRepository.Get(db, ioID)
 		if err != nil {
 			return err
 		}
@@ -501,7 +503,7 @@ func (ts *taskService) PutLimits(
 		current.MemoryLimit = io.MemoryLimit
 		current.TimeLimit = io.TimeLimit
 
-		err = ts.testCaseRepository.Put(tx, current)
+		err = ts.testCaseRepository.Put(db, current)
 		if err != nil {
 			return err
 		}
@@ -541,12 +543,12 @@ func TestCaseToSchema(model *models.TestCase) *schemas.TestCase {
 }
 
 func (ts *taskService) GetMyLiveTasks(
-	tx *gorm.DB,
+	db database.Database,
 	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) (*schemas.MyTasksResponse, error) {
 	// Get live tasks in contests
-	contestTasksMap, err := ts.taskRepository.GetLiveAssignedTasksGroupedByContest(tx, currentUser.ID, paginationParams.Limit, paginationParams.Offset)
+	contestTasksMap, err := ts.taskRepository.GetLiveAssignedTasksGroupedByContest(db, currentUser.ID, paginationParams.Limit, paginationParams.Offset)
 	if err != nil {
 		ts.logger.Errorf("Error getting live assigned tasks in contests: %v", err.Error())
 		return nil, err
@@ -559,7 +561,7 @@ func (ts *taskService) GetMyLiveTasks(
 
 	// Process contest tasks
 	for contestID, tasks := range contestTasksMap {
-		contest, err := ts.contestRepository.Get(tx, contestID)
+		contest, err := ts.contestRepository.Get(db, contestID)
 		if err != nil {
 			ts.logger.Errorf("Error getting contest: %v", err.Error())
 			continue
@@ -574,7 +576,7 @@ func (ts *taskService) GetMyLiveTasks(
 		}
 
 		for _, task := range tasks {
-			taskWithAttempts, err := ts.enrichTaskWithAttempts(tx, &task, currentUser.ID)
+			taskWithAttempts, err := ts.enrichTaskWithAttempts(db, &task, currentUser.ID)
 			if err != nil {
 				ts.logger.Errorf("Error enriching task with attempts: %v", err.Error())
 				continue
@@ -589,12 +591,12 @@ func (ts *taskService) GetMyLiveTasks(
 }
 
 func (ts *taskService) enrichTaskWithAttempts(
-	tx *gorm.DB,
+	db database.Database,
 	task *models.Task,
 	userID int64,
 ) (*schemas.TaskWithAttempts, error) {
 	// Get attempt count
-	attemptCount, err := ts.submissionRepository.GetAttemptCountForTaskByUser(tx, task.ID, userID)
+	attemptCount, err := ts.submissionRepository.GetAttemptCountForTaskByUser(db, task.ID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -602,7 +604,7 @@ func (ts *taskService) enrichTaskWithAttempts(
 	// Get best score if there are attempts
 	var bestScore float64
 	if attemptCount > 0 {
-		bestScore, err = ts.submissionRepository.GetBestScoreForTaskByUser(tx, task.ID, userID)
+		bestScore, err = ts.submissionRepository.GetBestScoreForTaskByUser(db, task.ID, userID)
 		ts.logger.Infof("Best score for task %d and user %d: %v", task.ID, userID, bestScore)
 		if err != nil {
 			return nil, err
@@ -625,15 +627,15 @@ func (ts *taskService) enrichTaskWithAttempts(
 }
 
 // hasTaskPermission checks that task exists and if the user has the required permission for the task.
-func (ts *taskService) hasTaskPermission(tx *gorm.DB, taskID int64, user *schemas.User, requiredPermission types.Permission) error {
-	_, err := ts.taskRepository.Get(tx, taskID)
+func (ts *taskService) hasTaskPermission(db database.Database, taskID int64, user *schemas.User, requiredPermission types.Permission) error {
+	_, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
 		}
 		return err
 	}
-	return ts.accessControlService.CanUserAccess(tx, models.ResourceTypeTask, taskID, user, requiredPermission)
+	return ts.accessControlService.CanUserAccess(db, models.ResourceTypeTask, taskID, user, requiredPermission)
 }
 
 func TaskToInfoSchema(model *models.Task) *schemas.TaskInfo {

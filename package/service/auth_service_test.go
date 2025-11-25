@@ -3,6 +3,8 @@ package service_test
 import (
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/testutils"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
@@ -23,10 +25,10 @@ func TestRegister(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("get user by email when user exists", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email2@email.com").Return(&models.User{
+		ur.EXPECT().GetByEmail(db, "email2@email.com").Return(&models.User{
 			ID:           1,
 			Name:         "name",
 			Surname:      "surname",
@@ -42,15 +44,15 @@ func TestRegister(t *testing.T) {
 			Username: "username",
 			Password: "Password123!",
 		}
-		response, err := as.Register(tx, userRegister)
+		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, errors.ErrUserAlreadyExists)
 		assert.Nil(t, response)
 	})
 
 	t.Run("successful user registration", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email3@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Create(tx, gomock.Any()).Return(int64(1), nil).Times(1)
-		js.EXPECT().GenerateTokens(tx, int64(1)).Return(&schemas.JWTTokens{
+		ur.EXPECT().GetByEmail(db, "email3@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().Create(db, gomock.Any()).Return(int64(1), nil).Times(1)
+		js.EXPECT().GenerateTokens(db, int64(1)).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
 		}, nil).Times(1)
@@ -62,7 +64,7 @@ func TestRegister(t *testing.T) {
 			Username: "username3",
 			Password: "Password123!",
 		}
-		response, err := as.Register(tx, userRegister)
+		response, err := as.Register(db, userRegister)
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.IsType(t, &schemas.JWTTokens{}, response)
@@ -71,7 +73,7 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("unexpected repository error", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email4@email.com").Return(nil, gorm.ErrInvalidDB).Times(1)
+		ur.EXPECT().GetByEmail(db, "email4@email.com").Return(nil, gorm.ErrInvalidDB).Times(1)
 		userRegister := schemas.UserRegisterRequest{
 			Name:     "name",
 			Surname:  "surname",
@@ -79,14 +81,14 @@ func TestRegister(t *testing.T) {
 			Username: "username4",
 			Password: "Password123!",
 		}
-		response, err := as.Register(tx, userRegister)
+		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, gorm.ErrInvalidDB)
 		assert.Nil(t, response)
 	})
 
 	t.Run("failed to create user", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email5@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Create(tx, gomock.Any()).Return(int64(0), gorm.ErrInvalidDB).Times(1)
+		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().Create(db, gomock.Any()).Return(int64(0), gorm.ErrInvalidDB).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{
 			Name:     "name",
@@ -95,7 +97,7 @@ func TestRegister(t *testing.T) {
 			Username: "username5",
 			Password: "Password123!",
 		}
-		response, err := as.Register(tx, userRegister)
+		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, gorm.ErrInvalidDB)
 		assert.Nil(t, response)
 	})
@@ -108,7 +110,7 @@ func TestLogin(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	password := "Password123!"
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -124,34 +126,34 @@ func TestLogin(t *testing.T) {
 	}
 
 	t.Run("get user by email when user does not exist", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "nonexistent@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().GetByEmail(db, "nonexistent@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		userLogin := schemas.UserLoginRequest{
 			Email:    "nonexistent@email.com",
 			Password: "password",
 		}
 
-		response, err := as.Login(tx, userLogin)
+		response, err := as.Login(db, userLogin)
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 		assert.Nil(t, response)
 	})
 
 	t.Run("compare password hash fails", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email5@email.com").Return(user, nil).Times(1)
+		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(user, nil).Times(1)
 
 		userLogin := schemas.UserLoginRequest{
 			Email:    "email5@email.com",
 			Password: "wrongpassword",
 		}
 
-		response, err := as.Login(tx, userLogin)
+		response, err := as.Login(db, userLogin)
 		require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 		assert.Nil(t, response)
 	})
 
 	t.Run("successful user login", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(tx, "email5@email.com").Return(user, nil).Times(1)
-		js.EXPECT().GenerateTokens(tx, user.ID).Return(&schemas.JWTTokens{
+		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(user, nil).Times(1)
+		js.EXPECT().GenerateTokens(db, user.ID).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
 		}, nil).Times(1)
@@ -161,7 +163,7 @@ func TestLogin(t *testing.T) {
 			Password: password,
 		}
 
-		response, err := as.Login(tx, userLogin)
+		response, err := as.Login(db, userLogin)
 		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.IsType(t, &schemas.JWTTokens{}, response)
@@ -177,11 +179,11 @@ func TestRefreshTokens(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	js := mock_service.NewMockJWTService(ctrl)
 	as := service.NewAuthService(ur, js)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful token refresh", func(t *testing.T) {
 		// userID := int64(1)
-		js.EXPECT().RefreshTokens(tx, "initial-refresh-token").Return(&schemas.JWTTokens{
+		js.EXPECT().RefreshTokens(db, "initial-refresh-token").Return(&schemas.JWTTokens{
 			AccessToken:  "new-access-token",
 			RefreshToken: "new-refresh-token",
 		}, nil).Times(1)
@@ -190,7 +192,7 @@ func TestRefreshTokens(t *testing.T) {
 		refreshRequest := schemas.RefreshTokenRequest{
 			RefreshToken: "initial-refresh-token",
 		}
-		newTokens, err := as.RefreshTokens(tx, refreshRequest)
+		newTokens, err := as.RefreshTokens(db, refreshRequest)
 		require.NoError(t, err)
 		assert.NotNil(t, newTokens)
 		assert.IsType(t, &schemas.JWTTokens{}, newTokens)
@@ -203,11 +205,11 @@ func TestRefreshTokens(t *testing.T) {
 	})
 
 	t.Run("invalid refresh token", func(t *testing.T) {
-		js.EXPECT().RefreshTokens(tx, "invalid-refresh-token").Return(nil, errors.ErrInvalidTokenType).Times(1)
+		js.EXPECT().RefreshTokens(db, "invalid-refresh-token").Return(nil, errors.ErrInvalidTokenType).Times(1)
 		refreshRequest := schemas.RefreshTokenRequest{
 			RefreshToken: "invalid-refresh-token",
 		}
-		newTokens, err := as.RefreshTokens(tx, refreshRequest)
+		newTokens, err := as.RefreshTokens(db, refreshRequest)
 		require.Error(t, err)
 		require.Nil(t, newTokens)
 	})

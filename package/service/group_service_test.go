@@ -4,6 +4,8 @@ package service_test
 import (
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/testutils"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -14,11 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 func TestCreateGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -27,7 +28,7 @@ func TestCreateGroup(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
-		groupID, err := gs.Create(tx, *currentUser, &schemas.Group{
+		groupID, err := gs.Create(db, *currentUser, &schemas.Group{
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
 		})
@@ -37,7 +38,7 @@ func TestCreateGroup(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
-		groupID, err := gs.Create(tx, *currentUser, &schemas.Group{
+		groupID, err := gs.Create(db, *currentUser, &schemas.Group{
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
 		})
@@ -47,7 +48,7 @@ func TestCreateGroup(t *testing.T) {
 }
 
 func TestDeleteGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -62,13 +63,13 @@ func TestDeleteGroup(t *testing.T) {
 		}
 		gr.EXPECT().Delete(gomock.Any(), group.ID).Return(nil).Times(1)
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
-		err := gs.Delete(tx, *currentUser, group.ID)
+		err := gs.Delete(db, *currentUser, group.ID)
 		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized student", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
-		err := gs.Delete(tx, *currentUser, 2)
+		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
@@ -79,13 +80,13 @@ func TestDeleteGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: 1,
 		}, nil).Times(1)
-		err := gs.Delete(tx, *currentUser, 2)
+		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
 func TestGetAllGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -95,7 +96,7 @@ func TestGetAllGroup(t *testing.T) {
 	t.Run("No groups", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]models.Group{}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
+		groups, err := gs.GetAll(db, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.Empty(t, groups)
 	})
@@ -109,14 +110,14 @@ func TestGetAllGroup(t *testing.T) {
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
+		groups, err := gs.GetAll(db, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotEmpty(t, groups)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
-		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
+		groups, err := gs.GetAll(db, *currentUser, paginationParams)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, groups)
 	})
@@ -136,14 +137,14 @@ func TestGetAllGroup(t *testing.T) {
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
-		groups, err := gs.GetAll(tx, *currentUser, paginationParams)
+		groups, err := gs.GetAll(db, *currentUser, paginationParams)
 		require.NoError(t, err)
 		assert.NotNil(t, groups)
 	})
 }
 
 func TestGetGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -156,21 +157,21 @@ func TestGetGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
-		group, err := gs.Get(tx, *currentUser, 1)
+		group, err := gs.Get(db, *currentUser, 1)
 		require.NoError(t, err)
 		assert.Equal(t, "Test Group", group.Name)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
-		group, err := gs.Get(tx, *currentUser, 1)
+		group, err := gs.Get(db, *currentUser, 1)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, group)
 	})
 }
 
 func TestAddUsersToGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -186,7 +187,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		ur.EXPECT().Get(gomock.Any(), user.ID).Return(&models.User{ID: user.ID}, nil).Times(1)
 		gr.EXPECT().UserBelongsTo(gomock.Any(), int64(1), user.ID).Return(false, nil).Times(1)
 		gr.EXPECT().AddUser(gomock.Any(), int64(1), user.ID).Return(nil).Times(1)
-		err := gs.AddUsers(tx, *currentUser, int64(1), []int64{user.ID})
+		err := gs.AddUsers(db, *currentUser, int64(1), []int64{user.ID})
 		require.NoError(t, err)
 	})
 
@@ -194,13 +195,13 @@ func TestAddUsersToGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID := int64(1) // Assuming the group ID is 1 for the test
 		user := &schemas.User{ID: 3}
-		err := gs.AddUsers(tx, *currentUser, groupID, []int64{user.ID})
+		err := gs.AddUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 }
 
 func TestGetGroupUsers(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -216,7 +217,7 @@ func TestGetGroupUsers(t *testing.T) {
 		}, nil).Times(1)
 		user := &schemas.User{ID: int64(2)}
 		gr.EXPECT().GetUsers(gomock.Any(), groupID).Return([]models.User{{ID: user.ID}}, nil).Times(1)
-		users, err := gs.GetUsers(tx, *currentUser, groupID)
+		users, err := gs.GetUsers(db, *currentUser, groupID)
 		require.NoError(t, err)
 		assert.NotEmpty(t, users)
 	})
@@ -225,15 +226,15 @@ func TestGetGroupUsers(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID := int64(1)
 		user := &schemas.User{ID: 3}
-		err := gs.AddUsers(tx, *currentUser, groupID, []int64{user.ID})
+		err := gs.AddUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
-		users, err := gs.GetUsers(tx, *currentUser, groupID)
+		users, err := gs.GetUsers(db, *currentUser, groupID)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, users)
 	})
 }
 func TestEditGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -255,7 +256,7 @@ func TestEditGroup(t *testing.T) {
 			ID:   group.ID,
 			Name: newGroupName,
 		}, nil).Times(1)
-		updatedGroup, err := gs.Edit(tx, *currentUser, group.ID, editInfo)
+		updatedGroup, err := gs.Edit(db, *currentUser, group.ID, editInfo)
 		require.NoError(t, err)
 		assert.Equal(t, newGroupName, updatedGroup.Name)
 	})
@@ -269,7 +270,7 @@ func TestEditGroup(t *testing.T) {
 		editInfo := &schemas.EditGroup{
 			Name: &newGroupName,
 		}
-		updatedGroup, err := gs.Edit(tx, *currentUser, group.ID, editInfo)
+		updatedGroup, err := gs.Edit(db, *currentUser, group.ID, editInfo)
 		require.ErrorIs(t, err, errors.ErrGroupNotFound)
 		assert.Nil(t, updatedGroup)
 	})
@@ -285,7 +286,7 @@ func TestEditGroup(t *testing.T) {
 		editInfo := &schemas.EditGroup{
 			Name: &newGroupName,
 		}
-		updatedGroup, err := gs.Edit(tx, *currentUser, group.ID, editInfo)
+		updatedGroup, err := gs.Edit(db, *currentUser, group.ID, editInfo)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, updatedGroup)
 	})
@@ -298,13 +299,13 @@ func TestEditGroup(t *testing.T) {
 		editInfo := &schemas.EditGroup{
 			Name: nil, // Invalid as name is required
 		}
-		updatedGroup, err := gs.Edit(tx, *currentUser, group.ID, editInfo)
+		updatedGroup, err := gs.Edit(db, *currentUser, group.ID, editInfo)
 		require.Error(t, err)
 		assert.Nil(t, updatedGroup)
 	})
 }
 func TestDeleteUsersFromGroup(t *testing.T) {
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
@@ -322,7 +323,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		gr.EXPECT().UserBelongsTo(gomock.Any(), groupID, user.ID).Return(true, nil).Times(1)
 		gr.EXPECT().DeleteUser(gomock.Any(), groupID, user.ID).Return(nil).Times(1)
 		ur.EXPECT().Get(gomock.Any(), user.ID).Return(&models.User{ID: user.ID}, nil).Times(1)
-		err := gs.DeleteUsers(tx, *currentUser, groupID, []int64{user.ID})
+		err := gs.DeleteUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.NoError(t, err)
 	})
 
@@ -331,7 +332,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		groupID := int64(1) // Assuming the group ID is 1 for the test
 
 		user := &schemas.User{ID: 3}
-		err := gs.DeleteUsers(tx, *currentUser, groupID, []int64{user.ID})
+		err := gs.DeleteUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
@@ -344,7 +345,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
 		user := &schemas.User{ID: 2}
-		err := gs.DeleteUsers(tx, *currentUser, group.ID, []int64{user.ID})
+		err := gs.DeleteUsers(db, *currentUser, group.ID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
 
@@ -357,14 +358,14 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
 		ur.EXPECT().Get(gomock.Any(), int64(9999)).Return(nil, errors.ErrUserNotFound).Times(1)
-		err := gs.DeleteUsers(tx, *currentUser, groupID, []int64{9999})
+		err := gs.DeleteUsers(db, *currentUser, groupID, []int64{9999})
 		require.ErrorIs(t, err, errors.ErrUserNotFound)
 	})
 
 	t.Run("Group not found", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound).Times(1)
-		err := gs.DeleteUsers(tx, *currentUser, int64(9999), []int64{currentUser.ID})
+		err := gs.DeleteUsers(db, *currentUser, int64(9999), []int64{currentUser.ID})
 		require.ErrorIs(t, err, errors.ErrNotFound)
 	})
 }

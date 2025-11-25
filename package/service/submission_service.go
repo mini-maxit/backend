@@ -5,6 +5,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -18,35 +20,35 @@ import (
 
 type SubmissionService interface {
 	// Create creates a new submission for a given task, user, language, and order.
-	Create(tx *gorm.DB, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error)
+	Create(db database.Database, taskID, userID, languageID int64, contestID *int64, order int, fileID int64) (int64, error)
 	// CreateSubmissionResult creates a new submission result based on the response message.
-	CreateSubmissionResult(tx *gorm.DB, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
+	CreateSubmissionResult(db database.Database, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
-	GetAll(tx *gorm.DB, user *schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAll(db database.Database, user *schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
-	GetAllForTask(tx *gorm.DB, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForTask(db database.Database, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
-	GetAllForContest(tx *gorm.DB, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForContest(db database.Database, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
-	GetAllForUser(tx *gorm.DB, userID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	GetAllForUser(db database.Database, userID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAvailableLanguages retrieves all available languages.
-	GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error)
+	GetAvailableLanguages(db database.Database) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
-	Get(tx *gorm.DB, submissionID int64, user *schemas.User) (schemas.Submission, error)
+	Get(db database.Database, submissionID int64, user *schemas.User) (schemas.Submission, error)
 	// MarkComplete marks a submission as complete.
-	MarkComplete(tx *gorm.DB, submissionID int64) error
+	MarkComplete(db database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed with an error message.
-	MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error
+	MarkFailed(db database.Database, submissionID int64, errorMsg string) error
 	// MarkProcessing marks a submission as processing.
-	MarkProcessing(tx *gorm.DB, submissionID int64) error
+	MarkProcessing(db database.Database, submissionID int64) error
 	// Submit creates new submission, publishes it to the queue, and returns the submission ID.
-	Submit(tx *gorm.DB, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
+	Submit(db database.Database, user *schemas.User, taskID, languageID int64, contestID *int64, submissionFilePath string) (int64, error)
 	// GetTaskStatsForContest retrieves aggregated statistics for each task in a contest.
-	GetTaskStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error)
+	GetTaskStatsForContest(db database.Database, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error)
 	// GetUserStatsForContestTask retrieves per-user statistics for a specific task in a contest.
-	GetUserStatsForContestTask(tx *gorm.DB, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error)
+	GetUserStatsForContestTask(db database.Database, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error)
 	// GetUserStatsForContest retrieves overall statistics for users in a contest.
-	GetUserStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error)
+	GetUserStatsForContest(db database.Database, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error)
 }
 
 const defaultSortOrder = "submitted_at:desc"
@@ -70,7 +72,7 @@ type submissionService struct {
 }
 
 func (ss *submissionService) GetAll(
-	tx *gorm.DB,
+	db database.Database,
 	user *schemas.User,
 	userID, taskID, contestID *int64,
 	paginationParams schemas.PaginationParams,
@@ -85,9 +87,9 @@ func (ss *submissionService) GetAll(
 	var totalCount int64
 
 	if userID != nil || contestID != nil || taskID != nil {
-		submissionModels, totalCount, err = ss.getFilteredSubmissions(tx, user, userID, contestID, taskID, paginationParams)
+		submissionModels, totalCount, err = ss.getFilteredSubmissions(db, user, userID, contestID, taskID, paginationParams)
 	} else {
-		submissionModels, totalCount, err = ss.getUnfilteredSubmissions(tx, user, paginationParams)
+		submissionModels, totalCount, err = ss.getUnfilteredSubmissions(db, user, paginationParams)
 	}
 
 	if err != nil {
@@ -100,7 +102,7 @@ func (ss *submissionService) GetAll(
 }
 
 func (ss *submissionService) getFilteredSubmissions(
-	tx *gorm.DB,
+	db database.Database,
 	user *schemas.User,
 	userID, contestID, taskID *int64,
 	paginationParams schemas.PaginationParams,
@@ -129,10 +131,10 @@ func (ss *submissionService) getFilteredSubmissions(
 	// For teachers viewing other users' submissions, use teacher-specific repository methods
 	// that filter at the database level using JOINs
 	if user.Role == types.UserRoleTeacher && targetUserID != user.ID {
-		submissionModels, totalCount, err = ss.fetchSubmissionsByFiltersForTeacher(tx, targetUserID, user.ID, contestID, taskID, limit, offset, sort)
+		submissionModels, totalCount, err = ss.fetchSubmissionsByFiltersForTeacher(db, targetUserID, user.ID, contestID, taskID, limit, offset, sort)
 	} else {
 		// For admins and users viewing their own submissions, use standard repository methods
-		submissionModels, totalCount, err = ss.fetchSubmissionsByFilters(tx, targetUserID, contestID, taskID, limit, offset, sort)
+		submissionModels, totalCount, err = ss.fetchSubmissionsByFilters(db, targetUserID, contestID, taskID, limit, offset, sort)
 	}
 
 	if err != nil {
@@ -144,37 +146,37 @@ func (ss *submissionService) getFilteredSubmissions(
 }
 
 func (ss *submissionService) fetchSubmissionsByFiltersForTeacher(
-	tx *gorm.DB,
+	db database.Database,
 	userID, teacherID int64,
 	contestID, taskID *int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
 	if contestID != nil && taskID != nil {
-		return ss.submissionRepository.GetAllByUserForContestAndTaskByTeacher(tx, userID, *contestID, *taskID, teacherID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForContestAndTaskByTeacher(db, userID, *contestID, *taskID, teacherID, limit, offset, sort)
 	} else if contestID != nil {
-		return ss.submissionRepository.GetAllByUserForContestByTeacher(tx, userID, *contestID, teacherID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForContestByTeacher(db, userID, *contestID, teacherID, limit, offset, sort)
 	} else if taskID != nil {
-		return ss.submissionRepository.GetAllByUserForTaskByTeacher(tx, userID, *taskID, teacherID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForTaskByTeacher(db, userID, *taskID, teacherID, limit, offset, sort)
 	}
-	return ss.submissionRepository.GetAllByUserForTeacher(tx, userID, teacherID, limit, offset, sort)
+	return ss.submissionRepository.GetAllByUserForTeacher(db, userID, teacherID, limit, offset, sort)
 }
 
 func (ss *submissionService) fetchSubmissionsByFilters(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	contestID, taskID *int64,
 	limit, offset int,
 	sort string,
 ) ([]models.Submission, int64, error) {
 	if contestID != nil && taskID != nil {
-		return ss.submissionRepository.GetAllByUserForContestAndTask(tx, userID, *contestID, *taskID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForContestAndTask(db, userID, *contestID, *taskID, limit, offset, sort)
 	} else if contestID != nil {
-		return ss.submissionRepository.GetAllByUserForContest(tx, userID, *contestID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForContest(db, userID, *contestID, limit, offset, sort)
 	} else if taskID != nil {
-		return ss.submissionRepository.GetAllByUserForTask(tx, userID, *taskID, limit, offset, sort)
+		return ss.submissionRepository.GetAllByUserForTask(db, userID, *taskID, limit, offset, sort)
 	}
-	models, totalCount, err := ss.submissionRepository.GetAllByUser(tx, userID, limit, offset, sort)
+	models, totalCount, err := ss.submissionRepository.GetAllByUser(db, userID, limit, offset, sort)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -182,7 +184,7 @@ func (ss *submissionService) fetchSubmissionsByFilters(
 }
 
 func (ss *submissionService) getUnfilteredSubmissions(
-	tx *gorm.DB,
+	db database.Database,
 	user *schemas.User,
 	paginationParams schemas.PaginationParams,
 ) ([]models.Submission, int64, error) {
@@ -196,11 +198,11 @@ func (ss *submissionService) getUnfilteredSubmissions(
 
 	switch user.Role {
 	case types.UserRoleAdmin:
-		submissionModels, totalCount, err = ss.submissionRepository.GetAll(tx, limit, offset, sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAll(db, limit, offset, sort)
 	case types.UserRoleStudent:
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllByUser(tx, user.ID, limit, offset, sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllByUser(db, user.ID, limit, offset, sort)
 	case types.UserRoleTeacher:
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForTeacher(tx, user.ID, limit, offset, sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForTeacher(db, user.ID, limit, offset, sort)
 	}
 
 	if err != nil {
@@ -219,8 +221,8 @@ func (ss *submissionService) modelsToSchemas(submissionModels []models.Submissio
 	return result
 }
 
-func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user *schemas.User) (schemas.Submission, error) {
-	submissionModel, err := ss.submissionRepository.Get(tx, submissionID)
+func (ss *submissionService) Get(db database.Database, submissionID int64, user *schemas.User) (schemas.Submission, error) {
+	submissionModel, err := ss.submissionRepository.Get(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission: %v", err.Error())
 		return schemas.Submission{}, err
@@ -247,7 +249,7 @@ func (ss *submissionService) Get(tx *gorm.DB, submissionID int64, user *schemas.
 }
 
 func (ss *submissionService) GetAllForUser(
-	tx *gorm.DB,
+	db database.Database,
 	userID int64,
 	currentUser *schemas.User,
 	paginationParams schemas.PaginationParams,
@@ -256,7 +258,7 @@ func (ss *submissionService) GetAllForUser(
 		paginationParams.Sort = defaultSortOrder
 	}
 
-	submissionModels, totalCount, err := ss.submissionRepository.GetAllByUser(tx, userID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	submissionModels, totalCount, err := ss.submissionRepository.GetAllByUser(db, userID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
 		ss.logger.Errorf("Error getting all submissions for user: %v", err.Error())
 		return nil, err
@@ -290,7 +292,7 @@ func (ss *submissionService) GetAllForUser(
 }
 
 func (ss *submissionService) GetAllForGroup(
-	tx *gorm.DB,
+	db database.Database,
 	groupID int64,
 	user *schemas.User,
 	paginationParams schemas.PaginationParams,
@@ -306,13 +308,13 @@ func (ss *submissionService) GetAllForGroup(
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(db, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Student is only allowed to view their own submissions
 		return nil, 0, errors.ErrPermissionDenied
 	case types.UserRoleTeacher:
 		// Teacher is only allowed to view submissions for tasks they created
-		group, er := ss.groupRepository.Get(tx, groupID)
+		group, er := ss.groupRepository.Get(db, groupID)
 		if er != nil {
 			ss.logger.Errorf("Error getting group: %v", er.Error())
 			return nil, 0, er
@@ -320,7 +322,7 @@ func (ss *submissionService) GetAllForGroup(
 		if group.CreatedBy != user.ID {
 			return nil, 0, errors.ErrPermissionDenied
 		}
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(tx, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(db, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
@@ -337,7 +339,7 @@ func (ss *submissionService) GetAllForGroup(
 }
 
 func (ss *submissionService) GetAllForTask(
-	tx *gorm.DB,
+	db database.Database,
 	taskID int64,
 	user *schemas.User,
 	paginationParams schemas.PaginationParams,
@@ -352,25 +354,25 @@ func (ss *submissionService) GetAllForTask(
 	var totalCount int64
 	switch user.Role {
 	case types.UserRoleAdmin:
-		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(db, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
-		task, er := ss.taskService.Get(tx, user, taskID)
+		task, er := ss.taskService.Get(db, user, taskID)
 		if er != nil {
 			return nil, er
 		}
 		if task.CreatedBy != user.ID {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(tx, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(db, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
-		isAssigned, er := ss.userService.IsTaskAssignedToUser(tx, user.ID, taskID)
+		isAssigned, er := ss.userService.IsTaskAssignedToUser(db, user.ID, taskID)
 		if er != nil {
 			return nil, er
 		}
 		if !isAssigned {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTaskByUser(tx, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTaskByUser(db, taskID, user.ID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	}
 
 	if err != nil {
@@ -387,7 +389,7 @@ func (ss *submissionService) GetAllForTask(
 }
 
 func (ss *submissionService) GetAllForContest(
-	tx *gorm.DB,
+	db database.Database,
 	contestID int64,
 	user *schemas.User,
 	paginationParams schemas.PaginationParams,
@@ -403,10 +405,10 @@ func (ss *submissionService) GetAllForContest(
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions for the contest
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
-		contest, er := ss.contestService.Get(tx, user, contestID)
+		contest, er := ss.contestService.Get(db, user, contestID)
 		if er != nil {
 			ss.logger.Errorf("Error getting contest: %v", er.Error())
 			return nil, er
@@ -414,7 +416,7 @@ func (ss *submissionService) GetAllForContest(
 		if contest.CreatedBy != user.ID {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(tx, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleStudent:
 		// Students are not allowed to view all submissions for a contest
 		return nil, errors.ErrPermissionDenied
@@ -433,8 +435,8 @@ func (ss *submissionService) GetAllForContest(
 	return &paginatedResult, nil
 }
 
-func (ss *submissionService) MarkFailed(tx *gorm.DB, submissionID int64, errorMsg string) error {
-	err := ss.submissionRepository.MarkFailed(tx, submissionID, errorMsg)
+func (ss *submissionService) MarkFailed(db database.Database, submissionID int64, errorMsg string) error {
+	err := ss.submissionRepository.MarkFailed(db, submissionID, errorMsg)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission failed: %v", err.Error())
 		return err
@@ -443,8 +445,8 @@ func (ss *submissionService) MarkFailed(tx *gorm.DB, submissionID int64, errorMs
 	return nil
 }
 
-func (ss *submissionService) MarkComplete(tx *gorm.DB, submissionID int64) error {
-	err := ss.submissionRepository.MarkEvaluated(tx, submissionID)
+func (ss *submissionService) MarkComplete(db database.Database, submissionID int64) error {
+	err := ss.submissionRepository.MarkEvaluated(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
 		return err
@@ -453,8 +455,8 @@ func (ss *submissionService) MarkComplete(tx *gorm.DB, submissionID int64) error
 	return nil
 }
 
-func (ss *submissionService) MarkProcessing(tx *gorm.DB, submissionID int64) error {
-	err := ss.submissionRepository.MarkProcessing(tx, submissionID)
+func (ss *submissionService) MarkProcessing(db database.Database, submissionID int64) error {
+	err := ss.submissionRepository.MarkProcessing(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission processing: %v", err.Error())
 		return err
@@ -464,7 +466,7 @@ func (ss *submissionService) MarkProcessing(tx *gorm.DB, submissionID int64) err
 }
 
 func (ss *submissionService) Create(
-	tx *gorm.DB,
+	db database.Database,
 	taskID int64,
 	userID int64,
 	languageID int64,
@@ -482,7 +484,7 @@ func (ss *submissionService) Create(
 		FileID:     fileID,
 		Status:     types.SubmissionStatusReceived,
 	}
-	submissionID, err := ss.submissionRepository.Create(tx, submission)
+	submissionID, err := ss.submissionRepository.Create(db, submission)
 
 	if err != nil {
 		ss.logger.Errorf("Error creating submission: %v", err.Error())
@@ -493,7 +495,7 @@ func (ss *submissionService) Create(
 }
 
 func (ss *submissionService) CreateSubmissionResult(
-	tx *gorm.DB,
+	db database.Database,
 	submissionID int64,
 	responseMessage schemas.QueueResponseMessage,
 ) (int64, error) {
@@ -505,7 +507,7 @@ func (ss *submissionService) CreateSubmissionResult(
 		return -1, err
 	}
 
-	submissionResult, err := ss.submissionResultRepository.GetBySubmission(tx, submissionID)
+	submissionResult, err := ss.submissionResultRepository.GetBySubmission(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission result: %v", err.Error())
 		return -1, err
@@ -517,14 +519,14 @@ func (ss *submissionService) CreateSubmissionResult(
 	}
 	submissionResult.Message = submissionResultResponse.Message
 	submissionResult.Submission.CheckedAt = time.Now()
-	err = ss.submissionResultRepository.Put(tx, submissionResult)
+	err = ss.submissionResultRepository.Put(db, submissionResult)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission result: %v", err.Error())
 		return -1, err
 	}
 	// Save test results
 	for _, responseTestResult := range submissionResultResponse.TestResults {
-		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(tx, submissionID, responseTestResult.Order)
+		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(db, submissionID, responseTestResult.Order)
 		if err != nil {
 			ss.logger.Errorf("Error getting test result: %v", err.Error())
 			return -1, err
@@ -537,14 +539,14 @@ func (ss *submissionService) CreateSubmissionResult(
 		testResult.Passed = &responseTestResult.Passed
 		testResult.ExecutionTime = responseTestResult.ExecutionTime
 		testResult.ErrorMessage = responseTestResult.ErrorMessage
-		err = ss.testResultRepository.Put(tx, testResult)
+		err = ss.testResultRepository.Put(db, testResult)
 		if err != nil {
 			ss.logger.Errorf("Error storing test result: %v", err.Error())
 			return -1, err
 		}
 	}
 
-	err = ss.submissionRepository.MarkEvaluated(tx, submissionID)
+	err = ss.submissionRepository.MarkEvaluated(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error marking submission complete: %v", err.Error())
 		return -1, err
@@ -553,8 +555,8 @@ func (ss *submissionService) CreateSubmissionResult(
 	return submissionResult.ID, nil
 }
 
-func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.LanguageConfig, error) {
-	languages, err := ss.languageService.GetAllEnabled(tx)
+func (ss *submissionService) GetAvailableLanguages(db database.Database) ([]schemas.LanguageConfig, error) {
+	languages, err := ss.languageService.GetAllEnabled(db)
 	if err != nil {
 		ss.logger.Errorf("Error getting all languages: %v", err.Error())
 		return nil, err
@@ -566,27 +568,27 @@ func (ss *submissionService) GetAvailableLanguages(tx *gorm.DB) ([]schemas.Langu
 }
 
 func (ss *submissionService) Submit(
-	tx *gorm.DB,
+	db database.Database,
 	user *schemas.User,
 	taskID, languageID int64,
 	contestID *int64, // null means no contest
 	submissionFilePath string,
 ) (int64, error) {
-	_, err := ss.taskService.Get(tx, user, taskID)
+	_, err := ss.taskService.Get(db, user, taskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting task: %v", err.Error())
 		return -1, err
 	}
 	if contestID != nil {
 		// Validate contest submission (checks contest status, task in contest, user participation, submission windows, etc.)
-		err = ss.contestService.ValidateContestSubmission(tx, *contestID, taskID, user.ID)
+		err = ss.contestService.ValidateContestSubmission(db, *contestID, taskID, user.ID)
 		if err != nil {
 			ss.logger.Errorf("Contest submission validation failed: %v", err.Error())
 			return -1, err
 		}
 	}
 	// Upload solution file to storage
-	latest, err := ss.submissionRepository.GetLatestForTaskByUser(tx, user.ID, taskID)
+	latest, err := ss.submissionRepository.GetLatestForTaskByUser(db, user.ID, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			latest = nil
@@ -611,24 +613,24 @@ func (ss *submissionService) Submit(
 		ServerType: uploadedFile.ServerType,
 	}
 
-	err = ss.fileRepository.Create(tx, file)
+	err = ss.fileRepository.Create(db, file)
 	if err != nil {
 		ss.logger.Errorf("Error creating file record: %v", err.Error())
 		return -1, err
 	}
-	submissionID, err := ss.Create(tx, taskID, user.ID, languageID, contestID, newOrder, file.ID)
+	submissionID, err := ss.Create(db, taskID, user.ID, languageID, contestID, newOrder, file.ID)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission: %v", err.Error())
 		return 0, err
 	}
 	// Create submissionResult if the submission is created successfully
-	submissionResultID, err := ss.createSubmissionResult(tx, submissionID)
+	submissionResultID, err := ss.createSubmissionResult(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission result: %v", err.Error())
 		return -1, err
 	}
 
-	err = ss.queueService.PublishSubmission(tx, submissionID, submissionResultID)
+	err = ss.queueService.PublishSubmission(db, submissionID, submissionResultID)
 	if err != nil {
 		ss.logger.Errorf("Error publishing submission to queue: %v", err.Error())
 		return -1, err
@@ -637,26 +639,26 @@ func (ss *submissionService) Submit(
 }
 
 // creates blank submission result for the submission together with testResults
-func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID int64) (int64, error) {
+func (ss *submissionService) createSubmissionResult(db database.Database, submissionID int64) (int64, error) {
 	submissionResult := models.SubmissionResult{
 		SubmissionID: submissionID,
 		Code:         types.SubmissionResultCodeUnknown,
 		Message:      "Awaiting processing",
 	}
 
-	submission, err := ss.submissionRepository.Get(tx, submissionID)
+	submission, err := ss.submissionRepository.Get(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission: %v", err.Error())
 		return -1, err
 	}
 
-	submissionResultID, err := ss.submissionResultRepository.Create(tx, submissionResult)
+	submissionResultID, err := ss.submissionResultRepository.Create(db, submissionResult)
 	if err != nil {
 		ss.logger.Errorf("Error creating submission result: %v", err.Error())
 		return -1, err
 	}
 
-	inputOutputs, err := ss.inputOutputRepository.GetByTask(tx, submission.TaskID)
+	inputOutputs, err := ss.inputOutputRepository.GetByTask(db, submission.TaskID)
 	if err != nil {
 		ss.logger.Errorf("Error getting input outputs: %v", err.Error())
 		return -1, err
@@ -672,7 +674,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			Bucket:     stdoutFile.Bucket,
 			ServerType: stdoutFile.ServerType,
 		}
-		err = ss.fileRepository.Create(tx, stdoutFileModel)
+		err = ss.fileRepository.Create(db, stdoutFileModel)
 		if err != nil {
 			ss.logger.Errorf("Error creating stdout file record: %v", err.Error())
 			return -1, err
@@ -683,7 +685,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			Bucket:     stderrFile.Bucket,
 			ServerType: stderrFile.ServerType,
 		}
-		err = ss.fileRepository.Create(tx, stderrFileMode)
+		err = ss.fileRepository.Create(db, stderrFileMode)
 		if err != nil {
 			ss.logger.Errorf("Error creating stdout file record: %v", err.Error())
 			return -1, err
@@ -694,7 +696,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			Bucket:     diffFile.Bucket,
 			ServerType: diffFile.ServerType,
 		}
-		err = ss.fileRepository.Create(tx, diffFileModel)
+		err = ss.fileRepository.Create(db, diffFileModel)
 		if err != nil {
 			ss.logger.Errorf("Error creating diff file record: %v", err.Error())
 			return -1, err
@@ -712,7 +714,7 @@ func (ss *submissionService) createSubmissionResult(tx *gorm.DB, submissionID in
 			StdoutFileID:       stdoutFileModel.ID,
 			DiffFileID:         diffFileModel.ID,
 		}
-		err = ss.testResultRepository.Create(tx, &testResult)
+		err = ss.testResultRepository.Create(db, &testResult)
 		if err != nil {
 			ss.logger.Errorf("Error creating test result: %v", err.Error())
 			return -1, err
@@ -808,20 +810,20 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 	}
 }
 
-func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
-	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+func (ss *submissionService) GetTaskStatsForContest(db database.Database, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
+	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = ss.contestService.Get(tx, user, contestID)
+	_, err = ss.contestService.Get(db, user, contestID)
 	if err != nil {
 		ss.logger.Errorw("Error getting contest for contest task stats", "error", err)
 		return nil, err
 	}
 
 	// Get raw stats from repository
-	rawStats, err := ss.submissionRepository.GetTaskStatsForContest(tx, contestID)
+	rawStats, err := ss.submissionRepository.GetTaskStatsForContest(db, contestID)
 	if err != nil {
 		ss.logger.Errorw("Error getting task stats for contest", "error", err)
 		return nil, err
@@ -847,13 +849,13 @@ func (ss *submissionService) GetTaskStatsForContest(tx *gorm.DB, user *schemas.U
 	return stats, nil
 }
 
-func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
-	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+func (ss *submissionService) GetUserStatsForContestTask(db database.Database, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
+	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}
 
-	isInContest, err := ss.contestService.IsTaskInContest(tx, contestID, taskID)
+	isInContest, err := ss.contestService.IsTaskInContest(db, contestID, taskID)
 	if err != nil {
 		ss.logger.Errorw("Error checking if task is in contest for contest task stats", "error", err)
 		return nil, err
@@ -864,7 +866,7 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schem
 	}
 
 	// Get raw stats from repository
-	rawStats, err := ss.submissionRepository.GetUserStatsForContestTask(tx, contestID, taskID)
+	rawStats, err := ss.submissionRepository.GetUserStatsForContestTask(db, contestID, taskID)
 	if err != nil {
 		ss.logger.Errorw("Error getting user stats for contest task", "error", err)
 		return nil, err
@@ -885,13 +887,13 @@ func (ss *submissionService) GetUserStatsForContestTask(tx *gorm.DB, user *schem
 	return stats, nil
 }
 
-func (ss *submissionService) GetUserStatsForContest(tx *gorm.DB, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
-	err := ss.accessControlService.CanUserAccess(tx, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+func (ss *submissionService) GetUserStatsForContest(db database.Database, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
+	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}
 
-	rawStats, err := ss.submissionRepository.GetUserStatsForContest(tx, contestID, userID)
+	rawStats, err := ss.submissionRepository.GetUserStatsForContest(db, contestID, userID)
 	if err != nil {
 		ss.logger.Errorw("Error getting user stats for contest", "error", err)
 		return nil, err

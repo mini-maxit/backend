@@ -103,13 +103,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-	submissions, err := s.submissionService.GetAll(tx, currentUser, userID, taskID, contestID, paginationParams)
+	submissions, err := s.submissionService.GetAll(db, currentUser, userID, taskID, contestID, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, s.logger)
 		return
@@ -140,12 +134,6 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	submissionIDStr := httputils.GetPathValue(r, "id")
 	submissionID, err := strconv.ParseInt(submissionIDStr, 10, 64)
@@ -157,7 +145,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	submission, err := s.submissionService.Get(tx, submissionID, currentUser)
+	submission, err := s.submissionService.Get(db, submissionID, currentUser)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submission", "error", err)
@@ -201,18 +189,12 @@ func (s *SumbissionImpl) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	response, err := s.submissionService.GetAllForUser(tx, userID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForUser(db, userID, currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, s.logger)
 		return
@@ -255,17 +237,11 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 
 	currentUser := httputils.GetCurrentUser(r)
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	response, err := s.submissionService.GetAllForTask(tx, taskID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForTask(db, taskID, currentUser, paginationParams)
 	if err != nil {
 		db.Rollback()
 		s.logger.Errorw("Failed to get submissions for task", "error", err)
@@ -290,13 +266,7 @@ func (s *SumbissionImpl) GetAllForTask(w http.ResponseWriter, r *http.Request) {
 //	@Router			/submissions/languages [get]
 func (s *SumbissionImpl) GetAvailableLanguages(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
-	languages, err := s.submissionService.GetAvailableLanguages(tx)
+	languages, err := s.submissionService.GetAvailableLanguages(db)
 	if err != nil {
 		s.logger.Errorw("Failed to get available languages", "error", err)
 		httputils.ReturnError(w, http.StatusInternalServerError, "Language service temporarily unavailable")
@@ -393,15 +363,9 @@ func (s *SumbissionImpl) SubmitSolution(w http.ResponseWriter, r *http.Request) 
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	// Create the submission with the correct order
-	submissionID, err := s.submissionService.Submit(tx, currentUser, taskID, languageID, contestID, filePath)
+	submissionID, err := s.submissionService.Submit(db, currentUser, taskID, languageID, contestID, filePath)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, s.logger)
 		return
@@ -434,18 +398,12 @@ func (s *SumbissionImpl) GetMySubmissions(w http.ResponseWriter, r *http.Request
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		s.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	response, err := s.submissionService.GetAllForUser(tx, currentUser.ID, currentUser, paginationParams)
+	response, err := s.submissionService.GetAllForUser(db, currentUser.ID, currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, s.logger)
 		return

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/testutils"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
@@ -11,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gorm.io/gorm"
 )
 
 // mockQueuePublisher is a simple mock implementation of queue.Publisher
@@ -86,7 +87,7 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 		TestResults:  []models.TestResult{},
 	}
 
-	db := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 	submissionRepository.EXPECT().Get(db, int64(1)).Return(submission, nil)
 	submissionResultRepository.EXPECT().Get(db, int64(1)).Return(submissionResult, nil)
 
@@ -122,7 +123,7 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	)
 	assert.NotNil(t, queueService)
 
-	db := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	// Call RetryPendingSubmissions - should return error but not panic
 	err := queueService.RetryPendingSubmissions(db)

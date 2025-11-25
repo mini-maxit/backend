@@ -95,20 +95,14 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 		CreatedBy: currentUser.ID,
 	}
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
-	taskID, err := tr.taskService.Create(tx, currentUser, &task)
+	taskID, err := tr.taskService.Create(db, currentUser, &task)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
 	}
 
-	err = tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath)
+	err = tr.taskService.ProcessAndUpload(db, currentUser, taskID, filePath)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -151,12 +145,6 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
@@ -166,7 +154,7 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 		request.Title = &newTitle
 	}
 
-	err = tr.taskService.Edit(tx, currentUser, taskID, &request)
+	err = tr.taskService.Edit(db, currentUser, taskID, &request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -200,7 +188,7 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Process and upload
-	if err := tr.taskService.ProcessAndUpload(tx, currentUser, taskID, filePath); err != nil {
+	if err := tr.taskService.ProcessAndUpload(db, currentUser, taskID, filePath); err != nil {
 		db.Rollback()
 		tr.logger.Errorw("Failed to process and upload task", "error", err)
 		httputils.ReturnError(w, http.StatusInternalServerError, "Task processing service temporarily unavailable")
@@ -240,16 +228,10 @@ func (tr *tasksManagementRoute) DeleteTask(w http.ResponseWriter, r *http.Reques
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = tr.taskService.Delete(tx, currentUser, taskID)
+	err = tr.taskService.Delete(db, currentUser, taskID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -288,16 +270,10 @@ func (tr *tasksManagementRoute) GetLimits(w http.ResponseWriter, r *http.Request
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	limits, err := tr.taskService.GetLimits(tx, currentUser, taskID)
+	limits, err := tr.taskService.GetLimits(db, currentUser, taskID)
 	if err != nil {
 		switch {
 		case errors.Is(err, errors.ErrNotFound):
@@ -343,12 +319,6 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
@@ -359,7 +329,7 @@ func (tr *tasksManagementRoute) PutLimits(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = tr.taskService.PutLimits(tx, currentUser, taskID, request)
+	err = tr.taskService.PutLimits(db, currentUser, taskID, request)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return
@@ -389,18 +359,12 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		tr.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 	currentUser := httputils.GetCurrentUser(r)
 
-	response, err := tr.taskService.GetAllCreated(tx, currentUser, paginationParams)
+	response, err := tr.taskService.GetAllCreated(db, currentUser, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, tr.logger)
 		return

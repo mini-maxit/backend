@@ -75,16 +75,10 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.AddCollaborator(tx, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(db, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -124,16 +118,10 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeContest, contestID)
+	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeContest, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -194,16 +182,10 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeContest, contestID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeContest, contestID, userID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -255,16 +237,10 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeContest, contestID, userID)
+	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeContest, contestID, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -315,16 +291,10 @@ func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.AddCollaborator(tx, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(db, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -364,16 +334,10 @@ func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *htt
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(tx, user, models.ResourceTypeTask, taskID)
+	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeTask, taskID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -434,16 +398,10 @@ func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *h
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.UpdateCollaborator(tx, user, models.ResourceTypeTask, taskID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeTask, taskID, userID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -495,16 +453,10 @@ func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *h
 	}
 
 	db := r.Context().Value(httputils.DatabaseKey).(database.Database)
-	tx, err := db.BeginTransaction()
-	if err != nil {
-		ac.logger.Errorw("Failed to begin database transaction", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Database connection error")
-		return
-	}
 
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.RemoveCollaborator(tx, user, models.ResourceTypeTask, taskID, userID)
+	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeTask, taskID, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return

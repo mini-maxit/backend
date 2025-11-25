@@ -94,35 +94,6 @@ func TestCreateContest(t *testing.T) {
 		}
 	})
 
-	t.Run("Transaction was not started by middleware", func(t *testing.T) {
-		body := schemas.CreateContest{
-			Name:        "Test Contest",
-			Description: "Test Description",
-			StartAt:     time.Now().Add(1 * time.Hour),
-		}
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			t.Fatalf("Failed to marshal request body: %v", err)
-		}
-		db.Invalidate()
-		resp, err := http.Post(server.URL, "application/json", bytes.NewBuffer(jsonBody))
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		db.Validate()
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		bodyString := string(bodyBytes)
-
-		assert.Contains(t, bodyString, "Database connection error")
-	})
-
 	t.Run("Not authorized", func(t *testing.T) {
 		body := schemas.CreateContest{
 			Name:        "Test Contest",

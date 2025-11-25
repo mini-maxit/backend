@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const (
@@ -25,17 +25,17 @@ const (
 
 type QueueService interface {
 	// GetSubmissionID returns the submission ID for a message ID
-	GetSubmissionID(tx *gorm.DB, messageID string) (int64, error)
+	GetSubmissionID(db database.Database, messageID string) (int64, error)
 	// PublishHandshake publishes a handshake message to the queue
 	PublishHandshake() error
 	// PublishSubmission publishes a submission message to the queue
-	PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error
+	PublishSubmission(db database.Database, submissionID int64, submissionResultID int64) error
 	// PublishWorkerStatus publishes a worker status message to the queue
 	PublishWorkerStatus() error
 	// UpdateWorkerStatus updates the worker status in the database
 	UpdateWorkerStatus(statusResponse schemas.StatusResponsePayload) error
 	// RetryPendingSubmissions attempts to queue submissions that are in "received" status
-	RetryPendingSubmissions(db *gorm.DB) error
+	RetryPendingSubmissions(db database.Database) error
 	// IsConnected returns true if queue is connected and ready
 	IsConnected() bool
 	// StatusMux returns the status mutex
@@ -118,14 +118,14 @@ func (qs *queueService) publishMessage(msg schemas.QueueMessage) error {
 	return nil
 }
 
-func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submissionResultID int64) error {
-	submission, err := qs.submissionRepository.Get(tx, submissionID)
+func (qs *queueService) PublishSubmission(db database.Database, submissionID int64, submissionResultID int64) error {
+	submission, err := qs.submissionRepository.Get(db, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission: %v", err)
 		return err
 	}
 
-	submissionResult, err := qs.submissionResultRepository.Get(tx, submissionResultID)
+	submissionResult, err := qs.submissionResultRepository.Get(db, submissionResultID)
 	if err != nil {
 		qs.logger.Errorf("Error getting submission result: %v", err)
 		return err
@@ -196,7 +196,7 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 		qs.logger.Warnf("Queue unavailable - submission %d will be queued later: %v", submissionID, err)
 		return nil
 	}
-	err = qs.submissionRepository.MarkProcessing(tx, submissionID)
+	err = qs.submissionRepository.MarkProcessing(db, submissionID)
 	if err != nil {
 		qs.logger.Errorf("Error marking submission processing: %v", err)
 		return err
@@ -206,8 +206,8 @@ func (qs *queueService) PublishSubmission(tx *gorm.DB, submissionID int64, submi
 	return nil
 }
 
-func (qs *queueService) GetSubmissionID(tx *gorm.DB, messageID string) (int64, error) {
-	queueMessage, err := qs.queueRepository.Get(tx, messageID)
+func (qs *queueService) GetSubmissionID(db database.Database, messageID string) (int64, error) {
+	queueMessage, err := qs.queueRepository.Get(db, messageID)
 	if err != nil {
 		return 0, err
 	}
@@ -283,7 +283,7 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 	return qs.statusMux
 }
 
-func (qs *queueService) RetryPendingSubmissions(db *gorm.DB) error {
+func (qs *queueService) RetryPendingSubmissions(db database.Database) error {
 	if !qs.queueClient.IsConnected() {
 		qs.logger.Debug("Queue not connected - skipping retry of pending submissions")
 		return errors.New("queue not connected")

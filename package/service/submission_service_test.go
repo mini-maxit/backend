@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -672,14 +673,14 @@ func TestMarkSubmissionStatus(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		method        func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error
+		method        func(s service.SubmissionService, db database.Database, id int64, args ...interface{}) error
 		expectedCall  func()
 		expectedError bool
 	}{
 		{
 			name: "Successfully mark submission as failed",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error {
-				return s.MarkFailed(tx, id, args[0].(string))
+			method: func(s service.SubmissionService, db database.Database, id int64, args ...interface{}) error {
+				return s.MarkFailed(db, id, args[0].(string))
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkFailed(gomock.Any(), int64(1), "Error message").Return(nil).Times(1)
@@ -688,8 +689,8 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as failed",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, args ...interface{}) error {
-				return s.MarkFailed(tx, id, args[0].(string))
+			method: func(s service.SubmissionService, db database.Database, id int64, args ...interface{}) error {
+				return s.MarkFailed(db, id, args[0].(string))
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkFailed(gomock.Any(), int64(1), "Error message").Return(gorm.ErrInvalidData).Times(1)
@@ -698,8 +699,8 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Successfully mark submission as complete",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
-				return s.MarkComplete(tx, id)
+			method: func(s service.SubmissionService, db database.Database, id int64, _ ...interface{}) error {
+				return s.MarkComplete(db, id)
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkEvaluated(gomock.Any(), int64(1)).Return(nil).Times(1)
@@ -708,8 +709,8 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as complete",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
-				return s.MarkComplete(tx, id)
+			method: func(s service.SubmissionService, db database.Database, id int64, _ ...interface{}) error {
+				return s.MarkComplete(db, id)
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkEvaluated(gomock.Any(), int64(1)).Return(gorm.ErrInvalidData).Times(1)
@@ -718,8 +719,8 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Successfully mark submission as processing",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
-				return s.MarkProcessing(tx, id)
+			method: func(s service.SubmissionService, db database.Database, id int64, _ ...interface{}) error {
+				return s.MarkProcessing(db, id)
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkProcessing(gomock.Any(), int64(1)).Return(nil).Times(1)
@@ -728,8 +729,8 @@ func TestMarkSubmissionStatus(t *testing.T) {
 		},
 		{
 			name: "Error marking submission as processing",
-			method: func(s service.SubmissionService, tx *gorm.DB, id int64, _ ...interface{}) error {
-				return s.MarkProcessing(tx, id)
+			method: func(s service.SubmissionService, db database.Database, id int64, _ ...interface{}) error {
+				return s.MarkProcessing(db, id)
 			},
 			expectedCall: func() {
 				setup.submissionRepository.EXPECT().MarkProcessing(gomock.Any(), int64(1)).Return(gorm.ErrInvalidData).Times(1)

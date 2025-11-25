@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/testutils"
+
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -177,7 +179,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := &schemas.User{
@@ -203,9 +205,9 @@ func TestContestService_GetPastContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, err := cs.GetPastContests(db, currentUser, queryParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result.Items, 1)
@@ -226,9 +228,9 @@ func TestContestService_GetPastContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
-		result, err := cs.GetPastContests(tx, currentUser, queryParams)
+		result, err := cs.GetPastContests(db, currentUser, queryParams)
 
 		require.Error(t, err)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -247,7 +249,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
 		currentUser := &schemas.User{
@@ -273,9 +275,9 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
 
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
 
 		require.NoError(t, err)
 		assert.Len(t, result.Items, 1)
@@ -296,9 +298,9 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			Sort:   "start_time",
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(tx, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
-		result, err := cs.GetUpcomingContests(tx, currentUser, queryParams)
+		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
 
 		require.Error(t, err)
 		assert.Empty(t, result.Items)
@@ -317,7 +319,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
 		currentUser := &schemas.User{
@@ -345,15 +347,15 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
+		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.NoError(t, err)
 	})
@@ -384,15 +386,15 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
+		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.NoError(t, err)
 	})
@@ -405,11 +407,11 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		contestID := int64(10)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -423,9 +425,9 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		contestID := int64(999)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNotFound)
@@ -439,12 +441,12 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		contestID := int64(10)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -464,11 +466,11 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			CreatedBy: 2,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNotFound)
@@ -500,14 +502,14 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(true, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().DeleteRegistrationRequest(tx, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(true, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().DeleteRegistrationRequest(db, request.ID).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrAlreadyParticipant)
@@ -532,13 +534,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Username: "testuser",
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNoPendingRegistration)
@@ -563,12 +565,12 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Username: "testuser",
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, gorm.ErrInvalidDB).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		assert.Equal(t, gorm.ErrInvalidDB, err)
@@ -593,13 +595,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Username: "testuser",
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, gorm.ErrInvalidDB).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		assert.Equal(t, gorm.ErrInvalidDB, err)
@@ -631,14 +633,14 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(gorm.ErrInvalidDB).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		assert.Equal(t, gorm.ErrInvalidDB, err)
@@ -670,15 +672,15 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
-		cr.EXPECT().CreateContestParticipant(tx, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
+		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.ApproveRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		assert.Equal(t, gorm.ErrInvalidDB, err)
@@ -696,7 +698,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
 		currentUser := &schemas.User{
@@ -724,14 +726,14 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.NoError(t, err)
 	})
@@ -762,14 +764,14 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.NoError(t, err)
 	})
@@ -782,11 +784,11 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		contestID := int64(10)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -800,9 +802,9 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		contestID := int64(999)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNotFound)
@@ -816,12 +818,12 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		contestID := int64(10)
 		userID := int64(5)
 
-		cr.EXPECT().Get(tx, contestID).Return(&models.Contest{
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -841,11 +843,11 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			CreatedBy: 2,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNotFound)
@@ -877,14 +879,14 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(true, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().DeleteRegistrationRequest(tx, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(true, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().DeleteRegistrationRequest(db, request.ID).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrAlreadyParticipant)
@@ -909,13 +911,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			Username: "testuser",
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		require.ErrorIs(t, err, errors.ErrNoPendingRegistration)
@@ -947,14 +949,14 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 			Status:    types.RegistrationRequestStatusPending,
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(contest, nil).Times(1)
-		ur.EXPECT().Get(tx, userID).Return(user, nil).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, userID).Return(false, nil).Times(1)
-		cr.EXPECT().GetPendingRegistrationRequest(tx, contestID, userID).Return(request, nil).Times(1)
-		cr.EXPECT().UpdateRegistrationRequestStatus(tx, request.ID, types.RegistrationRequestStatusRejected).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
+		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
+		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(gorm.ErrInvalidDB).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		err := cs.RejectRegistrationRequest(tx, currentUser, contestID, userID)
+		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
 		assert.Equal(t, gorm.ErrInvalidDB, err)
@@ -972,7 +974,7 @@ func TestContestService_Get(t *testing.T) {
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
-	tx := &gorm.DB{}
+	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {
 		currentUser := &schemas.User{
@@ -991,9 +993,9 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1018,9 +1020,9 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1044,11 +1046,11 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1072,12 +1074,12 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1101,12 +1103,12 @@ func TestContestService_Get(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().Get(tx, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(tx, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(tx, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
-		cr.EXPECT().IsUserParticipant(tx, contestID, currentUser.ID).Return(false, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1120,9 +1122,9 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(999)
 
-		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1136,9 +1138,9 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(10)
 
-		cr.EXPECT().GetWithCount(tx, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetWithCount(db, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
 
-		result, err := cs.Get(tx, currentUser, contestID)
+		result, err := cs.Get(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)

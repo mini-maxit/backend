@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
@@ -19,7 +20,7 @@ type AuthService interface {
 	// Method should check if such user exists, and if he does create valid JWT tokens and return them.
 	// Possible errors: ErrInvalidCredentials, ErrUserNotFound, validator.ValidationErrors,
 	// errors returned by JWTService, repository.UserRepository.
-	Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error)
+	Login(db database.Database, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error)
 
 	// Register registers user if he is not registered yet
 	//
@@ -27,10 +28,10 @@ type AuthService interface {
 	// creates new user, creates JWT tokens for him and returns them.
 	// Possible errors: ErrUserAlreadyExists, errors returned by JWTService,
 	// repository.UserRepository, bcrypt lib.
-	Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error)
+	Register(db database.Database, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error)
 
 	// RefreshTokens refreshes JWT tokens using a valid refresh token
-	RefreshTokens(tx *gorm.DB, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error)
+	RefreshTokens(db database.Database, refreshRequest schemas.RefreshTokenRequest) (*schemas.JWTTokens, error)
 }
 
 // authService implements AuthService interface.
@@ -41,8 +42,8 @@ type authService struct {
 }
 
 // Login implements Login method of [AuthService] interface.
-func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
-	user, err := as.userRepository.GetByEmail(tx, userLogin.Email)
+func (as *authService) Login(db database.Database, userLogin schemas.UserLoginRequest) (*schemas.JWTTokens, error) {
+	user, err := as.userRepository.GetByEmail(db, userLogin.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrUserNotFound
@@ -56,7 +57,7 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 		return nil, errors.ErrInvalidCredentials
 	}
 
-	tokens, err := as.jwtService.GenerateTokens(tx, user.ID)
+	tokens, err := as.jwtService.GenerateTokens(db, user.ID)
 	if err != nil {
 		as.logger.Errorf("Error generating JWT tokens: %v", err.Error())
 		return nil, err
@@ -65,8 +66,8 @@ func (as *authService) Login(tx *gorm.DB, userLogin schemas.UserLoginRequest) (*
 }
 
 // Register implements Register method of [AuthService] interface.
-func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
-	user, err := as.userRepository.GetByEmail(tx, userRegister.Email)
+func (as *authService) Register(db database.Database, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error) {
+	user, err := as.userRepository.GetByEmail(db, userRegister.Email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		as.logger.Errorf("Error getting user by email: %v", err.Error())
 		return nil, err
@@ -91,13 +92,13 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 		Role:         types.UserRoleStudent,
 	}
 
-	userID, err := as.userRepository.Create(tx, userModel)
+	userID, err := as.userRepository.Create(db, userModel)
 	if err != nil {
 		as.logger.Errorf("Error creating user: %v", err.Error())
 		return nil, err
 	}
 
-	tokens, err := as.jwtService.GenerateTokens(tx, userID)
+	tokens, err := as.jwtService.GenerateTokens(db, userID)
 	if err != nil {
 		as.logger.Errorf("Error generating JWT tokens: %v", err.Error())
 		return nil, err
@@ -109,10 +110,10 @@ func (as *authService) Register(tx *gorm.DB, userRegister schemas.UserRegisterRe
 
 // RefreshTokens implements RefreshTokens method of [AuthService] interface
 func (as *authService) RefreshTokens(
-	tx *gorm.DB,
+	db database.Database,
 	refreshRequest schemas.RefreshTokenRequest,
 ) (*schemas.JWTTokens, error) {
-	tokens, err := as.jwtService.RefreshTokens(tx, refreshRequest.RefreshToken)
+	tokens, err := as.jwtService.RefreshTokens(db, refreshRequest.RefreshToken)
 	if err != nil {
 		as.logger.Errorf("Error refreshing JWT tokens: %v", err.Error())
 		return nil, err
