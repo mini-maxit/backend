@@ -20,6 +20,8 @@ type ContestService interface {
 	Create(db database.Database, currentUser *schemas.User, contest *schemas.CreateContest) (int64, error)
 	// Get retrieves a contest by ID
 	Get(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.Contest, error)
+	// GetDetails retrieves detailed contest information including creator name (for participants and users with access_policy)
+	GetDetails(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestDetailed, error)
 	// GetOngoingContests retrieves contests that are currently running
 	GetOngoingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
 	// GetPastContests retrieves contests that have ended
@@ -34,6 +36,8 @@ type ContestService interface {
 	RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all contest task relations (with timing/submission flags) for a contest (for authorized users)
 	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.ContestTask, error)
+	// GetVisibleTasksForContest retrieves visible contest tasks filtered by status (for participants and users with access_policy)
+	GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status *types.ContestStatus) ([]schemas.ContestTask, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (for authorized users)
@@ -145,6 +149,48 @@ func (cs *contestService) Get(db database.Database, currentUser *schemas.User, c
 		ParticipantCount: contest.ParticipantCount,
 		TaskCount:        contest.TaskCount,
 		Status:           getContestStatus(contest.StartAt, contest.EndAt),
+	}, nil
+}
+
+func (cs *contestService) GetDetails(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestDetailed, error) {
+	// First check if user has access to the contest (participant or has access_policy)
+	contest, creator, err := cs.contestRepository.GetWithCreator(db, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Check if user is participant or has access permission
+	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, currentUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	hasAccessPolicy := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit) == nil
+
+	if !isParticipant && !hasAccessPolicy {
+		return nil, errors.ErrForbidden
+	}
+
+	return &schemas.ContestDetailed{
+		Contest: schemas.Contest{
+			BaseContest: schemas.BaseContest{
+				ID:          contest.ID,
+				Name:        contest.Name,
+				Description: contest.Description,
+				CreatedBy:   contest.CreatedBy,
+				StartAt:     contest.StartAt,
+				EndAt:       contest.EndAt,
+			},
+			ParticipantCount: contest.ParticipantCount,
+			TaskCount:        contest.TaskCount,
+			Status:           getContestStatus(contest.StartAt, contest.EndAt),
+		},
+		CreatorName:        creator.Name,
+		IsRegistrationOpen: contest.IsRegistrationOpen,
+		IsSubmissionOpen:   contest.IsSubmissionOpen,
 	}, nil
 }
 
@@ -399,9 +445,71 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
+			IsVisible:        rel.IsVisible,
 		}
 	}
 	return result, nil
+}
+
+func (cs *contestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status *types.ContestStatus) ([]schemas.ContestTask, error) {
+	// Check if contest exists
+	_, err := cs.contestRepository.Get(db, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	// Check if user is participant or has access permission
+	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, currentUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	hasAccessPolicy := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit) == nil
+
+	if !isParticipant && !hasAccessPolicy {
+		return nil, errors.ErrForbidden
+	}
+
+	// Get only visible tasks for participants
+	relations, err := cs.contestRepository.GetVisibleContestTasksWithSettings(db, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]schemas.ContestTask, 0, len(relations))
+	now := time.Now()
+	for _, rel := range relations {
+		taskStatus := getTaskStatus(rel.StartAt, rel.EndAt, now)
+
+		// If status filter is provided, only include tasks matching the status
+		if status != nil && taskStatus != *status {
+			continue
+		}
+
+		result = append(result, schemas.ContestTask{
+			Task:             *TaskToSchema(&rel.Task),
+			CreatorName:      rel.Task.Author.Name,
+			StartAt:          rel.StartAt,
+			EndAt:            rel.EndAt,
+			IsSubmissionOpen: rel.IsSubmissionOpen,
+			IsVisible:        rel.IsVisible,
+		})
+	}
+	return result, nil
+}
+
+// getTaskStatus determines the status of a task based on its start and end times
+func getTaskStatus(startAt time.Time, endAt *time.Time, now time.Time) types.ContestStatus {
+	if now.Before(startAt) {
+		return types.ContestStatusUpcoming
+	}
+	if endAt == nil || now.Before(*endAt) {
+		return types.ContestStatusOngoing
+	}
+	return types.ContestStatusPast
 }
 
 func (cs *contestService) GetTaskProgressForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error) {
@@ -553,12 +661,18 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 		return errors.ErrEndBeforeStart
 	}
 
+	isVisible := true
+	if request.IsVisible != nil {
+		isVisible = *request.IsVisible
+	}
+
 	taskContest := models.ContestTask{
 		ContestID:        contestID,
 		TaskID:           request.TaskID,
 		StartAt:          startAt,
 		EndAt:            endAt,
 		IsSubmissionOpen: true,
+		IsVisible:        isVisible,
 	}
 
 	return cs.contestRepository.AddTaskToContest(db, taskContest)

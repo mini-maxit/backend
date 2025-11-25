@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -15,6 +16,8 @@ import (
 
 type ContestRoute interface {
 	GetContest(w http.ResponseWriter, r *http.Request)
+	GetContestDetails(w http.ResponseWriter, r *http.Request)
+	GetContestTasksFiltered(w http.ResponseWriter, r *http.Request)
 	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
 	GetMyActiveContests(w http.ResponseWriter, r *http.Request)
 	GetMyPastContests(w http.ResponseWriter, r *http.Request)
@@ -72,6 +75,113 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, contest)
+}
+
+// GetContestDetails godoc
+//
+//	@Tags			contests
+//	@Summary		Get detailed contest information
+//	@Description	Get detailed contest information including creator name. Only accessible by participants or users with access policy.
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[schemas.ContestDetailed]
+//	@Router			/contests/{id}/details [get]
+func (cr *ContestRouteImpl) GetContestDetails(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	contest, err := cr.contestService.GetDetails(db, currentUser, contestID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, contest)
+}
+
+// GetContestTasksFiltered godoc
+//
+//	@Tags			contests
+//	@Summary		Get contest tasks with optional status filter
+//	@Description	Get visible tasks for a contest with optional status filter (past, ongoing, upcoming). Only accessible by participants or users with access policy.
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			status	query		string	false	"Task status filter"	Enums(past, ongoing, upcoming)
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[[]schemas.ContestTask]
+//	@Router			/contests/{id}/tasks [get]
+func (cr *ContestRouteImpl) GetContestTasksFiltered(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	// Parse optional status filter
+	var status *types.ContestStatus
+	statusStr := r.URL.Query().Get("status")
+	if statusStr != "" {
+		switch statusStr {
+		case "past":
+			s := types.ContestStatusPast
+			status = &s
+		case "ongoing":
+			s := types.ContestStatusOngoing
+			status = &s
+		case "upcoming":
+			s := types.ContestStatusUpcoming
+			status = &s
+		default:
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid status value. Must be 'past', 'ongoing', or 'upcoming'")
+			return
+		}
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	tasks, err := cr.contestService.GetVisibleTasksForContest(db, currentUser, contestID, status)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
 // GetContests godoc
@@ -417,6 +527,19 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests/my", contestRoute.GetMyContests)
 	mux.HandleFunc("/contests/my/active", contestRoute.GetMyActiveContests)
 	mux.HandleFunc("/contests/my/past", contestRoute.GetMyPastContests)
+
+	// Contest details endpoint - returns detailed contest info with creator name
+	mux.HandleFunc("/contests/{id}/details", contestRoute.GetContestDetails)
+
+	// Contest tasks endpoint with status filter
+	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			contestRoute.GetContestTasksFiltered(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
 
 	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

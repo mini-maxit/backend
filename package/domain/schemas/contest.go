@@ -22,6 +22,14 @@ type Contest struct {
 	Status           types.ContestStatus `json:"status"` // "upcoming", "ongoing", "past"
 }
 
+// ContestDetailed contains all contest information including the creator name
+type ContestDetailed struct {
+	Contest
+	CreatorName        string `json:"creatorName"`
+	IsRegistrationOpen *bool  `json:"isRegistrationOpen"`
+	IsSubmissionOpen   *bool  `json:"isSubmissionOpen"`
+}
+
 type AvailableContest struct {
 	Contest
 	RegistrationStatus string `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
@@ -84,9 +92,10 @@ type UserContestsWithStats struct {
 }
 
 type AddTaskToContest struct {
-	TaskID  int64      `json:"taskId" validate:"required"`
-	StartAt *time.Time `json:"startAt,omitempty"`
-	EndAt   *time.Time `json:"endAt,omitempty"`
+	TaskID    int64      `json:"taskId" validate:"required"`
+	StartAt   *time.Time `json:"startAt,omitempty"`
+	EndAt     *time.Time `json:"endAt,omitempty"`
+	IsVisible *bool      `json:"isVisible,omitempty"` // if false, task is hidden from participants
 }
 
 type RegistrationRequest struct {
@@ -104,6 +113,7 @@ type ContestTask struct {
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
+	IsVisible        bool       `json:"isVisible"` // if false, task is hidden from participants
 }
 
 type TaskResult struct {

@@ -31,6 +31,7 @@ type ContestTask struct {
 	StartAt          time.Time  `gorm:"not null"`
 	EndAt            *time.Time `gorm:"null"`
 	IsSubmissionOpen bool       `gorm:"default:true;not null"`
+	IsVisible        bool       `gorm:"default:true;not null"` // if false, task is hidden from participants
 
 	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
 	Task    Task    `gorm:"foreignKey:TaskID;references:ID"`

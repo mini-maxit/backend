@@ -1990,6 +1990,21 @@ func (mr *MockContestRepositoryMockRecorder) GetUpcomingContestsWithStats(db, us
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetUpcomingContestsWithStats), db, userID, offset, limit, sort)
 }
 
+// GetVisibleContestTasksWithSettings mocks base method.
+func (m *MockContestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVisibleContestTasksWithSettings", db, contestID)
+	ret0, _ := ret[0].([]models.ContestTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVisibleContestTasksWithSettings indicates an expected call of GetVisibleContestTasksWithSettings.
+func (mr *MockContestRepositoryMockRecorder) GetVisibleContestTasksWithSettings(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleContestTasksWithSettings", reflect.TypeOf((*MockContestRepository)(nil).GetVisibleContestTasksWithSettings), db, contestID)
+}
+
 // GetWithCount mocks base method.
 func (m *MockContestRepository) GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error) {
 	m.ctrl.T.Helper()
@@ -2003,6 +2018,22 @@ func (m *MockContestRepository) GetWithCount(db database.Database, contestID int
 func (mr *MockContestRepositoryMockRecorder) GetWithCount(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCount", reflect.TypeOf((*MockContestRepository)(nil).GetWithCount), db, contestID)
+}
+
+// GetWithCreator mocks base method.
+func (m *MockContestRepository) GetWithCreator(db database.Database, contestID int64) (*models.ParticipantContestStats, *models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithCreator", db, contestID)
+	ret0, _ := ret[0].(*models.ParticipantContestStats)
+	ret1, _ := ret[1].(*models.User)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetWithCreator indicates an expected call of GetWithCreator.
+func (mr *MockContestRepositoryMockRecorder) GetWithCreator(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCreator", reflect.TypeOf((*MockContestRepository)(nil).GetWithCreator), db, contestID)
 }
 
 // IsPendingRegistrationExists mocks base method.
