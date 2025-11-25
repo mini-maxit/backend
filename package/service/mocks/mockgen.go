@@ -240,21 +240,6 @@ func (mr *MockContestServiceMockRecorder) Edit(db, currentUser, contestID, editI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestService)(nil).Edit), db, currentUser, contestID, editInfo)
 }
 
-// Get mocks base method.
-func (m *MockContestService) Get(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.Contest, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", db, currentUser, contestID)
-	ret0, _ := ret[0].(*schemas.Contest)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get.
-func (mr *MockContestServiceMockRecorder) Get(db, currentUser, contestID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContestService)(nil).Get), db, currentUser, contestID)
-}
-
 // GetAssignableTasks mocks base method.
 func (m *MockContestService) GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
@@ -300,19 +285,19 @@ func (mr *MockContestServiceMockRecorder) GetContestsCreatedByUser(db, userID, p
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsCreatedByUser", reflect.TypeOf((*MockContestService)(nil).GetContestsCreatedByUser), db, userID, paginationParams)
 }
 
-// GetDetails mocks base method.
-func (m *MockContestService) GetDetails(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestDetailed, error) {
+// GetDetailed mocks base method.
+func (m *MockContestService) GetDetailed(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestDetailed, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDetails", db, currentUser, contestID)
+	ret := m.ctrl.Call(m, "GetDetailed", db, currentUser, contestID)
 	ret0, _ := ret[0].(*schemas.ContestDetailed)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetDetails indicates an expected call of GetDetails.
-func (mr *MockContestServiceMockRecorder) GetDetails(db, currentUser, contestID any) *gomock.Call {
+// GetDetailed indicates an expected call of GetDetailed.
+func (mr *MockContestServiceMockRecorder) GetDetailed(db, currentUser, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetails", reflect.TypeOf((*MockContestService)(nil).GetDetails), db, currentUser, contestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestService)(nil).GetDetailed), db, currentUser, contestID)
 }
 
 // GetManagedContests mocks base method.

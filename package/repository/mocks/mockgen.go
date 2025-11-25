@@ -1867,6 +1867,21 @@ func (mr *MockContestRepositoryMockRecorder) GetContestsForUserWithStats(db, use
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsForUserWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetContestsForUserWithStats), db, userID)
 }
 
+// GetDetailed mocks base method.
+func (m *MockContestRepository) GetDetailed(db database.Database, contestID int64) (*repository.ContestDetailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDetailed", db, contestID)
+	ret0, _ := ret[0].(*repository.ContestDetailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDetailed indicates an expected call of GetDetailed.
+func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
+}
+
 // GetOngoingContestsWithStats mocks base method.
 func (m *MockContestRepository) GetOngoingContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
 	m.ctrl.T.Helper()

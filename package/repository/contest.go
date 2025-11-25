@@ -10,11 +10,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type ContestDetailed struct {
+	models.Contest
+	CreatedByName    string `gorm:"column:created_by_name"`
+	ParticipantCount int64  `gorm:"column:participant_count"`
+	TaskCount        int64  `gorm:"column:task_count"` // number of visible tasks
+}
+
 type ContestRepository interface {
 	// Create creates a new contest
 	Create(db database.Database, contest *models.Contest) (int64, error)
 	// Get retrieves a contest by ID
 	Get(db database.Database, contestID int64) (*models.Contest, error)
+	// GetDetailed retrieves a contest by ID with detailed information
+	GetDetailed(db database.Database, contestID int64) (*ContestDetailed, error)
 	// Get retrieves a contest by ID with participant and task counts
 	GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error)
 	// GetWithCreator retrieves a contest by ID with preloaded creator and stats
@@ -87,6 +96,33 @@ func (cr *contestRepository) Get(db database.Database, contestID int64) (*models
 	tx := db.GetInstance()
 	var contest models.Contest
 	err := tx.Where("id = ?", contestID).First(&contest).Error
+	if err != nil {
+		return nil, err
+	}
+	return &contest, nil
+}
+
+func (cr *contestRepository) GetDetailed(db database.Database, contestID int64) (*ContestDetailed, error) {
+	tx := db.GetInstance()
+	var contest ContestDetailed
+	err := tx.Model(&models.Contest{}).
+		Select(`contests.*, (users.name || ' ' || users.surname) as created_by_name, pc.participant_count, tc.task_count`).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as participant_count
+			FROM %s
+			WHERE contest_id = ?
+			GROUP BY contest_id
+		) as pc ON contests.id = pc.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{})), contestID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as task_count
+			FROM %s
+			WHERE contest_id = ?
+			GROUP BY contest_id
+		) as tc ON contests.id = tc.contest_id`, database.ResolveTableName(tx, &models.ContestTask{})), contestID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s as users
+			ON contests.created_by = users.id`, database.ResolveTableName(tx, &models.User{}))).
+		Where("contests.id = ?", contestID).
+		First(&contest).Error
 	if err != nil {
 		return nil, err
 	}

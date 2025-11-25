@@ -274,9 +274,9 @@ func TestEditContest(t *testing.T) {
 				Description: "Test Description",
 				CreatedBy:   1,
 			},
-			IsVisible:          &isVisible,
-			IsRegistrationOpen: &isRegistrationOpen,
-			IsSubmissionOpen:   &isSubmissionOpen,
+			IsVisible:          isVisible,
+			IsRegistrationOpen: isRegistrationOpen,
+			IsSubmissionOpen:   isSubmissionOpen,
 		}
 
 		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)

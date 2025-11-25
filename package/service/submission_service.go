@@ -408,7 +408,7 @@ func (ss *submissionService) GetAllForContest(
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
-		contest, er := ss.contestService.Get(db, user, contestID)
+		contest, er := ss.contestService.GetDetailed(db, user, contestID)
 		if er != nil {
 			ss.logger.Errorf("Error getting contest: %v", er.Error())
 			return nil, er
@@ -816,7 +816,7 @@ func (ss *submissionService) GetTaskStatsForContest(db database.Database, user *
 		return nil, err
 	}
 
-	_, err = ss.contestService.Get(db, user, contestID)
+	_, err = ss.contestService.GetDetailed(db, user, contestID)
 	if err != nil {
 		ss.logger.Errorw("Error getting contest for contest task stats", "error", err)
 		return nil, err

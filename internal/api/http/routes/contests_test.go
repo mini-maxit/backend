@@ -82,7 +82,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
+		cs.EXPECT().GetDetailed(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -94,7 +94,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
+		cs.EXPECT().GetDetailed(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -106,7 +106,7 @@ func TestGetContest(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		contest := &schemas.Contest{
+		contest := &schemas.ContestDetailed{
 			BaseContest: schemas.BaseContest{
 				ID:          1,
 				Name:        "Test Contest",
@@ -115,7 +115,7 @@ func TestGetContest(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
+		cs.EXPECT().GetDetailed(gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
 
 		resp, err := http.Get(server.URL + "/1")
 		if err != nil {
@@ -311,7 +311,7 @@ func TestGetOngoingContests(t *testing.T) {
 		now := time.Now()
 		contests := []schemas.AvailableContest{
 			{
-				Contest: schemas.Contest{
+				ContestDetailed: schemas.ContestDetailed{
 					BaseContest: schemas.BaseContest{
 						ID:          1,
 						Name:        "Ongoing Contest",
@@ -502,222 +502,5 @@ func TestGetMyContestResults(t *testing.T) {
 		assert.InDelta(t, 80.5, response.Data.TaskResults[0].BestScore, 0.001)
 		assert.NotNil(t, response.Data.TaskResults[0].BestSubmissionID)
 		assert.Equal(t, int64(10), *response.Data.TaskResults[0].BestSubmissionID)
-	})
-}
-
-func TestGetContestDetails(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	cs := mock_service.NewMockContestService(ctrl)
-	ss := mock_service.NewMockSubmissionService(ctrl)
-	route := routes.NewContestRoute(cs, ss)
-	db := &testutils.MockDatabase{}
-	router := mux.NewRouter()
-	router.HandleFunc("/{id}/details", func(w http.ResponseWriter, r *http.Request) {
-		route.GetContestDetails(w, r)
-	})
-	handler := testutils.MockDatabaseMiddleware(router, db)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mockUser := schemas.User{
-			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
-		}
-		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
-		handler.ServeHTTP(w, r.WithContext(ctx))
-	}))
-	defer server.Close()
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/1/details", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
-	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().GetDetails(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
-		resp, err := http.Get(server.URL + "/1/details")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	})
-	t.Run("Not authorized - not a participant", func(t *testing.T) {
-		cs.EXPECT().GetDetails(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
-		resp, err := http.Get(server.URL + "/1/details")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-	})
-	t.Run("Success", func(t *testing.T) {
-		isRegOpen := true
-		isSubOpen := true
-		contest := &schemas.ContestDetailed{
-			Contest: schemas.Contest{
-				BaseContest: schemas.BaseContest{
-					ID:          1,
-					Name:        "Test Contest",
-					Description: "Test Description",
-					CreatedBy:   1,
-				},
-				ParticipantCount: 5,
-				TaskCount:        3,
-			},
-			CreatorName:        "Test Creator",
-			IsRegistrationOpen: &isRegOpen,
-			IsSubmissionOpen:   &isSubOpen,
-		}
-		cs.EXPECT().GetDetails(gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
-		resp, err := http.Get(server.URL + "/1/details")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		var response httputils.APIResponse[schemas.ContestDetailed]
-		err = json.Unmarshal(bodyBytes, &response)
-		if err != nil {
-			t.Fatalf("Failed to unmarshal response: %v", err)
-		}
-		assert.True(t, response.Ok)
-		assert.Equal(t, "Test Contest", response.Data.Name)
-		assert.Equal(t, "Test Creator", response.Data.CreatorName)
-		assert.Equal(t, int64(5), response.Data.ParticipantCount)
-	})
-}
-func TestGetContestTasksFiltered(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	cs := mock_service.NewMockContestService(ctrl)
-	ss := mock_service.NewMockSubmissionService(ctrl)
-	route := routes.NewContestRoute(cs, ss)
-	db := &testutils.MockDatabase{}
-	router := mux.NewRouter()
-	router.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
-		route.GetContestTasksFiltered(w, r)
-	})
-	handler := testutils.MockDatabaseMiddleware(router, db)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mockUser := schemas.User{
-			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
-		}
-		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
-		handler.ServeHTTP(w, r.WithContext(ctx))
-	}))
-	defer server.Close()
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/1/tasks", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
-	t.Run("Contest not found", func(t *testing.T) {
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
-		resp, err := http.Get(server.URL + "/1/tasks")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	})
-	t.Run("Not authorized - not a participant", func(t *testing.T) {
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
-		resp, err := http.Get(server.URL + "/1/tasks")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-	})
-	t.Run("Invalid status parameter", func(t *testing.T) {
-		resp, err := http.Get(server.URL + "/1/tasks?status=invalid")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	})
-	t.Run("Success without status filter", func(t *testing.T) {
-		now := time.Now()
-		tasks := []schemas.ContestTask{
-			{
-				Task: schemas.TaskInfo{
-					ID:    1,
-					Title: "Test Task 1",
-				},
-				CreatorName:      "Test Creator",
-				StartAt:          now.Add(-time.Hour),
-				EndAt:            nil,
-				IsSubmissionOpen: true,
-				IsVisible:        true,
-			},
-		}
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, nil)
-		resp, err := http.Get(server.URL + "/1/tasks")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("Failed to read response body: %v", err)
-		}
-		var response httputils.APIResponse[[]schemas.ContestTask]
-		err = json.Unmarshal(bodyBytes, &response)
-		if err != nil {
-			t.Fatalf("Failed to unmarshal response: %v", err)
-		}
-		assert.True(t, response.Ok)
-		assert.Len(t, response.Data, 1)
-		assert.Equal(t, "Test Task 1", response.Data[0].Task.Title)
-		assert.True(t, response.Data[0].IsVisible)
-	})
-	t.Run("Success with status filter", func(t *testing.T) {
-		now := time.Now()
-		tasks := []schemas.ContestTask{
-			{
-				Task: schemas.TaskInfo{
-					ID:    1,
-					Title: "Ongoing Task",
-				},
-				CreatorName:      "Test Creator",
-				StartAt:          now.Add(-time.Hour),
-				EndAt:            nil,
-				IsSubmissionOpen: true,
-				IsVisible:        true,
-			},
-		}
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, nil)
-		resp, err := http.Get(server.URL + "/1/tasks?status=ongoing")
-		if err != nil {
-			t.Fatalf("Failed to make request: %v", err)
-		}
-		defer resp.Body.Close()
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 }
