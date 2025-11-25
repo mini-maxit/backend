@@ -7,12 +7,13 @@ import (
 )
 
 type BaseContest struct {
-	ID          int64      `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	CreatedBy   int64      `json:"createdBy"`
-	StartAt     time.Time  `json:"startAt"`
-	EndAt       *time.Time `json:"endAt"`
+	ID            int64      `json:"id"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	CreatedBy     int64      `json:"createdBy"`
+	CreatedByName string     `json:"createdByName"`
+	StartAt       time.Time  `json:"startAt"`
+	EndAt         *time.Time `json:"endAt"`
 }
 
 type Contest struct {
@@ -99,20 +100,21 @@ type RegistrationRequest struct {
 }
 
 type ContestTask struct {
-	Task
+	Task             TaskInfo   `json:"task"`
 	CreatorName      string     `json:"creatorName"`
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
 }
+
 type TaskResult struct {
-	TaskID           int64   `json:"taskId"`
-	AttemptCount     int     `json:"attemptCount"`
-	BestResult       float64 `json:"bestResult"`
-	BestSubmissionID *int64  `json:"bestSubmissionId,omitempty"`
+	Task             TaskInfo `json:"task"`
+	AttemptCount     int      `json:"attemptCount"`
+	BestResult       float64  `json:"bestResult"`
+	BestSubmissionID *int64   `json:"bestSubmissionId,omitempty"`
 }
 
 type ContestResults struct {
-	ContestID   int64        `json:"contestId"`
+	Contest     BaseContest  `json:"contest"`
 	TaskResults []TaskResult `json:"taskResults"`
 }

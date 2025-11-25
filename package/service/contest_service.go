@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
@@ -394,7 +395,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 	result := make([]schemas.ContestTask, len(relations))
 	for i, rel := range relations {
 		result[i] = schemas.ContestTask{
-			Task:             *TaskToSchema(&rel.Task),
+			Task:             *TaskToInfoSchema(&rel.Task),
 			CreatorName:      rel.Task.Author.Name,
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
@@ -978,7 +979,7 @@ func (cs *contestService) GetMyContestResults(db database.Database, currentUser 
 		}
 
 		taskResults = append(taskResults, schemas.TaskResult{
-			TaskID:           task.ID,
+			Task:             *TaskToInfoSchema(&task),
 			AttemptCount:     attemptCount,
 			BestResult:       bestScore,
 			BestSubmissionID: bestSubmissionID,
@@ -986,7 +987,15 @@ func (cs *contestService) GetMyContestResults(db database.Database, currentUser 
 	}
 
 	return &schemas.ContestResults{
-		ContestID:   contestID,
+		Contest: schemas.BaseContest{
+			ID:            contest.ID,
+			Name:          contest.Name,
+			Description:   contest.Description,
+			CreatedBy:     contest.CreatedBy,
+			CreatedByName: fmt.Sprintf("%s %s", contest.Creator.Name, contest.Creator.Surname),
+			StartAt:       contest.StartAt,
+			EndAt:         contest.EndAt,
+		},
 		TaskResults: taskResults,
 	}, nil
 }
