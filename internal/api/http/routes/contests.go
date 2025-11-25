@@ -22,6 +22,7 @@ type ContestRoute interface {
 	RegisterForContest(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
 	GetContestTask(w http.ResponseWriter, r *http.Request)
+	GetMyContestResults(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -359,6 +360,48 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
+// GetMyContestResults godoc
+// @Tags			contests
+// @Summary		Get user's results for a contest
+// @Description	Get results of the current user for a given contest, including attempt count, best result, and best submission ID for each task
+// @Produce		json
+// @Param			id	path		int	true	"Contest ID"
+// @Failure		400	{object}	httputils.APIError
+// @Failure		403	{object}	httputils.APIError
+// @Failure		404	{object}	httputils.APIError
+// @Failure		405	{object}	httputils.APIError
+// @Failure		500	{object}	httputils.APIError
+// @Success		200	{object}	httputils.APIResponse[schemas.ContestResults]
+// @Router			/contests/{id}/results/my [get]
+func (cr *ContestRouteImpl) GetMyContestResults(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	db := httputils.GetDatabase(r)
+
+	results, err := cr.contestService.GetMyContestResults(db, currentUser, contestID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, results)
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -386,6 +429,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 
 	mux.HandleFunc("/contests/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
 	mux.HandleFunc("/contests/{id}/tasks/{task_id}", contestRoute.GetContestTask)
+	mux.HandleFunc("/contests/{id}/results/my", contestRoute.GetMyContestResults)
 
 	mux.HandleFunc("/contests/{id}/register", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

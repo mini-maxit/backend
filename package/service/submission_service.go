@@ -875,11 +875,15 @@ func (ss *submissionService) GetUserStatsForContestTask(db database.Database, us
 	// Convert typed model slice to schema slice
 	stats := make([]schemas.TaskUserStats, 0, len(rawStats))
 	for _, raw := range rawStats {
+		var bestSubmissionID *int64
+		if raw.BestSubmissionID != 0 {
+			bestSubmissionID = &raw.BestSubmissionID
+		}
 		stat := schemas.TaskUserStats{
 			User:             *UserToInfoSchema(&raw.User),
 			SubmissionCount:  int(raw.SubmissionCount),
 			BestScore:        raw.BestScore,
-			BestSubmissionID: raw.BestSubmissionID,
+			BestSubmissionID: bestSubmissionID,
 		}
 		stats = append(stats, stat)
 	}

@@ -378,3 +378,129 @@ func TestGetOngoingContests(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
 }
+
+func TestGetMyContestResults(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cs := mock_service.NewMockContestService(ctrl)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestRoute(cs, ss)
+	db := &testutils.MockDatabase{}
+
+	mux := mux.NewRouter()
+
+	mux.HandleFunc("/{id}/results/my", func(w http.ResponseWriter, r *http.Request) {
+		route.GetMyContestResults(w, r)
+	})
+
+	handler := testutils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "student",
+			Email: "test@example.com",
+		}
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/results/my", nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Contest not found", func(t *testing.T) {
+		cs.EXPECT().GetMyContestResults(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrNotFound)
+
+		resp, err := http.Get(server.URL + "/999/results/my")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		cs.EXPECT().GetMyContestResults(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
+
+		resp, err := http.Get(server.URL + "/1/results/my")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		submissionID := int64(10)
+		results := &schemas.ContestResults{
+			Contest: schemas.BaseContest{
+				ID: int64(1),
+			},
+			TaskResults: []schemas.TaskResult{
+				{
+					Task: schemas.TaskInfo{
+						ID: int64(1),
+					},
+					SubmissionCount:  5,
+					BestScore:        80.5,
+					BestSubmissionID: &submissionID,
+				},
+				{
+					Task: schemas.TaskInfo{
+						ID: int64(12),
+					},
+					SubmissionCount:  3,
+					BestScore:        100.0,
+					BestSubmissionID: &submissionID,
+				},
+			},
+		}
+
+		cs.EXPECT().GetMyContestResults(gomock.Any(), gomock.Any(), int64(1)).Return(results, nil)
+
+		resp, err := http.Get(server.URL + "/1/results/my")
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("Failed to read response: %v", err)
+		}
+
+		var response httputils.APIResponse[schemas.ContestResults]
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+
+		assert.True(t, response.Ok)
+		assert.Equal(t, int64(1), response.Data.Contest.ID)
+		assert.Len(t, response.Data.TaskResults, 2)
+		assert.Equal(t, int64(1), response.Data.TaskResults[0].Task.ID)
+		assert.Equal(t, 5, response.Data.TaskResults[0].SubmissionCount)
+		assert.InDelta(t, 80.5, response.Data.TaskResults[0].BestScore, 0.001)
+		assert.NotNil(t, response.Data.TaskResults[0].BestSubmissionID)
+		assert.Equal(t, int64(10), *response.Data.TaskResults[0].BestSubmissionID)
+	})
+}

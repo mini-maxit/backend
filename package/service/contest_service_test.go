@@ -10,6 +10,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
+	repository "github.com/mini-maxit/backend/package/repository"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
@@ -18,6 +19,182 @@ import (
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
+
+func TestContestService_GetMyContestResults(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	visibleTrue := true
+	visibleFalse := false
+
+	t.Run("contest not found", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
+		contestID := int64(999)
+
+		cr.EXPECT().Get(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+		assert.Nil(t, result)
+	})
+
+	t.Run("user without access (invisible + not participant + no permission)", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
+		contestID := int64(55)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Hidden Contest",
+			CreatedBy: 2,
+			IsVisible: &visibleFalse,
+		}
+
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, result)
+	})
+
+	t.Run("empty task list", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
+		contestID := int64(100)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Empty Tasks Contest",
+			CreatedBy: 5,
+			IsVisible: &visibleTrue,
+		}
+
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetTasksForContest(db, contestID).Return([]models.Task{}, nil).Times(1)
+		sr.EXPECT().GetAllTaskStatsForContestUser(db, contestID, currentUser.ID).Return([]repository.TaskUserSubmissionStats{}, nil).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, contestID, result.Contest.ID)
+		assert.Empty(t, result.TaskResults)
+	})
+
+	t.Run("tasks with no submissions (zero attempts)", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
+		contestID := int64(200)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "No Submissions Contest",
+			CreatedBy: 7,
+			IsVisible: &visibleTrue,
+		}
+
+		task := models.Task{ID: 1, Title: "Task A"}
+		tasks := []models.Task{task}
+
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
+		stats := []repository.TaskUserSubmissionStats{
+			{TaskID: task.ID, AttemptCount: 0, BestScore: 0, BestSubmissionID: nil},
+		}
+		sr.EXPECT().GetAllTaskStatsForContestUser(db, contestID, currentUser.ID).Return(stats, nil).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.Len(t, result.TaskResults, 1)
+		assert.Equal(t, 0, result.TaskResults[0].SubmissionCount)
+		assert.Equal(t, 0.0, result.TaskResults[0].BestScore) //nolint:testifylint // direct comparison with float64
+		assert.Nil(t, result.TaskResults[0].BestSubmissionID)
+	})
+
+	t.Run("tasks with submissions and best score calculation", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 15, Role: types.UserRoleStudent}
+		contestID := int64(300)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Submissions Contest",
+			CreatedBy: 9,
+			IsVisible: &visibleTrue,
+		}
+
+		task1 := models.Task{ID: 11, Title: "Task One"}
+		task2 := models.Task{ID: 12, Title: "Task Two"}
+		tasks := []models.Task{task1, task2}
+
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
+
+		bestSub1 := int64(1001)
+		bestSub2 := int64(1002)
+		stats := []repository.TaskUserSubmissionStats{
+			{TaskID: task1.ID, AttemptCount: 5, BestScore: 80.0, BestSubmissionID: &bestSub1},
+			{TaskID: task2.ID, AttemptCount: 3, BestScore: 66.6667, BestSubmissionID: &bestSub2},
+		}
+		sr.EXPECT().GetAllTaskStatsForContestUser(db, contestID, currentUser.ID).Return(stats, nil).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.Len(t, result.TaskResults, 2)
+
+		tr1 := result.TaskResults[0]
+		tr2 := result.TaskResults[1]
+
+		assert.Equal(t, int64(11), tr1.Task.ID)
+		assert.Equal(t, 5, tr1.SubmissionCount)
+		assert.InDelta(t, 80.0, tr1.BestScore, 0.001)
+		require.NotNil(t, tr1.BestSubmissionID)
+		assert.Equal(t, bestSub1, *tr1.BestSubmissionID)
+
+		assert.Equal(t, int64(12), tr2.Task.ID)
+		assert.Equal(t, 3, tr2.SubmissionCount)
+		assert.InDelta(t, 66.6667, tr2.BestScore, 0.001)
+		require.NotNil(t, tr2.BestSubmissionID)
+		assert.Equal(t, bestSub2, *tr2.BestSubmissionID)
+	})
+
+	t.Run("creator not preloaded - still succeeds", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 22, Role: types.UserRoleStudent}
+		contestID := int64(400)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "No Creator Preload",
+			CreatedBy: 22,
+			IsVisible: &visibleTrue,
+		}
+
+		task := models.Task{ID: 50, Title: "Solo Task"}
+		tasks := []models.Task{task}
+
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
+		stats := []repository.TaskUserSubmissionStats{
+			{TaskID: task.ID, AttemptCount: 1, BestScore: 100.0, BestSubmissionID: nil},
+		}
+		sr.EXPECT().GetAllTaskStatsForContestUser(db, contestID, currentUser.ID).Return(stats, nil).Times(1)
+
+		result, err := cs.GetMyContestResults(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.Len(t, result.TaskResults, 1)
+		assert.Equal(t, contest.CreatedBy, result.Contest.CreatedBy)
+		assert.Equal(t, "No Creator Preload", result.Contest.Name)
+	})
+}
 
 func TestContestWithStatsToSchema(t *testing.T) {
 	startTime := time.Now().Add(-1 * time.Hour)

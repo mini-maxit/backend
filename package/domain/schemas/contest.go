@@ -99,9 +99,21 @@ type RegistrationRequest struct {
 }
 
 type ContestTask struct {
-	Task
+	Task             TaskInfo   `json:"task"`
 	CreatorName      string     `json:"creatorName"`
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
+}
+
+type TaskResult struct {
+	Task             TaskInfo `json:"task"`
+	SubmissionCount  int      `json:"submissionCount"`
+	BestScore        float64  `json:"bestScore"`
+	BestSubmissionID *int64   `json:"bestSubmissionId"`
+}
+
+type ContestResults struct {
+	Contest     BaseContest  `json:"contest"`
+	TaskResults []TaskResult `json:"taskResults"`
 }

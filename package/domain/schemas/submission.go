@@ -64,7 +64,7 @@ type TaskUserStats struct {
 	User             UserInfo `json:"user"`
 	SubmissionCount  int      `json:"submissionCount"`
 	BestScore        float64  `json:"bestScore"`
-	BestSubmissionID int64    `json:"bestSubmissionId"`
+	BestSubmissionID *int64   `json:"bestSubmissionId"`
 }
 
 // UserContestStats contains overall performance statistics for a user in a contest

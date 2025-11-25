@@ -15,6 +15,7 @@ import (
 	database "github.com/mini-maxit/backend/internal/database"
 	models "github.com/mini-maxit/backend/package/domain/models"
 	types "github.com/mini-maxit/backend/package/domain/types"
+	repository "github.com/mini-maxit/backend/package/repository"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -549,6 +550,21 @@ func (m *MockSubmissionRepository) GetAllForTeacher(db database.Database, curren
 func (mr *MockSubmissionRepositoryMockRecorder) GetAllForTeacher(db, currentUserID, limit, offset, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForTeacher", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForTeacher), db, currentUserID, limit, offset, sort)
+}
+
+// GetAllTaskStatsForContestUser mocks base method.
+func (m *MockSubmissionRepository) GetAllTaskStatsForContestUser(db database.Database, contestID, userID int64) ([]repository.TaskUserSubmissionStats, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTaskStatsForContestUser", db, contestID, userID)
+	ret0, _ := ret[0].([]repository.TaskUserSubmissionStats)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllTaskStatsForContestUser indicates an expected call of GetAllTaskStatsForContestUser.
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllTaskStatsForContestUser(db, contestID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTaskStatsForContestUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllTaskStatsForContestUser), db, contestID, userID)
 }
 
 // GetAttemptCountForTaskByUser mocks base method.
