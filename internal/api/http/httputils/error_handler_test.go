@@ -196,3 +196,165 @@ func TestConvertValidationErrors(t *testing.T) {
 		t.Errorf("passwordField: expected INVALID_PASSWORD_FORMAT, got %+v", v)
 	}
 }
+
+func TestHttpToErrorCode(t *testing.T) {
+	tests := []struct {
+		status   int
+		expected string
+	}{
+		{http.StatusNotFound, "ERR_NOT_FOUND"},
+		{http.StatusInternalServerError, "ERR_INTERNAL_SERVER_ERROR"},
+		{http.StatusBadRequest, "ERR_BAD_REQUEST"},
+		{http.StatusNonAuthoritativeInfo, "ERR_NON_AUTHORITATIVE_INFORMATION"},
+	}
+	for _, tc := range tests {
+		got := httpToErrorCode(tc.status)
+		if got != tc.expected {
+			t.Fatalf("expected %s, got %s", tc.expected, got)
+		}
+	}
+}
+
+const applicationJSON = "application/json"
+
+func TestReturnError(t *testing.T) {
+	w := httptest.NewRecorder()
+	ReturnError(w, http.StatusBadRequest, "bad req")
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != applicationJSON {
+		t.Fatalf("expected Content-Type application/json, got %s", ct)
+	}
+
+	var resp APIError
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if resp.Ok {
+		t.Fatalf("expected ok=false")
+	}
+	if resp.Data.Code != "ERR_BAD_REQUEST" {
+		t.Fatalf("expected code ERR_BAD_REQUEST, got %s", resp.Data.Code)
+	}
+	if resp.Data.Message != "bad req" {
+		t.Fatalf("expected message 'bad req', got %s", resp.Data.Message)
+	}
+}
+
+func TestReturnServiceError(t *testing.T) {
+	w := httptest.NewRecorder()
+	returnServiceError(w, errors.ErrUserAlreadyExists)
+
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d", http.StatusConflict, w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != applicationJSON {
+		t.Fatalf("expected Content-Type application/json, got %s", ct)
+	}
+
+	var resp APIError
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if resp.Ok {
+		t.Fatalf("expected ok=false")
+	}
+	if resp.Data.Code != string(errors.CodeUserAlreadyExists) {
+		t.Fatalf("expected code %s, got %s", errors.CodeUserAlreadyExists, resp.Data.Code)
+	}
+	if resp.Data.Message != "User already exists" {
+		t.Fatalf("expected message 'User already exists', got %s", resp.Data.Message)
+	}
+}
+
+func TestReturnValidationError(t *testing.T) {
+	validate, err := utils.NewValidator()
+	require.NoError(t, err)
+
+	type S struct {
+		Name string `json:"name" validate:"required"`
+	}
+	var s S
+	err = validate.Struct(s)
+	require.Error(t, err)
+
+	var valErrs validator.ValidationErrors
+	ok := errors.As(err, &valErrs)
+	require.True(t, ok)
+
+	w := httptest.NewRecorder()
+	returnValidationError(w, valErrs)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != applicationJSON {
+		t.Fatalf("expected Content-Type application/json, got %s", ct)
+	}
+
+	var resp ValidationErrorResponse
+	if derr := json.NewDecoder(w.Body).Decode(&resp); derr != nil {
+		t.Fatalf("decode error: %v", derr)
+	}
+	if resp.Ok {
+		t.Fatalf("expected ok=false")
+	}
+	if v, ok := resp.Data["name"]; !ok || string(v.Code) != "FIELD_REQUIRED" {
+		t.Fatalf("expected name FIELD_REQUIRED, got %+v", v)
+	}
+}
+
+func TestHandleValidationError(t *testing.T) {
+	t.Run("validation errors mapped", func(t *testing.T) {
+		validate, err := utils.NewValidator()
+		require.NoError(t, err)
+
+		type S struct {
+			Email string `json:"email" validate:"email"`
+		}
+		s := S{Email: "bad-email"}
+		verr := validate.Struct(s)
+		require.Error(t, verr)
+
+		w := httptest.NewRecorder()
+		HandleValidationError(w, verr)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		}
+		var resp ValidationErrorResponse
+		if derr := json.NewDecoder(w.Body).Decode(&resp); derr != nil {
+			t.Fatalf("decode error: %v", derr)
+		}
+		if resp.Ok {
+			t.Fatalf("expected ok=false")
+		}
+		if v, ok := resp.Data["email"]; !ok || string(v.Code) != "INVALID_EMAIL" {
+			t.Fatalf("expected email INVALID_EMAIL, got %+v", v)
+		}
+	})
+
+	t.Run("non-validation error returns generic bad request", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		HandleValidationError(w, errors.New("boom"))
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		}
+		var resp APIError
+		if derr := json.NewDecoder(w.Body).Decode(&resp); derr != nil {
+			t.Fatalf("decode error: %v", derr)
+		}
+		if resp.Ok {
+			t.Fatalf("expected ok=false")
+		}
+		if resp.Data.Code != "ERR_BAD_REQUEST" {
+			t.Fatalf("expected code ERR_BAD_REQUEST, got %s", resp.Data.Code)
+		}
+		if resp.Data.Message != InvalidRequestBodyMessage {
+			t.Fatalf("expected message %q, got %q", InvalidRequestBodyMessage, resp.Data.Message)
+		}
+	})
+}
