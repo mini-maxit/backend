@@ -16,15 +16,15 @@ import (
 
 type ContestRoute interface {
 	GetContest(w http.ResponseWriter, r *http.Request)
-	GetContestTasksFiltered(w http.ResponseWriter, r *http.Request)
-	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
-	GetMyActiveContests(w http.ResponseWriter, r *http.Request)
-	GetMyPastContests(w http.ResponseWriter, r *http.Request)
-	GetContests(w http.ResponseWriter, r *http.Request)
-	RegisterForContest(w http.ResponseWriter, r *http.Request)
-	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
 	GetContestTask(w http.ResponseWriter, r *http.Request)
+	GetContestTasks(w http.ResponseWriter, r *http.Request)
+	GetContests(w http.ResponseWriter, r *http.Request)
+	GetMyActiveContests(w http.ResponseWriter, r *http.Request)
 	GetMyContestResults(w http.ResponseWriter, r *http.Request)
+	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
+	GetMyPastContests(w http.ResponseWriter, r *http.Request)
+	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
+	RegisterForContest(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -76,7 +76,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, contest)
 }
 
-// GetContestTasksFiltered godoc
+// GetContestTasks godoc
 //
 //	@Tags			contests
 //	@Summary		Get contest tasks with optional status filter
@@ -91,7 +91,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[[]schemas.ContestTask]
 //	@Router			/contests/{id}/tasks [get]
-func (cr *ContestRouteImpl) GetContestTasksFiltered(w http.ResponseWriter, r *http.Request) {
+func (cr *ContestRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
@@ -487,7 +487,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			contestRoute.GetContestTasksFiltered(w, r)
+			contestRoute.GetContestTasks(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
