@@ -1,10 +1,11 @@
-package config_test
+//nolint:testpackage // testing private default values
+package config
 
 import (
 	"os"
+	"strconv"
 	"testing"
 
-	"github.com/mini-maxit/backend/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +67,7 @@ func TestNewConfig_SuccessFullEnv(t *testing.T) {
 	unsetAll()
 	setEnv(baseEnv)
 
-	cfg := config.NewConfig()
+	cfg := NewConfig()
 	require.NotNil(t, cfg)
 
 	// DB
@@ -117,14 +118,15 @@ func TestNewConfig_DefaultsAndOptionalMissing(t *testing.T) {
 	}
 	setEnv(minimal)
 
-	cfg := config.NewConfig()
+	cfg := NewConfig()
 	require.NotNil(t, cfg)
 
 	// Defaults applied
-	require.Equal(t, uint16(8080), cfg.API.Port)
-	require.Equal(t, "/api/v1/auth/refresh", cfg.API.RefreshTokenPath)
-	require.Equal(t, "worker_queue", cfg.Broker.QueueName)
-	require.Equal(t, "worker_response_queue", cfg.Broker.ResponseQueueName)
+	port, _ := strconv.ParseUint(defaultAPIPort, 10, 16)
+	require.Equal(t, uint16(port), cfg.API.Port)
+	require.Equal(t, defaultAPIRefreshTokenPath, cfg.API.RefreshTokenPath)
+	require.Equal(t, defaultQueueName, cfg.Broker.QueueName)
+	require.Equal(t, defaultResponseQueueName, cfg.Broker.ResponseQueueName)
 
 	// Optional missing values preserved as empty string
 	require.Empty(t, cfg.DB.Host)     // Warns but does not set "localhost"
@@ -150,7 +152,7 @@ func TestNewConfig_DumpFlagFalseWhenMissing(t *testing.T) {
 	}
 	setEnv(env)
 
-	cfg := config.NewConfig()
+	cfg := NewConfig()
 	require.NotNil(t, cfg)
 	require.False(t, cfg.Dump)
 }
@@ -182,7 +184,7 @@ func TestNewConfig_PanicsWhenRequiredMissing(t *testing.T) {
 						didPanic = true
 					}
 				}()
-				_ = config.NewConfig()
+				_ = NewConfig()
 			}()
 			require.True(t, didPanic, "expected panic when %s is missing", missing)
 		})
@@ -231,7 +233,7 @@ func TestNewConfig_PanicsOnInvalidPortValues(t *testing.T) {
 						didPanic = true
 					}
 				}()
-				_ = config.NewConfig()
+				_ = NewConfig()
 			}()
 			require.True(t, didPanic, "expected panic for case %s", tc.name)
 		})

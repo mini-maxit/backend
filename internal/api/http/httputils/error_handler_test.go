@@ -7,7 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/backend/package/utils"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -122,4 +125,74 @@ func TestHandleServiceError(t *testing.T) {
 			t.Errorf("Expected code %s, got %s", errors.CodeForbidden, response.Data.Code)
 		}
 	})
+}
+
+func TestConvertValidationErrors(t *testing.T) {
+	validate, err := utils.NewValidator()
+	require.NoError(t, err)
+
+	type TestStruct struct {
+		RequiredField string `validate:"required" json:"requiredField"`
+		EmailField    string `validate:"email" json:"emailField"`
+		MinLenField   string `validate:"gte=5" json:"minLenField"`
+		MaxLenField   string `validate:"lte=3" json:"maxLenField"`
+		MatchField    string `validate:"eqfield=ConfirmField" json:"matchField"`
+		ConfirmField  string `json:"confirmField"`
+		UsernameField string `validate:"username" json:"usernameField"`
+		PasswordField string `validate:"password" json:"passwordField"`
+	}
+
+	// Build instance to trigger errors for each tag
+	obj := TestStruct{
+		RequiredField: "",
+		EmailField:    "not-an-email",
+		MinLenField:   "123",
+		MaxLenField:   "1234",
+		MatchField:    "abc",
+		ConfirmField:  "abcd",
+		UsernameField: "1invalid",
+		PasswordField: "weak",
+	}
+
+	err = validate.Struct(obj)
+	if err == nil {
+		t.Fatalf("expected validation errors, got nil")
+	}
+
+	var valErrs validator.ValidationErrors
+	ok := errors.As(err, &valErrs)
+	if !ok {
+		t.Fatalf("expected validator.ValidationErrors, got %T", err)
+	}
+
+	result := ConvertValidationErrors(valErrs)
+
+	// required
+	if v, exists := result["requiredField"]; !exists || string(v.Code) != "FIELD_REQUIRED" {
+		t.Errorf("requiredField: expected FIELD_REQUIRED, got %+v", v)
+	}
+	// email
+	if v, exists := result["emailField"]; !exists || string(v.Code) != "INVALID_EMAIL" {
+		t.Errorf("emailField: expected INVALID_EMAIL, got %+v", v)
+	}
+	// gte -> MIN_LENGTH_%s with param
+	if v, exists := result["minLenField"]; !exists || string(v.Code) != "MIN_LENGTH_5" {
+		t.Errorf("minLenField: expected MIN_LENGTH_5, got %+v", v)
+	}
+	// lte -> MAX_LENGTH_%s with param
+	if v, exists := result["maxLenField"]; !exists || string(v.Code) != "MAX_LENGTH_3" {
+		t.Errorf("maxLenField: expected MAX_LENGTH_3, got %+v", v)
+	}
+	// eqfield -> FIELD_MUST_MATCH_%s where %s is json name of param (confirmField)
+	if v, exists := result["matchField"]; !exists || string(v.Code) != "FIELD_MUST_MATCH_confirmField" {
+		t.Errorf("matchField: expected FIELD_MUST_MATCH_confirmField, got %+v", v)
+	}
+	// username
+	if v, exists := result["usernameField"]; !exists || string(v.Code) != "INVALID_USERNAME_FORMAT" {
+		t.Errorf("usernameField: expected INVALID_USERNAME_FORMAT, got %+v", v)
+	}
+	// password
+	if v, exists := result["passwordField"]; !exists || string(v.Code) != "INVALID_PASSWORD_FORMAT" {
+		t.Errorf("passwordField: expected INVALID_PASSWORD_FORMAT, got %+v", v)
+	}
 }
