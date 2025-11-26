@@ -109,23 +109,22 @@ func (cr *ContestRouteImpl) GetContestTasksFiltered(w http.ResponseWriter, r *ht
 	}
 
 	// Parse optional status filter
-	var status *types.ContestStatus
+	var status types.ContestStatus
 	statusStr := r.URL.Query().Get("status")
 	if statusStr != "" {
 		switch statusStr {
 		case "past":
-			s := types.ContestStatusPast
-			status = &s
+			status = types.ContestStatusPast
 		case "ongoing":
-			s := types.ContestStatusOngoing
-			status = &s
+			status = types.ContestStatusOngoing
 		case "upcoming":
-			s := types.ContestStatusUpcoming
-			status = &s
+			status = types.ContestStatusUpcoming
 		default:
 			httputils.ReturnError(w, http.StatusBadRequest, "Invalid status value. Must be 'past', 'ongoing', or 'upcoming'")
 			return
 		}
+	} else {
+		status = types.ContestStatusOngoing
 	}
 
 	db := httputils.GetDatabase(r)

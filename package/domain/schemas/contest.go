@@ -30,10 +30,9 @@ type AvailableContest struct {
 }
 
 type CreatedContest struct {
-	BaseContest
+	ContestDetailed
 	CreatedAt          time.Time `json:"createdAt"`
 	IsRegistrationOpen bool      `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool      `json:"isSubmissionOpen"`
 	IsVisible          bool      `json:"isVisible"`
 }
 
@@ -86,10 +85,9 @@ type UserContestsWithStats struct {
 }
 
 type AddTaskToContest struct {
-	TaskID    int64      `json:"taskId" validate:"required"`
-	StartAt   *time.Time `json:"startAt,omitempty"`
-	EndAt     *time.Time `json:"endAt,omitempty"`
-	IsVisible bool       `json:"isVisible,omitempty"` // if false, task is hidden from participants
+	TaskID  int64      `json:"taskId" validate:"required"`
+	StartAt *time.Time `json:"startAt,omitempty"`
+	EndAt   *time.Time `json:"endAt,omitempty"`
 }
 
 type RegistrationRequest struct {
@@ -107,7 +105,6 @@ type ContestTask struct {
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
-	IsVisible        bool       `json:"isVisible"` // if false, task is hidden from participants
 }
 
 type TaskResult struct {

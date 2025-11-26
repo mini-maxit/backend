@@ -35,7 +35,7 @@ type ContestService interface {
 	// GetTasksForContest retrieves all contest task relations (with timing/submission flags) for a contest (for authorized users)
 	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.ContestTask, error)
 	// GetVisibleTasksForContest retrieves visible contest tasks filtered by status (for participants and users with access_policy)
-	GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status *types.ContestStatus) ([]schemas.ContestTask, error)
+	GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (for authorized users)
@@ -402,29 +402,19 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
-			IsVisible:        rel.IsVisible,
 		}
 	}
 	return result, nil
 }
 
-func (cs *contestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status *types.ContestStatus) ([]schemas.ContestTask, error) {
-	// Check if contest exists
-	_, err := cs.contestRepository.Get(db, contestID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.ErrNotFound
-		}
-		return nil, err
-	}
+func (cs *contestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
+	hasAccessPolicy := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit) == nil
 
 	// Check if user is participant or has access permission
 	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, currentUser.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	hasAccessPolicy := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit) == nil
 
 	if !isParticipant && !hasAccessPolicy {
 		return nil, errors.ErrForbidden
@@ -441,8 +431,8 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 	for _, rel := range relations {
 		taskStatus := getTaskStatus(rel.StartAt, rel.EndAt, now)
 
-		// If status filter is provided, only include tasks matching the status
-		if status != nil && taskStatus != *status {
+		// only include tasks matching the status
+		if taskStatus != status {
 			continue
 		}
 
@@ -452,7 +442,6 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
-			IsVisible:        rel.IsVisible,
 		})
 	}
 	return result, nil
@@ -621,14 +610,12 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 		return errors.ErrEndBeforeStart
 	}
 
-	isVisible := request.IsVisible
 	taskContest := models.ContestTask{
 		ContestID:        contestID,
 		TaskID:           request.TaskID,
 		StartAt:          startAt,
 		EndAt:            endAt,
 		IsSubmissionOpen: true,
-		IsVisible:        isVisible,
 	}
 
 	return cs.contestRepository.AddTaskToContest(db, taskContest)
@@ -636,16 +623,18 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 
 func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {
 	return &schemas.CreatedContest{
-		BaseContest: schemas.BaseContest{
-			ID:          model.ID,
-			Name:        model.Name,
-			Description: model.Description,
-			CreatedBy:   model.CreatedBy,
-			StartAt:     model.StartAt,
-			EndAt:       model.EndAt,
+		ContestDetailed: schemas.ContestDetailed{
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
+			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
 		IsRegistrationOpen: model.IsRegistrationOpen,
-		IsSubmissionOpen:   model.IsSubmissionOpen,
 		IsVisible:          model.IsVisible,
 	}
 }
@@ -982,19 +971,24 @@ func (cs *contestService) GetContestTask(db database.Database, currentUser *sche
 	return task, nil
 }
 
-func ContestToCreatedSchema(model *models.Contest) *schemas.CreatedContest {
+func ContestToCreatedSchema(model *repository.ContestDetailed) *schemas.CreatedContest {
 	return &schemas.CreatedContest{
-		BaseContest: schemas.BaseContest{
-			ID:          model.ID,
-			Name:        model.Name,
-			Description: model.Description,
-			CreatedBy:   model.CreatedBy,
-			StartAt:     model.StartAt,
-			EndAt:       model.EndAt,
+		ContestDetailed: schemas.ContestDetailed{
+			BaseContest: schemas.BaseContest{
+				ID:          model.ID,
+				Name:        model.Name,
+				Description: model.Description,
+				CreatedBy:   model.CreatedBy,
+				StartAt:     model.StartAt,
+				EndAt:       model.EndAt,
+			},
+			ParticipantCount: model.ParticipantCount,
+			TaskCount:        model.TaskCount,
+			Status:           getContestStatus(model.StartAt, model.EndAt),
+			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
 		IsVisible:          model.IsVisible,
 		IsRegistrationOpen: model.IsRegistrationOpen,
-		IsSubmissionOpen:   model.IsSubmissionOpen,
 		CreatedAt:          model.CreatedAt,
 	}
 }
@@ -1109,17 +1103,19 @@ func ParticipantContestStatsToPastSchema(contest *models.ParticipantContestStats
 func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContest {
 	return &schemas.ManagedContest{
 		CreatedContest: schemas.CreatedContest{
-			BaseContest: schemas.BaseContest{
-				ID:          model.ID,
-				Name:        model.Name,
-				Description: model.Description,
-				CreatedBy:   model.CreatedBy,
-				StartAt:     model.StartAt,
-				EndAt:       model.EndAt,
+			ContestDetailed: schemas.ContestDetailed{
+				BaseContest: schemas.BaseContest{
+					ID:          model.ID,
+					Name:        model.Name,
+					Description: model.Description,
+					CreatedBy:   model.CreatedBy,
+					StartAt:     model.StartAt,
+					EndAt:       model.EndAt,
+				},
+				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
 			IsVisible:          model.IsVisible,
 			IsRegistrationOpen: model.IsRegistrationOpen,
-			IsSubmissionOpen:   model.IsSubmissionOpen,
 			CreatedAt:          model.CreatedAt,
 		},
 		PermissionType: model.PermissionType,

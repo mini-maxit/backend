@@ -451,7 +451,7 @@ func (mr *MockContestServiceMockRecorder) GetUserContests(db, userID any) *gomoc
 }
 
 // GetVisibleTasksForContest mocks base method.
-func (m *MockContestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status *types.ContestStatus) ([]schemas.ContestTask, error) {
+func (m *MockContestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVisibleTasksForContest", db, currentUser, contestID, status)
 	ret0, _ := ret[0].([]schemas.ContestTask)

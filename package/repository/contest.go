@@ -37,7 +37,7 @@ type ContestRepository interface {
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
 	GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
+	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error)
 	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
 	GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
@@ -116,7 +116,7 @@ func (cr *contestRepository) GetDetailed(db database.Database, contestID int64) 
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as task_count
 			FROM %s
-			WHERE contest_id = ?
+			WHERE contest_id = ? AND start_at <= NOW()
 			GROUP BY contest_id
 		) as tc ON contests.id = tc.contest_id`, database.ResolveTableName(tx, &models.ContestTask{})), contestID).
 		Joins(fmt.Sprintf(`LEFT JOIN %s as users
@@ -143,9 +143,9 @@ func (cr *contestRepository) GetAll(db database.Database, offset int, limit int,
 	return contests, nil
 }
 
-func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error) {
+func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error) {
 	tx := db.GetInstance()
-	var contests []models.Contest
+	var contests []ContestDetailed
 	var totalCount int64
 
 	// Get total count first
@@ -160,7 +160,8 @@ func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID in
 	if err != nil {
 		return nil, 0, err
 	}
-	err = paginatedQuery.Where("created_by = ?", creatorID).Find(&contests).Error
+
+	err = paginatedQuery.Select(`*, (SELECT COUNT(*) FROM maxit.contest_participants WHERE contest_id = contests.id) AS participant_count, (SELECT COUNT(*) FROM maxit.contest_tasks WHERE contest_id = contests.id) AS task_count`).Where("created_by = ?", creatorID).Find(&contests).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -611,7 +612,7 @@ func (cr *contestRepository) GetVisibleContestTasksWithSettings(db database.Data
 	tx := db.GetInstance()
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).
-		Where("contest_id = ? AND is_visible = ?", contestID, true).
+		Where("contest_id = ? AND start_at < now()", contestID).
 		Preload("Task").
 		Preload("Task.Author").
 		Find(&relations).Error

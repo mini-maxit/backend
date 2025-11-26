@@ -1792,10 +1792,10 @@ func (mr *MockContestRepositoryMockRecorder) GetAllForCollaborator(db, userID, o
 }
 
 // GetAllForCreator mocks base method.
-func (m *MockContestRepository) GetAllForCreator(db database.Database, creatorID int64, offset, limit int, sort string) ([]models.Contest, int64, error) {
+func (m *MockContestRepository) GetAllForCreator(db database.Database, creatorID int64, offset, limit int, sort string) ([]repository.ContestDetailed, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForCreator", db, creatorID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.Contest)
+	ret0, _ := ret[0].([]repository.ContestDetailed)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
