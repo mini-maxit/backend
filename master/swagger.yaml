@@ -23,10 +23,10 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-Contest:
+  APIResponse-ContestDetailed:
     properties:
       data:
-        $ref: '#/definitions/Contest'
+        $ref: '#/definitions/ContestDetailed'
       ok:
         type: boolean
     type: object
@@ -340,12 +340,16 @@ definitions:
     properties:
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
         type: string
       id:
         type: integer
+      isSubmissionOpen:
+        type: boolean
       name:
         type: string
       participantCount:
@@ -390,16 +394,20 @@ definitions:
       user_name:
         type: string
     type: object
-  Contest:
+  ContestDetailed:
     properties:
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
         type: string
       id:
         type: integer
+      isSubmissionOpen:
+        type: boolean
       name:
         type: string
       participantCount:
@@ -466,12 +474,16 @@ definitions:
     properties:
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
         type: string
       id:
         type: integer
+      isSubmissionOpen:
+        type: boolean
       name:
         type: string
       participantCount:
@@ -540,6 +552,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
@@ -554,8 +568,16 @@ definitions:
         type: boolean
       name:
         type: string
+      participantCount:
+        type: integer
       startAt:
         type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/ContestStatus'
+        description: '"upcoming", "ongoing", "past"'
+      taskCount:
+        type: integer
     type: object
   EditContest:
     properties:
@@ -618,6 +640,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
@@ -632,12 +656,20 @@ definitions:
         type: boolean
       name:
         type: string
+      participantCount:
+        type: integer
       permissionType:
         allOf:
         - $ref: '#/definitions/Permission'
         description: '"view", "edit", "manage", "owner"'
       startAt:
         type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/ContestStatus'
+        description: '"upcoming", "ongoing", "past"'
+      taskCount:
+        type: integer
     type: object
   MessageResponse:
     properties:
@@ -718,12 +750,16 @@ definitions:
     properties:
       createdBy:
         type: integer
+      creatorName:
+        type: string
       description:
         type: string
       endAt:
         type: string
       id:
         type: integer
+      isSubmissionOpen:
+        type: boolean
       maximumScore:
         type: integer
       name:
@@ -2302,7 +2338,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Contest'
+            $ref: '#/definitions/APIResponse-ContestDetailed'
         "400":
           description: Bad Request
           schema:
@@ -2408,6 +2444,54 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Get user's results for a contest
+      tags:
+      - contests
+  /contests/{id}/tasks:
+    get:
+      description: Get visible tasks for a contest with optional status filter (past,
+        ongoing, upcoming). Only accessible by participants or users with access policy.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task status filter
+        enum:
+        - past
+        - ongoing
+        - upcoming
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-ContestTask'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contest tasks with optional status filter
       tags:
       - contests
   /contests/{id}/tasks/{task_id}:
