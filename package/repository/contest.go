@@ -10,13 +10,24 @@ import (
 	"gorm.io/gorm"
 )
 
+type ContestDetailed struct {
+	models.Contest
+	CreatedByName    string `gorm:"column:created_by_name"`
+	ParticipantCount int64  `gorm:"column:participant_count"`
+	TaskCount        int64  `gorm:"column:task_count"` // number of visible tasks
+}
+
 type ContestRepository interface {
 	// Create creates a new contest
 	Create(db database.Database, contest *models.Contest) (int64, error)
 	// Get retrieves a contest by ID
 	Get(db database.Database, contestID int64) (*models.Contest, error)
+	// GetDetailed retrieves a contest by ID with detailed information
+	GetDetailed(db database.Database, contestID int64) (*ContestDetailed, error)
 	// Get retrieves a contest by ID with participant and task counts
 	GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error)
+	// GetWithCreator retrieves a contest by ID with preloaded creator and stats
+	GetWithCreator(db database.Database, contestID int64) (*models.ParticipantContestStats, *models.User, error)
 	// GetAll retrieves all contests with pagination and sorting
 	GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error)
 	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
@@ -26,7 +37,7 @@ type ContestRepository interface {
 	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
 	GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
-	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error)
+	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error)
 	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
 	GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
@@ -45,6 +56,8 @@ type ContestRepository interface {
 	GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task
 	GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
+	// GetVisibleContestTasksWithSettings retrieves visible contest-task relations with timing flags and associated task
+	GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest
@@ -89,6 +102,33 @@ func (cr *contestRepository) Get(db database.Database, contestID int64) (*models
 	return &contest, nil
 }
 
+func (cr *contestRepository) GetDetailed(db database.Database, contestID int64) (*ContestDetailed, error) {
+	tx := db.GetInstance()
+	var contest ContestDetailed
+	err := tx.Model(&models.Contest{}).
+		Select(`contests.*, (users.name || ' ' || users.surname) as created_by_name, pc.participant_count, tc.task_count`).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as participant_count
+			FROM %s
+			WHERE contest_id = ?
+			GROUP BY contest_id
+		) as pc ON contests.id = pc.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{})), contestID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as task_count
+			FROM %s
+			WHERE contest_id = ? AND start_at <= NOW()
+			GROUP BY contest_id
+		) as tc ON contests.id = tc.contest_id`, database.ResolveTableName(tx, &models.ContestTask{})), contestID).
+		Joins(fmt.Sprintf(`LEFT JOIN %s as users
+			ON contests.created_by = users.id`, database.ResolveTableName(tx, &models.User{}))).
+		Where("contests.id = ?", contestID).
+		First(&contest).Error
+	if err != nil {
+		return nil, err
+	}
+	return &contest, nil
+}
+
 func (cr *contestRepository) GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error) {
 	tx := db.GetInstance()
 	var contests []models.Contest
@@ -103,9 +143,9 @@ func (cr *contestRepository) GetAll(db database.Database, offset int, limit int,
 	return contests, nil
 }
 
-func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.Contest, int64, error) {
+func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error) {
 	tx := db.GetInstance()
-	var contests []models.Contest
+	var contests []ContestDetailed
 	var totalCount int64
 
 	// Get total count first
@@ -120,7 +160,8 @@ func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID in
 	if err != nil {
 		return nil, 0, err
 	}
-	err = paginatedQuery.Where("created_by = ?", creatorID).Find(&contests).Error
+
+	err = paginatedQuery.Select(`*, (SELECT COUNT(*) FROM maxit.contest_participants WHERE contest_id = contests.id) AS participant_count, (SELECT COUNT(*) FROM maxit.contest_tasks WHERE contest_id = contests.id) AS task_count`).Where("created_by = ?", creatorID).Find(&contests).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -566,6 +607,21 @@ func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, c
 	return relations, nil
 }
 
+// GetVisibleContestTasksWithSettings retrieves visible contest-task relations (with timing flags) and preloads the associated Task
+func (cr *contestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+	tx := db.GetInstance()
+	var relations []models.ContestTask
+	err := tx.Model(&models.ContestTask{}).
+		Where("contest_id = ? AND start_at < now()", contestID).
+		Preload("Task").
+		Preload("Task.Author").
+		Find(&relations).Error
+	if err != nil {
+		return nil, err
+	}
+	return relations, nil
+}
+
 func (cr *contestRepository) GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error) {
 	tx := db.GetInstance()
 	var tasks []models.Task
@@ -846,6 +902,58 @@ func (cr *contestRepository) GetWithCount(db database.Database, contestID int64)
 		return nil, err
 	}
 	return &contest, nil
+}
+
+func (cr *contestRepository) GetWithCreator(db database.Database, contestID int64) (*models.ParticipantContestStats, *models.User, error) {
+	tx := db.GetInstance()
+	var contest models.ParticipantContestStats
+	err := tx.Model(&models.Contest{}).
+		Select(`
+		contests.*,
+		COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+		COALESCE(contest_task_count.count, 0) as task_count
+		`).
+		Where("contests.id = ?", contestID).
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT contest_id, COUNT(*) AS count
+			FROM %s
+			GROUP BY contest_id
+		) AS direct_participants ON contests.id = direct_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipant{})),
+		).
+		// Group participants expanded to distinct users
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) AS count
+			FROM %s cpg
+			JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) AS group_participants ON contests.id = group_participants.contest_id`,
+			database.ResolveTableName(tx, &models.ContestParticipantGroup{}),
+			database.ResolveTableName(tx, &models.UserGroup{})),
+		).
+		// Task count per contest
+		Joins(fmt.Sprintf(`
+		LEFT JOIN (
+			SELECT contest_id, COUNT(*) AS count
+			FROM %s
+			GROUP BY contest_id
+		) AS contest_task_count ON contests.id = contest_task_count.contest_id`,
+			database.ResolveTableName(tx, &models.ContestTask{})),
+		).First(&contest).Error
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Fetch the creator
+	var creator models.User
+	err = tx.Where("id = ?", contest.CreatedBy).First(&creator).Error
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &contest, &creator, nil
 }
 
 func NewContestRepository() ContestRepository {

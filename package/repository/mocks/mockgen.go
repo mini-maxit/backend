@@ -1792,10 +1792,10 @@ func (mr *MockContestRepositoryMockRecorder) GetAllForCollaborator(db, userID, o
 }
 
 // GetAllForCreator mocks base method.
-func (m *MockContestRepository) GetAllForCreator(db database.Database, creatorID int64, offset, limit int, sort string) ([]models.Contest, int64, error) {
+func (m *MockContestRepository) GetAllForCreator(db database.Database, creatorID int64, offset, limit int, sort string) ([]repository.ContestDetailed, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllForCreator", db, creatorID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.Contest)
+	ret0, _ := ret[0].([]repository.ContestDetailed)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -1865,6 +1865,21 @@ func (m *MockContestRepository) GetContestsForUserWithStats(db database.Database
 func (mr *MockContestRepositoryMockRecorder) GetContestsForUserWithStats(db, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestsForUserWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetContestsForUserWithStats), db, userID)
+}
+
+// GetDetailed mocks base method.
+func (m *MockContestRepository) GetDetailed(db database.Database, contestID int64) (*repository.ContestDetailed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDetailed", db, contestID)
+	ret0, _ := ret[0].(*repository.ContestDetailed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDetailed indicates an expected call of GetDetailed.
+func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
 }
 
 // GetOngoingContestsWithStats mocks base method.
@@ -1990,6 +2005,21 @@ func (mr *MockContestRepositoryMockRecorder) GetUpcomingContestsWithStats(db, us
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetUpcomingContestsWithStats), db, userID, offset, limit, sort)
 }
 
+// GetVisibleContestTasksWithSettings mocks base method.
+func (m *MockContestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVisibleContestTasksWithSettings", db, contestID)
+	ret0, _ := ret[0].([]models.ContestTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVisibleContestTasksWithSettings indicates an expected call of GetVisibleContestTasksWithSettings.
+func (mr *MockContestRepositoryMockRecorder) GetVisibleContestTasksWithSettings(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleContestTasksWithSettings", reflect.TypeOf((*MockContestRepository)(nil).GetVisibleContestTasksWithSettings), db, contestID)
+}
+
 // GetWithCount mocks base method.
 func (m *MockContestRepository) GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error) {
 	m.ctrl.T.Helper()
@@ -2003,6 +2033,22 @@ func (m *MockContestRepository) GetWithCount(db database.Database, contestID int
 func (mr *MockContestRepositoryMockRecorder) GetWithCount(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCount", reflect.TypeOf((*MockContestRepository)(nil).GetWithCount), db, contestID)
+}
+
+// GetWithCreator mocks base method.
+func (m *MockContestRepository) GetWithCreator(db database.Database, contestID int64) (*models.ParticipantContestStats, *models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWithCreator", db, contestID)
+	ret0, _ := ret[0].(*models.ParticipantContestStats)
+	ret1, _ := ret[1].(*models.User)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetWithCreator indicates an expected call of GetWithCreator.
+func (mr *MockContestRepositoryMockRecorder) GetWithCreator(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCreator", reflect.TypeOf((*MockContestRepository)(nil).GetWithCreator), db, contestID)
 }
 
 // IsPendingRegistrationExists mocks base method.

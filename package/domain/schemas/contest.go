@@ -15,24 +15,25 @@ type BaseContest struct {
 	EndAt       *time.Time `json:"endAt"`
 }
 
-type Contest struct {
+type ContestDetailed struct {
 	BaseContest
+	CreatorName      string              `json:"creatorName"`
 	ParticipantCount int64               `json:"participantCount"`
 	TaskCount        int64               `json:"taskCount"`
 	Status           types.ContestStatus `json:"status"` // "upcoming", "ongoing", "past"
+	IsSubmissionOpen bool                `json:"isSubmissionOpen"`
 }
 
 type AvailableContest struct {
-	Contest
+	ContestDetailed
 	RegistrationStatus string `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
 }
 
 type CreatedContest struct {
-	BaseContest
+	ContestDetailed
 	CreatedAt          time.Time `json:"createdAt"`
-	IsRegistrationOpen *bool     `json:"isRegistrationOpen"`
-	IsSubmissionOpen   *bool     `json:"isSubmissionOpen"`
-	IsVisible          *bool     `json:"isVisible"`
+	IsRegistrationOpen bool      `json:"isRegistrationOpen"`
+	IsVisible          bool      `json:"isVisible"`
 }
 
 type ManagedContest struct {
@@ -45,9 +46,9 @@ type CreateContest struct {
 	Description        string     `json:"description" validate:"required"`
 	StartAt            time.Time  `json:"startAt" validate:"required"`
 	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen *bool      `json:"isRegistrationOpen"`
-	IsSubmissionOpen   *bool      `json:"isSubmissionOpen"`
-	IsVisible          *bool      `json:"isVisible"`
+	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
+	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
+	IsVisible          bool       `json:"isVisible"`
 }
 
 type EditContest struct {
@@ -61,16 +62,16 @@ type EditContest struct {
 }
 
 type ContestWithStats struct {
-	Contest
+	ContestDetailed
 	SolvedTaskCount int64 `json:"solvedTaskCount"`
 }
 
 type UpcomingContest struct {
-	Contest
+	ContestDetailed
 }
 
 type PastContestWithStats struct {
-	Contest
+	ContestDetailed
 	SolvedTaskPercentage float64 `json:"solvedPercentage"`
 	Score                int64   `json:"score"`
 	MaximumScore         int64   `json:"maximumScore"`

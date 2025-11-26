@@ -56,7 +56,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Hidden Contest",
 			CreatedBy: 2,
-			IsVisible: &visibleFalse,
+			IsVisible: visibleFalse,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -78,7 +78,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Empty Tasks Contest",
 			CreatedBy: 5,
-			IsVisible: &visibleTrue,
+			IsVisible: visibleTrue,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -100,7 +100,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "No Submissions Contest",
 			CreatedBy: 7,
-			IsVisible: &visibleTrue,
+			IsVisible: visibleTrue,
 		}
 
 		task := models.Task{ID: 1, Title: "Task A"}
@@ -129,7 +129,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Submissions Contest",
 			CreatedBy: 9,
-			IsVisible: &visibleTrue,
+			IsVisible: visibleTrue,
 		}
 
 		task1 := models.Task{ID: 11, Title: "Task One"}
@@ -175,7 +175,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "No Creator Preload",
 			CreatedBy: 22,
-			IsVisible: &visibleTrue,
+			IsVisible: visibleTrue,
 		}
 
 		task := models.Task{ID: 50, Title: "Solo Task"}
@@ -209,7 +209,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 			StartAt:     startTime,
 			EndAt:       &endTime,
 			CreatedBy:   1,
-			IsVisible:   &visible,
+			IsVisible:   visible,
 		},
 		TaskCount:        5,
 		ParticipantCount: 10,
@@ -243,7 +243,7 @@ func TestContestWithStatsToSchemaWithNilUserInfo(t *testing.T) {
 			StartAt:     startTime,
 			EndAt:       &endTime,
 			CreatedBy:   1,
-			IsVisible:   &visible,
+			IsVisible:   visible,
 		},
 		TaskCount:        5,
 		ParticipantCount: 10,
@@ -278,7 +278,7 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 				StartAt:     startTime,
 				EndAt:       &endTime,
 				CreatedBy:   1,
-				IsVisible:   &visible,
+				IsVisible:   visible,
 			},
 			TaskCount:        3,
 			ParticipantCount: 5,
@@ -293,7 +293,7 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 				StartAt:     startTime,
 				EndAt:       &endTime,
 				CreatedBy:   2,
-				IsVisible:   &visible,
+				IsVisible:   visible,
 			},
 			TaskCount:        4,
 			ParticipantCount: 8,
@@ -318,31 +318,6 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 	assert.Equal(t, int64(2), results[1].ID)
 	assert.Equal(t, "Contest 2", results[1].Name)
 	assert.Equal(t, int64(4), results[1].TaskCount)
-}
-
-func TestContestWithStatsToSchemaWithNilIsVisible(t *testing.T) {
-	startTime := time.Now().Add(-1 * time.Hour)
-	endTime := time.Now().Add(1 * time.Hour)
-
-	contestWithStats := &models.ContestWithStats{
-		Contest: models.Contest{
-			ID:          1,
-			Name:        "Test Contest",
-			Description: "Test Description",
-			StartAt:     startTime,
-			EndAt:       &endTime,
-			CreatedBy:   1,
-			IsVisible:   nil,
-		},
-		TaskCount:        5,
-		ParticipantCount: 10,
-		IsParticipant:    true,
-		HasPendingReg:    false,
-	}
-
-	result := service.ContestWithStatsToAvailableContest(contestWithStats)
-
-	assert.NotNil(t, result)
 }
 
 func TestContestService_GetPastContests(t *testing.T) {
@@ -375,7 +350,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 				Contest: models.Contest{
 					ID:        1,
 					Name:      "Past Contest",
-					IsVisible: &visible,
+					IsVisible: visible,
 				},
 				TaskCount:        5,
 				ParticipantCount: 10,
@@ -445,7 +420,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 				Contest: models.Contest{
 					ID:        1,
 					Name:      "Upcoming Contest",
-					IsVisible: &visible,
+					IsVisible: visible,
 				},
 				TaskCount:        5,
 				ParticipantCount: 10,
@@ -1140,7 +1115,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	})
 }
 
-func TestContestService_Get(t *testing.T) {
+func TestContestService_GetDetailed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -1161,18 +1136,18 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := true
 
-		contest := &models.ParticipantContestStats{
+		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
 				Name:      "Test Contest",
 				CreatedBy: 2,
-				IsVisible: &visible,
+				IsVisible: visible,
 			},
 		}
 
-		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1188,18 +1163,20 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.ParticipantContestStats{
+		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
 				Name:      "Test Contest",
 				CreatedBy: 2,
-				IsVisible: &visible,
+				IsVisible: visible,
 			},
 		}
 
-		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1214,20 +1191,20 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.ParticipantContestStats{
+		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
 				Name:      "Test Contest",
 				CreatedBy: 2,
-				IsVisible: &visible,
+				IsVisible: visible,
 			},
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)
@@ -1242,21 +1219,21 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.ParticipantContestStats{
+		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
 				Name:      "Test Contest",
 				CreatedBy: 2,
-				IsVisible: &visible,
+				IsVisible: visible,
 			},
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1271,21 +1248,21 @@ func TestContestService_Get(t *testing.T) {
 		contestID := int64(10)
 		visible := false
 
-		contest := &models.ParticipantContestStats{
+		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
 				Name:      "Test Contest",
 				CreatedBy: 2,
-				IsVisible: &visible,
+				IsVisible: visible,
 			},
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
-		cr.EXPECT().GetWithCount(db, contestID).Return(contest, nil).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1299,9 +1276,9 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(999)
 
-		cr.EXPECT().GetWithCount(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
@@ -1315,12 +1292,354 @@ func TestContestService_Get(t *testing.T) {
 		}
 		contestID := int64(10)
 
-		cr.EXPECT().GetWithCount(db, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetDetailed(db, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
 
-		result, err := cs.Get(db, currentUser, contestID)
+		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.Error(t, err)
 		assert.Nil(t, result)
 		assert.Equal(t, errors.ErrDatabaseConnection.Message, err.Error())
+	})
+}
+
+func TestContestService_GetVisibleTasksForContest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	visible := true
+
+	t.Run("successful retrieval - participant", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
+
+		tasks := []models.ContestTask{
+			{
+				ContestID: contestID,
+				TaskID:    1,
+				Task: models.Task{
+					ID:    1,
+					Title: "Test Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          time.Now().Add(-1 * time.Hour),
+				EndAt:            nil,
+				IsSubmissionOpen: true,
+			},
+		}
+
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(tasks, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
+
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+		assert.Equal(t, int64(1), result[0].Task.ID)
+		assert.Equal(t, "Test Task", result[0].Task.Title)
+		assert.Equal(t, "Creator", result[0].CreatorName)
+	})
+
+	t.Run("successful retrieval - user with edit permission", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleTeacher,
+		}
+		contestID := int64(10)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
+
+		tasks := []models.ContestTask{
+			{
+				ContestID: contestID,
+				TaskID:    1,
+				Task: models.Task{
+					ID:    1,
+					Title: "Test Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          time.Now().Add(-1 * time.Hour),
+				EndAt:            nil,
+				IsSubmissionOpen: true,
+			},
+		}
+
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(tasks, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
+
+		require.NoError(t, err)
+		assert.Len(t, result, 1)
+	})
+
+	t.Run("unauthorized - not participant and no permission", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
+
+		require.Error(t, err)
+		assert.Nil(t, result)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("filter by status - ongoing", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+		now := time.Now()
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
+
+		pastEnd := now.Add(-1 * time.Hour)
+		tasks := []models.ContestTask{
+			{
+				ContestID: contestID,
+				TaskID:    1,
+				Task: models.Task{
+					ID:    1,
+					Title: "Ongoing Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          now.Add(-2 * time.Hour),
+				EndAt:            nil, // No end = ongoing
+				IsSubmissionOpen: true,
+			},
+			{
+				ContestID: contestID,
+				TaskID:    2,
+				Task: models.Task{
+					ID:    2,
+					Title: "Past Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          now.Add(-3 * time.Hour),
+				EndAt:            &pastEnd, // Ended
+				IsSubmissionOpen: false,
+			},
+		}
+
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(tasks, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
+
+		require.NoError(t, err)
+		assert.Len(t, result, 1) // Only ongoing task
+		assert.Equal(t, "Ongoing Task", result[0].Task.Title)
+	})
+
+	t.Run("filter by status - past", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+		now := time.Now()
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
+
+		pastEnd := now.Add(-1 * time.Hour)
+		tasks := []models.ContestTask{
+			{
+				ContestID: contestID,
+				TaskID:    1,
+				Task: models.Task{
+					ID:    1,
+					Title: "Ongoing Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          now.Add(-2 * time.Hour),
+				EndAt:            nil,
+				IsSubmissionOpen: true,
+			},
+			{
+				ContestID: contestID,
+				TaskID:    2,
+				Task: models.Task{
+					ID:    2,
+					Title: "Past Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          now.Add(-3 * time.Hour),
+				EndAt:            &pastEnd,
+				IsSubmissionOpen: false,
+			},
+		}
+
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(tasks, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusPast)
+
+		require.NoError(t, err)
+		assert.Len(t, result, 1) // Only past task
+		assert.Equal(t, "Past Task", result[0].Task.Title)
+	})
+
+	t.Run("filter by status - upcoming", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+		now := time.Now()
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
+
+		futureStart := now.Add(1 * time.Hour)
+		tasks := []models.ContestTask{
+			{
+				ContestID: contestID,
+				TaskID:    1,
+				Task: models.Task{
+					ID:    1,
+					Title: "Upcoming Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          futureStart,
+				EndAt:            nil,
+				IsSubmissionOpen: false,
+			},
+			{
+				ContestID: contestID,
+				TaskID:    2,
+				Task: models.Task{
+					ID:    2,
+					Title: "Ongoing Task",
+					Author: models.User{
+						Name: "Creator",
+					},
+				},
+				StartAt:          now.Add(-1 * time.Hour),
+				EndAt:            nil,
+				IsSubmissionOpen: true,
+			},
+		}
+
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(tasks, nil).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusUpcoming)
+
+		require.NoError(t, err)
+		assert.Len(t, result, 1) // Only upcoming task
+		assert.Equal(t, "Upcoming Task", result[0].Task.Title)
+	})
+
+	t.Run("repository error", func(t *testing.T) {
+		currentUser := &schemas.User{
+			ID:   1,
+			Role: types.UserRoleStudent,
+		}
+		contestID := int64(10)
+
+		contest := &models.Contest{
+			ID:        contestID,
+			Name:      "Test Contest",
+			CreatedBy: 2,
+			IsVisible: visible,
+		}
+
+		// hasContestPermission calls Get first
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
+		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
+
+		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
+
+		require.Error(t, err)
+		assert.Nil(t, result)
 	})
 }

@@ -268,15 +268,17 @@ func TestEditContest(t *testing.T) {
 		isRegistrationOpen := true
 		isSubmissionOpen := true
 		contest := &schemas.CreatedContest{
-			BaseContest: schemas.BaseContest{
-				ID:          1,
-				Name:        "Updated Contest",
-				Description: "Test Description",
-				CreatedBy:   1,
+			ContestDetailed: schemas.ContestDetailed{
+				BaseContest: schemas.BaseContest{
+					ID:          1,
+					Name:        "Updated Contest",
+					CreatedBy:   1,
+					Description: "Test Description",
+				},
+				IsSubmissionOpen: isSubmissionOpen,
 			},
-			IsVisible:          &isVisible,
-			IsRegistrationOpen: &isRegistrationOpen,
-			IsSubmissionOpen:   &isSubmissionOpen,
+			IsVisible:          isVisible,
+			IsRegistrationOpen: isRegistrationOpen,
 		}
 
 		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)

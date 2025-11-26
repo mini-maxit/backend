@@ -8,6 +8,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/stretchr/testify/assert"
@@ -128,5 +129,5 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	// Call RetryPendingSubmissions - should return error but not panic
 	err := queueService.RetryPendingSubmissions(db)
 	require.Error(t, err, "RetryPendingSubmissions should return error when queue is unavailable")
-	assert.Contains(t, err.Error(), "queue not connected")
+	assert.ErrorIs(t, err, errors.ErrQueueNotConnected)
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"slices"
 	"strconv"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
@@ -96,7 +96,7 @@ func NewQueueService(
 func (qs *queueService) publishMessage(msg schemas.QueueMessage) error {
 	if !qs.queueClient.IsConnected() {
 		qs.logger.Warn("Queue is not connected - message will not be published")
-		return errors.New("queue is not connected")
+		return errors.ErrQueueNotConnected
 	}
 
 	msgBytes, err := json.Marshal(msg)
@@ -286,7 +286,7 @@ func (qs *queueService) StatusMux() *sync.Mutex {
 func (qs *queueService) RetryPendingSubmissions(db database.Database) error {
 	if !qs.queueClient.IsConnected() {
 		qs.logger.Debug("Queue not connected - skipping retry of pending submissions")
-		return errors.New("queue not connected")
+		return errors.ErrQueueNotConnected
 	}
 
 	pendingSubmissions, err := qs.submissionRepository.GetPendingSubmissions(db, pendingSubmissionsBatchLimit)
