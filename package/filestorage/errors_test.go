@@ -55,7 +55,7 @@ func TestValidationError(t *testing.T) {
 		}
 
 		unwrapped := err.Unwrap()
-		require.NoError(t, unwrapped)
+		assert.NoError(t, unwrapped)
 	})
 
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
@@ -128,7 +128,7 @@ func TestDecompressionError(t *testing.T) {
 		}
 
 		unwrapped := err.Unwrap()
-		require.NoError(t, unwrapped)
+		assert.NoError(t, unwrapped)
 	})
 
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
