@@ -1,6 +1,12 @@
 package httputils
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/mini-maxit/backend/internal/database"
+)
 
 type QueryError struct {
 	Filed  string
@@ -31,3 +37,14 @@ const (
 	// QueryParamsKey is the key used to store the query parameters of current request in the context.
 	QueryParamsKey ContextKey = "queryParams"
 )
+
+// DatabaseMiddleware is a middleware that injects the database connection into the context.
+func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		session := db.NewSession()
+		ctx = context.WithValue(ctx, DatabaseKey, session)
+		rWithDatabase := r.WithContext(ctx)
+		next.ServeHTTP(w, rWithDatabase)
+	})
+}

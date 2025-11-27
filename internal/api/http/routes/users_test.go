@@ -36,7 +36,7 @@ func TestGetAllUsers(t *testing.T) {
 		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
-			handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAllUsers), db)
+			handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAllUsers), db)
 			server := httptest.NewServer(handler)
 			defer server.Close()
 
@@ -161,7 +161,7 @@ func TestGetUserByID(t *testing.T) {
 		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
-			handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+			handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 			server := httptest.NewServer(handler)
 			defer server.Close()
 
@@ -180,7 +180,7 @@ func TestGetUserByID(t *testing.T) {
 	})
 
 	t.Run("Empty user ID", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+		handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		w := httptest.NewRecorder()
 
@@ -191,7 +191,7 @@ func TestGetUserByID(t *testing.T) {
 	})
 
 	t.Run("Invalid user ID", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+		handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/abc", nil)
 		req = SetPathValue(req, "id", "abc")
 		w := httptest.NewRecorder()
@@ -203,7 +203,7 @@ func TestGetUserByID(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+		handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/999", nil)
 		req = SetPathValue(req, "id", "999")
 		w := httptest.NewRecorder()
@@ -217,7 +217,7 @@ func TestGetUserByID(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+		handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/1", nil)
 		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()
@@ -231,7 +231,7 @@ func TestGetUserByID(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
+		handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetUserByID), db)
 		req := httptest.NewRequest(http.MethodGet, "/1", nil)
 		req = SetPathValue(req, "id", "1")
 		w := httptest.NewRecorder()

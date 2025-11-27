@@ -292,6 +292,10 @@ func As(err error, target any) bool {
 	return stderrors.As(err, target)
 }
 
+func New(text string) error {
+	return stderrors.New(text)
+}
+
 // AsServiceError checks if err is a ServiceError and assigns it to target.
 // Returns true if successful.
 func AsServiceError(err error, target **ServiceError) bool {
