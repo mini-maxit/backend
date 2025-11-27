@@ -1,10 +1,6 @@
 package testutils
 
 import (
-	"context"
-	"net/http"
-
-	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/database"
 	"gorm.io/gorm"
 )
@@ -13,25 +9,25 @@ type MockDatabase struct {
 	invalid bool
 }
 
-func (db *MockDatabase) BeginTransaction() (*gorm.DB, error) {
+func (db MockDatabase) BeginTransaction() (*gorm.DB, error) {
 	if db.invalid {
 		return nil, gorm.ErrInvalidDB
 	}
 	return &gorm.DB{}, nil
 }
 
-func (db *MockDatabase) NewSession() database.Database {
+func (db MockDatabase) NewSession() database.Database {
 	return &MockDatabase{}
 }
 
-func (db *MockDatabase) Commit() error {
+func (db MockDatabase) Commit() error {
 	return nil
 }
 
-func (db *MockDatabase) Rollback() {
+func (db MockDatabase) Rollback() {
 }
 
-func (db *MockDatabase) ShouldRollback() bool {
+func (db MockDatabase) ShouldRollback() bool {
 	return false
 }
 
@@ -43,21 +39,14 @@ func (db *MockDatabase) Validate() {
 	db.invalid = false
 }
 
-func (db *MockDatabase) DB() *gorm.DB {
+func (db MockDatabase) DB() *gorm.DB {
 	return &gorm.DB{}
 }
 
-func (db *MockDatabase) GetInstance() *gorm.DB {
+func (db MockDatabase) GetInstance() *gorm.DB {
 	return &gorm.DB{}
 }
 
-func (db *MockDatabase) ResolveTableName(model interface{}) string {
+func (db MockDatabase) ResolveTableName(model interface{}) string {
 	return "mock_table"
-}
-
-func MockDatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }

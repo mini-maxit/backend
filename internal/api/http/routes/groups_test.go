@@ -46,7 +46,7 @@ func TestCreateGroup(t *testing.T) {
 	gs := mock_service.NewMockGroupService(ctrl)
 	route := routes.NewGroupRoute(gs)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.CreateGroup), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.CreateGroup), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
@@ -225,7 +225,7 @@ func TestGetGroup(t *testing.T) {
 		route.GetGroup(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -333,7 +333,7 @@ func TestGetAllGroup(t *testing.T) {
 		route.GetAllGroup(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -456,7 +456,7 @@ func TestEditGroup(t *testing.T) {
 		route.EditGroup(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -586,7 +586,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		route.AddUsersToGroup(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -760,7 +760,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		route.DeleteUsersFromGroup(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -935,7 +935,7 @@ func TestGetGroupUsers(t *testing.T) {
 		route.GetGroupUsers(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{

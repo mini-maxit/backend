@@ -161,9 +161,7 @@ func TestConvertValidationErrors(t *testing.T) {
 
 	var valErrs validator.ValidationErrors
 	ok := errors.As(err, &valErrs)
-	if !ok {
-		t.Fatalf("expected validator.ValidationErrors, got %T", err)
-	}
+	require.True(t, ok, "expected validator.ValidationErrors")
 
 	result := ConvertValidationErrors(valErrs)
 

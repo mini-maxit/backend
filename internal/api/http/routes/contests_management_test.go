@@ -28,7 +28,7 @@ func TestCreateContest(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	route := routes.NewContestsManagementRoute(cs, ss)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.CreateContest), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.CreateContest), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
@@ -152,7 +152,7 @@ func TestEditContest(t *testing.T) {
 		route.EditContest(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -311,7 +311,7 @@ func TestDeleteContest(t *testing.T) {
 		route.DeleteContest(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -404,7 +404,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 		route.GetRegistrationRequests(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -513,7 +513,7 @@ func TestApproveRegistrationRequest(t *testing.T) {
 		route.ApproveRegistrationRequest(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{

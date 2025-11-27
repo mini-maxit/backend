@@ -50,7 +50,7 @@ func TestGetContest(t *testing.T) {
 		route.GetContest(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -140,7 +140,7 @@ func TestRegisterForContest(t *testing.T) {
 		route.RegisterForContest(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -274,7 +274,7 @@ func TestGetOngoingContests(t *testing.T) {
 	ss := mock_service.NewMockSubmissionService(ctrl)
 	route := routes.NewContestRoute(cs, ss)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetContests), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetContests), db)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
@@ -392,7 +392,7 @@ func TestGetMyContestResults(t *testing.T) {
 		route.GetMyContestResults(w, r)
 	})
 
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{

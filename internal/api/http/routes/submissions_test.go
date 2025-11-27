@@ -35,7 +35,7 @@ func TestGetAll(t *testing.T) {
 	qs := mock_service.NewMockQueueService(ctrl)
 	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAll), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAll), db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -135,7 +135,7 @@ func TestGetByID(t *testing.T) {
 
 	mux := mux.NewRouter()
 	mux.HandleFunc("/{id}", route.GetByID)
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -218,7 +218,7 @@ func TestGetAllForTask(t *testing.T) {
 
 	mux := mux.NewRouter()
 	mux.HandleFunc("/task/{id}", route.GetAllForTask)
-	handler := testutils.MockDatabaseMiddleware(mux, db)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
@@ -298,7 +298,7 @@ func TestGetAvailableLanguages(t *testing.T) {
 	qs := mock_service.NewMockQueueService(ctrl)
 	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAvailableLanguages), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAvailableLanguages), db)
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -344,7 +344,7 @@ func TestSubmitSolution(t *testing.T) {
 	qs := mock_service.NewMockQueueService(ctrl)
 	route := routes.NewSubmissionRoutes(ss, qs, ts)
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.SubmitSolution), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.SubmitSolution), db)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{

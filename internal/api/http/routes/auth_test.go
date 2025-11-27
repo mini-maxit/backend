@@ -32,7 +32,7 @@ func TestLogin(t *testing.T) {
 	as := mock_service.NewMockAuthService(ctrl)
 	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
@@ -236,7 +236,7 @@ func TestRegister(t *testing.T) {
 	as := mock_service.NewMockAuthService(ctrl)
 	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
@@ -396,7 +396,7 @@ func TestRefreshToken(t *testing.T) {
 	as := mock_service.NewMockAuthService(ctrl)
 	route := routes.NewAuthRoute(us, as, "/auth/refresh")
 	db := &testutils.MockDatabase{}
-	handler := testutils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
