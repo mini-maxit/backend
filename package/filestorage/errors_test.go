@@ -1,17 +1,66 @@
-package filestorage_test
+//nolint:testpackage // to access unexported identifiers for testing
+package filestorage
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// Export internal types for testing
+// This file is only included in test builds
+
+// NewDecompressor creates a new decompressor for testing.
+func NewDecompressor() Decompressor {
+	return &decompressor{}
+}
+
+// RemoveDirectory is exported for testing.
+func RemoveDirectory(path string) error {
+	return removeDirectory(path)
+}
+
+// TestableFileStorageService exposes internal methods for testing.
+type TestableFileStorageService struct {
+	*fileStorageService
+}
+
+// NewTestableFileStorageService creates a FileStorageService with injected dependencies for testing.
+func NewTestableFileStorageService(decompressor Decompressor, validator ArchiveValidator, bucketName string) *TestableFileStorageService {
+	return &TestableFileStorageService{
+		fileStorageService: &fileStorageService{
+			decompressor: decompressor,
+			validator:    validator,
+			bucketName:   bucketName,
+		},
+	}
+}
+
+// NormalizeFolderPath exposes the normalizeFolderPath method for testing.
+func (f *TestableFileStorageService) NormalizeFolderPath(folderPath string) (string, error) {
+	return f.normalizeFolderPath(folderPath)
+}
+
+// SetDecompressor allows injecting a custom decompressor (mock/fake) for tests.
+func (f *TestableFileStorageService) SetDecompressor(d Decompressor) {
+	f.decompressor = d
+}
+
+// SetValidator allows injecting a custom archive validator (mock/fake) for tests.
+func (f *TestableFileStorageService) SetValidator(v ArchiveValidator) {
+	f.validator = v
+}
+
+// SetBucketName allows overriding the bucket name for tests.
+func (f *TestableFileStorageService) SetBucketName(name string) {
+	f.bucketName = name
+}
+
 func TestValidationError(t *testing.T) {
 	t.Run("Error returns formatted string without cause", func(t *testing.T) {
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    nil,
@@ -24,7 +73,7 @@ func TestValidationError(t *testing.T) {
 
 	t.Run("Error returns formatted string with cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    cause,
@@ -37,7 +86,7 @@ func TestValidationError(t *testing.T) {
 
 	t.Run("Unwrap returns cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    cause,
@@ -48,7 +97,7 @@ func TestValidationError(t *testing.T) {
 	})
 
 	t.Run("Unwrap returns nil when no cause", func(t *testing.T) {
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    nil,
@@ -60,7 +109,7 @@ func TestValidationError(t *testing.T) {
 
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
 		cause := errors.New("specific error")
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    cause,
@@ -70,13 +119,13 @@ func TestValidationError(t *testing.T) {
 	})
 
 	t.Run("Error is compatible with errors.As", func(t *testing.T) {
-		err := &filestorage.ValidationError{
+		err := &ValidationError{
 			RuleName: "test-rule",
 			Message:  "test message",
 			Cause:    nil,
 		}
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "test-rule", validationErr.RuleName)
 	})
@@ -84,7 +133,7 @@ func TestValidationError(t *testing.T) {
 
 func TestDecompressionError(t *testing.T) {
 	t.Run("Error returns formatted string without cause", func(t *testing.T) {
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       nil,
@@ -97,7 +146,7 @@ func TestDecompressionError(t *testing.T) {
 
 	t.Run("Error returns formatted string with cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       cause,
@@ -110,7 +159,7 @@ func TestDecompressionError(t *testing.T) {
 
 	t.Run("Unwrap returns cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       cause,
@@ -121,7 +170,7 @@ func TestDecompressionError(t *testing.T) {
 	})
 
 	t.Run("Unwrap returns nil when no cause", func(t *testing.T) {
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       nil,
@@ -133,7 +182,7 @@ func TestDecompressionError(t *testing.T) {
 
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
 		cause := errors.New("specific error")
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       cause,
@@ -143,13 +192,13 @@ func TestDecompressionError(t *testing.T) {
 	})
 
 	t.Run("Error is compatible with errors.As", func(t *testing.T) {
-		err := &filestorage.DecompressionError{
+		err := &DecompressionError{
 			ArchivePath: "/path/to/archive.zip",
 			Message:     "failed to decompress",
 			Cause:       nil,
 		}
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 		assert.Equal(t, "/path/to/archive.zip", decompressionErr.ArchivePath)
 	})

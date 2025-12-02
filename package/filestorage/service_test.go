@@ -1,20 +1,23 @@
-package filestorage_test
+//nolint:testpackage // to access unexported identifiers for testing
+package filestorage
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/mini-maxit/backend/package/filestorage"
+	"github.com/mini-maxit/backend/package/utils"
+	"github.com/mini-maxit/file-storage/pkg/filestorage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDecompressor_DecompressArchive(t *testing.T) {
-	d := filestorage.NewDecompressor()
+	d := NewDecompressor()
 
 	t.Run("Decompress zip archive successfully", func(t *testing.T) {
 		zipPath := createTestZipArchive(t)
@@ -55,7 +58,7 @@ func TestDecompressor_DecompressArchive(t *testing.T) {
 		_, err = d.DecompressArchive(tempFile.Name(), "test-*")
 		require.Error(t, err)
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 		assert.Contains(t, decompressionErr.Message, "unsupported archive type")
 	})
@@ -64,7 +67,7 @@ func TestDecompressor_DecompressArchive(t *testing.T) {
 		_, err := d.DecompressArchive("/nonexistent/path.zip", "test-*")
 		require.Error(t, err)
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 	})
 
@@ -72,7 +75,7 @@ func TestDecompressor_DecompressArchive(t *testing.T) {
 		_, err := d.DecompressArchive("/nonexistent/path.tar.gz", "test-*")
 		require.Error(t, err)
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 	})
 
@@ -87,7 +90,7 @@ func TestDecompressor_DecompressArchive(t *testing.T) {
 		_, err = d.DecompressArchive(tempFile.Name(), "test-*")
 		require.Error(t, err)
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 	})
 
@@ -102,13 +105,13 @@ func TestDecompressor_DecompressArchive(t *testing.T) {
 		_, err = d.DecompressArchive(tempFile.Name(), "test-*")
 		require.Error(t, err)
 
-		var decompressionErr *filestorage.DecompressionError
+		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
 	})
 }
 
 func TestDecompressor_decompressZipWithDirs(t *testing.T) {
-	d := filestorage.NewDecompressor()
+	d := NewDecompressor()
 
 	t.Run("Decompress zip with directories", func(t *testing.T) {
 		zipPath := createTestZipArchiveWithDirs(t)
@@ -124,7 +127,7 @@ func TestDecompressor_decompressZipWithDirs(t *testing.T) {
 }
 
 func TestDecompressor_decompressTarGzWithDirs(t *testing.T) {
-	d := filestorage.NewDecompressor()
+	d := NewDecompressor()
 
 	t.Run("Decompress tar.gz with directories", func(t *testing.T) {
 		targzPath := createTestTarGzArchiveWithDirs(t)
@@ -146,18 +149,18 @@ func TestRemoveDirectory(t *testing.T) {
 		require.NoError(t, os.MkdirAll(testDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(testDir, "file.txt"), []byte("test"), 0644))
 
-		err := filestorage.RemoveDirectory(testDir)
+		err := RemoveDirectory(testDir)
 		require.NoError(t, err)
 		assert.NoDirExists(t, testDir)
 	})
 
 	t.Run("Remove nonexistent directory returns no error", func(t *testing.T) {
-		err := filestorage.RemoveDirectory("/nonexistent/path")
+		err := RemoveDirectory("/nonexistent/path")
 		require.NoError(t, err)
 	})
 
 	t.Run("Remove empty path returns error", func(t *testing.T) {
-		err := filestorage.RemoveDirectory("")
+		err := RemoveDirectory("")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "empty path")
 	})
@@ -165,7 +168,7 @@ func TestRemoveDirectory(t *testing.T) {
 
 func TestFileStorageServiceGetTestResultPaths(t *testing.T) {
 	// Create a testable service for testing the path generation methods
-	service := filestorage.NewTestableFileStorageService(nil, nil, "maxit")
+	service := NewTestableFileStorageService(nil, nil, "maxit")
 
 	t.Run("GetTestResultStdoutPath returns correct path", func(t *testing.T) {
 		result := service.GetTestResultStdoutPath(1, 2, 3, 4)
@@ -200,7 +203,7 @@ func TestFileStorageServiceGetTestResultPaths(t *testing.T) {
 }
 
 func TestFileStorageServiceNormalizeFolderPath(t *testing.T) {
-	service := filestorage.NewTestableFileStorageService(nil, nil, "maxit")
+	service := NewTestableFileStorageService(nil, nil, "maxit")
 
 	t.Run("Single root directory", func(t *testing.T) {
 		tempDir := t.TempDir()
@@ -247,7 +250,7 @@ func TestFileStorageServiceNormalizeFolderPath(t *testing.T) {
 
 func TestFileStorageServiceValidateArchiveStructure(t *testing.T) {
 	t.Run("Empty archive path returns error", func(t *testing.T) {
-		service := filestorage.NewTestableFileStorageService(nil, nil, "maxit")
+		service := NewTestableFileStorageService(nil, nil, "maxit")
 
 		err := service.ValidateArchiveStructure("")
 		require.Error(t, err)
@@ -274,6 +277,209 @@ func createTestZipArchive(t *testing.T) string {
 	require.NoError(t, err)
 
 	return tempFile.Name()
+}
+
+type fakeStorage struct {
+	filestorage.FileStorage
+	createBucketErr    error
+	uploadedFiles      map[string][]string // bucket -> paths
+	lastUploadedPrefix string
+}
+
+func (f *fakeStorage) CreateBucket(bucket string) error {
+	return f.createBucketErr
+}
+
+func (f *fakeStorage) UploadFile(bucket, path string, file *os.File) error {
+	if f.uploadedFiles == nil {
+		f.uploadedFiles = make(map[string][]string)
+	}
+	f.uploadedFiles[bucket] = append(f.uploadedFiles[bucket], path)
+	return nil
+}
+
+func (f *fakeStorage) UploadMultipleFiles(bucket, prefix string, files []*os.File) error {
+	f.lastUploadedPrefix = prefix
+	if f.uploadedFiles == nil {
+		f.uploadedFiles = make(map[string][]string)
+	}
+	for _, file := range files {
+		if file == nil {
+			continue
+		}
+		// Use the base filename as path suffix for testing
+		name := filepath.Base(file.Name())
+		f.uploadedFiles[bucket] = append(f.uploadedFiles[bucket], filepath.Join(prefix, name))
+	}
+	return nil
+}
+
+func (f *fakeStorage) GetFileURL(bucket, path string) string {
+	return "http://fake/" + bucket + "/" + path
+}
+
+func TestEnsureBucketExists_SuccessAndError(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	// set a logger to avoid nil pointer deref in ensureBucketExists
+	svc.logger = utils.NewNamedLogger("file-storage-test")
+
+	t.Run("success when CreateBucket returns nil", func(t *testing.T) {
+		fs := &fakeStorage{createBucketErr: nil}
+		svc.storage = fs
+
+		err := svc.ensureBucketExists()
+		require.NoError(t, err)
+	})
+
+	t.Run("error when CreateBucket returns generic error", func(t *testing.T) {
+		fs := &fakeStorage{createBucketErr: errors.New("create bucket failed")}
+		svc.storage = fs
+
+		err := svc.ensureBucketExists()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create bucket")
+	})
+}
+
+func TestGetFileURL(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	fs := &fakeStorage{}
+	svc.storage = fs
+
+	url := svc.GetFileURL("task/1/description.pdf")
+	assert.Equal(t, "http://fake/maxit/task/1/description.pdf", url)
+}
+
+func TestUploadDirectoryFiles_AllBranches(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	svc.logger = utils.NewNamedLogger("file-storage-test")
+	fs := &fakeStorage{}
+	svc.storage = fs
+
+	t.Run("directory missing -> returns os.Stat error", func(t *testing.T) {
+		base := t.TempDir()
+		uploaded, err := svc.uploadDirectoryFiles(base, "missing", "task/1")
+		require.Error(t, err)
+		assert.Nil(t, uploaded)
+	})
+
+	t.Run("success -> uploads and sorts files", func(t *testing.T) {
+		base := t.TempDir()
+		dir := filepath.Join(base, "input")
+		require.NoError(t, os.MkdirAll(dir, 0755))
+
+		// create files in non-sorted order
+		f2, _ := os.Create(filepath.Join(dir, "b.txt"))
+		_ = f2.Close()
+		f1, _ := os.Create(filepath.Join(dir, "a.txt"))
+		_ = f1.Close()
+		// create subdir which should be ignored
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, "sub"), 0755))
+
+		uploaded, err := svc.uploadDirectoryFiles(base, "input", "task/1")
+		require.NoError(t, err)
+		require.Len(t, uploaded, 2)
+		assert.Equal(t, "a.txt", uploaded[0].Filename)
+		assert.Equal(t, "b.txt", uploaded[1].Filename)
+		assert.Equal(t, "task/1/input", fs.lastUploadedPrefix)
+		assert.ElementsMatch(t, []string{
+			"task/1/input/a.txt",
+			"task/1/input/b.txt",
+		}, fs.uploadedFiles["maxit"])
+	})
+}
+
+func TestUploadDescriptionFile_ErrorAndSuccess(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	svc.logger = utils.NewNamedLogger("file-storage-test")
+	fs := &fakeStorage{}
+	svc.storage = fs
+
+	t.Run("missing description.pdf -> open error", func(t *testing.T) {
+		base := t.TempDir()
+		uploaded, err := svc.uploadDescriptionFile(base, "task/99")
+		require.Error(t, err)
+		assert.Nil(t, uploaded)
+		assert.Contains(t, err.Error(), "failed to open description file")
+	})
+
+	t.Run("success -> uploads description.pdf", func(t *testing.T) {
+		base := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(base, "description.pdf"), []byte("pdf"), 0644))
+		uploaded, err := svc.uploadDescriptionFile(base, "task/99")
+		require.NoError(t, err)
+		require.NotNil(t, uploaded)
+		assert.Equal(t, "task/99/description.pdf", uploaded.Path)
+		assert.Equal(t, "description.pdf", uploaded.Filename)
+		assert.Equal(t, "maxit", uploaded.Bucket)
+	})
+}
+
+func TestUploadSolutionFile_Branches(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	svc.logger = utils.NewNamedLogger("file-storage-test")
+
+	t.Run("ensureBucketExists failure wraps", func(t *testing.T) {
+		tmp, err := os.CreateTemp(t.TempDir(), "sol-*.cpp")
+		require.NoError(t, err)
+		_, _ = tmp.WriteString("// code")
+		tmp.Close()
+
+		fs := &fakeStorage{createBucketErr: errors.New("create error")}
+		svc.storage = fs
+
+		uploaded, err := svc.UploadSolutionFile(1, 2, 3, tmp.Name())
+		require.Error(t, err)
+		assert.Nil(t, uploaded)
+		assert.Contains(t, err.Error(), "failed to ensure bucket exists")
+	})
+
+	t.Run("success flow", func(t *testing.T) {
+		tmp, err := os.CreateTemp(t.TempDir(), "sol-*.cpp")
+		require.NoError(t, err)
+		_, _ = tmp.WriteString("// code")
+		tmp.Close()
+
+		fs := &fakeStorage{createBucketErr: nil}
+		svc.storage = fs
+
+		uploaded, err := svc.UploadSolutionFile(10, 20, 1, tmp.Name())
+		require.NoError(t, err)
+		require.NotNil(t, uploaded)
+
+		assert.Equal(t, "solution/10/20/1/solution.cpp", uploaded.Path)
+		assert.Equal(t, "solution.cpp", uploaded.Filename)
+		assert.Equal(t, "maxit", uploaded.Bucket)
+		assert.Equal(t, "filestorage", uploaded.ServerType)
+	})
+}
+
+func TestUploadTask_EndToEnd_WithFakeDecompressor(t *testing.T) {
+	svc := NewTestableFileStorageService(nil, nil, "maxit")
+	svc.logger = utils.NewNamedLogger("file-storage-test")
+	fs := &fakeStorage{}
+	svc.storage = fs
+
+	// Build a decompressed folder structure
+	base := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(base, "description.pdf"), []byte("pdf"), 0644))
+	require.NoError(t, os.MkdirAll(filepath.Join(base, "input"), 0755))
+	require.NoError(t, os.MkdirAll(filepath.Join(base, "output"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(base, "input", "1.txt"), []byte("in1"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(base, "output", "1.txt"), []byte("out1"), 0644))
+
+	// Force decompressor to return our base dir
+	svc.decompressor = &fakeDecompressor{folderPath: base, err: nil}
+
+	files, err := svc.UploadTask(123, "/fake/archive.zip")
+	require.NoError(t, err)
+	require.NotNil(t, files)
+
+	assert.Equal(t, "task/123/description.pdf", files.DescriptionFile.Path)
+	require.Len(t, files.InputFiles, 1)
+	require.Len(t, files.OutputFiles, 1)
+	assert.Equal(t, "task/123/input/1.txt", files.InputFiles[0].Path)
+	assert.Equal(t, "task/123/output/1.txt", files.OutputFiles[0].Path)
 }
 
 func createTestZipArchiveWithDirs(t *testing.T) string {
@@ -327,6 +533,38 @@ func createTestTarGzArchive(t *testing.T) string {
 	return tempFile.Name()
 }
 
+func TestDecompressor_decompressTarGz_UnsupportedType(t *testing.T) {
+	d := NewDecompressor()
+
+	// Create a tar.gz with a symlink entry to trigger unsupported type in decompressGzip
+	tempFile, err := os.CreateTemp(t.TempDir(), "unsupported-*.tar.gz")
+	require.NoError(t, err)
+	defer tempFile.Close()
+
+	gzWriter := gzip.NewWriter(tempFile)
+	defer gzWriter.Close()
+
+	tarWriter := tar.NewWriter(gzWriter)
+	defer tarWriter.Close()
+
+	// Add a symlink entry (unsupported by our decompressor)
+	hdr := &tar.Header{
+		Name:     "link",
+		Linkname: "target",
+		Mode:     0777,
+		Typeflag: tar.TypeSymlink,
+	}
+	require.NoError(t, tarWriter.WriteHeader(hdr))
+
+	// Attempt to decompress and expect unsupported file type error
+	_, err = d.DecompressArchive(tempFile.Name(), "test-unsupported-*")
+	require.Error(t, err)
+
+	var decompressionErr *DecompressionError
+	require.ErrorAs(t, err, &decompressionErr)
+	assert.Contains(t, decompressionErr.Cause.Error(), "failed to read tar entry")
+}
+
 func createTestTarGzArchiveWithDirs(t *testing.T) string {
 	t.Helper()
 
@@ -361,4 +599,13 @@ func createTestTarGzArchiveWithDirs(t *testing.T) string {
 	require.NoError(t, err)
 
 	return tempFile.Name()
+}
+
+type fakeDecompressor struct {
+	folderPath string
+	err        error
+}
+
+func (d *fakeDecompressor) DecompressArchive(archivePath, pattern string) (string, error) {
+	return d.folderPath, d.err
 }

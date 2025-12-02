@@ -1,11 +1,11 @@
-package filestorage_test
+//nolint:testpackage // to access unexported identifiers for testing
+package filestorage
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,24 +40,24 @@ func setupTestDirectory(t *testing.T) string {
 
 func TestNewArchiveValidator(t *testing.T) {
 	t.Run("Create new archive validator", func(t *testing.T) {
-		validator := filestorage.NewArchiveValidator()
+		validator := NewArchiveValidator()
 		assert.NotNil(t, validator)
 	})
 }
 
 func TestArchiveValidatorAddRule(t *testing.T) {
 	t.Run("Add single rule", func(t *testing.T) {
-		validator := filestorage.NewArchiveValidator()
-		rule := &filestorage.NonEmptyArchiveRule{}
+		validator := NewArchiveValidator()
+		rule := &NonEmptyArchiveRule{}
 		validator.AddRule(rule)
 		// Validator should not panic and rule should be added
 		assert.NotNil(t, validator)
 	})
 
 	t.Run("Add multiple rules", func(t *testing.T) {
-		validator := filestorage.NewArchiveValidator()
-		validator.AddRule(&filestorage.NonEmptyArchiveRule{})
-		validator.AddRule(&filestorage.RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
+		validator := NewArchiveValidator()
+		validator.AddRule(&NonEmptyArchiveRule{})
+		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
 		assert.NotNil(t, validator)
 	})
 }
@@ -66,10 +66,10 @@ func TestArchiveValidatorValidate(t *testing.T) {
 	t.Run("Validate with passing rules", func(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
-		validator := filestorage.NewArchiveValidator()
-		validator.AddRule(&filestorage.NonEmptyArchiveRule{})
+		validator := NewArchiveValidator()
+		validator.AddRule(&NonEmptyArchiveRule{})
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -82,10 +82,10 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		tempDir := t.TempDir()
 		// Create an empty directory
 
-		validator := filestorage.NewArchiveValidator()
-		validator.AddRule(&filestorage.NonEmptyArchiveRule{})
+		validator := NewArchiveValidator()
+		validator.AddRule(&NonEmptyArchiveRule{})
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -93,7 +93,7 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		err := validator.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "non-empty-archive", validationErr.RuleName)
 	})
@@ -101,9 +101,9 @@ func TestArchiveValidatorValidate(t *testing.T) {
 	t.Run("Validate with no rules", func(t *testing.T) {
 		tempDir := t.TempDir()
 
-		validator := filestorage.NewArchiveValidator()
+		validator := NewArchiveValidator()
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -116,11 +116,11 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		tempDir := t.TempDir()
 		// Empty directory will fail non-empty rule
 
-		validator := filestorage.NewArchiveValidator()
-		validator.AddRule(&filestorage.NonEmptyArchiveRule{})
-		validator.AddRule(&filestorage.RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
+		validator := NewArchiveValidator()
+		validator.AddRule(&NonEmptyArchiveRule{})
+		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -128,14 +128,14 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		err := validator.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "non-empty-archive", validationErr.RuleName)
 	})
 }
 
 func TestNonEmptyArchiveRule(t *testing.T) {
-	rule := &filestorage.NonEmptyArchiveRule{}
+	rule := &NonEmptyArchiveRule{}
 
 	t.Run("Name returns correct value", func(t *testing.T) {
 		assert.Equal(t, "non-empty-archive", rule.Name())
@@ -144,7 +144,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 	t.Run("Validate success with non-empty archive", func(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -156,7 +156,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 	t.Run("Validate fails with empty archive", func(t *testing.T) {
 		tempDir := t.TempDir()
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -164,14 +164,14 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "non-empty-archive", validationErr.RuleName)
 		assert.Contains(t, validationErr.Message, "empty")
 	})
 
 	t.Run("Validate fails with invalid path", func(t *testing.T) {
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  "/nonexistent/path",
 		}
@@ -179,7 +179,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "non-empty-archive", validationErr.RuleName)
 		assert.Contains(t, validationErr.Message, "failed to read")
@@ -188,18 +188,18 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 
 func TestRequiredEntriesRule(t *testing.T) {
 	t.Run("Name returns correct value", func(t *testing.T) {
-		rule := &filestorage.RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
+		rule := &RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
 		assert.Equal(t, "required-entries", rule.Name())
 	})
 
 	t.Run("Validate success with all required entries", func(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
-		rule := &filestorage.RequiredEntriesRule{
+		rule := &RequiredEntriesRule{
 			RequiredEntries: []string{"input", "output", "description.pdf"},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -212,11 +212,11 @@ func TestRequiredEntriesRule(t *testing.T) {
 		tempDir := t.TempDir()
 		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "input"), 0755))
 
-		rule := &filestorage.RequiredEntriesRule{
+		rule := &RequiredEntriesRule{
 			RequiredEntries: []string{"input", "output"},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -224,7 +224,7 @@ func TestRequiredEntriesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "required-entries", validationErr.RuleName)
 	})
@@ -234,11 +234,11 @@ func TestRequiredEntriesRule(t *testing.T) {
 		// Add an extra file
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "extra.txt"), []byte("extra"), 0644))
 
-		rule := &filestorage.RequiredEntriesRule{
+		rule := &RequiredEntriesRule{
 			RequiredEntries: []string{"input", "output", "description.pdf"},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -246,16 +246,16 @@ func TestRequiredEntriesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "required-entries", validationErr.RuleName)
 		assert.Contains(t, validationErr.Message, "exactly")
 	})
 
 	t.Run("Validate fails with invalid path", func(t *testing.T) {
-		rule := &filestorage.RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
+		rule := &RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  "/nonexistent/path",
 		}
@@ -263,7 +263,7 @@ func TestRequiredEntriesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "required-entries", validationErr.RuleName)
 		assert.Contains(t, validationErr.Message, "failed to read")
@@ -272,8 +272,8 @@ func TestRequiredEntriesRule(t *testing.T) {
 
 func TestDirectoryFilesRule(t *testing.T) {
 	t.Run("Name returns correct value with directory name", func(t *testing.T) {
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 			},
@@ -284,15 +284,15 @@ func TestDirectoryFilesRule(t *testing.T) {
 	t.Run("Validate success with valid files", func(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 				RequireSequential:  true,
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -307,14 +307,14 @@ func TestDirectoryFilesRule(t *testing.T) {
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.MkdirAll(filepath.Join(inputDir, "subdir"), 0755))
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -322,7 +322,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "subdirectories")
 	})
@@ -333,14 +333,14 @@ func TestDirectoryFilesRule(t *testing.T) {
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.json"), []byte("test"), 0644))
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt", ".in"},
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -348,7 +348,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "extension")
 	})
@@ -360,15 +360,15 @@ func TestDirectoryFilesRule(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte("test"), 0644))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "3.txt"), []byte("test"), 0644)) // Skipped 2
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 				RequireSequential:  true,
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -376,7 +376,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "named")
 	})
@@ -387,15 +387,15 @@ func TestDirectoryFilesRule(t *testing.T) {
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte{}, 0644)) // Empty file
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 				RequireSequential:  true,
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -403,7 +403,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "empty")
 	})
@@ -411,14 +411,14 @@ func TestDirectoryFilesRule(t *testing.T) {
 	t.Run("Validate fails with nonexistent directory", func(t *testing.T) {
 		tempDir := t.TempDir()
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -426,7 +426,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "failed to read")
 	})
@@ -438,15 +438,15 @@ func TestDirectoryFilesRule(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "test1.txt"), []byte("test"), 0644))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "test2.txt"), []byte("test"), 0644))
 
-		rule := &filestorage.DirectoryFilesRule{
-			Config: filestorage.DirectoryConfig{
+		rule := &DirectoryFilesRule{
+			Config: DirectoryConfig{
 				Name:               "input",
 				AcceptedExtensions: []string{".txt"},
 				RequireSequential:  false,
 			},
 		}
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -457,7 +457,7 @@ func TestDirectoryFilesRule(t *testing.T) {
 }
 
 func TestInputOutputMatchRule(t *testing.T) {
-	rule := &filestorage.InputOutputMatchRule{}
+	rule := &InputOutputMatchRule{}
 
 	t.Run("Name returns correct value", func(t *testing.T) {
 		assert.Equal(t, "input-output-match", rule.Name())
@@ -466,7 +466,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 	t.Run("Validate success with matching counts", func(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -489,7 +489,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		// Create 1 output file
 		require.NoError(t, os.WriteFile(filepath.Join(outputDir, "1.txt"), []byte("output 1"), 0644))
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -497,7 +497,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Equal(t, "input-output-match", validationErr.RuleName)
 		assert.Contains(t, validationErr.Message, "same")
@@ -508,7 +508,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "input"), 0755))
 		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "output"), 0755))
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -516,7 +516,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "non-zero")
 	})
@@ -525,7 +525,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		tempDir := t.TempDir()
 		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "output"), 0755))
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -533,7 +533,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "input")
 	})
@@ -544,7 +544,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte("input 1"), 0644))
 
-		ctx := filestorage.ValidationContext{
+		ctx := ValidationContext{
 			ArchivePath: "test.zip",
 			FolderPath:  tempDir,
 		}
@@ -552,7 +552,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		err := rule.Validate(ctx)
 		require.Error(t, err)
 
-		var validationErr *filestorage.ValidationError
+		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
 		assert.Contains(t, validationErr.Message, "output")
 	})
