@@ -12,6 +12,7 @@ import (
 
 	"github.com/mini-maxit/backend/package/utils"
 	"github.com/mini-maxit/file-storage/pkg/filestorage"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -248,6 +249,27 @@ func TestFileStorageServiceNormalizeFolderPath(t *testing.T) {
 	})
 }
 
+type capturingValidator struct {
+	ArchiveValidator
+	called bool
+	gotCtx ValidationContext
+}
+
+// Implement ArchiveValidator
+func (c *capturingValidator) Validate(ctx ValidationContext) error {
+	c.called = true
+	c.gotCtx = ctx
+	return nil
+}
+func (c *capturingValidator) AddRule(rule ValidationRule) {}
+
+type failingValidator struct{}
+
+// Implement ArchiveValidator
+func (f *failingValidator) Validate(ctx ValidationContext) error {
+	return errors.New("validator failed")
+}
+func (f *failingValidator) AddRule(rule ValidationRule) {}
 func TestFileStorageServiceValidateArchiveStructure(t *testing.T) {
 	t.Run("Empty archive path returns error", func(t *testing.T) {
 		service := NewTestableFileStorageService(nil, nil, "maxit")
@@ -255,6 +277,89 @@ func TestFileStorageServiceValidateArchiveStructure(t *testing.T) {
 		err := service.ValidateArchiveStructure("")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "empty")
+	})
+
+	t.Run("Decompressor error is returned", func(t *testing.T) {
+		service := NewTestableFileStorageService(nil, nil, "maxit")
+
+		fd := &fakeDecompressor{folderPath: "", err: errors.New("decompress error")}
+		service.SetDecompressor(fd)
+
+		err := service.ValidateArchiveStructure("archive.zip")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "decompress")
+	})
+
+	t.Run("Validator error is propagated", func(t *testing.T) {
+		service := NewTestableFileStorageService(nil, nil, "maxit")
+
+		base := t.TempDir()
+		fd := &fakeDecompressor{folderPath: base, err: nil}
+		service.SetDecompressor(fd)
+
+		service.SetValidator(&failingValidator{})
+
+		err := service.ValidateArchiveStructure("ok.zip")
+		require.Error(t, err)
+	})
+
+	t.Run("Decompressor error is returned", func(t *testing.T) {
+		service := NewTestableFileStorageService(nil, nil, "maxit")
+		// Use fake decompressor that returns an error
+		fd := &fakeDecompressor{folderPath: "", err: errors.New("decompress error")}
+		service.SetDecompressor(fd)
+
+		err := service.ValidateArchiveStructure("archive.zip")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "decompress")
+	})
+
+	t.Run("Validator is invoked with proper context", func(t *testing.T) {
+		service := NewTestableFileStorageService(nil, nil, "maxit")
+
+		// Prepare a temp directory to act as decompressed content
+		base := t.TempDir()
+		// Create single root folder so normalizeFolderPath picks it
+		root := filepath.Join(base, "root")
+		require.NoError(t, os.MkdirAll(root, 0755))
+
+		// Decompressor returns base directory
+		fd := &fakeDecompressor{folderPath: base, err: nil}
+		service.SetDecompressor(fd)
+
+		// Create a real validator to ensure Validate is invoked without using mocks
+		validator := &capturingValidator{}
+
+		service.SetValidator(validator)
+
+		expectedArchivePath := "test.zip"
+		err := service.ValidateArchiveStructure(expectedArchivePath)
+		require.NoError(t, err)
+		assert.True(t, validator.called, "validator should be called")
+		assert.Equal(t, expectedArchivePath, validator.gotCtx.ArchivePath)
+	})
+
+	t.Run("Validator error is propagated", func(t *testing.T) {
+		service := NewTestableFileStorageService(nil, nil, "maxit")
+
+		// Decompressor returns a valid folder
+		base := t.TempDir()
+		fd := &fakeDecompressor{folderPath: base, err: nil}
+		service.SetDecompressor(fd)
+
+		// Create a validator that will fail using existing rules by providing a folder with no required content
+		validator := NewArchiveValidator()
+		// Add a rule that requires the archive not to be empty
+		validator.AddRule(&NonEmptyArchiveRule{})
+		// Also add a rule that requires specific entries; with empty base, it'll fail
+		validator.AddRule(&RequiredEntriesRule{
+			RequiredEntries: []string{"description.pdf", "input/", "output/"},
+		})
+
+		service.SetValidator(validator)
+
+		err := service.ValidateArchiveStructure("ok.zip")
+		require.Error(t, err)
 	})
 }
 
