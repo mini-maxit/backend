@@ -400,6 +400,9 @@ linters:
       # Default: false
       os-temp-dir: true
 
+    testpackage:
+      skip-regexp: ((export|internal)_test\\.go|mockgen\\.go)
+
 formatters:
   enable:
     - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
