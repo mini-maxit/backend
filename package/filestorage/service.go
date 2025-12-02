@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -448,8 +447,6 @@ func (f *fileStorageService) normalizeFolderPath(folderPath string) (string, err
 	}
 
 	if len(entries) == 1 && entries[0].IsDir() {
-		log.Println("Archive contains a single root directory, normalizing path.")
-		log.Printf("folderPath=%s, name=%s\n", folderPath, entries[0].Name())
 		return filepath.Join(folderPath, entries[0].Name()), nil
 	}
 

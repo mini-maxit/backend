@@ -474,10 +474,12 @@ func TestUploadDirectoryFiles_AllBranches(t *testing.T) {
 		require.NoError(t, os.MkdirAll(dir, 0755))
 
 		// create files in non-sorted order
-		f2, _ := os.Create(filepath.Join(dir, "b.txt"))
-		_ = f2.Close()
-		f1, _ := os.Create(filepath.Join(dir, "a.txt"))
-		_ = f1.Close()
+		f2, err := os.Create(filepath.Join(dir, "b.txt"))
+		require.NoError(t, err)
+		require.NoError(t, f2.Close())
+		f1, err := os.Create(filepath.Join(dir, "a.txt"))
+		require.NoError(t, err)
+		require.NoError(t, f1.Close())
 		// create subdir which should be ignored
 		require.NoError(t, os.MkdirAll(filepath.Join(dir, "sub"), 0755))
 
