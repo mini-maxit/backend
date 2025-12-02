@@ -7,7 +7,7 @@ docs: $(wildcard internal/api/http/routes/*.go)
 mocks: $(shell find package -name '*.go')
 	mockgen -destination package/service/mocks/mockgen.go ./package/service AccessControlService,ContestService,UserService,TaskService,AuthService,GroupService,SubmissionService,LanguageService,JWTService,QueueService,WorkerService
 	mockgen -destination package/repository/mocks/mockgen.go ./package/repository AccessControlRepository,SubmissionRepository,GroupRepository,TestCaseRepository,LanguageRepository,QueueMessageRepository,SubmissionResultRepository,TaskRepository,TestRepository,UserRepository,File,ContestRepository
-	mockgen -destination package/filestorage/mocks/mockgen.go ./package/filestorage Decompressor,ArchiveValidator,ValidationRule,FileStorageService
+	mockgen -destination ./package/filestorage/mockgen.go -package filestorage github.com/mini-maxit/backend/package/filestorage Decompressor,ArchiveValidator
 
 # Regenerate everything
 generate: docs mocks
