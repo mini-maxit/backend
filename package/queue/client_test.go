@@ -17,16 +17,26 @@ func newTestLogger() *zap.SugaredLogger {
 	return logger.Sugar()
 }
 
+func newTestConfig() queue.Config {
+	return queue.Config{
+		Host:              "localhost",
+		Port:              5672,
+		User:              "guest",
+		Password:          "guest",
+		WorkerQueueName:   "test_worker_queue",
+		ResponseQueueName: "test_response_queue",
+	}
+}
+
+func newInvalidHostConfig() queue.Config {
+	config := newTestConfig()
+	config.Host = "invalid-host"
+	return config
+}
+
 func TestNewClient(t *testing.T) {
 	t.Run("creates client with valid config", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -46,14 +56,7 @@ func TestNewClient(t *testing.T) {
 
 func TestClient_IsConnected_WhenNotConnected(t *testing.T) {
 	t.Run("returns false when client is not started", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -66,14 +69,7 @@ func TestClient_IsConnected_WhenNotConnected(t *testing.T) {
 
 func TestClient_Publish_WhenNotConnected(t *testing.T) {
 	t.Run("returns error when publish channel is not available", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -88,14 +84,7 @@ func TestClient_Publish_WhenNotConnected(t *testing.T) {
 
 func TestClient_Consume_WhenNotConnected(t *testing.T) {
 	t.Run("returns error when consume channel is not available", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -110,14 +99,7 @@ func TestClient_Consume_WhenNotConnected(t *testing.T) {
 
 func TestClient_OnReconnect(t *testing.T) {
 	t.Run("registers callback successfully", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -133,14 +115,7 @@ func TestClient_OnReconnect(t *testing.T) {
 	})
 
 	t.Run("registers multiple callbacks", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -156,14 +131,7 @@ func TestClient_OnReconnect(t *testing.T) {
 
 func TestClient_Start_And_Shutdown(t *testing.T) {
 	t.Run("start returns nil error even with invalid connection", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "invalid-host",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newInvalidHostConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -181,14 +149,7 @@ func TestClient_Start_And_Shutdown(t *testing.T) {
 	})
 
 	t.Run("shutdown can be called multiple times safely", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "invalid-host",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newInvalidHostConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -207,14 +168,7 @@ func TestClient_Start_And_Shutdown(t *testing.T) {
 
 func TestClient_OnReconnect_ConcurrentAccess(t *testing.T) {
 	t.Run("handles concurrent callback registration", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
@@ -249,14 +203,7 @@ func TestClient_OnReconnect_ConcurrentAccess(t *testing.T) {
 
 func TestClient_IsConnected_ConcurrentAccess(t *testing.T) {
 	t.Run("handles concurrent IsConnected calls", func(t *testing.T) {
-		config := queue.Config{
-			Host:              "localhost",
-			Port:              5672,
-			User:              "guest",
-			Password:          "guest",
-			WorkerQueueName:   "test_worker_queue",
-			ResponseQueueName: "test_response_queue",
-		}
+		config := newTestConfig()
 		logger := newTestLogger()
 
 		client := queue.NewClient(config, logger)
