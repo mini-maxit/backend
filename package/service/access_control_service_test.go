@@ -334,9 +334,10 @@ func TestGetCollaborators(t *testing.T) {
 		cr := mock_repository.NewMockContestRepository(ctrl)
 		acs := service.NewAccessControlService(acr, ur, tr, cr)
 
-		// When task doesn't exist, checkResourceExists returns (false, nil)
-		// but the current implementation doesn't check the boolean return value
-		// so it continues to GetResourceAccess which returns empty list
+		// Note: The current implementation of GetCollaborators ignores the boolean return value
+		// from checkResourceExists. When checkResourceExists returns (false, nil) for a non-existent
+		// resource, the code continues to GetResourceAccess instead of returning an error.
+		// This test documents the actual behavior rather than the expected behavior.
 		user := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tr.EXPECT().Get(db, resourceID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		acr.EXPECT().GetResourceAccess(db, resourceType, resourceID).Return([]models.AccessControl{}, nil).Times(1)
