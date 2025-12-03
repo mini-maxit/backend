@@ -469,7 +469,7 @@ func TestGetLimits(t *testing.T) {
 	defer server.Close()
 
 	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodDelete, http.MethodPatch}
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
 			req, err := http.NewRequest(method, server.URL+"/1/limits", nil)
@@ -605,7 +605,7 @@ func TestPutLimits(t *testing.T) {
 	defer server.Close()
 
 	t.Run("Accept only PUT", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodDelete, http.MethodPatch}
+		methods := []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPatch}
 
 		for _, method := range methods {
 			req, err := http.NewRequest(method, server.URL+"/1/limits", nil)
