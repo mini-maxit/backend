@@ -15,9 +15,11 @@ type UpdateCollaborator struct {
 
 // Collaborator represents a collaborator with their details.
 type Collaborator struct {
-	UserID     int64            `json:"user_id"`
-	UserName   string           `json:"user_name"`
-	UserEmail  string           `json:"user_email"`
+	UserID     int64            `json:"userId"`
+	UserName   string           `json:"userName"`
+	FirstName  string           `json:"firstName"`
+	LastName   string           `json:"lastName"`
+	UserEmail  string           `json:"userEmail"`
 	Permission types.Permission `json:"permission"`
-	AddedAt    string           `json:"added_at"`
+	AddedAt    string           `json:"addedAt"`
 }
