@@ -426,18 +426,19 @@ func (cr *ContestRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Reques
 }
 
 // GetMyContestResults godoc
-// @Tags			contests
-// @Summary		Get user's results for a contest
-// @Description	Get results of the current user for a given contest, including attempt count, best result, and best submission ID for each task
-// @Produce		json
-// @Param			id	path		int	true	"Contest ID"
-// @Failure		400	{object}	httputils.APIError
-// @Failure		403	{object}	httputils.APIError
-// @Failure		404	{object}	httputils.APIError
-// @Failure		405	{object}	httputils.APIError
-// @Failure		500	{object}	httputils.APIError
-// @Success		200	{object}	httputils.APIResponse[schemas.ContestResults]
-// @Router			/contests/{id}/results/my [get]
+//
+//	@Tags			contests
+//	@Summary		Get user's results for a contest
+//	@Description	Get results of the current user for a given contest, including attempt count, best result, and best submission ID for each task
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[schemas.ContestResults]
+//	@Router			/contests/{id}/results/my [get]
 func (cr *ContestRouteImpl) GetMyContestResults(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
