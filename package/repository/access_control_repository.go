@@ -37,6 +37,22 @@ type accessControlRepository struct{}
 
 func (r *accessControlRepository) AddAccess(db database.Database, access *models.AccessControl) error {
 	tx := db.GetInstance()
+
+	// Check if a soft-deleted record exists
+	var existing models.AccessControl
+	err := tx.Unscoped().
+		Where("resource_type = ? AND resource_id = ? AND user_id = ?",
+			access.ResourceType, access.ResourceID, access.UserID).
+		First(&existing).Error
+
+	if err == nil && existing.DeletedAt.Valid {
+		// Restore the soft-deleted record with the new permission
+		return tx.Unscoped().Model(&existing).Updates(map[string]interface{}{
+			"deleted_at": nil,
+			"permission": access.Permission,
+		}).Error
+	}
+
 	return tx.Create(access).Error
 }
 
