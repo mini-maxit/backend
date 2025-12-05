@@ -269,14 +269,18 @@ func accessControlToCollaborator(access *models.AccessControl) *schemas.Collabor
 	if access == nil {
 		return nil
 	}
-	var userName, userEmail string
+	var userName, userEmail, firstName, lastName string
 	if (access.User != models.User{}) {
 		userName = access.User.Name
 		userEmail = access.User.Email
+		firstName = access.User.Name
+		lastName = access.User.Surname
 	}
 	return &schemas.Collaborator{
 		UserID:     access.UserID,
 		UserName:   userName,
+		FirstName:  firstName,
+		LastName:   lastName,
 		UserEmail:  userEmail,
 		Permission: access.Permission,
 		AddedAt:    access.CreatedAt.Format(time.RFC3339),
