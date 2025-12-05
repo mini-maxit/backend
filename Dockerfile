@@ -8,13 +8,12 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o backend.o cmd/app/main.go
 
-FROM alpine:latest
+FROM alpine/curl:8.14.1
 
 WORKDIR /app
 
 # Install Atlas binary
-RUN apk add --no-cache curl && \
-    curl -L https://release.ariga.io/atlas/atlas-linux-amd64-latest -o /usr/local/bin/atlas && \
+RUN curl -L https://release.ariga.io/atlas/atlas-linux-amd64-latest -o /usr/local/bin/atlas && \
     chmod +x /usr/local/bin/atlas
 
 COPY --from=builder /app/migrations ./migrations
