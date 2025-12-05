@@ -383,15 +383,19 @@ definitions:
     type: object
   Collaborator:
     properties:
-      added_at:
+      addedAt:
+        type: string
+      firstName:
+        type: string
+      lastName:
         type: string
       permission:
         $ref: '#/definitions/Permission'
-      user_email:
+      userEmail:
         type: string
-      user_id:
+      userId:
         type: integer
-      user_name:
+      userName:
         type: string
     type: object
   ContestDetailed:
