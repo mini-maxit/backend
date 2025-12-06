@@ -35,10 +35,10 @@ type Config struct {
 	UsersPerGroup int
 
 	// Task generation
-	Tasks         int
-	VisibleTasks  int
-	TestsPerTask  int
-	FixturesDir   string
+	Tasks          int
+	VisibleTasks   int
+	TestsPerTask   int
+	FixturesDir    string
 	CreateFixtures bool
 
 	// Contest generation
@@ -83,17 +83,17 @@ type Generator struct {
 	random      *rand.Rand
 
 	// Repositories
-	userRepo           repository.UserRepository
-	groupRepo          repository.GroupRepository
-	taskRepo           repository.TaskRepository
-	contestRepo        repository.ContestRepository
-	submissionRepo     repository.SubmissionRepository
-	fileRepo           repository.File
-	langRepo           repository.LanguageRepository
-	accessControlRepo  repository.AccessControlRepository
-	testCaseRepo       repository.TestCaseRepository
+	userRepo             repository.UserRepository
+	groupRepo            repository.GroupRepository
+	taskRepo             repository.TaskRepository
+	contestRepo          repository.ContestRepository
+	submissionRepo       repository.SubmissionRepository
+	fileRepo             repository.File
+	langRepo             repository.LanguageRepository
+	accessControlRepo    repository.AccessControlRepository
+	testCaseRepo         repository.TestCaseRepository
 	submissionResultRepo repository.SubmissionResultRepository
-	testResultRepo     repository.TestRepository
+	testResultRepo       repository.TestRepository
 
 	// Generated data tracking
 	users     []*models.User
@@ -207,7 +207,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build file storage URL
-	fileStorageURL := fmt.Sprintf("http://%s:%s", 
+	fileStorageURL := fmt.Sprintf("http://%s:%s",
 		getEnvOrDefault("FILE_STORAGE_HOST", cfg.FileStorageHost),
 		getEnvOrDefault("FILE_STORAGE_PORT", cfg.FileStoragePort))
 
@@ -228,22 +228,22 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 
 	// Create generator
 	gen := &Generator{
-		config:      cfg,
-		db:          db,
-		fileStorage: fileStorage,
-		logger:      logger,
-		random:      rand.New(rand.NewSource(cfg.Seed)),
-		userRepo:    repository.NewUserRepository(),
-		groupRepo:   repository.NewGroupRepository(),
-		taskRepo:    repository.NewTaskRepository(),
-		contestRepo: repository.NewContestRepository(),
-		submissionRepo: repository.NewSubmissionRepository(),
-		fileRepo:    repository.NewFileRepository(),
-		langRepo:    repository.NewLanguageRepository(),
-		accessControlRepo: repository.NewAccessControlRepository(),
-		testCaseRepo: repository.NewTestCaseRepository(),
+		config:               cfg,
+		db:                   db,
+		fileStorage:          fileStorage,
+		logger:               logger,
+		random:               rand.New(rand.NewSource(cfg.Seed)),
+		userRepo:             repository.NewUserRepository(),
+		groupRepo:            repository.NewGroupRepository(),
+		taskRepo:             repository.NewTaskRepository(),
+		contestRepo:          repository.NewContestRepository(),
+		submissionRepo:       repository.NewSubmissionRepository(),
+		fileRepo:             repository.NewFileRepository(),
+		langRepo:             repository.NewLanguageRepository(),
+		accessControlRepo:    repository.NewAccessControlRepository(),
+		testCaseRepo:         repository.NewTestCaseRepository(),
 		submissionResultRepo: repository.NewSubmissionResultRepository(),
-		testResultRepo: repository.NewTestResultRepository(),
+		testResultRepo:       repository.NewTestResultRepository(),
 	}
 
 	// Clear existing data if requested
@@ -257,7 +257,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 
 	// Generate data
 	logger.Info("Starting data generation...")
-	
+
 	if err := gen.generateLanguageConfigs(); err != nil {
 		return fmt.Errorf("failed to generate language configs: %w", err)
 	}
@@ -337,8 +337,7 @@ func getEnvOrDefaultUint16(envKey string, flagValue uint16, defaultVal uint16) u
 	if val := os.Getenv(envKey); val != "" {
 		// Parse the value
 		var parsed uint16
-		fmt.Sscanf(val, "%d", &parsed)
-		if parsed != 0 {
+		if _, err := fmt.Sscanf(val, "%d", &parsed); err == nil && parsed != 0 {
 			return parsed
 		}
 	}
@@ -352,10 +351,10 @@ func checkConnectivity(db database.Database, fileStorageURL string, logger *zap.
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %w", err)
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := sqlDB.PingContext(ctx); err != nil {
 		return fmt.Errorf("database connectivity check failed: %w\nPlease ensure PostgreSQL is running and accessible", err)
 	}
@@ -373,7 +372,7 @@ func checkConnectivity(db database.Database, fileStorageURL string, logger *zap.
 		}
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("file storage returned error status %d\nPlease ensure file-storage service is running properly", resp.StatusCode)
 	}
@@ -385,17 +384,17 @@ func checkConnectivity(db database.Database, fileStorageURL string, logger *zap.
 func printDryRun(cfg *Config, logger *zap.SugaredLogger) {
 	logger.Info("DRY RUN - No data will be created")
 	logger.Info("Configuration:")
-	logger.Infof("  Users: %d (admins: %d, teachers: %d, students: %d)", 
+	logger.Infof("  Users: %d (admins: %d, teachers: %d, students: %d)",
 		cfg.Users, cfg.AdminCount, cfg.TeacherCount, cfg.StudentCount)
 	logger.Infof("  Groups: %d (avg %d users per group)", cfg.Groups, cfg.UsersPerGroup)
-	logger.Infof("  Tasks: %d (%d visible, %d tests per task)", 
+	logger.Infof("  Tasks: %d (%d visible, %d tests per task)",
 		cfg.Tasks, cfg.VisibleTasks, cfg.TestsPerTask)
-	logger.Infof("  Contests: %d (%d tasks, %d participants, %d group participants each)", 
+	logger.Infof("  Contests: %d (%d tasks, %d participants, %d group participants each)",
 		cfg.Contests, cfg.TasksPerContest, cfg.ParticipantsPerContest, cfg.GroupParticipantsPerContest)
-	logger.Infof("  Submissions: %d per task, %d per contest", 
+	logger.Infof("  Submissions: %d per task, %d per contest",
 		cfg.SubmissionsPerTask, cfg.SubmissionsPerContest)
 	logger.Infof("  Registration requests: %d per contest", cfg.RegistrationRequestsPerContest)
-	logger.Infof("  Collaborators: %d per task, %d per contest", 
+	logger.Infof("  Collaborators: %d per task, %d per contest",
 		cfg.CollaboratorsPerTask, cfg.CollaboratorsPerContest)
 	logger.Infof("  Seed: %d", cfg.Seed)
 	logger.Infof("  Clear existing: %v", cfg.ClearExisting)
@@ -446,7 +445,7 @@ func (g *Generator) clearExistingData() error {
 
 func (g *Generator) generateLanguageConfigs() error {
 	g.logger.Info("Generating language configurations...")
-	
+
 	// Check if languages already exist
 	existing, err := g.langRepo.GetAll(g.db)
 	if err == nil && len(existing) > 0 {
@@ -785,7 +784,7 @@ func (g *Generator) generateTasks() error {
 
 			potentialCollabs := append([]*models.User{}, g.teachers...)
 			potentialCollabs = append(potentialCollabs, g.admins...)
-			
+
 			// Remove creator from potential collaborators
 			filtered := make([]*models.User, 0)
 			for _, u := range potentialCollabs {
@@ -821,7 +820,7 @@ func (g *Generator) generateTasks() error {
 
 func (g *Generator) createFixtures() error {
 	g.logger.Info("  Creating sample fixtures...")
-	
+
 	// Create fixtures directory if it doesn't exist
 	if err := os.MkdirAll(g.config.FixturesDir, 0755); err != nil {
 		return fmt.Errorf("failed to create fixtures directory: %w", err)
@@ -854,10 +853,10 @@ func (g *Generator) createFixtures() error {
 	for i := 1; i <= 3; i++ {
 		inputPath := filepath.Join(inputDir, fmt.Sprintf("input_%d.txt", i))
 		outputPath := filepath.Join(outputDir, fmt.Sprintf("output_%d.txt", i))
-		
+
 		inputContent := fmt.Sprintf("%d %d\n", i, i*2)
 		outputContent := fmt.Sprintf("%d\n", i*3)
-		
+
 		if err := os.WriteFile(inputPath, []byte(inputContent), 0644); err != nil {
 			return fmt.Errorf("failed to create input file: %w", err)
 		}
@@ -947,7 +946,7 @@ func (g *Generator) generateContests() error {
 		for j := 0; j < numTasks; j++ {
 			taskStartAt := startAt.Add(time.Duration(j*24) * time.Hour)
 			taskEndAt := taskStartAt.Add(24 * time.Hour)
-			
+
 			contestTask := models.ContestTask{
 				ContestID:        contestID,
 				TaskID:           selectedTasks[j].ID,
@@ -955,7 +954,7 @@ func (g *Generator) generateContests() error {
 				EndAt:            &taskEndAt,
 				IsSubmissionOpen: true,
 			}
-			
+
 			if err := g.contestRepo.AddTaskToContest(g.db, contestTask); err != nil {
 				g.db.Rollback()
 				return fmt.Errorf("failed to add task to contest: %w", err)
@@ -1069,7 +1068,7 @@ func (g *Generator) generateContests() error {
 			collabCount := g.config.CollaboratorsPerContest
 			potentialCollabs := append([]*models.User{}, g.teachers...)
 			potentialCollabs = append(potentialCollabs, g.admins...)
-			
+
 			// Remove creator
 			filtered := make([]*models.User, 0)
 			for _, u := range potentialCollabs {
@@ -1139,7 +1138,7 @@ func (g *Generator) generateSubmissions() error {
 		for i := 0; i < g.config.SubmissionsPerTask; i++ {
 			// Pick random user
 			user := g.users[g.random.Intn(len(g.users))]
-			
+
 			if err := g.createSubmission(task.ID, user.ID, nil, i+1); err != nil {
 				g.db.Rollback()
 				return err
@@ -1177,7 +1176,7 @@ func (g *Generator) generateSubmissions() error {
 			for i := 0; i < g.config.SubmissionsPerContest; i++ {
 				// Pick random participant
 				participant := participants[g.random.Intn(len(participants))]
-				
+
 				if err := g.createSubmission(contestTask.TaskID, participant.ID, &contest.ID, i+1); err != nil {
 					g.db.Rollback()
 					return err
@@ -1204,7 +1203,7 @@ func (g *Generator) generateSubmissions() error {
 func (g *Generator) createSubmission(taskID, userID int64, contestID *int64, order int) error {
 	// Create source file
 	lang := g.languages[g.random.Intn(len(g.languages))]
-	
+
 	sourceFile := &models.File{
 		Filename:   fmt.Sprintf("solution_%d%s", order, lang.FileExtension),
 		Path:       fmt.Sprintf("/submissions/task-%d/user-%d/solution_%d%s", taskID, userID, order, lang.FileExtension),
@@ -1224,13 +1223,13 @@ func (g *Generator) createSubmission(taskID, userID int64, contestID *int64, ord
 	status := statuses[g.random.Intn(len(statuses))]
 
 	submission := &models.Submission{
-		TaskID:     taskID,
-		UserID:     userID,
-		Order:      order,
-		LanguageID: lang.ID,
-		FileID:     sourceFile.ID,
-		Status:     status,
-		ContestID:  contestID,
+		TaskID:      taskID,
+		UserID:      userID,
+		Order:       order,
+		LanguageID:  lang.ID,
+		FileID:      sourceFile.ID,
+		Status:      status,
+		ContestID:   contestID,
 		SubmittedAt: time.Now().Add(-time.Duration(g.random.Intn(24*30)) * time.Hour),
 	}
 
@@ -1276,7 +1275,9 @@ func (g *Generator) createSubmission(taskID, userID int64, contestID *int64, ord
 				Bucket:     "maxit",
 				ServerType: "local",
 			}
-			g.fileRepo.Create(g.db, stdoutFile)
+			if err := g.fileRepo.Create(g.db, stdoutFile); err != nil {
+				return fmt.Errorf("failed to create stdout file: %w", err)
+			}
 
 			stderrFile := &models.File{
 				Filename:   "stderr.txt",
@@ -1284,7 +1285,9 @@ func (g *Generator) createSubmission(taskID, userID int64, contestID *int64, ord
 				Bucket:     "maxit",
 				ServerType: "local",
 			}
-			g.fileRepo.Create(g.db, stderrFile)
+			if err := g.fileRepo.Create(g.db, stderrFile); err != nil {
+				return fmt.Errorf("failed to create stderr file: %w", err)
+			}
 
 			diffFile := &models.File{
 				Filename:   "diff.txt",
@@ -1292,7 +1295,9 @@ func (g *Generator) createSubmission(taskID, userID int64, contestID *int64, ord
 				Bucket:     "maxit",
 				ServerType: "local",
 			}
-			g.fileRepo.Create(g.db, diffFile)
+			if err := g.fileRepo.Create(g.db, diffFile); err != nil {
+				return fmt.Errorf("failed to create diff file: %w", err)
+			}
 
 			statusCodes := []types.TestResultStatusCode{
 				types.TestResultStatusCodeOK,
