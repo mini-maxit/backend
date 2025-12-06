@@ -18,6 +18,7 @@ Generates realistic test data for all database entities:
 - File storage service running (optional, can skip connectivity check)
 - Go 1.23+ installed
 - Environment variables configured in `.env` file at project root (automatically loaded)
+  - `JWT_SECRET_KEY` - Required for user password hashing (any string value works for testing)
 
 ## Usage
 
@@ -26,7 +27,11 @@ Generates realistic test data for all database entities:
 ```bash
 # Generate default dataset (50 users, 10 groups, 15 tasks, 5 contests)
 # Automatically loads .env from project root
+# Requires JWT_SECRET_KEY environment variable
 go run ./cmd/generate-test-data
+
+# Or set JWT_SECRET_KEY directly
+JWT_SECRET_KEY=your_secret_key go run ./cmd/generate-test-data
 
 # View all available options
 go run ./cmd/generate-test-data --help

@@ -14,13 +14,14 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/filestorage"
 	"github.com/mini-maxit/backend/package/repository"
+	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Config struct {
@@ -83,7 +84,12 @@ type Generator struct {
 	logger      *zap.SugaredLogger
 	random      *rand.Rand
 
-	// Repositories
+	// Services
+	authService service.AuthService
+	taskService service.TaskService
+	groupService service.GroupService
+
+	// Repositories (for operations not covered by services)
 	userRepo             repository.UserRepository
 	groupRepo            repository.GroupRepository
 	taskRepo             repository.TaskRepository
@@ -234,21 +240,80 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create generator
+	userRepo := repository.NewUserRepository()
+	groupRepo := repository.NewGroupRepository()
+	taskRepo := repository.NewTaskRepository()
+	contestRepo := repository.NewContestRepository()
+	submissionRepo := repository.NewSubmissionRepository()
+	fileRepo := repository.NewFileRepository()
+	testCaseRepo := repository.NewTestCaseRepository()
+	accessControlRepo := repository.NewAccessControlRepository()
+	
+	// Get JWT secret from environment
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		return fmt.Errorf("JWT_SECRET_KEY environment variable is required for user generation")
+	}
+	
+	// Initialize services with correct order and dependencies
+	jwtService := service.NewJWTService(userRepo, jwtSecretKey)
+	authService := service.NewAuthService(userRepo, jwtService)
+	
+	// AccessControlService needs: accessControlRepo, userRepo, taskRepo, contestRepo
+	accessControlService := service.NewAccessControlService(
+		accessControlRepo,
+		userRepo,
+		taskRepo,
+		contestRepo,
+	)
+	
+	// TaskService needs: fileStorage, fileRepo, taskRepo, testCaseRepo, userRepo, groupRepo, submissionRepo, contestRepo, accessControlService
+	taskService := service.NewTaskService(
+		fileStorage,
+		fileRepo,
+		taskRepo,
+		testCaseRepo,
+		userRepo,
+		groupRepo,
+		submissionRepo,
+		contestRepo,
+		accessControlService,
+	)
+	
+	// ContestService needs: contestRepo, userRepo, submissionRepo, taskRepo, accessControlService, taskService
+	contestService := service.NewContestService(
+		contestRepo,
+		userRepo,
+		submissionRepo,
+		taskRepo,
+		accessControlService,
+		taskService,
+	)
+	
+	// UserService needs: userRepo, contestService
+	userService := service.NewUserService(userRepo, contestService)
+	
+	// GroupService needs: groupRepo, userRepo, userService
+	groupService := service.NewGroupService(groupRepo, userRepo, userService)
+	
 	gen := &Generator{
 		config:               cfg,
 		db:                   db,
 		fileStorage:          fileStorage,
 		logger:               logger,
 		random:               rand.New(rand.NewSource(cfg.Seed)),
-		userRepo:             repository.NewUserRepository(),
-		groupRepo:            repository.NewGroupRepository(),
-		taskRepo:             repository.NewTaskRepository(),
-		contestRepo:          repository.NewContestRepository(),
-		submissionRepo:       repository.NewSubmissionRepository(),
-		fileRepo:             repository.NewFileRepository(),
+		authService:          authService,
+		taskService:          taskService,
+		groupService:         groupService,
+		userRepo:             userRepo,
+		groupRepo:            groupRepo,
+		taskRepo:             taskRepo,
+		contestRepo:          contestRepo,
+		submissionRepo:       submissionRepo,
+		fileRepo:             fileRepo,
 		langRepo:             repository.NewLanguageRepository(),
-		accessControlRepo:    repository.NewAccessControlRepository(),
-		testCaseRepo:         repository.NewTestCaseRepository(),
+		accessControlRepo:    accessControlRepo,
+		testCaseRepo:         testCaseRepo,
 		submissionResultRepo: repository.NewSubmissionResultRepository(),
 		testResultRepo:       repository.NewTestResultRepository(),
 	}
@@ -525,48 +590,74 @@ func (g *Generator) generateUsers() error {
 		}
 	}()
 
-	// Hash the default password once
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(g.config.UserPassword), bcrypt.DefaultCost)
-	if err != nil {
-		g.db.Rollback()
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
-
 	// Generate admins
 	for i := 0; i < g.config.AdminCount; i++ {
-		user := g.createUser(types.UserRoleAdmin, string(hashedPassword))
-		id, err := g.userRepo.Create(g.db, user)
+		userRequest := g.createUserRequest()
+		_, err := g.authService.Register(g.db, userRequest)
 		if err != nil {
 			g.db.Rollback()
-			return fmt.Errorf("failed to create admin user: %w", err)
+			return fmt.Errorf("failed to register admin user: %w", err)
 		}
-		user.ID = id
+		
+		// Get the created user and update role
+		user, err := g.userRepo.GetByEmail(g.db, userRequest.Email)
+		if err != nil {
+			g.db.Rollback()
+			return fmt.Errorf("failed to get registered admin user: %w", err)
+		}
+		user.Role = types.UserRoleAdmin
+		err = g.userRepo.Edit(g.db, user)
+		if err != nil {
+			g.db.Rollback()
+			return fmt.Errorf("failed to set admin role: %w", err)
+		}
+		
 		g.users = append(g.users, user)
 		g.admins = append(g.admins, user)
 	}
 
 	// Generate teachers
 	for i := 0; i < g.config.TeacherCount; i++ {
-		user := g.createUser(types.UserRoleTeacher, string(hashedPassword))
-		id, err := g.userRepo.Create(g.db, user)
+		userRequest := g.createUserRequest()
+		_, err := g.authService.Register(g.db, userRequest)
 		if err != nil {
 			g.db.Rollback()
-			return fmt.Errorf("failed to create teacher user: %w", err)
+			return fmt.Errorf("failed to register teacher user: %w", err)
 		}
-		user.ID = id
+		
+		// Get the created user and update role
+		user, err := g.userRepo.GetByEmail(g.db, userRequest.Email)
+		if err != nil {
+			g.db.Rollback()
+			return fmt.Errorf("failed to get registered teacher user: %w", err)
+		}
+		user.Role = types.UserRoleTeacher
+		err = g.userRepo.Edit(g.db, user)
+		if err != nil {
+			g.db.Rollback()
+			return fmt.Errorf("failed to set teacher role: %w", err)
+		}
+		
 		g.users = append(g.users, user)
 		g.teachers = append(g.teachers, user)
 	}
 
 	// Generate students
 	for i := 0; i < g.config.StudentCount; i++ {
-		user := g.createUser(types.UserRoleStudent, string(hashedPassword))
-		id, err := g.userRepo.Create(g.db, user)
+		userRequest := g.createUserRequest()
+		_, err := g.authService.Register(g.db, userRequest)
 		if err != nil {
 			g.db.Rollback()
-			return fmt.Errorf("failed to create student user: %w", err)
+			return fmt.Errorf("failed to register student user: %w", err)
 		}
-		user.ID = id
+		
+		// Get the created user (students are default role from Register)
+		user, err := g.userRepo.GetByEmail(g.db, userRequest.Email)
+		if err != nil {
+			g.db.Rollback()
+			return fmt.Errorf("failed to get registered student user: %w", err)
+		}
+		
 		g.users = append(g.users, user)
 		g.students = append(g.students, user)
 	}
@@ -580,14 +671,13 @@ func (g *Generator) generateUsers() error {
 	return nil
 }
 
-func (g *Generator) createUser(role types.UserRole, hashedPassword string) *models.User {
-	return &models.User{
-		Name:         gofakeit.FirstName(),
-		Surname:      gofakeit.LastName(),
-		Email:        gofakeit.Email(),
-		Username:     gofakeit.Username(),
-		PasswordHash: hashedPassword,
-		Role:         role,
+func (g *Generator) createUserRequest() schemas.UserRegisterRequest {
+	return schemas.UserRegisterRequest{
+		Name:     gofakeit.FirstName(),
+		Surname:  gofakeit.LastName(),
+		Email:    gofakeit.Email(),
+		Username: gofakeit.Username(),
+		Password: g.config.UserPassword,
 	}
 }
 
