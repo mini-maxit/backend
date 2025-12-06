@@ -223,6 +223,19 @@ func TestGetContestCollaborators(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Invalid contest ID")
 	})
 
+	t.Run("Contest not found", func(t *testing.T) {
+		handler := createAccessControlHandler(db, currentUser, route.GetContestCollaborators)
+		req := httptest.NewRequest(http.MethodGet, "/contests/999/collaborators", nil)
+		req = mux.SetURLVars(req, map[string]string{"resource_id": "999"})
+		w := httptest.NewRecorder()
+
+		acs.EXPECT().GetCollaborators(gomock.Any(), gomock.Any(), gomock.Any(), int64(999)).Return(nil, errors.ErrNotFound).Times(1)
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
 	t.Run("Not authorized", func(t *testing.T) {
 		handler := createAccessControlHandler(db, currentUser, route.GetContestCollaborators)
 		req := httptest.NewRequest(http.MethodGet, "/contests/1/collaborators", nil)
@@ -673,6 +686,19 @@ func TestGetTaskCollaborators(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Contains(t, w.Body.String(), "Invalid task ID")
+	})
+
+	t.Run("Task not found", func(t *testing.T) {
+		handler := createAccessControlHandler(db, currentUser, route.GetTaskCollaborators)
+		req := httptest.NewRequest(http.MethodGet, "/tasks/999/collaborators", nil)
+		req = mux.SetURLVars(req, map[string]string{"resource_id": "999"})
+		w := httptest.NewRecorder()
+
+		acs.EXPECT().GetCollaborators(gomock.Any(), gomock.Any(), gomock.Any(), int64(999)).Return(nil, errors.ErrNotFound).Times(1)
+
+		handler.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 
 	t.Run("Success", func(t *testing.T) {
