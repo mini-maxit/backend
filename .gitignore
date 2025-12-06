@@ -8,3 +8,7 @@ coverage*
 
 docs/*
 !docs/index.html
+
+# Build artifacts
+/app
+/loader

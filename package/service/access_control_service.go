@@ -132,19 +132,21 @@ func (acs *accessControlService) AddCollaborator(db database.Database, currentUs
 
 // GetCollaborators retrieves all collaborators for a resource and converts them to schema objects. Requires edit permission.
 func (acs *accessControlService) GetCollaborators(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
-	err := acs.CanUserAccess(db, resourceType, resourceID, currentUser, types.PermissionEdit)
+	// Check if resource exists first before checking permissions
+	exists, err := acs.checkResourceExists(db, resourceType, resourceID)
+	if err != nil {
+		acs.logger.Errorw("Error checking resource existence", "error", err, "resourceType", resourceType, "resourceID", resourceID)
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.ErrNotFound
+	}
+
+	err = acs.CanUserAccess(db, resourceType, resourceID, currentUser, types.PermissionEdit)
 	if err != nil {
 		if !errors.Is(err, errors.ErrForbidden) {
 			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
 		}
-		return nil, err
-	}
-
-	if _, err = acs.checkResourceExists(db, resourceType, resourceID); err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.ErrNotFound
-		}
-		acs.logger.Errorw("Error getting resource", "error", err, "resourceType", resourceType, "resourceID", resourceID)
 		return nil, err
 	}
 
@@ -269,14 +271,18 @@ func accessControlToCollaborator(access *models.AccessControl) *schemas.Collabor
 	if access == nil {
 		return nil
 	}
-	var userName, userEmail string
+	var userName, userEmail, firstName, lastName string
 	if (access.User != models.User{}) {
 		userName = access.User.Name
 		userEmail = access.User.Email
+		firstName = access.User.Name
+		lastName = access.User.Surname
 	}
 	return &schemas.Collaborator{
 		UserID:     access.UserID,
 		UserName:   userName,
+		FirstName:  firstName,
+		LastName:   lastName,
 		UserEmail:  userEmail,
 		Permission: access.Permission,
 		AddedAt:    access.CreatedAt.Format(time.RFC3339),
