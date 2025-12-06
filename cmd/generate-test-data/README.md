@@ -16,73 +16,70 @@ Generates realistic test data for all database entities:
 
 - PostgreSQL database running
 - File storage service running (optional, can skip connectivity check)
-- Environment variables configured (or use CLI flags)
-
-## Installation
-
-```bash
-go build -o generate-test-data ./cmd/generate-test-data
-```
+- Go 1.23+ installed
+- Environment variables configured in `.env` file at project root (automatically loaded)
 
 ## Usage
 
 ### Basic Usage
 
 ```bash
-# Generate default dataset (10 users, 3 groups, 5 tasks, 2 contests)
-./generate-test-data
+# Generate default dataset (50 users, 10 groups, 15 tasks, 5 contests)
+# Automatically loads .env from project root
+go run ./cmd/generate-test-data
 
-# With environment variables from .env file
-export DEBUG=true  # Loads .env file
-./generate-test-data
+# View all available options
+go run ./cmd/generate-test-data --help
 ```
+
+**Default Password:** All generated users have the password `password123`
 
 ### Common Examples
 
 ```bash
 # Large production-like dataset
-./generate-test-data --users 100 --groups 15 --tasks 30 --contests 10 \
+go run ./cmd/generate-test-data --users 100 --groups 15 --tasks 30 --contests 10 \
   --registration-requests-per-contest 10 --collaborators-per-task 3
 
 # Reproducible data for testing
-./generate-test-data --clear-existing --seed 42 --verbose
+go run ./cmd/generate-test-data --clear-existing --seed 42 --verbose
 
 # Preview what would be created
-./generate-test-data --dry-run --users 50 --contests 5
+go run ./cmd/generate-test-data --dry-run --users 100 --contests 10
 
 # Skip connectivity checks (for offline testing)
-./generate-test-data --skip-connectivity-check
+go run ./cmd/generate-test-data --skip-connectivity-check
 ```
 
 ## CLI Flags
 
 ### User Generation
-- `--users int` - Total number of users (default: 10)
-- `--admin-count int` - Number of admin users (default: 1)
-- `--teacher-count int` - Number of teacher users (default: 2)
+- `--users int` - Total number of users (default: 50)
+- `--admin-count int` - Number of admin users (default: 2)
+- `--teacher-count int` - Number of teacher users (default: 8)
 - `--student-count int` - Number of student users (0 = remaining, default: 0)
 - `--user-password string` - Default password for all users (default: "password123")
 
 ### Group Generation
-- `--groups int` - Number of groups to create (default: 3)
-- `--users-per-group int` - Average number of users per group (default: 5)
+- `--groups int` - Number of groups to create (default: 10)
+- `--users-per-group int` - Average number of users per group (default: 8)
 
 ### Task Generation
-- `--tasks int` - Number of tasks to create (default: 5)
-- `--visible-tasks int` - Number of tasks visible to all (default: 3)
+- `--tasks int` - Number of tasks to create (default: 15)
+- `--visible-tasks int` - Number of tasks visible to all (default: 10)
 - `--tests-per-task int` - Number of test cases per task (default: 3)
 - `--fixtures-dir string` - Path to fixtures directory (default: "./fixtures")
 - `--create-fixtures` - Create sample fixture files if they don't exist (default: false)
 
 ### Contest Generation
-- `--contests int` - Number of contests to create (default: 2)
-- `--tasks-per-contest int` - Number of tasks per contest (default: 3)
-- `--participants-per-contest int` - Individual participants per contest (default: 5)
-- `--group-participants-per-contest int` - Group participants per contest (default: 1)
+- `--contests int` - Number of contests to create (default: 5)
+- `--tasks-per-contest int` - Number of tasks per contest (default: 5)
+- `--participants-per-contest int` - Individual participants per contest (default: 10)
+- `--group-participants-per-contest int` - Group participants per contest (default: 2)
 
 ### Submission Generation
-- `--submissions-per-task int` - Submissions per standalone task (default: 3)
-- `--submissions-per-contest int` - Submissions per contest task (default: 2)
+- `--submissions-per-task int` - Submissions per standalone task (default: 5)
+- `--submissions-per-contest int` - Submissions per contest task (default: 3)
 
 ### Supporting Data
 - `--registration-requests-per-contest int` - Registration requests per contest (default: 3)
@@ -138,19 +135,19 @@ The tool generates data in dependency order:
 
 ### Default Development Dataset
 ```bash
-./generate-test-data
+go run ./cmd/generate-test-data
 ```
 Creates:
-- 10 users (1 admin, 2 teachers, 7 students)
-- 3 groups with ~5 members each
-- 5 tasks (3 visible) with 3 test cases each
-- 2 contests with 3 tasks and 5 participants each
-- 3 submissions per task
+- 50 users (2 admins, 8 teachers, 40 students) - password: `password123`
+- 10 groups with ~8 members each
+- 15 tasks (10 visible) with 3 test cases each
+- 5 contests with 5 tasks and 10 participants each
+- 5 submissions per task
 - Supporting data (access control, registration requests, etc.)
 
 ### Large Production-like Dataset
 ```bash
-./generate-test-data \
+go run ./cmd/generate-test-data \
   --users 100 \
   --admin-count 5 \
   --teacher-count 15 \
@@ -163,13 +160,13 @@ Creates:
 
 ### Reproducible CI/Testing Data
 ```bash
-./generate-test-data --clear-existing --seed 42 --verbose
+go run ./cmd/generate-test-data --clear-existing --seed 42 --verbose
 ```
 Always generates the same data with seed 42.
 
 ### Preview Mode
 ```bash
-./generate-test-data --dry-run --users 50 --contests 5
+go run ./cmd/generate-test-data --dry-run --users 100 --contests 10
 ```
 Shows configuration without creating any data.
 

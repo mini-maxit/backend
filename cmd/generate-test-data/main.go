@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/joho/godotenv"
 	"github.com/mini-maxit/backend/internal/config"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -119,32 +120,32 @@ submissions and all supporting tables with configurable parameters.`,
 
 func init() {
 	// User generation flags
-	rootCmd.Flags().IntVar(&cfg.Users, "users", 10, "Total number of users to create")
-	rootCmd.Flags().IntVar(&cfg.AdminCount, "admin-count", 1, "Number of admin users")
-	rootCmd.Flags().IntVar(&cfg.TeacherCount, "teacher-count", 2, "Number of teacher users")
+	rootCmd.Flags().IntVar(&cfg.Users, "users", 50, "Total number of users to create")
+	rootCmd.Flags().IntVar(&cfg.AdminCount, "admin-count", 2, "Number of admin users")
+	rootCmd.Flags().IntVar(&cfg.TeacherCount, "teacher-count", 8, "Number of teacher users")
 	rootCmd.Flags().IntVar(&cfg.StudentCount, "student-count", 0, "Number of student users (0 = remaining)")
 	rootCmd.Flags().StringVar(&cfg.UserPassword, "user-password", "password123", "Default password for all users")
 
 	// Group generation flags
-	rootCmd.Flags().IntVar(&cfg.Groups, "groups", 3, "Number of groups to create")
-	rootCmd.Flags().IntVar(&cfg.UsersPerGroup, "users-per-group", 5, "Average number of users per group")
+	rootCmd.Flags().IntVar(&cfg.Groups, "groups", 10, "Number of groups to create")
+	rootCmd.Flags().IntVar(&cfg.UsersPerGroup, "users-per-group", 8, "Average number of users per group")
 
 	// Task generation flags
-	rootCmd.Flags().IntVar(&cfg.Tasks, "tasks", 5, "Number of tasks to create")
-	rootCmd.Flags().IntVar(&cfg.VisibleTasks, "visible-tasks", 3, "Number of visible tasks")
+	rootCmd.Flags().IntVar(&cfg.Tasks, "tasks", 15, "Number of tasks to create")
+	rootCmd.Flags().IntVar(&cfg.VisibleTasks, "visible-tasks", 10, "Number of visible tasks")
 	rootCmd.Flags().IntVar(&cfg.TestsPerTask, "tests-per-task", 3, "Number of test cases per task")
 	rootCmd.Flags().StringVar(&cfg.FixturesDir, "fixtures-dir", "./fixtures", "Path to fixtures directory")
 	rootCmd.Flags().BoolVar(&cfg.CreateFixtures, "create-fixtures", false, "Create sample fixture files if they don't exist")
 
 	// Contest generation flags
-	rootCmd.Flags().IntVar(&cfg.Contests, "contests", 2, "Number of contests to create")
-	rootCmd.Flags().IntVar(&cfg.TasksPerContest, "tasks-per-contest", 3, "Number of tasks per contest")
-	rootCmd.Flags().IntVar(&cfg.ParticipantsPerContest, "participants-per-contest", 5, "Individual participants per contest")
-	rootCmd.Flags().IntVar(&cfg.GroupParticipantsPerContest, "group-participants-per-contest", 1, "Group participants per contest")
+	rootCmd.Flags().IntVar(&cfg.Contests, "contests", 5, "Number of contests to create")
+	rootCmd.Flags().IntVar(&cfg.TasksPerContest, "tasks-per-contest", 5, "Number of tasks per contest")
+	rootCmd.Flags().IntVar(&cfg.ParticipantsPerContest, "participants-per-contest", 10, "Individual participants per contest")
+	rootCmd.Flags().IntVar(&cfg.GroupParticipantsPerContest, "group-participants-per-contest", 2, "Group participants per contest")
 
 	// Submission generation flags
-	rootCmd.Flags().IntVar(&cfg.SubmissionsPerTask, "submissions-per-task", 3, "Number of submissions per standalone task")
-	rootCmd.Flags().IntVar(&cfg.SubmissionsPerContest, "submissions-per-contest", 2, "Number of submissions per contest task")
+	rootCmd.Flags().IntVar(&cfg.SubmissionsPerTask, "submissions-per-task", 5, "Number of submissions per standalone task")
+	rootCmd.Flags().IntVar(&cfg.SubmissionsPerContest, "submissions-per-contest", 3, "Number of submissions per contest task")
 
 	// Supporting data flags
 	rootCmd.Flags().IntVar(&cfg.RegistrationRequestsPerContest, "registration-requests-per-contest", 3, "Registration requests per contest")
@@ -179,6 +180,12 @@ func main() {
 
 func runGenerate(cmd *cobra.Command, args []string) error {
 	logger := utils.NewNamedLogger("generate-test-data")
+
+	// Load .env file from project root by default
+	if err := godotenv.Load(".env"); err != nil {
+		// Don't fail if .env doesn't exist, just log a debug message
+		logger.Debugf(".env file not found or could not be loaded: %v", err)
+	}
 
 	// Initialize seed
 	if cfg.Seed == 0 {
