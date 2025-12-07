@@ -2663,7 +2663,7 @@ paths:
       summary: Get past contests for the current user
       tags:
       - contests
-  /groups/:
+  /groups-management/groups:
     get:
       description: Get all groups
       produces:
@@ -2729,7 +2729,7 @@ paths:
       summary: Create a group
       tags:
       - group
-  /groups/{id}:
+  /groups-management/groups/{id}:
     get:
       description: Get a group
       parameters:
@@ -2806,7 +2806,7 @@ paths:
       summary: Edit a group
       tags:
       - group
-  /groups/{id}/users:
+  /groups-management/groups/{id}/users:
     delete:
       consumes:
       - application/json
