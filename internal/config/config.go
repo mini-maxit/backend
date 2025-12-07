@@ -189,6 +189,11 @@ func NewConfig() *Config {
 	}
 	corsAllowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == "true"
 
+	if corsAllowCredentials && corsAllowedOrigins == "*" {
+		log.Panicf(`CORS_ALLOWED_ORIGINS=* and CORS_ALLOW_CREDENTIALS=true cannot be set at the same time.
+More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers#sect`)
+	}
+
 	return &Config{
 		DB: DBConfig{
 			Host:     dbHost,

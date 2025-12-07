@@ -17,8 +17,8 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 		allowedOrigin := cfg.AllowedOrigins
 		if cfg.AllowedOrigins != "*" && origin != "" {
 			// Check if the origin is in the allowed list
-			allowedOrigins := strings.Split(cfg.AllowedOrigins, ",")
-			for _, allowed := range allowedOrigins {
+			allowedOrigins := strings.SplitSeq(cfg.AllowedOrigins, ",")
+			for allowed := range allowedOrigins {
 				if strings.TrimSpace(allowed) == origin {
 					allowedOrigin = origin
 					break

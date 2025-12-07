@@ -11,12 +11,12 @@ import (
 
 func TestCORSMiddleware(t *testing.T) {
 	tests := []struct {
-		name           string
-		method         string
-		origin         string
-		corsConfig     *config.CORSConfig
-		expectedStatus int
-		checkHeaders   map[string]string
+		name            string
+		method          string
+		origin          string
+		corsConfig      *config.CORSConfig
+		expectedStatus  int
+		expectedHeaders map[string]string
 	}{
 		{
 			name:   "OPTIONS request returns 204 with wildcard origin",
@@ -27,7 +27,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: false,
 			},
 			expectedStatus: http.StatusNoContent,
-			checkHeaders: map[string]string{
+			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin":      "*",
 				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
 				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
@@ -45,7 +45,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			checkHeaders: map[string]string{
+			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin":      "http://localhost:3000",
 				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
 				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
@@ -61,7 +61,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			checkHeaders: map[string]string{
+			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin":      "http://localhost:5173",
 				"Access-Control-Allow-Credentials": "true",
 			},
@@ -75,7 +75,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			checkHeaders: map[string]string{
+			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin": "http://localhost:3000,http://localhost:5173",
 			},
 		},
@@ -88,7 +88,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			checkHeaders: map[string]string{
+			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin": "http://localhost:3000",
 			},
 		},
@@ -120,7 +120,7 @@ func TestCORSMiddleware(t *testing.T) {
 			}
 
 			// Check CORS headers
-			for header, expected := range tt.checkHeaders {
+			for header, expected := range tt.expectedHeaders {
 				if got := w.Header().Get(header); got != expected {
 					t.Errorf("Header %s: expected %q, got %q", header, expected, got)
 				}
