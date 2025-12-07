@@ -33,6 +33,7 @@ type ContestsManagementRoute interface {
 	AddGroupToContest(w http.ResponseWriter, r *http.Request)
 	RemoveGroupFromContest(w http.ResponseWriter, r *http.Request)
 	GetContestGroups(w http.ResponseWriter, r *http.Request)
+	GetAssignableGroups(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -849,7 +850,7 @@ func (cr *contestsManagementRouteImpl) RemoveGroupFromContest(w http.ResponseWri
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[schemas.ContestGroupsInfo]
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Group]
 //	@Router			/contests-management/contests/{id}/groups [get]
 func (cr *contestsManagementRouteImpl) GetContestGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -871,13 +872,56 @@ func (cr *contestsManagementRouteImpl) GetContestGroups(w http.ResponseWriter, r
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	groupsInfo, err := cr.contestService.GetContestGroups(db, currentUser, contestID)
+	groups, err := cr.contestService.GetContestGroups(db, currentUser, contestID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, groupsInfo)
+	httputils.ReturnSuccess(w, http.StatusOK, groups)
+}
+
+// GetAssignableGroups godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get assignable groups for a contest
+//	@Description	Get groups that can be assigned to a specific contest (only accessible by contest collaborators with edit permission)
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.Group]
+//	@Router			/contests-management/contests/{id}/groups/assignable [get]
+func (cr *contestsManagementRouteImpl) GetAssignableGroups(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	groups, err := cr.contestService.GetAssignableGroups(db, currentUser, contestID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, groups)
 }
 
 // GetManageableContests godoc
@@ -972,6 +1016,7 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 
 	// Group management endpoints
 	mux.HandleFunc("/contests/{id}/groups", route.GetContestGroups)
+	mux.HandleFunc("/contests/{id}/groups/assignable", route.GetAssignableGroups)
 	mux.HandleFunc("/contests/{id}/groups/{groupId}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:

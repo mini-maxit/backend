@@ -254,6 +254,21 @@ func (mr *MockContestServiceMockRecorder) Edit(db, currentUser, contestID, editI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestService)(nil).Edit), db, currentUser, contestID, editInfo)
 }
 
+// GetAssignableGroups mocks base method.
+func (m *MockContestService) GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableGroups", db, currentUser, contestID)
+	ret0, _ := ret[0].([]schemas.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignableGroups indicates an expected call of GetAssignableGroups.
+func (mr *MockContestServiceMockRecorder) GetAssignableGroups(db, currentUser, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableGroups", reflect.TypeOf((*MockContestService)(nil).GetAssignableGroups), db, currentUser, contestID)
+}
+
 // GetAssignableTasks mocks base method.
 func (m *MockContestService) GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
@@ -270,10 +285,10 @@ func (mr *MockContestServiceMockRecorder) GetAssignableTasks(db, currentUser, co
 }
 
 // GetContestGroups mocks base method.
-func (m *MockContestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestGroupsInfo, error) {
+func (m *MockContestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContestGroups", db, currentUser, contestID)
-	ret0, _ := ret[0].(*schemas.ContestGroupsInfo)
+	ret0, _ := ret[0].([]schemas.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

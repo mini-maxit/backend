@@ -70,8 +70,10 @@ type ContestService interface {
 	AddGroupToContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
 	// RemoveGroupFromContest removes a group from contest participants (only accessible by contest collaborators)
 	RemoveGroupFromContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
-	// GetContestGroups retrieves groups assigned to a contest with assignable groups (only accessible by contest collaborators)
-	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestGroupsInfo, error)
+	// GetContestGroups retrieves groups assigned to a contest (only accessible by contest collaborators)
+	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
+	// GetAssignableGroups retrieves groups that can be assigned to a contest (only accessible by contest collaborators)
+	GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -1160,7 +1162,7 @@ func (cs *contestService) RemoveGroupFromContest(db database.Database, currentUs
 	return cs.contestRepository.RemoveGroupFromContest(db, contestID, groupID)
 }
 
-func (cs *contestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestGroupsInfo, error) {
+func (cs *contestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
 	// Check if user has edit permission for the contest
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
@@ -1173,6 +1175,28 @@ func (cs *contestService) GetContestGroups(db database.Database, currentUser *sc
 		return nil, err
 	}
 
+	// Convert to schemas
+	result := make([]schemas.Group, len(assignedGroups))
+	for i, group := range assignedGroups {
+		result[i] = schemas.Group{
+			ID:        group.ID,
+			Name:      group.Name,
+			CreatedBy: group.CreatedBy,
+			CreatedAt: group.CreatedAt,
+			UpdatedAt: group.UpdatedAt,
+		}
+	}
+
+	return result, nil
+}
+
+func (cs *contestService) GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get assignable groups
 	assignableGroups, err := cs.contestRepository.GetAssignableGroups(db, contestID)
 	if err != nil {
@@ -1180,20 +1204,9 @@ func (cs *contestService) GetContestGroups(db database.Database, currentUser *sc
 	}
 
 	// Convert to schemas
-	assigned := make([]schemas.Group, len(assignedGroups))
-	for i, group := range assignedGroups {
-		assigned[i] = schemas.Group{
-			ID:        group.ID,
-			Name:      group.Name,
-			CreatedBy: group.CreatedBy,
-			CreatedAt: group.CreatedAt,
-			UpdatedAt: group.UpdatedAt,
-		}
-	}
-
-	assignable := make([]schemas.Group, len(assignableGroups))
+	result := make([]schemas.Group, len(assignableGroups))
 	for i, group := range assignableGroups {
-		assignable[i] = schemas.Group{
+		result[i] = schemas.Group{
 			ID:        group.ID,
 			Name:      group.Name,
 			CreatedBy: group.CreatedBy,
@@ -1202,10 +1215,7 @@ func (cs *contestService) GetContestGroups(db database.Database, currentUser *sc
 		}
 	}
 
-	return &schemas.ContestGroupsInfo{
-		Assigned:   assigned,
-		Assignable: assignable,
-	}, nil
+	return result, nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, groupRepository repository.GroupRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
