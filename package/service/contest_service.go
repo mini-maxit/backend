@@ -66,6 +66,12 @@ type ContestService interface {
 	GetContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 	// GetMyContestResults returns the results of the current user for a given contest
 	GetMyContestResults(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestResults, error)
+	// AddGroupToContest adds a group as participant to a contest (only accessible by contest collaborators)
+	AddGroupToContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
+	// RemoveGroupFromContest removes a group from contest participants (only accessible by contest collaborators)
+	RemoveGroupFromContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
+	// GetContestGroups retrieves groups assigned to a contest with assignable groups (only accessible by contest collaborators)
+	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestGroupsInfo, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -75,6 +81,7 @@ type contestService struct {
 	taskRepository       repository.TaskRepository
 	userRepository       repository.UserRepository
 	submissionRepository repository.SubmissionRepository
+	groupRepository      repository.GroupRepository
 	accessControlService AccessControlService
 
 	taskService TaskService
@@ -1122,12 +1129,92 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 	}
 }
 
-func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
+func (cs *contestService) AddGroupToContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+
+	// Verify the group exists
+	_, err = cs.groupRepository.Get(db, groupID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrNotFound
+		}
+		return err
+	}
+
+	// Add the group to the contest
+	return cs.contestRepository.AddGroupToContest(db, contestID, groupID)
+}
+
+func (cs *contestService) RemoveGroupFromContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+
+	// Remove the group from the contest
+	return cs.contestRepository.RemoveGroupFromContest(db, contestID, groupID)
+}
+
+func (cs *contestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestGroupsInfo, error) {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get assigned groups
+	assignedGroups, err := cs.contestRepository.GetContestGroups(db, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get assignable groups
+	assignableGroups, err := cs.contestRepository.GetAssignableGroups(db, contestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to schemas
+	assigned := make([]schemas.Group, len(assignedGroups))
+	for i, group := range assignedGroups {
+		assigned[i] = schemas.Group{
+			ID:        group.ID,
+			Name:      group.Name,
+			CreatedBy: group.CreatedBy,
+			CreatedAt: group.CreatedAt,
+			UpdatedAt: group.UpdatedAt,
+		}
+	}
+
+	assignable := make([]schemas.Group, len(assignableGroups))
+	for i, group := range assignableGroups {
+		assignable[i] = schemas.Group{
+			ID:        group.ID,
+			Name:      group.Name,
+			CreatedBy: group.CreatedBy,
+			CreatedAt: group.CreatedAt,
+			UpdatedAt: group.UpdatedAt,
+		}
+	}
+
+	return &schemas.ContestGroupsInfo{
+		Assigned:   assigned,
+		Assignable: assignable,
+	}, nil
+}
+
+func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, groupRepository repository.GroupRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
 	return &contestService{
 		contestRepository:    contestRepository,
 		taskRepository:       taskRepository,
 		userRepository:       userRepository,
 		submissionRepository: submissionRepository,
+		groupRepository:      groupRepository,
 		accessControlService: accessControlService,
 		taskService:          taskService,
 		logger:               utils.NewNamedLogger("contest_service"),

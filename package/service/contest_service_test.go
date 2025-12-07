@@ -30,7 +30,8 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	visibleTrue := true
@@ -330,7 +331,8 @@ func TestContestService_GetPastContests(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -400,7 +402,8 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval", func(t *testing.T) {
@@ -470,7 +473,8 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	t.Run("successful approval by admin", func(t *testing.T) {
@@ -849,7 +853,8 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	t.Run("successful rejection by admin", func(t *testing.T) {
@@ -1125,7 +1130,8 @@ func TestContestService_GetDetailed(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	t.Run("successful retrieval - visible contest", func(t *testing.T) {
@@ -1312,7 +1318,8 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	ts := mock_service.NewMockTaskService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, acs, ts)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
 	visible := true
