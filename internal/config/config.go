@@ -13,6 +13,7 @@ type Config struct {
 	DB             DBConfig
 	API            APIConfig
 	Broker         BrokerConfig
+	CORS           CORSConfig
 	JWTSecretKey   string
 	Dump           bool
 }
@@ -28,6 +29,13 @@ type DBConfig struct {
 type APIConfig struct {
 	Port             uint16
 	RefreshTokenPath string
+}
+
+type CORSConfig struct {
+	// Allowed origins (comma-separated). Use "*" for all origins
+	AllowedOrigins string
+	// Allow credentials
+	AllowCredentials bool
 }
 
 type BrokerConfig struct {
@@ -50,6 +58,7 @@ const (
 	defaultAPIRefreshTokenPath = "/api/v1/auth/refresh"
 	defaultQueueName           = "worker_queue"
 	defaultResponseQueueName   = "worker_response_queue"
+	defaultCORSAllowedOrigins  = "http://localhost:3000,http://localhost:5173"
 )
 
 // NewConfig creates new Config instance
@@ -173,6 +182,18 @@ func NewConfig() *Config {
 	dumpStr := os.Getenv("DUMP")
 	dump := dumpStr == "true"
 
+	corsAllowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if corsAllowedOrigins == "" {
+		log.Warnf("CORS_ALLOWED_ORIGINS is not set. Using default value %s", defaultCORSAllowedOrigins)
+		corsAllowedOrigins = defaultCORSAllowedOrigins
+	}
+	corsAllowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == "true"
+
+	if corsAllowCredentials && corsAllowedOrigins == "*" {
+		log.Panicf(`CORS_ALLOWED_ORIGINS=* and CORS_ALLOW_CREDENTIALS=true cannot be set at the same time.
+More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials`)
+	}
+
 	return &Config{
 		DB: DBConfig{
 			Host:     dbHost,
@@ -192,6 +213,10 @@ func NewConfig() *Config {
 			Port:              queuePort,
 			User:              queueUser,
 			Password:          queuePassword,
+		},
+		CORS: CORSConfig{
+			AllowedOrigins:   corsAllowedOrigins,
+			AllowCredentials: corsAllowCredentials,
 		},
 		FileStorageURL: fileStorageURL,
 		JWTSecretKey:   jwtSecretKey,

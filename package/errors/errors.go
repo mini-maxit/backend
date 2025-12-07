@@ -17,6 +17,8 @@ const (
 
 	CodeQueueNotConnected ErrorCode = "ERR_QUEUE_NOT_CONNECTED"
 
+	CodeCORSNotAllowed ErrorCode = "ERR_CORS_NOT_ALLOWED"
+
 	// Task errors
 	CodeTaskExists           ErrorCode = "ERR_TASK_EXISTS"
 	CodeTaskNotFound         ErrorCode = "ERR_TASK_NOT_FOUND"
@@ -280,6 +282,8 @@ var (
 	ErrEndBeforeStart = newServiceError(CodeEndBeforeStart, "End time cannot be before start time")
 
 	ErrQueueNotConnected = newServiceError(CodeQueueNotConnected, "Worker queue is not connected")
+
+	ErrCORSNotAllowed = newServiceError(CodeCORSNotAllowed, "CORS origin not allowed")
 )
 
 // This is a convenience wrapper around errors.Is from the standard library.
