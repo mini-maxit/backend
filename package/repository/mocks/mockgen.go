@@ -1629,6 +1629,20 @@ func (m *MockContestRepository) EXPECT() *MockContestRepositoryMockRecorder {
 	return m.recorder
 }
 
+// AddGroupToContest mocks base method.
+func (m *MockContestRepository) AddGroupToContest(db database.Database, contestID, groupID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddGroupToContest", db, contestID, groupID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddGroupToContest indicates an expected call of AddGroupToContest.
+func (mr *MockContestRepositoryMockRecorder) AddGroupToContest(db, contestID, groupID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddGroupToContest", reflect.TypeOf((*MockContestRepository)(nil).AddGroupToContest), db, contestID, groupID)
+}
+
 // AddTaskToContest mocks base method.
 func (m *MockContestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
 	m.ctrl.T.Helper()
@@ -1807,6 +1821,21 @@ func (mr *MockContestRepositoryMockRecorder) GetAllForCreator(db, creatorID, off
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCreator", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCreator), db, creatorID, offset, limit, sort)
 }
 
+// GetAssignableGroups mocks base method.
+func (m *MockContestRepository) GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableGroups", db, contestID)
+	ret0, _ := ret[0].([]models.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignableGroups indicates an expected call of GetAssignableGroups.
+func (mr *MockContestRepositoryMockRecorder) GetAssignableGroups(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableGroups", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableGroups), db, contestID)
+}
+
 // GetAssignableTasks mocks base method.
 func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error) {
 	m.ctrl.T.Helper()
@@ -1820,6 +1849,21 @@ func (m *MockContestRepository) GetAssignableTasks(db database.Database, contest
 func (mr *MockContestRepositoryMockRecorder) GetAssignableTasks(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableTasks), db, contestID)
+}
+
+// GetContestGroups mocks base method.
+func (m *MockContestRepository) GetContestGroups(db database.Database, contestID int64) ([]models.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestGroups", db, contestID)
+	ret0, _ := ret[0].([]models.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestGroups indicates an expected call of GetContestGroups.
+func (mr *MockContestRepositoryMockRecorder) GetContestGroups(db, contestID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestGroups", reflect.TypeOf((*MockContestRepository)(nil).GetContestGroups), db, contestID)
 }
 
 // GetContestTask mocks base method.
@@ -2079,6 +2123,20 @@ func (m *MockContestRepository) IsUserParticipant(db database.Database, contestI
 func (mr *MockContestRepositoryMockRecorder) IsUserParticipant(db, contestID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUserParticipant", reflect.TypeOf((*MockContestRepository)(nil).IsUserParticipant), db, contestID, userID)
+}
+
+// RemoveGroupFromContest mocks base method.
+func (m *MockContestRepository) RemoveGroupFromContest(db database.Database, contestID, groupID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveGroupFromContest", db, contestID, groupID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveGroupFromContest indicates an expected call of RemoveGroupFromContest.
+func (mr *MockContestRepositoryMockRecorder) RemoveGroupFromContest(db, contestID, groupID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveGroupFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveGroupFromContest), db, contestID, groupID)
 }
 
 // UpdateRegistrationRequestStatus mocks base method.

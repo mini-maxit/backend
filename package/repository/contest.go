@@ -79,6 +79,14 @@ type ContestRepository interface {
 	// GetContestTask retrieves the ContestTask relationship for validation
 	GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error)
 	GetTaskContests(db database.Database, taskID int64) ([]int64, error)
+	// AddGroupToContest adds a group as a participant group to a contest
+	AddGroupToContest(db database.Database, contestID, groupID int64) error
+	// RemoveGroupFromContest removes a group from a contest's participant groups
+	RemoveGroupFromContest(db database.Database, contestID, groupID int64) error
+	// GetContestGroups retrieves all groups assigned to a contest
+	GetContestGroups(db database.Database, contestID int64) ([]models.Group, error)
+	// GetAssignableGroups retrieves all groups NOT assigned to a contest
+	GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error)
 }
 
 type contestRepository struct{}
@@ -954,6 +962,54 @@ func (cr *contestRepository) GetWithCreator(db database.Database, contestID int6
 	}
 
 	return &contest, &creator, nil
+}
+
+func (cr *contestRepository) AddGroupToContest(db database.Database, contestID, groupID int64) error {
+	tx := db.GetInstance()
+	participantGroup := &models.ContestParticipantGroup{
+		ContestID: contestID,
+		GroupID:   groupID,
+	}
+	err := tx.Create(participantGroup).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cr *contestRepository) RemoveGroupFromContest(db database.Database, contestID, groupID int64) error {
+	tx := db.GetInstance()
+	err := tx.Where("contest_id = ? AND group_id = ?", contestID, groupID).Delete(&models.ContestParticipantGroup{}).Error
+	return err
+}
+
+func (cr *contestRepository) GetContestGroups(db database.Database, contestID int64) ([]models.Group, error) {
+	tx := db.GetInstance()
+	var groups []models.Group
+	err := tx.Model(&models.Group{}).
+		Joins(fmt.Sprintf("JOIN %s ON contest_participant_groups.group_id = groups.id", database.ResolveTableName(tx, &models.ContestParticipantGroup{}))).
+		Where("contest_participant_groups.contest_id = ?", contestID).
+		Find(&groups).Error
+	if err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+func (cr *contestRepository) GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error) {
+	tx := db.GetInstance()
+	var groups []models.Group
+	err := tx.Model(&models.Group{}).
+		Where("id NOT IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.ContestParticipantGroup{})).
+				Select("group_id").
+				Where("contest_id = ?", contestID),
+		).
+		Find(&groups).Error
+	if err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func NewContestRepository() ContestRepository {

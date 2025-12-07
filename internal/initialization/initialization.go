@@ -113,7 +113,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		accessControlService,
 	)
 
-	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, accessControlService, taskService)
+	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, groupRepository, accessControlService, taskService)
 	userService := service.NewUserService(userRepository, contestService)
 	groupService := service.NewGroupService(groupRepository, userRepository, userService)
 	langService := service.NewLanguageService(langRepository)

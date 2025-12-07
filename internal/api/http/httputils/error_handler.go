@@ -120,6 +120,11 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	// Group errors
 	case errors.CodeGroupNotFound:
 		return http.StatusNotFound
+	// Contest group assignment errors
+	case errors.CodeGroupAlreadyAssignedToContest:
+		return http.StatusConflict
+	case errors.CodeGroupNotAssignedToContest:
+		return http.StatusBadRequest
 
 	// Pagination errors
 	case errors.CodeInvalidLimitParam, errors.CodeInvalidOffsetParam:

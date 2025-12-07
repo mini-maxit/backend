@@ -128,6 +128,10 @@ const (
 
 	// Internal/unknown error
 	CodeInternalError ErrorCode = "ERR_INTERNAL_ERROR"
+
+	// Contest group assignment errors
+	CodeGroupAlreadyAssignedToContest ErrorCode = "ERR_GROUP_ALREADY_ASSIGNED_TO_CONTEST"
+	CodeGroupNotAssignedToContest     ErrorCode = "ERR_GROUP_NOT_ASSIGNED_TO_CONTEST"
 )
 
 // ServiceError is a custom error type for service layer errors.
@@ -282,6 +286,10 @@ var (
 	ErrEndBeforeStart = newServiceError(CodeEndBeforeStart, "End time cannot be before start time")
 
 	ErrQueueNotConnected = newServiceError(CodeQueueNotConnected, "Worker queue is not connected")
+
+	// Contest group assignment errors
+	ErrGroupAlreadyAssignedToContest = newServiceError(CodeGroupAlreadyAssignedToContest, "Group is already assigned to the contest")
+	ErrGroupNotAssignedToContest     = newServiceError(CodeGroupNotAssignedToContest, "Group is not assigned to the contest")
 
 	ErrCORSNotAllowed = newServiceError(CodeCORSNotAllowed, "CORS origin not allowed")
 )

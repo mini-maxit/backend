@@ -46,7 +46,7 @@ func (gr *groupRepository) Create(db database.Database, group *models.Group) (in
 func (gr *groupRepository) Get(db database.Database, groupID int64) (*models.Group, error) {
 	tx := db.GetInstance()
 	var group models.Group
-	err := tx.Where("id = ?", groupID).Preload("Tasks").Preload("Users").First(&group).Error
+	err := tx.Where("id = ?", groupID).Preload("Users").First(&group).Error
 	if err != nil {
 		return nil, err
 	}
