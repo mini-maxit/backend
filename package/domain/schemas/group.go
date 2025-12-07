@@ -27,8 +27,3 @@ type CreateGroup struct {
 type EditGroup struct {
 	Name *string `json:"name,omitempty" validate:"gte=3,lte=50"`
 }
-
-type ContestGroupsInfo struct {
-	Assigned   []Group `json:"assigned"`
-	Assignable []Group `json:"assignable"`
-}

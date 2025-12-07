@@ -1712,10 +1712,26 @@ func TestContestService_AddGroupToContest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		gr.EXPECT().Get(db, groupID).Return(&models.Group{ID: groupID}, nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
 		cr.EXPECT().AddGroupToContest(db, contestID, groupID).Return(nil).Times(1)
 
 		err := cs.AddGroupToContest(db, currentUser, contestID, groupID)
 		require.NoError(t, err)
+	})
+
+	t.Run("group already assigned", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(1)
+		groupID := int64(5)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		gr.EXPECT().Get(db, groupID).Return(&models.Group{ID: groupID}, nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID}}, nil).Times(1)
+
+		err := cs.AddGroupToContest(db, currentUser, contestID, groupID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrGroupAlreadyAssignedToContest)
 	})
 }
 
@@ -1753,10 +1769,25 @@ func TestContestService_RemoveGroupFromContest(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID}}, nil).Times(1)
 		cr.EXPECT().RemoveGroupFromContest(db, contestID, groupID).Return(nil).Times(1)
 
 		err := cs.RemoveGroupFromContest(db, currentUser, contestID, groupID)
 		require.NoError(t, err)
+	})
+
+	t.Run("group not assigned", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(1)
+		groupID := int64(5)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
+
+		err := cs.RemoveGroupFromContest(db, currentUser, contestID, groupID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrGroupNotAssignedToContest)
 	})
 }
 

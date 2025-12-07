@@ -1147,6 +1147,17 @@ func (cs *contestService) AddGroupToContest(db database.Database, currentUser *s
 		return err
 	}
 
+	// Check if group is already assigned to the contest
+	assignedGroups, err := cs.contestRepository.GetContestGroups(db, contestID)
+	if err != nil {
+		return err
+	}
+	for _, g := range assignedGroups {
+		if g.ID == groupID {
+			return errors.ErrGroupAlreadyAssignedToContest
+		}
+	}
+
 	// Add the group to the contest
 	return cs.contestRepository.AddGroupToContest(db, contestID, groupID)
 }
@@ -1156,6 +1167,22 @@ func (cs *contestService) RemoveGroupFromContest(db database.Database, currentUs
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
+	}
+
+	// Ensure the group is currently assigned to the contest
+	assignedGroups, err := cs.contestRepository.GetContestGroups(db, contestID)
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, g := range assignedGroups {
+		if g.ID == groupID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.ErrGroupNotAssignedToContest
 	}
 
 	// Remove the group from the contest
