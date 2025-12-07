@@ -194,7 +194,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Len(t, result.Assigned, 0)
-		assert.Len(t, result.Assignable, 0)
+		assert.Empty(t, result.Assigned)
+		assert.Empty(t, result.Assignable)
 	})
 }
