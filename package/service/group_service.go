@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -37,6 +38,7 @@ type groupService struct {
 	userRepository       repository.UserRepository
 	userService          UserService
 	accessControlService AccessControlService
+	logger               *zap.SugaredLogger
 }
 
 func (gs *groupService) Create(db database.Database, currentUser schemas.User, group *schemas.Group) (int64, error) {
@@ -340,5 +342,6 @@ func NewGroupService(
 		userRepository:       userRepository,
 		userService:          userService,
 		accessControlService: accessControlService,
+		logger:               utils.NewNamedLogger("group_service"),
 	}
 }
