@@ -281,7 +281,7 @@ func TestGetCurrentUser_PanicWhenMissing(t *testing.T) {
 }
 
 func TestGetDatabase(t *testing.T) {
-	db := testutils.MockDatabase{}
+	db := &testutils.MockDatabase{}
 	req := httptest.NewRequest(http.MethodGet, "/db", nil)
 	ctx := context.WithValue(req.Context(), DatabaseKey, db)
 	req = req.WithContext(ctx)

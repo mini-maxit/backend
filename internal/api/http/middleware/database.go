@@ -27,15 +27,16 @@ func DatabaseMiddleware(next http.Handler, db database.Database) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		session := db.NewSession()
-		tx, err := session.BeginTransaction()
+		err := session.BeginTransaction()
 		if err != nil {
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+tx.Error.Error())
+			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction."+err.Error())
 			return
 		}
 		ctx = context.WithValue(ctx, httputils.DatabaseKey, session)
 		rWithDatabase := r.WithContext(ctx)
 		wrappedWriter := &ResponseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		defer func() {
+			tx := session.GetInstance()
 			if session.ShouldRollback() {
 				tx.Rollback()
 			} else {

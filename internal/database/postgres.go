@@ -54,17 +54,17 @@ func (p *PostgresDB) NewSession() Database {
 	return &PostgresDB{db: p.db.Session(&gorm.Session{}), logger: p.logger}
 }
 
-func (p *PostgresDB) BeginTransaction() (*gorm.DB, error) {
+func (p *PostgresDB) BeginTransaction() error {
 	if p.tx != nil {
-		return p.tx, nil
+		return nil
 	}
 	tx := p.db.Begin()
 	if tx.Error != nil {
 		p.logger.Errorf("Failed to start transaction: %s", tx.Error.Error())
-		return nil, tx.Error
+		return tx.Error
 	}
 	p.tx = tx
-	return tx, nil
+	return nil
 }
 
 func (p *PostgresDB) ShouldRollback() bool {

@@ -10,7 +10,7 @@ import (
 )
 
 func dump(db database.Database, log *zap.SugaredLogger, authService service.AuthService, userRepository repository.UserRepository) {
-	_, err := db.BeginTransaction()
+	err := db.BeginTransaction()
 	if err != nil {
 		log.Warnf("Failed to connect to database to init dump: %s", err.Error())
 	}

@@ -168,7 +168,7 @@ func (ql *listener) processMessage(msg amqp.Delivery) {
 	ql.logger.Infof("Received message: %s of type %s", queueMessage.MessageID, queueMessage.Type)
 
 	session := ql.database.NewSession()
-	_, err = session.BeginTransaction()
+	err = session.BeginTransaction()
 	if err != nil {
 		ql.logger.Errorf("Failed to begin transaction: %s", err)
 		_ = msg.Nack(false, false)

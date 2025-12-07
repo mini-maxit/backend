@@ -6,25 +6,30 @@ import (
 )
 
 type MockDatabase struct {
-	invalid bool
+	database.Database
+	invalid   bool
+	txStarted bool
 }
 
-func (db MockDatabase) BeginTransaction() (*gorm.DB, error) {
+func (db *MockDatabase) BeginTransaction() error {
 	if db.invalid {
-		return nil, gorm.ErrInvalidDB
+		return gorm.ErrInvalidDB
 	}
-	return &gorm.DB{}, nil
+	db.txStarted = true
+	return nil
 }
 
 func (db MockDatabase) NewSession() database.Database {
 	return &MockDatabase{}
 }
 
-func (db MockDatabase) Commit() error {
+func (db *MockDatabase) Commit() error {
+	db.txStarted = false
 	return nil
 }
 
-func (db MockDatabase) Rollback() {
+func (db *MockDatabase) Rollback() {
+	db.txStarted = false
 }
 
 func (db MockDatabase) ShouldRollback() bool {

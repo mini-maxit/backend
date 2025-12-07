@@ -32,11 +32,6 @@ func JWTValidationMiddleware(next http.Handler, db database.Database, jwtService
 		}
 
 		session := db.NewSession()
-		_, err := session.BeginTransaction()
-		if err != nil {
-			httputils.ReturnError(w, http.StatusInternalServerError, "Failed to start transaction. "+err.Error())
-			return
-		}
 
 		tokenResponse, err := jwtService.AuthenticateToken(session, token)
 		if err != nil {
