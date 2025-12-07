@@ -84,9 +84,9 @@ func (gs *groupService) Delete(db database.Database, currentUser schemas.User, g
 		return err
 	}
 
-	// Check if user has manage permission (owner or manager can delete)
+	// Check if user has manage permission (owner can delete)
 	if currentUser.Role != types.UserRoleAdmin {
-		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionManage)
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionOwner)
 		if err != nil {
 			return err
 		}

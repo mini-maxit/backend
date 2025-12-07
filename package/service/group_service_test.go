@@ -77,7 +77,7 @@ func TestDeleteGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: 1,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionManage).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionOwner).Return(errors.ErrForbidden).Times(1)
 		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
@@ -89,7 +89,7 @@ func TestDeleteGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: 1,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionManage).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionOwner).Return(errors.ErrForbidden).Times(1)
 		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
