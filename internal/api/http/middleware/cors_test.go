@@ -49,6 +49,7 @@ func TestCORSMiddleware(t *testing.T) {
 				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
 				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
 				"Access-Control-Allow-Credentials": "true",
+				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
 			},
 		},
 		{
@@ -63,6 +64,7 @@ func TestCORSMiddleware(t *testing.T) {
 			expectedHeaders: map[string]string{
 				"Access-Control-Allow-Origin":      "http://localhost:5173",
 				"Access-Control-Allow-Credentials": "true",
+				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
 			},
 		},
 		{
@@ -84,8 +86,22 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowedOrigins:   "http://localhost:3000",
 				AllowCredentials: true,
 			},
-			expectedStatus:  http.StatusForbidden,
+			expectedStatus:  http.StatusOK,
 			expectedHeaders: map[string]string{},
+		},
+		{
+			name:   "Origin with whitespace in allowed list",
+			method: http.MethodGet,
+			origin: "http://localhost:3000",
+			corsConfig: &config.CORSConfig{
+				AllowedOrigins:   "http://localhost:3000 , http://localhost:5173",
+				AllowCredentials: true,
+			},
+			expectedStatus: http.StatusOK,
+			expectedHeaders: map[string]string{
+				"Access-Control-Allow-Origin":      "http://localhost:3000",
+				"Access-Control-Allow-Credentials": "true",
+			},
 		},
 	}
 

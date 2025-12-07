@@ -33,7 +33,7 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 				return
 			}
 		} else {
-			httputils.ReturnServiceError(w, errors.ErrCORSMissingOrigin)
+			next.ServeHTTP(w, r)
 			return
 		}
 
