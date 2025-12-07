@@ -42,7 +42,7 @@ type GroupRouteImpl struct {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.IDResponse]
-//	@Router			/groups/ [post]
+//	@Router			/groups-management/groups [post]
 func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -91,7 +91,7 @@ func (gr *GroupRouteImpl) CreateGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[schemas.Group]
-//	@Router			/groups/{id} [get]
+//	@Router			/groups-management/groups/{id} [get]
 func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -132,7 +132,7 @@ func (gr *GroupRouteImpl) GetGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.Group]
-//	@Router			/groups/ [get]
+//	@Router			/groups-management/groups [get]
 func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -167,7 +167,7 @@ func (gr *GroupRouteImpl) GetAllGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[schemas.Group]
-//	@Router			/groups/{id} [put]
+//	@Router			/groups-management/groups/{id} [put]
 func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -218,7 +218,7 @@ func (gr *GroupRouteImpl) EditGroup(w http.ResponseWriter, r *http.Request) {
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/groups/{id}/users [post]
+//	@Router			/groups-management/groups/{id}/users [post]
 func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -269,7 +269,7 @@ func (gr *GroupRouteImpl) AddUsersToGroup(w http.ResponseWriter, r *http.Request
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/groups/{id}/users [delete]
+//	@Router			/groups-management/groups/{id}/users [delete]
 func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -318,7 +318,7 @@ func (gr *GroupRouteImpl) DeleteUsersFromGroup(w http.ResponseWriter, r *http.Re
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.User]
-//	@Router			/groups/{id}/users [get]
+//	@Router			/groups-management/groups/{id}/users [get]
 func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -350,7 +350,7 @@ func (gr *GroupRouteImpl) GetGroupUsers(w http.ResponseWriter, r *http.Request) 
 }
 
 func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/groups", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			groupRoute.CreateGroup(w, r)
@@ -361,7 +361,7 @@ func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/groups/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			groupRoute.GetGroup(w, r)
@@ -372,7 +372,7 @@ func RegisterGroupRoutes(mux *mux.Router, groupRoute GroupRoute) {
 		}
 	})
 
-	mux.HandleFunc("/{id}/users", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/groups/{id}/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			groupRoute.AddUsersToGroup(w, r)
