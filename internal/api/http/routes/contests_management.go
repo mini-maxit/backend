@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -735,14 +736,14 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 //	@Accept			json
 //	@Produce		json
 //	@Param			id			path		int		true	"Contest ID"
-//	@Param			groupId		path		int		true	"Group ID"
+//	@Param			body		body		[]int	true	"Group IDs"
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		405			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests-management/contests/{id}/groups/{groupId} [post]
+//	@Router			/contests-management/contests/{id}/groups [post]
 func (cr *contestsManagementRouteImpl) AddGroupToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -760,27 +761,31 @@ func (cr *contestsManagementRouteImpl) AddGroupToContest(w http.ResponseWriter, 
 		return
 	}
 
-	groupStr := httputils.GetPathValue(r, "groupId")
-	if groupStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+	// Parse group IDs from request body
+	var req struct {
+		GroupIDs []int64 `json:"groupIds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	groupID, err := strconv.ParseInt(groupStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+	if len(req.GroupIDs) == 0 {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group IDs cannot be empty")
 		return
 	}
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = cr.contestService.AddGroupToContest(db, currentUser, contestID, groupID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
+	// Batch add groups
+	for _, groupID := range req.GroupIDs {
+		if err := cr.contestService.AddGroupToContest(db, currentUser, contestID, groupID); err != nil {
+			httputils.HandleServiceError(w, err, db, cr.logger)
+			return
+		}
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Group added to contest successfully"))
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Groups added to contest successfully"))
 }
 
 // RemoveGroupFromContest godoc
@@ -790,14 +795,14 @@ func (cr *contestsManagementRouteImpl) AddGroupToContest(w http.ResponseWriter, 
 //	@Description	Remove a group from contest participants (only accessible by contest collaborators with edit permission)
 //	@Produce		json
 //	@Param			id			path		int		true	"Contest ID"
-//	@Param			groupId		path		int		true	"Group ID"
+//	@Param			body		body		[]int	true	"Group IDs"
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		405			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests-management/contests/{id}/groups/{groupId} [delete]
+//	@Router			/contests-management/contests/{id}/groups [delete]
 func (cr *contestsManagementRouteImpl) RemoveGroupFromContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -815,27 +820,31 @@ func (cr *contestsManagementRouteImpl) RemoveGroupFromContest(w http.ResponseWri
 		return
 	}
 
-	groupStr := httputils.GetPathValue(r, "groupId")
-	if groupStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Group ID cannot be empty")
+	// Parse group IDs from request body
+	var req struct {
+		GroupIDs []int64 `json:"groupIds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	groupID, err := strconv.ParseInt(groupStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid group ID")
+	if len(req.GroupIDs) == 0 {
+		httputils.ReturnError(w, http.StatusBadRequest, "Group IDs cannot be empty")
 		return
 	}
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = cr.contestService.RemoveGroupFromContest(db, currentUser, contestID, groupID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
+	// Batch remove groups
+	for _, groupID := range req.GroupIDs {
+		if err := cr.contestService.RemoveGroupFromContest(db, currentUser, contestID, groupID); err != nil {
+			httputils.HandleServiceError(w, err, db, cr.logger)
+			return
+		}
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Group removed from contest successfully"))
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Groups removed from contest successfully"))
 }
 
 // GetContestGroups godoc
@@ -1015,11 +1024,13 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
 
 	// Group management endpoints
-	mux.HandleFunc("/contests/{id}/groups", route.GetContestGroups)
 	mux.HandleFunc("/contests/{id}/groups/assignable", route.GetAssignableGroups)
-	mux.HandleFunc("/contests/{id}/groups/{groupId}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/contests/{id}/groups", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
+		case http.MethodGet:
+			route.GetContestGroups(w, r)
 		case http.MethodPost:
+
 			route.AddGroupToContest(w, r)
 		case http.MethodDelete:
 			route.RemoveGroupFromContest(w, r)
