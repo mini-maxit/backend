@@ -104,7 +104,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.PathPrefix("/tasks").Handler(taskMux)
 	secureMux.PathPrefix("/submissions").Handler(subbmissionMux)
 	secureMux.PathPrefix("/users/").Handler(http.StripPrefix("/users", userMux))
-	secureMux.PathPrefix("/groups/").Handler(http.StripPrefix("/groups", groupMux))
+	secureMux.PathPrefix("/groups-management/").Handler(http.StripPrefix("/groups-management", groupMux))
 	secureMux.PathPrefix("/contests-management/").Handler(http.StripPrefix("/contests-management", contestManagementMux))
 	secureMux.PathPrefix("/contests").Handler(contestMux)
 	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
