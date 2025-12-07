@@ -251,15 +251,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-array_Group:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Group'
-        type: array
-      ok:
-        type: boolean
-    type: object
   APIResponse-array_LanguageConfig:
     properties:
       data:
@@ -1903,6 +1894,182 @@ paths:
       summary: Edit a contest
       tags:
       - contests-management
+  /contests-management/contests/{id}/groups:
+    delete:
+      description: Remove a group from contest participants (only accessible by contest
+        collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Group IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Remove a group from a contest
+      tags:
+      - contests-management
+    get:
+      description: Get groups assigned to a contest and groups that can be assigned
+        (only accessible by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get contest groups information
+      tags:
+      - contests-management
+    post:
+      consumes:
+      - application/json
+      description: Add a group as participants to a specific contest (only accessible
+        by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Group IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Add a group to a contest
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/groups/assignable:
+    get:
+      description: Get groups that can be assigned to a specific contest (only accessible
+        by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get assignable groups for a contest
+      tags:
+      - contests-management
   /contests-management/contests/{id}/registration-requests:
     get:
       description: Get all pending registration requests for a specific contest (only
@@ -2672,7 +2839,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_Group'
+            $ref: '#/definitions/APIResponse-Group'
         "400":
           description: Bad Request
           schema:
