@@ -14,16 +14,27 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		// Determine allowed origin
-		allowedOrigin := cfg.AllowedOrigins
-		if cfg.AllowedOrigins != "*" && origin != "" {
+		allowedOrigin := ""
+		if cfg.AllowedOrigins == "*" {
+			allowedOrigin = "*"
+		} else if origin != "" {
 			// Check if the origin is in the allowed list
-			allowedOrigins := strings.SplitSeq(cfg.AllowedOrigins, ",")
-			for allowed := range allowedOrigins {
+			allowedOrigins := strings.Split(cfg.AllowedOrigins, ",")
+			for _, allowed := range allowedOrigins {
 				if strings.TrimSpace(allowed) == origin {
 					allowedOrigin = origin
 					break
 				}
 			}
+			if allowedOrigin == "" {
+				// Don't set CORS headers for disallowed origins
+				next.ServeHTTP(w, r)
+				return
+			}
+		} else {
+			// No origin header and not wildcard, do not set CORS headers
+			next.ServeHTTP(w, r)
+			return
 		}
 
 		// Set CORS headers
