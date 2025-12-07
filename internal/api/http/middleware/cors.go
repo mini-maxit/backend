@@ -30,16 +30,17 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(cfg.AllowCredentials))
-		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		// Handle preflight OPTIONS request
 		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Max-Age", "86400")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
+		// For non-preflight requests, expose headers
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
 		// Pass to next handler
 		next.ServeHTTP(w, r)
 	})

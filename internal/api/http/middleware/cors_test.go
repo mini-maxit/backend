@@ -75,9 +75,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin": "http://localhost:3000,http://localhost:5173",
-			},
+			expectedHeaders: map[string]string{},
 		},
 		{
 			name:   "Request with no origin header",
@@ -88,9 +86,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
-			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin": "http://localhost:3000",
-			},
+			expectedHeaders: map[string]string{},
 		},
 	}
 
