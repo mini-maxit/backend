@@ -58,6 +58,8 @@ func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 //nolint:gocyclo // This function intentionally maps all error codes exhaustively
 func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	switch code {
+	case errors.CodeCORSMissing, errors.CodeCORSNotAllowed:
+		return http.StatusForbidden
 	// Database errors - 500
 	case errors.CodeDatabaseConnection:
 		return http.StatusInternalServerError
@@ -190,8 +192,8 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	}
 }
 
-// returnServiceError writes a ServiceError as JSON response
-func returnServiceError(w http.ResponseWriter, serviceErr *errors.ServiceError) {
+// ReturnServiceError writes a ServiceError as JSON response
+func ReturnServiceError(w http.ResponseWriter, serviceErr *errors.ServiceError) {
 	statusCode := errorCodeToHTTPStatus(serviceErr.Code)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -235,7 +237,7 @@ func HandleServiceError(w http.ResponseWriter, err error, db database.Database, 
 	}
 
 	// Return the error response with error code
-	returnServiceError(w, serviceErr)
+	ReturnServiceError(w, serviceErr)
 }
 
 // HandleValidationError handles validation errors and returns appropriate HTTP responses

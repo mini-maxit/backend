@@ -5,7 +5,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/config"
+	"github.com/mini-maxit/backend/package/errors"
 )
 
 // CORSMiddleware handles Cross-Origin Resource Sharing (CORS) headers
@@ -19,21 +21,19 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 			allowedOrigin = "*"
 		} else if origin != "" {
 			// Check if the origin is in the allowed list
-			allowedOrigins := strings.Split(cfg.AllowedOrigins, ",")
-			for _, allowed := range allowedOrigins {
+			allowedOrigins := strings.SplitSeq(cfg.AllowedOrigins, ",")
+			for allowed := range allowedOrigins {
 				if strings.TrimSpace(allowed) == origin {
 					allowedOrigin = origin
 					break
 				}
 			}
 			if allowedOrigin == "" {
-				// Don't set CORS headers for disallowed origins
-				next.ServeHTTP(w, r)
+				httputils.ReturnServiceError(w, errors.ErrCORSNotAllowed)
 				return
 			}
 		} else {
-			// No origin header and not wildcard, do not set CORS headers
-			next.ServeHTTP(w, r)
+			httputils.ReturnServiceError(w, errors.ErrCORSMissingOrigin)
 			return
 		}
 

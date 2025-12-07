@@ -243,7 +243,7 @@ func TestReturnError(t *testing.T) {
 
 func TestReturnServiceError(t *testing.T) {
 	w := httptest.NewRecorder()
-	returnServiceError(w, errors.ErrUserAlreadyExists)
+	ReturnServiceError(w, errors.ErrUserAlreadyExists)
 
 	if w.Code != http.StatusConflict {
 		t.Fatalf("expected status %d, got %d", http.StatusConflict, w.Code)

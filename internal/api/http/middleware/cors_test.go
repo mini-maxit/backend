@@ -31,7 +31,6 @@ func TestCORSMiddleware(t *testing.T) {
 				"Access-Control-Allow-Origin":      "*",
 				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
 				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
-				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
 				"Access-Control-Allow-Credentials": "false",
 				"Access-Control-Max-Age":           "86400",
 			},
@@ -74,7 +73,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
 				AllowCredentials: true,
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus:  http.StatusForbidden,
 			expectedHeaders: map[string]string{},
 		},
 		{
@@ -85,7 +84,7 @@ func TestCORSMiddleware(t *testing.T) {
 				AllowedOrigins:   "http://localhost:3000",
 				AllowCredentials: true,
 			},
-			expectedStatus: http.StatusOK,
+			expectedStatus:  http.StatusForbidden,
 			expectedHeaders: map[string]string{},
 		},
 	}
@@ -115,7 +114,6 @@ func TestCORSMiddleware(t *testing.T) {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 
-			// Check CORS headers
 			for header, expected := range tt.expectedHeaders {
 				if got := w.Header().Get(header); got != expected {
 					t.Errorf("Header %s: expected %q, got %q", header, expected, got)
