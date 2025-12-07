@@ -12,7 +12,7 @@ import (
 func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		
+
 		// Determine allowed origin
 		allowedOrigin := cfg.AllowedOrigins
 		if cfg.AllowedOrigins != "*" && origin != "" {
@@ -25,7 +25,7 @@ func CORSMiddleware(next http.Handler, cfg *config.CORSConfig) http.Handler {
 				}
 			}
 		}
-		
+
 		// Set CORS headers
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")

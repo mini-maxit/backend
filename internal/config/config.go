@@ -58,7 +58,7 @@ const (
 	defaultAPIRefreshTokenPath = "/api/v1/auth/refresh"
 	defaultQueueName           = "worker_queue"
 	defaultResponseQueueName   = "worker_response_queue"
-	defaultCORSAllowedOrigins  = "*"
+	defaultCORSAllowedOrigins  = "http://localhost:3000,http://localhost:5173"
 )
 
 // NewConfig creates new Config instance

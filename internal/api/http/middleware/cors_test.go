@@ -1,10 +1,11 @@
-package middleware
+package middleware_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/mini-maxit/backend/internal/api/http/middleware"
 	"github.com/mini-maxit/backend/internal/config"
 )
 
@@ -101,7 +102,7 @@ func TestCORSMiddleware(t *testing.T) {
 			})
 
 			// Wrap with CORS middleware
-			handler := CORSMiddleware(testHandler, tt.corsConfig)
+			handler := middleware.CORSMiddleware(testHandler, tt.corsConfig)
 
 			// Create test request
 			req := httptest.NewRequest(tt.method, "/test", nil)
