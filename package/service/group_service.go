@@ -66,8 +66,7 @@ func (gs *groupService) Create(db database.Database, currentUser schemas.User, g
 	// Grant owner access to the creator
 	err = gs.accessControlService.GrantOwnerAccess(db, types.ResourceTypeGroup, groupID, currentUser.ID)
 	if err != nil {
-		// Log the error but don't fail the operation
-		// The creator can still manage the group through the CreatedBy field
+		return -1, err
 	}
 
 	return groupID, nil
