@@ -23,11 +23,13 @@ func TestCreateGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		acs.EXPECT().GrantOwnerAccess(gomock.Any(), types.ResourceTypeGroup, int64(1), currentUser.ID).Return(nil).Times(1)
 		groupID, err := gs.Create(db, *currentUser, &schemas.Group{
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
@@ -52,7 +54,8 @@ func TestDeleteGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -61,14 +64,20 @@ func TestDeleteGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: currentUser.ID,
 		}
-		gr.EXPECT().Delete(gomock.Any(), group.ID).Return(nil).Times(1)
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
+		gr.EXPECT().Delete(gomock.Any(), group.ID).Return(nil).Times(1)
 		err := gs.Delete(db, *currentUser, group.ID)
 		require.NoError(t, err)
 	})
 
 	t.Run("Not authorized student", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
+		gr.EXPECT().Get(gomock.Any(), int64(2)).Return(&models.Group{
+			ID:        int64(2),
+			Name:      "Test Group",
+			CreatedBy: 1,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionManage).Return(errors.ErrForbidden).Times(1)
 		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
@@ -80,6 +89,7 @@ func TestDeleteGroup(t *testing.T) {
 			Name:      "Test Group",
 			CreatedBy: 1,
 		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionManage).Return(errors.ErrForbidden).Times(1)
 		err := gs.Delete(db, *currentUser, 2)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
@@ -90,7 +100,8 @@ func TestGetAllGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
 	t.Run("No groups", func(t *testing.T) {
@@ -148,7 +159,8 @@ func TestGetGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -164,6 +176,12 @@ func TestGetGroup(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
+		gr.EXPECT().Get(gomock.Any(), int64(1)).Return(&models.Group{
+			ID:        1,
+			Name:      "Test Group",
+			CreatedBy: 3,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(1), currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		group, err := gs.Get(db, *currentUser, 1)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, group)
@@ -175,7 +193,8 @@ func TestAddUsersToGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -195,6 +214,12 @@ func TestAddUsersToGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID := int64(1) // Assuming the group ID is 1 for the test
 		user := &schemas.User{ID: 3}
+		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
+			ID:        groupID,
+			Name:      "Test Group",
+			CreatedBy: 4,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		err := gs.AddUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
@@ -205,7 +230,8 @@ func TestGetGroupUsers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: int64(1), Role: types.UserRoleAdmin}
@@ -225,20 +251,25 @@ func TestGetGroupUsers(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID := int64(1)
-		user := &schemas.User{ID: 3}
-		err := gs.AddUsers(db, *currentUser, groupID, []int64{user.ID})
-		require.ErrorIs(t, err, errors.ErrForbidden)
+		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
+			ID:        groupID,
+			Name:      "Test Group",
+			CreatedBy: 4,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		users, err := gs.GetUsers(db, *currentUser, groupID)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, users)
 	})
 }
+
 func TestEditGroup(t *testing.T) {
 	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	newGroupName := "Updated Group Name"
 	t.Run("Success", func(t *testing.T) {
@@ -283,6 +314,7 @@ func TestEditGroup(t *testing.T) {
 			CreatedBy: 1, // Assuming the admin user ID is 1
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, group.ID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		editInfo := &schemas.EditGroup{
 			Name: &newGroupName,
 		}
@@ -309,7 +341,8 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	gr := mock_repository.NewMockGroupRepository(ctrl)
-	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)))
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
 	t.Run("Success", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -330,7 +363,12 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 	t.Run("Not authorized student", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID := int64(1) // Assuming the group ID is 1 for the test
-
+		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
+			ID:        groupID,
+			Name:      "Test Group",
+			CreatedBy: 4,
+		}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		user := &schemas.User{ID: 3}
 		err := gs.DeleteUsers(db, *currentUser, groupID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -344,6 +382,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 			CreatedBy: 1, // Assuming the admin user ID is 1
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, group.ID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		user := &schemas.User{ID: 2}
 		err := gs.DeleteUsers(db, *currentUser, group.ID, []int64{user.ID})
 		require.ErrorIs(t, err, errors.ErrForbidden)

@@ -33,9 +33,10 @@ type GroupService interface {
 const defaultGroupSort = "created_at:desc"
 
 type groupService struct {
-	groupRepository repository.GroupRepository
-	userRepository  repository.UserRepository
-	userService     UserService
+	groupRepository      repository.GroupRepository
+	userRepository       repository.UserRepository
+	userService          UserService
+	accessControlService AccessControlService
 }
 
 func (gs *groupService) Create(db database.Database, currentUser schemas.User, group *schemas.Group) (int64, error) {
@@ -62,16 +63,19 @@ func (gs *groupService) Create(db database.Database, currentUser schemas.User, g
 		return -1, err
 	}
 
+	// Grant owner access to the creator
+	err = gs.accessControlService.GrantOwnerAccess(db, types.ResourceTypeGroup, groupID, currentUser.ID)
+	if err != nil {
+		// Log the error but don't fail the operation
+		// The creator can still manage the group through the CreatedBy field
+	}
+
 	return groupID, nil
 }
 
 func (gs *groupService) Delete(db database.Database, currentUser schemas.User, groupID int64) error {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return err
-	}
-
-	group, err := gs.groupRepository.Get(db, groupID)
+	// Check if group exists
+	_, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -79,8 +83,12 @@ func (gs *groupService) Delete(db database.Database, currentUser schemas.User, g
 		return err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return errors.ErrForbidden
+	// Check if user has manage permission (owner or manager can delete)
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionManage)
+		if err != nil {
+			return err
+		}
 	}
 
 	return gs.groupRepository.Delete(db, groupID)
@@ -92,11 +100,6 @@ func (gs *groupService) Edit(
 	groupID int64,
 	editInfo *schemas.EditGroup,
 ) (*schemas.Group, error) {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return nil, err
-	}
-
 	validate, err := utils.NewValidator()
 	if err != nil {
 		return nil, err
@@ -112,8 +115,13 @@ func (gs *groupService) Edit(
 		}
 		return nil, err
 	}
-	if currentUser.Role == types.UserRoleTeacher && model.CreatedBy != currentUser.ID {
-		return nil, errors.ErrForbidden
+
+	// Check if user has edit permission
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionEdit)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	gs.updateModel(model, editInfo)
@@ -165,11 +173,6 @@ func (gs *groupService) GetAll(
 }
 
 func (gs *groupService) Get(db database.Database, currentUser schemas.User, groupID int64) (*schemas.GroupDetailed, error) {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return nil, err
-	}
-
 	group, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -178,20 +181,19 @@ func (gs *groupService) Get(db database.Database, currentUser schemas.User, grou
 		return nil, err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, errors.ErrForbidden
+	// Check if user has edit permission (to view group details)
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionEdit)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return GroupToSchemaDetailed(group), nil
 }
 
 func (gs *groupService) AddUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return err
-	}
-
-	group, err := gs.groupRepository.Get(db, groupID)
+	_, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -199,8 +201,12 @@ func (gs *groupService) AddUsers(db database.Database, currentUser schemas.User,
 		return err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return errors.ErrForbidden
+	// Check if user has edit permission
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionEdit)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, userID := range userIDs {
@@ -226,12 +232,7 @@ func (gs *groupService) AddUsers(db database.Database, currentUser schemas.User,
 }
 
 func (gs *groupService) DeleteUsers(db database.Database, currentUser schemas.User, groupID int64, userIDs []int64) error {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return err
-	}
-
-	group, err := gs.groupRepository.Get(db, groupID)
+	_, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrGroupNotFound
@@ -239,8 +240,12 @@ func (gs *groupService) DeleteUsers(db database.Database, currentUser schemas.Us
 		return err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return errors.ErrForbidden
+	// Check if user has edit permission
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionEdit)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, userID := range userIDs {
@@ -266,12 +271,7 @@ func (gs *groupService) DeleteUsers(db database.Database, currentUser schemas.Us
 }
 
 func (gs *groupService) GetUsers(db database.Database, currentUser schemas.User, groupID int64) ([]schemas.User, error) {
-	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin, types.UserRoleTeacher})
-	if err != nil {
-		return nil, err
-	}
-
-	group, err := gs.groupRepository.Get(db, groupID)
+	_, err := gs.groupRepository.Get(db, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrGroupNotFound
@@ -279,8 +279,12 @@ func (gs *groupService) GetUsers(db database.Database, currentUser schemas.User,
 		return nil, err
 	}
 
-	if currentUser.Role == types.UserRoleTeacher && group.CreatedBy != currentUser.ID {
-		return nil, errors.ErrForbidden
+	// Check if user has edit permission
+	if currentUser.Role != types.UserRoleAdmin {
+		err = gs.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, &currentUser, types.PermissionEdit)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	users, err := gs.groupRepository.GetUsers(db, groupID)
@@ -330,10 +334,12 @@ func NewGroupService(
 	groupRepository repository.GroupRepository,
 	userRepository repository.UserRepository,
 	userService UserService,
+	accessControlService AccessControlService,
 ) GroupService {
 	return &groupService{
-		groupRepository: groupRepository,
-		userRepository:  userRepository,
-		userService:     userService,
+		groupRepository:      groupRepository,
+		userRepository:       userRepository,
+		userService:          userService,
+		accessControlService: accessControlService,
 	}
 }

@@ -23,6 +23,8 @@ func parseResourceType(r *http.Request) (types.ResourceType, bool) {
 		return types.ResourceTypeContest, true
 	case "tasks":
 		return types.ResourceTypeTask, true
+	case "groups":
+		return types.ResourceTypeGroup, true
 	default:
 		return types.ResourceType(resourceTypeStr), false
 	}
@@ -341,7 +343,7 @@ func NewAccessControlRoute(accessControlService service.AccessControlService) Ac
 
 func RegisterAccessControlRoutes(mux *mux.Router, route AccessControlRoute) {
 	// Configurable set of resource types; extend this slice to add more resources.
-	resourceTypes := []string{"contests", "tasks"}
+	resourceTypes := []string{"contests", "tasks", "groups"}
 	rtPattern := strings.Join(resourceTypes, "|")
 
 	// Generic collaborators collection route
