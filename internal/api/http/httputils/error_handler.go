@@ -58,7 +58,7 @@ func ReturnError(w http.ResponseWriter, statusCode int, message string) {
 //nolint:gocyclo // This function intentionally maps all error codes exhaustively
 func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	switch code {
-	case errors.CodeCORSMissing, errors.CodeCORSNotAllowed:
+	case errors.CodeCORSNotAllowed:
 		return http.StatusForbidden
 	// Database errors - 500
 	case errors.CodeDatabaseConnection:
