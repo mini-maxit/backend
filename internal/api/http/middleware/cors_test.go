@@ -12,16 +12,18 @@ func TestCORSMiddleware(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
+		origin         string
 		corsConfig     *config.CORSConfig
 		expectedStatus int
 		checkHeaders   map[string]string
 	}{
 		{
-			name:   "OPTIONS request returns 204 with default config",
+			name:   "OPTIONS request returns 204 with wildcard origin",
 			method: http.MethodOptions,
+			origin: "http://example.com",
 			corsConfig: &config.CORSConfig{
 				AllowedOrigins:   "*",
-				AllowCredentials: true,
+				AllowCredentials: false,
 			},
 			expectedStatus: http.StatusNoContent,
 			checkHeaders: map[string]string{
@@ -29,36 +31,64 @@ func TestCORSMiddleware(t *testing.T) {
 				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
 				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
 				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
-				"Access-Control-Allow-Credentials": "true",
+				"Access-Control-Allow-Credentials": "false",
 				"Access-Control-Max-Age":           "86400",
 			},
 		},
 		{
-			name:   "GET request passes through with custom origins",
+			name:   "GET request with specific allowed origin",
 			method: http.MethodGet,
+			origin: "http://localhost:3000",
 			corsConfig: &config.CORSConfig{
 				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
-				AllowCredentials: false,
-			},
-			expectedStatus: http.StatusOK,
-			checkHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "http://localhost:3000,http://localhost:5173",
-				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
-				"Access-Control-Allow-Credentials": "false",
-			},
-		},
-		{
-			name:   "POST request with credentials enabled",
-			method: http.MethodPost,
-			corsConfig: &config.CORSConfig{
-				AllowedOrigins:   "https://example.com",
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
 			checkHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "https://example.com",
+				"Access-Control-Allow-Origin":      "http://localhost:3000",
+				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
 				"Access-Control-Allow-Credentials": "true",
+			},
+		},
+		{
+			name:   "POST request with credentials and matching origin",
+			method: http.MethodPost,
+			origin: "http://localhost:5173",
+			corsConfig: &config.CORSConfig{
+				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
+				AllowCredentials: true,
+			},
+			expectedStatus: http.StatusOK,
+			checkHeaders: map[string]string{
+				"Access-Control-Allow-Origin":      "http://localhost:5173",
+				"Access-Control-Allow-Credentials": "true",
+			},
+		},
+		{
+			name:   "Request from non-allowed origin",
+			method: http.MethodGet,
+			origin: "http://evil.com",
+			corsConfig: &config.CORSConfig{
+				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
+				AllowCredentials: true,
+			},
+			expectedStatus: http.StatusOK,
+			checkHeaders: map[string]string{
+				"Access-Control-Allow-Origin": "http://localhost:3000,http://localhost:5173",
+			},
+		},
+		{
+			name:   "Request with no origin header",
+			method: http.MethodGet,
+			origin: "",
+			corsConfig: &config.CORSConfig{
+				AllowedOrigins:   "http://localhost:3000",
+				AllowCredentials: true,
+			},
+			expectedStatus: http.StatusOK,
+			checkHeaders: map[string]string{
+				"Access-Control-Allow-Origin": "http://localhost:3000",
 			},
 		},
 	}
@@ -75,6 +105,9 @@ func TestCORSMiddleware(t *testing.T) {
 
 			// Create test request
 			req := httptest.NewRequest(tt.method, "/test", nil)
+			if tt.origin != "" {
+				req.Header.Set("Origin", tt.origin)
+			}
 			w := httptest.NewRecorder()
 
 			// Execute request
