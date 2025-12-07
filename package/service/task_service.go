@@ -98,8 +98,7 @@ func (ts *taskService) Create(db database.Database, currentUser *schemas.User, t
 
 	// Automatically grant owner permission to the creator (immutable highest level)
 	if err := ts.accessControlService.GrantOwnerAccess(db, types.ResourceTypeTask, taskID, currentUser.ID); err != nil {
-		ts.logger.Warnf("Failed to grant owner permission: %v", err)
-		// Don't fail the creation if we can't add owner permission entry
+		return -1, err
 	}
 
 	return taskID, nil
