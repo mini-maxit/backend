@@ -111,6 +111,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-PaginatedResult-User:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-User'
+      ok:
+        type: boolean
+    type: object
   APIResponse-PaginatedResult-array_CreatedContest:
     properties:
       data:
@@ -122,13 +129,6 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/PaginatedResult-array_Task'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-array_User:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-array_User'
       ok:
         type: boolean
     type: object
@@ -703,6 +703,15 @@ definitions:
       pagination:
         $ref: '#/definitions/PaginationMetadata'
     type: object
+  PaginatedResult-User:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/User'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
   PaginatedResult-array_CreatedContest:
     properties:
       items:
@@ -717,15 +726,6 @@ definitions:
       items:
         items:
           $ref: '#/definitions/Task'
-        type: array
-      pagination:
-        $ref: '#/definitions/PaginationMetadata'
-    type: object
-  PaginatedResult-array_User:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/User'
         type: array
       pagination:
         $ref: '#/definitions/PaginationMetadata'
@@ -1240,12 +1240,71 @@ info:
   title: Mini-Maxit API
   version: 1.0.0
 paths:
-  /access-control/contests/{resource_id}/collaborators:
+  /access-control/resources/{resource_type}/{resource_id}/assignable:
     get:
-      description: Get all collaborators for a specific contest. Users with edit permission
-        or higher can see collaborators.
+      description: List users (teachers) who can be granted access for the given resource.
+        Only users with manage permission can view assignable users. Returned users
+        do not currently have any access entry for the resource.
       parameters:
-      - description: Contest ID
+      - description: Resource type (contests|tasks)
+        in: path
+        name: resource_type
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resource_id
+        required: true
+        type: integer
+      - description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort fields, e.g. 'id:asc,created_at:desc'
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-PaginatedResult-User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get assignable users for a resource
+      tags:
+      - access-control
+  /access-control/resources/{resource_type}/{resource_id}/collaborators:
+    get:
+      description: Get all collaborators for a specific resource. Users with edit
+        permission or higher can see collaborators.
+      parameters:
+      - description: Resource type (contests|tasks)
+        in: path
+        name: resource_type
+        required: true
+        type: string
+      - description: Resource ID
         in: path
         name: resource_id
         required: true
@@ -1273,16 +1332,22 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get collaborators for a contest
+      summary: Get collaborators for a resource
       tags:
       - access-control
     post:
       consumes:
       - application/json
-      description: Add a user as a collaborator to a contest with specified permissions
-        (edit or manage). Only users with manage permission can add collaborators.
+      description: Add a user as a collaborator to a resource (contest, task, etc.)
+        with specified permissions (edit or manage). Only users with manage permission
+        can add collaborators.
       parameters:
-      - description: Contest ID
+      - description: Resource type (contests|tasks)
+        in: path
+        name: resource_type
+        required: true
+        type: string
+      - description: Resource ID
         in: path
         name: resource_id
         required: true
@@ -1316,15 +1381,20 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Add a collaborator to a contest
+      summary: Add a collaborator to a resource
       tags:
       - access-control
-  /access-control/contests/{resource_id}/collaborators/{user_id}:
+  /access-control/resources/{resource_type}/{resource_id}/collaborators/{user_id}:
     delete:
-      description: Remove a user's collaborator access to a contest. Only users with
+      description: Remove a user's collaborator access to a resource. Only users with
         manage permission can remove collaborators. Cannot remove the creator.
       parameters:
-      - description: Contest ID
+      - description: Resource type (contests|tasks)
+        in: path
+        name: resource_type
+        required: true
+        type: string
+      - description: Resource ID
         in: path
         name: resource_id
         required: true
@@ -1357,16 +1427,21 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Remove a collaborator from a contest
+      summary: Remove a collaborator from a resource
       tags:
       - access-control
     put:
       consumes:
       - application/json
-      description: Update the permission level of a collaborator for a contest. Only
+      description: Update the permission level of a collaborator for a resource. Only
         users with manage permission can update collaborators.
       parameters:
-      - description: Contest ID
+      - description: Resource type (contests|tasks)
+        in: path
+        name: resource_type
+        required: true
+        type: string
+      - description: Resource ID
         in: path
         name: resource_id
         required: true
@@ -1405,175 +1480,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Update a contest collaborator's permission
-      tags:
-      - access-control
-  /access-control/tasks/{resource_id}/collaborators:
-    get:
-      description: Get all collaborators for a specific task. Users with edit permission
-        or higher can see collaborators.
-      parameters:
-      - description: Task ID
-        in: path
-        name: resource_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-Collaborator'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Get collaborators for a task
-      tags:
-      - access-control
-    post:
-      consumes:
-      - application/json
-      description: Add a user as a collaborator to a task with specified permissions
-        (edit or manage). Only users with manage permission can add collaborators.
-      parameters:
-      - description: Task ID
-        in: path
-        name: resource_id
-        required: true
-        type: integer
-      - description: Collaborator details
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/AddCollaborator'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ValidationErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Add a collaborator to a task
-      tags:
-      - access-control
-  /access-control/tasks/{resource_id}/collaborators/{user_id}:
-    delete:
-      description: Remove a user's collaborator access to a task. Only users with
-        manage permission can remove collaborators. Cannot remove the creator.
-      parameters:
-      - description: Task ID
-        in: path
-        name: resource_id
-        required: true
-        type: integer
-      - description: User ID
-        in: path
-        name: user_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Remove a collaborator from a task
-      tags:
-      - access-control
-    put:
-      consumes:
-      - application/json
-      description: Update the permission level of a collaborator for a task. Only
-        users with manage permission can update collaborators.
-      parameters:
-      - description: Task ID
-        in: path
-        name: resource_id
-        required: true
-        type: integer
-      - description: User ID
-        in: path
-        name: user_id
-        required: true
-        type: integer
-      - description: New permission
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/UpdateCollaborator'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ValidationErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/APIError'
-      summary: Update a task collaborator's permission
+      summary: Update a collaborator's permission for a resource
       tags:
       - access-control
   /auth/login:
@@ -3689,7 +3596,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_User'
+            $ref: '#/definitions/APIResponse-PaginatedResult-User'
         "405":
           description: Method Not Allowed
           schema:
