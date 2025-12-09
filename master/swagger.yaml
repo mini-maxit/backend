@@ -1019,6 +1019,8 @@ definitions:
         type: string
       errorMessage:
         type: string
+      executionTimeMs:
+        type: number
       id:
         type: integer
       passed:
