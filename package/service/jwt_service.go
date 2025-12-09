@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	AccessTokenDuration  = time.Hour * 1      // 1 hour
+	AccessTokenDuration  = time.Hour * 3      // 3 hour
 	RefreshTokenDuration = time.Hour * 24 * 7 // 7 days
 	TokenTypeBearer      = "Bearer"
 	TokenTypeAccess      = "access"
