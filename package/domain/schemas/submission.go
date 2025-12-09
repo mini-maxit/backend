@@ -40,12 +40,13 @@ type SubmissionResult struct {
 }
 
 type TestResult struct {
-	ID                 int64  `json:"id"`
-	SubmissionResultID int64  `json:"submissionResultId"`
-	TestCaseID         int64  `json:"testCaseId"`
-	Passed             bool   `json:"passed"`
-	Code               string `json:"code"`
-	ErrorMessage       string `json:"errorMessage"`
+	ID                 int64   `json:"id"`
+	SubmissionResultID int64   `json:"submissionResultId"`
+	TestCaseID         int64   `json:"testCaseId"`
+	ExecutionTimeMs    float64 `json:"executionTimeMs"`
+	Passed             bool    `json:"passed"`
+	Code               string  `json:"code"`
+	ErrorMessage       string  `json:"errorMessage"`
 }
 
 // ContestTaskStats contains aggregated statistics for a task in a contest
