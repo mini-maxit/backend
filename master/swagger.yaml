@@ -939,9 +939,15 @@ definitions:
     type: object
   TaskInfo:
     properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
       id:
         type: integer
       title:
+        type: string
+      updatedAt:
         type: string
     type: object
   TaskResult:
