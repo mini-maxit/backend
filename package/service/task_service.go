@@ -640,8 +640,11 @@ func (ts *taskService) hasTaskPermission(db database.Database, taskID int64, use
 
 func TaskToInfoSchema(model *models.Task) *schemas.TaskInfo {
 	return &schemas.TaskInfo{
-		ID:    model.ID,
-		Title: model.Title,
+		ID:        model.ID,
+		Title:     model.Title,
+		CreatedBy: model.CreatedBy,
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
 	}
 }
 

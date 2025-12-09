@@ -18,8 +18,11 @@ type Task struct {
 
 // Struct to embed basic task info
 type TaskInfo struct {
-	ID    int64  `json:"id"`
-	Title string `json:"title"`
+	ID        int64     `json:"id"`
+	Title     string    `json:"title"`
+	CreatedBy int64     `json:"createdBy"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type TaskDetailed struct {
