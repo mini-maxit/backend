@@ -1213,8 +1213,18 @@ definitions:
       processingMessageId:
         type: string
       status:
-        type: string
+        $ref: '#/definitions/WorkerStatusType'
     type: object
+  WorkerStatusType:
+    enum:
+    - idle
+    - busy
+    - invalid
+    type: string
+    x-enum-varnames:
+    - WorkerStatusIdle
+    - WorkerStatusBusy
+    - WorkerStatusInvalid
   WorkersStatus:
     properties:
       busyWorkers:
