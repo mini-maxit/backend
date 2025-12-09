@@ -14,7 +14,6 @@ import (
 	sync "sync"
 
 	database "github.com/mini-maxit/backend/internal/database"
-	models "github.com/mini-maxit/backend/package/domain/models"
 	schemas "github.com/mini-maxit/backend/package/domain/schemas"
 	types "github.com/mini-maxit/backend/package/domain/types"
 	gomock "go.uber.org/mock/gomock"
@@ -45,7 +44,7 @@ func (m *MockAccessControlService) EXPECT() *MockAccessControlServiceMockRecorde
 }
 
 // AddCollaborator mocks base method.
-func (m *MockAccessControlService) AddCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (m *MockAccessControlService) AddCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddCollaborator", db, currentUser, resourceType, resourceID, userID, permission)
 	ret0, _ := ret[0].(error)
@@ -59,7 +58,7 @@ func (mr *MockAccessControlServiceMockRecorder) AddCollaborator(db, currentUser,
 }
 
 // CanUserAccess mocks base method.
-func (m *MockAccessControlService) CanUserAccess(db database.Database, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
+func (m *MockAccessControlService) CanUserAccess(db database.Database, resourceType types.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanUserAccess", db, resourceType, resourceID, user, requiredPermission)
 	ret0, _ := ret[0].(error)
@@ -72,8 +71,23 @@ func (mr *MockAccessControlServiceMockRecorder) CanUserAccess(db, resourceType, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUserAccess", reflect.TypeOf((*MockAccessControlService)(nil).CanUserAccess), db, resourceType, resourceID, user, requiredPermission)
 }
 
+// GetAssignableUsers mocks base method.
+func (m *MockAccessControlService) GetAssignableUsers(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, params schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.User], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableUsers", db, currentUser, resourceType, resourceID, params)
+	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.User])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignableUsers indicates an expected call of GetAssignableUsers.
+func (mr *MockAccessControlServiceMockRecorder) GetAssignableUsers(db, currentUser, resourceType, resourceID, params any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableUsers", reflect.TypeOf((*MockAccessControlService)(nil).GetAssignableUsers), db, currentUser, resourceType, resourceID, params)
+}
+
 // GetCollaborators mocks base method.
-func (m *MockAccessControlService) GetCollaborators(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
+func (m *MockAccessControlService) GetCollaborators(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCollaborators", db, currentUser, resourceType, resourceID)
 	ret0, _ := ret[0].([]schemas.Collaborator)
@@ -88,7 +102,7 @@ func (mr *MockAccessControlServiceMockRecorder) GetCollaborators(db, currentUser
 }
 
 // GetUserPermission mocks base method.
-func (m *MockAccessControlService) GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error) {
+func (m *MockAccessControlService) GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (types.Permission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserPermission", db, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(types.Permission)
@@ -103,7 +117,7 @@ func (mr *MockAccessControlServiceMockRecorder) GetUserPermission(db, resourceTy
 }
 
 // GrantOwnerAccess mocks base method.
-func (m *MockAccessControlService) GrantOwnerAccess(db database.Database, resourceType models.ResourceType, resourceID, ownerID int64) error {
+func (m *MockAccessControlService) GrantOwnerAccess(db database.Database, resourceType types.ResourceType, resourceID, ownerID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GrantOwnerAccess", db, resourceType, resourceID, ownerID)
 	ret0, _ := ret[0].(error)
@@ -117,7 +131,7 @@ func (mr *MockAccessControlServiceMockRecorder) GrantOwnerAccess(db, resourceTyp
 }
 
 // RemoveCollaborator mocks base method.
-func (m *MockAccessControlService) RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64) error {
+func (m *MockAccessControlService) RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveCollaborator", db, currentUser, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(error)
@@ -131,7 +145,7 @@ func (mr *MockAccessControlServiceMockRecorder) RemoveCollaborator(db, currentUs
 }
 
 // UpdateCollaborator mocks base method.
-func (m *MockAccessControlService) UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (m *MockAccessControlService) UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateCollaborator", db, currentUser, resourceType, resourceID, userID, permission)
 	ret0, _ := ret[0].(error)

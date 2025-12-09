@@ -62,7 +62,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.GetMyContestResults(db, currentUser, contestID)
@@ -509,7 +509,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -548,7 +548,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -566,7 +566,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
@@ -600,7 +600,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -623,7 +623,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		ur.EXPECT().Get(db, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
@@ -663,7 +663,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(true, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().DeleteRegistrationRequest(db, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -694,7 +694,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -724,7 +724,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
 		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -755,7 +755,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -794,7 +794,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -834,7 +834,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved).Return(nil).Times(1)
 		cr.EXPECT().CreateContestParticipant(db, contestID, userID).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.ApproveRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -888,7 +888,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -926,7 +926,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -944,7 +944,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
 		require.Error(t, err)
@@ -978,7 +978,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{
 			ID: contestID,
 		}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -1002,7 +1002,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
 		ur.EXPECT().Get(db, userID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -1041,7 +1041,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(true, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().DeleteRegistrationRequest(db, request.ID).Return(nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -1072,7 +1072,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		ur.EXPECT().Get(db, userID).Return(user, nil).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(nil, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -1111,7 +1111,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 		cr.EXPECT().IsUserParticipant(db, contestID, userID).Return(false, nil).Times(1)
 		cr.EXPECT().GetPendingRegistrationRequest(db, contestID, userID).Return(request, nil).Times(1)
 		cr.EXPECT().UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected).Return(gorm.ErrInvalidDB).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		err := cs.RejectRegistrationRequest(db, currentUser, contestID, userID)
 
@@ -1180,7 +1180,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		result, err := cs.GetDetailed(db, currentUser, contestID)
 
@@ -1208,7 +1208,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 
 		result, err := cs.GetDetailed(db, currentUser, contestID)
 
@@ -1236,7 +1236,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.GetDetailed(db, currentUser, contestID)
@@ -1265,7 +1265,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 
 		cr.EXPECT().Get(db, contestID).Return(&contest.Contest, nil).Times(1)
 		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.GetDetailed(db, currentUser, contestID)
@@ -1340,7 +1340,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
 
 		tasks := []models.ContestTask{
@@ -1387,7 +1387,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		tasks := []models.ContestTask{
@@ -1431,7 +1431,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(false, nil).Times(1)
 
 		result, err := cs.GetVisibleTasksForContest(db, currentUser, contestID, types.ContestStatusOngoing)
@@ -1458,7 +1458,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
 
 		pastEnd := now.Add(-1 * time.Hour)
@@ -1519,7 +1519,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
 
 		pastEnd := now.Add(-1 * time.Hour)
@@ -1580,7 +1580,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
 
 		futureStart := now.Add(1 * time.Hour)
@@ -1640,7 +1640,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		// hasContestPermission calls Get first
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		cr.EXPECT().IsUserParticipant(db, contestID, currentUser.ID).Return(true, nil).Times(1)
 		cr.EXPECT().GetVisibleContestTasksWithSettings(db, contestID).Return(nil, errors.ErrDatabaseConnection).Times(1)
 
@@ -1671,7 +1671,7 @@ func TestContestService_AddGroupToContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.AddGroupToContest(db, currentUser, contestID, groupID)
 		require.Error(t, err)
@@ -1696,7 +1696,7 @@ func TestContestService_AddGroupToContest(t *testing.T) {
 		groupID := int64(999)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		gr.EXPECT().Get(db, groupID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 
 		err := cs.AddGroupToContest(db, currentUser, contestID, groupID)
@@ -1710,7 +1710,7 @@ func TestContestService_AddGroupToContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		gr.EXPECT().Get(db, groupID).Return(&models.Group{ID: groupID}, nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
 		cr.EXPECT().AddGroupToContest(db, contestID, groupID).Return(nil).Times(1)
@@ -1725,7 +1725,7 @@ func TestContestService_AddGroupToContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		gr.EXPECT().Get(db, groupID).Return(&models.Group{ID: groupID}, nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID}}, nil).Times(1)
 
@@ -1755,7 +1755,7 @@ func TestContestService_RemoveGroupFromContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		err := cs.RemoveGroupFromContest(db, currentUser, contestID, groupID)
 		require.Error(t, err)
@@ -1768,7 +1768,7 @@ func TestContestService_RemoveGroupFromContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID}}, nil).Times(1)
 		cr.EXPECT().RemoveGroupFromContest(db, contestID, groupID).Return(nil).Times(1)
 
@@ -1782,7 +1782,7 @@ func TestContestService_RemoveGroupFromContest(t *testing.T) {
 		groupID := int64(5)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
 
 		err := cs.RemoveGroupFromContest(db, currentUser, contestID, groupID)
@@ -1810,7 +1810,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		contestID := int64(1)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
 		require.Error(t, err)
@@ -1828,7 +1828,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return(assignedGroups, nil).Times(1)
 
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
@@ -1846,7 +1846,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		contestID := int64(1)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
 
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
@@ -1875,7 +1875,7 @@ func TestContestService_GetAssignableGroups(t *testing.T) {
 		contestID := int64(1)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 
 		result, err := cs.GetAssignableGroups(db, currentUser, contestID)
 		require.Error(t, err)
@@ -1893,7 +1893,7 @@ func TestContestService_GetAssignableGroups(t *testing.T) {
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetAssignableGroups(db, contestID).Return(assignableGroups, nil).Times(1)
 
 		result, err := cs.GetAssignableGroups(db, currentUser, contestID)
@@ -1911,7 +1911,7 @@ func TestContestService_GetAssignableGroups(t *testing.T) {
 		contestID := int64(1)
 
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
-		acs.EXPECT().CanUserAccess(db, models.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetAssignableGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
 
 		result, err := cs.GetAssignableGroups(db, currentUser, contestID)

@@ -1,20 +1,25 @@
 package repository
 
 import (
+	"fmt"
+
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/utils"
 )
 
 // AccessControlRepository manages access control for resources (contests and tasks).
 type AccessControlRepository interface {
 	// Generic access control methods
 	AddAccess(db database.Database, access *models.AccessControl) error
-	GetAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (*models.AccessControl, error)
-	GetResourceAccess(db database.Database, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error)
-	UpdatePermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error
-	RemoveAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) error
-	GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error)
+	GetAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (*models.AccessControl, error)
+	GetResourceAccess(db database.Database, resourceType types.ResourceType, resourceID int64) ([]models.AccessControl, error)
+	UpdatePermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64, permission types.Permission) error
+	RemoveAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) error
+	GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (types.Permission, error)
+	// GetAssignableUsers returns teachers without any access entry for the given resource. Supports pagination and sorting.
+	GetAssignableUsers(db database.Database, resourceType types.ResourceType, resourceID int64, limit, offset int, sort string) ([]models.User, int64, error)
 
 	// Convenience methods for contests
 	AddContestCollaborator(db database.Database, contestID, userID int64, permission types.Permission) error
@@ -56,7 +61,7 @@ func (r *accessControlRepository) AddAccess(db database.Database, access *models
 	return tx.Create(access).Error
 }
 
-func (r *accessControlRepository) GetAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (*models.AccessControl, error) {
+func (r *accessControlRepository) GetAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (*models.AccessControl, error) {
 	tx := db.GetInstance()
 	var access models.AccessControl
 	err := tx.Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
@@ -68,7 +73,7 @@ func (r *accessControlRepository) GetAccess(db database.Database, resourceType m
 	return &access, nil
 }
 
-func (r *accessControlRepository) GetResourceAccess(db database.Database, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error) {
+func (r *accessControlRepository) GetResourceAccess(db database.Database, resourceType types.ResourceType, resourceID int64) ([]models.AccessControl, error) {
 	tx := db.GetInstance()
 	var accesses []models.AccessControl
 	err := tx.Model(&models.AccessControl{}).Where("resource_type = ? AND resource_id = ?", resourceType, resourceID).
@@ -77,23 +82,24 @@ func (r *accessControlRepository) GetResourceAccess(db database.Database, resour
 	return accesses, err
 }
 
-func (r *accessControlRepository) UpdatePermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (r *accessControlRepository) UpdatePermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	tx := db.GetInstance()
 	return tx.Model(&models.AccessControl{}).
 		Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
 		Update("permission", permission).Error
 }
 
-func (r *accessControlRepository) RemoveAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) error {
+func (r *accessControlRepository) RemoveAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) error {
 	tx := db.GetInstance()
 	return tx.Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
 		Delete(&models.AccessControl{}).Error
 }
 
-func (r *accessControlRepository) GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error) {
+func (r *accessControlRepository) GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (types.Permission, error) {
 	tx := db.GetInstance()
 	var access models.AccessControl
-	err := tx.Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
+	err := tx.Model(&models.AccessControl{}).
+		Where("resource_type = ? AND resource_id = ? AND user_id = ?", resourceType, resourceID, userID).
 		Select("permission").
 		First(&access).Error
 	if err != nil {
@@ -106,7 +112,7 @@ func (r *accessControlRepository) GetUserPermission(db database.Database, resour
 
 func (r *accessControlRepository) AddContestCollaborator(db database.Database, contestID, userID int64, permission types.Permission) error {
 	access := &models.AccessControl{
-		ResourceType: models.ResourceTypeContest,
+		ResourceType: types.ResourceTypeContest,
 		ResourceID:   contestID,
 		UserID:       userID,
 		Permission:   permission,
@@ -115,26 +121,26 @@ func (r *accessControlRepository) AddContestCollaborator(db database.Database, c
 }
 
 func (r *accessControlRepository) GetContestCollaborators(db database.Database, contestID int64) ([]models.AccessControl, error) {
-	return r.GetResourceAccess(db, models.ResourceTypeContest, contestID)
+	return r.GetResourceAccess(db, types.ResourceTypeContest, contestID)
 }
 
 func (r *accessControlRepository) GetUserContestPermission(db database.Database, contestID, userID int64) (types.Permission, error) {
-	return r.GetUserPermission(db, models.ResourceTypeContest, contestID, userID)
+	return r.GetUserPermission(db, types.ResourceTypeContest, contestID, userID)
 }
 
 func (r *accessControlRepository) UpdateContestCollaboratorPermission(db database.Database, contestID, userID int64, permission types.Permission) error {
-	return r.UpdatePermission(db, models.ResourceTypeContest, contestID, userID, permission)
+	return r.UpdatePermission(db, types.ResourceTypeContest, contestID, userID, permission)
 }
 
 func (r *accessControlRepository) RemoveContestCollaborator(db database.Database, contestID, userID int64) error {
-	return r.RemoveAccess(db, models.ResourceTypeContest, contestID, userID)
+	return r.RemoveAccess(db, types.ResourceTypeContest, contestID, userID)
 }
 
 // Task Convenience Methods
 
 func (r *accessControlRepository) AddTaskCollaborator(db database.Database, taskID, userID int64, permission types.Permission) error {
 	access := &models.AccessControl{
-		ResourceType: models.ResourceTypeTask,
+		ResourceType: types.ResourceTypeTask,
 		ResourceID:   taskID,
 		UserID:       userID,
 		Permission:   permission,
@@ -143,21 +149,53 @@ func (r *accessControlRepository) AddTaskCollaborator(db database.Database, task
 }
 
 func (r *accessControlRepository) GetTaskCollaborators(db database.Database, taskID int64) ([]models.AccessControl, error) {
-	return r.GetResourceAccess(db, models.ResourceTypeTask, taskID)
+	return r.GetResourceAccess(db, types.ResourceTypeTask, taskID)
 }
 
 func (r *accessControlRepository) GetUserTaskPermission(db database.Database, taskID, userID int64) (types.Permission, error) {
-	return r.GetUserPermission(db, models.ResourceTypeTask, taskID, userID)
+	return r.GetUserPermission(db, types.ResourceTypeTask, taskID, userID)
 }
 
 func (r *accessControlRepository) UpdateTaskCollaboratorPermission(db database.Database, taskID, userID int64, permission types.Permission) error {
-	return r.UpdatePermission(db, models.ResourceTypeTask, taskID, userID, permission)
+	return r.UpdatePermission(db, types.ResourceTypeTask, taskID, userID, permission)
 }
 
 func (r *accessControlRepository) RemoveTaskCollaborator(db database.Database, taskID, userID int64) error {
-	return r.RemoveAccess(db, models.ResourceTypeTask, taskID, userID)
+	return r.RemoveAccess(db, types.ResourceTypeTask, taskID, userID)
 }
 
 func NewAccessControlRepository() AccessControlRepository {
 	return &accessControlRepository{}
+}
+
+// GetAssignableUsers returns teachers who currently do not have any access entry for the given resource.
+func (r *accessControlRepository) GetAssignableUsers(db database.Database, resourceType types.ResourceType, resourceID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	tx := db.GetInstance()
+
+	// Count total assignable teachers (without existing access for the resource)
+	accessControlsTable := database.ResolveTableName(tx, &models.AccessControl{})
+	var total int64
+	if err := tx.Model(&models.User{}).
+		Where("role = ?", types.UserRoleTeacher).
+		Where(fmt.Sprintf("NOT EXISTS (SELECT 1 FROM %s ac WHERE ac.user_id = users.id AND ac.resource_type = ? AND ac.resource_id = ?)", accessControlsTable), resourceType, resourceID).
+		Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and sorting
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Fetch page of assignable teachers
+	var users []models.User
+	err = paginatedTx.Model(&models.User{}).
+		Where("role = ?", types.UserRoleTeacher).
+		Where(fmt.Sprintf("NOT EXISTS (SELECT 1 FROM %s ac WHERE ac.user_id = users.id AND ac.resource_type = ? AND ac.resource_id = ?)", accessControlsTable), resourceType, resourceID).
+		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }

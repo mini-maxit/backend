@@ -3,28 +3,52 @@ package routes
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
-	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
-type AccessControlRoute interface {
-	// Contest collaborators
-	AddContestCollaborator(w http.ResponseWriter, r *http.Request)
-	GetContestCollaborators(w http.ResponseWriter, r *http.Request)
-	UpdateContestCollaborator(w http.ResponseWriter, r *http.Request)
-	RemoveContestCollaborator(w http.ResponseWriter, r *http.Request)
+// parseResourceType extracts resource_type from path and maps it to types.ResourceType.
+// Supports contests and tasks; extend switch when adding more types.
+func parseResourceType(r *http.Request) (types.ResourceType, bool) {
+	resourceTypeStr := httputils.GetPathValue(r, "resource_type")
+	switch resourceTypeStr {
+	case "contests":
+		return types.ResourceTypeContest, true
+	case "tasks":
+		return types.ResourceTypeTask, true
+	default:
+		return types.ResourceType(resourceTypeStr), false
+	}
+}
 
-	// Task collaborators
-	AddTaskCollaborator(w http.ResponseWriter, r *http.Request)
-	GetTaskCollaborators(w http.ResponseWriter, r *http.Request)
-	UpdateTaskCollaborator(w http.ResponseWriter, r *http.Request)
-	RemoveTaskCollaborator(w http.ResponseWriter, r *http.Request)
+// parseResourceID extracts resource_id from path and parses it to int64.
+func parseResourceID(r *http.Request) (int64, error) {
+	resourceIDStr := httputils.GetPathValue(r, "resource_id")
+	return strconv.ParseInt(resourceIDStr, 10, 64)
+}
+
+// parseUserID extracts user_id from path and parses it to int64.
+func parseUserID(r *http.Request) (int64, error) {
+	userIDStr := httputils.GetPathValue(r, "user_id")
+	return strconv.ParseInt(userIDStr, 10, 64)
+}
+
+type AccessControlRoute interface {
+	// Generic collaborators
+	AddCollaborator(w http.ResponseWriter, r *http.Request)
+	GetCollaborators(w http.ResponseWriter, r *http.Request)
+	UpdateCollaborator(w http.ResponseWriter, r *http.Request)
+	RemoveCollaborator(w http.ResponseWriter, r *http.Request)
+
+	// Assignable users for a resource (teachers without existing access)
+	GetAssignableUsers(w http.ResponseWriter, r *http.Request)
 }
 
 type accessControlRoute struct {
@@ -34,35 +58,38 @@ type accessControlRoute struct {
 
 // Contest Collaborators
 
-// AddContestCollaborator godoc
+// AddCollaborator godoc
 //
 //	@Tags			access-control
-//	@Summary		Add a collaborator to a contest
-//	@Description	Add a user as a collaborator to a contest with specified permissions (edit or manage). Only users with manage permission can add collaborators.
+//	@Summary		Add a collaborator to a resource
+//	@Description	Add a user as a collaborator to a resource (contest, task, etc.) with specified permissions (edit or manage). Only users with manage permission can add collaborators.
 //	@Accept			json
 //	@Produce		json
-//	@Param			resource_id	path		int						true	"Contest ID"
+//	@Param			resource_type	path		string					true	"Resource type (contests|tasks)"
+//	@Param			resource_id	path		int						true	"Resource ID"
 //	@Param			body		body		schemas.AddCollaborator	true	"Collaborator details"
 //	@Failure		400			{object}	httputils.ValidationErrorResponse
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/contests/{resource_id}/collaborators [post]
-func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *http.Request) {
+//	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators [post]
+func (ac *accessControlRoute) AddCollaborator(w http.ResponseWriter, r *http.Request) {
+	// Generic handler retained
 	if r.Method != http.MethodPost {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+	resourceType, ok := parseResourceType(r)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Unsupported resource type")
 		return
 	}
-	contestID, err := strconv.ParseInt(resourceIDStr, 10, 64)
+
+	resourceID, err := parseResourceID(r)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid resource ID")
 		return
 	}
 
@@ -76,7 +103,7 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.AddCollaborator(db, currentUser, models.ResourceTypeContest, contestID, request.UserID, request.Permission)
+	err = ac.accessControlService.AddCollaborator(db, currentUser, resourceType, resourceID, request.UserID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -85,40 +112,43 @@ func (ac *accessControlRoute) AddContestCollaborator(w http.ResponseWriter, r *h
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator added successfully"))
 }
 
-// GetContestCollaborators godoc
+// GetCollaborators godoc
 //
 //	@Tags			access-control
-//	@Summary		Get collaborators for a contest
-//	@Description	Get all collaborators for a specific contest. Users with edit permission or higher can see collaborators.
+//	@Summary		Get collaborators for a resource
+//	@Description	Get all collaborators for a specific resource. Users with edit permission or higher can see collaborators.
 //	@Produce		json
-//	@Param			resource_id	path		int	true	"Contest ID"
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_id		path		int		true	"Resource ID"
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[[]schemas.Collaborator]
-//	@Router			/access-control/contests/{resource_id}/collaborators [get]
-func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *http.Request) {
+//	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators [get]
+func (ac *accessControlRoute) GetCollaborators(w http.ResponseWriter, r *http.Request) {
+	// Generic handler retained
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+	resourceType, ok := parseResourceType(r)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Unsupported resource type")
 		return
 	}
-	contestID, err := strconv.ParseInt(resourceIDStr, 10, 64)
+
+	resourceID, err := parseResourceID(r)
 	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid resource ID")
 		return
 	}
 
 	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
-	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeContest, contestID)
+	collaborators, err := ac.accessControlService.GetCollaborators(db, user, resourceType, resourceID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -127,14 +157,15 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 	httputils.ReturnSuccess(w, http.StatusOK, collaborators)
 }
 
-// UpdateContestCollaborator godoc
+// UpdateCollaborator godoc
 //
 //	@Tags			access-control
-//	@Summary		Update a contest collaborator's permission
-//	@Description	Update the permission level of a collaborator for a contest. Only users with manage permission can update collaborators.
+//	@Summary		Update a collaborator's permission for a resource
+//	@Description	Update the permission level of a collaborator for a resource. Only users with manage permission can update collaborators.
 //	@Accept			json
 //	@Produce		json
-//	@Param			resource_id	path		int							true	"Contest ID"
+//	@Param			resource_type	path		string						true	"Resource type (contests|tasks)"
+//	@Param			resource_id	path		int							true	"Resource ID"
 //	@Param			user_id		path		int							true	"User ID"
 //	@Param			body		body		schemas.UpdateCollaborator	true	"New permission"
 //	@Failure		400			{object}	httputils.ValidationErrorResponse
@@ -142,30 +173,27 @@ func (ac *accessControlRoute) GetContestCollaborators(w http.ResponseWriter, r *
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/contests/{resource_id}/collaborators/{user_id} [put]
-func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r *http.Request) {
+//	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators/{user_id} [put]
+func (ac *accessControlRoute) UpdateCollaborator(w http.ResponseWriter, r *http.Request) {
+	// Generic handler retained
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
-		return
-	}
-	contestID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+	resourceType, ok := parseResourceType(r)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Unsupported resource type")
 		return
 	}
 
-	userIDStr := httputils.GetPathValue(r, "user_id")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
+	resourceID, err := parseResourceID(r)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid resource ID")
 		return
 	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+
+	userID, err := parseUserID(r)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
 		return
@@ -181,7 +209,7 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeContest, contestID, userID, request.Permission)
+	err = ac.accessControlService.UpdateCollaborator(db, user, resourceType, resourceID, userID, request.Permission)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
@@ -190,43 +218,41 @@ func (ac *accessControlRoute) UpdateContestCollaborator(w http.ResponseWriter, r
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator permission updated successfully"))
 }
 
-// RemoveContestCollaborator godoc
+// RemoveCollaborator godoc
 //
 //	@Tags			access-control
-//	@Summary		Remove a collaborator from a contest
-//	@Description	Remove a user's collaborator access to a contest. Only users with manage permission can remove collaborators. Cannot remove the creator.
+//	@Summary		Remove a collaborator from a resource
+//	@Description	Remove a user's collaborator access to a resource. Only users with manage permission can remove collaborators. Cannot remove the creator.
 //	@Produce		json
-//	@Param			resource_id	path		int	true	"Contest ID"
-//	@Param			user_id		path		int	true	"User ID"
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_id		path		int		true	"Resource ID"
+//	@Param			user_id			path		int		true	"User ID"
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
 //	@Failure		404			{object}	httputils.APIError
 //	@Failure		500			{object}	httputils.APIError
 //	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/contests/{resource_id}/collaborators/{user_id} [delete]
-func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r *http.Request) {
+//	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators/{user_id} [delete]
+func (ac *accessControlRoute) RemoveCollaborator(w http.ResponseWriter, r *http.Request) {
+	// Generic handler retained
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
-		return
-	}
-	contestID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+	resourceType, ok := parseResourceType(r)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Unsupported resource type")
 		return
 	}
 
-	userIDStr := httputils.GetPathValue(r, "user_id")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
+	resourceID, err := parseResourceID(r)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid resource ID")
 		return
 	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+
+	userID, err := parseUserID(r)
 	if err != nil {
 		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
 		return
@@ -235,226 +261,72 @@ func (ac *accessControlRoute) RemoveContestCollaborator(w http.ResponseWriter, r
 	db := httputils.GetDatabase(r)
 	user := httputils.GetCurrentUser(r)
 
-	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeContest, contestID, userID)
+	err = ac.accessControlService.RemoveCollaborator(db, user, resourceType, resourceID, userID)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, ac.logger)
 		return
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
+}
+
+// GetAssignableUsers godoc
+//
+//	@Tags			access-control
+//	@Summary		Get assignable users for a resource
+//	@Description	List users (teachers) who can be granted access for the given resource. Only users with manage permission can view assignable users. Returned users do not currently have any access entry for the resource.
+//	@Produce		json
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_id		path		int		true	"Resource ID"
+//	@Param			limit			query		int		false	"Pagination limit"
+//	@Param			offset			query		int		false	"Pagination offset"
+//	@Param			sort			query		string	false	"Sort fields, e.g. 'id:asc,created_at:desc'"
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		404			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Router			/access-control/resources/{resource_type}/{resource_id}/assignable [get]
+func (ac *accessControlRoute) GetAssignableUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	resourceType, ok := parseResourceType(r)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Unsupported resource type")
+		return
+	}
+
+	resourceID, err := parseResourceID(r)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid resource ID")
+		return
+	}
+
+	// Parse pagination query params
+	q := r.URL.Query()
+	queryParams, err := httputils.GetQueryParams(&q)
+	if err != nil {
+		httputils.HandleValidationError(w, err)
+		return
+	}
+	pagination := httputils.ExtractPaginationParams(queryParams)
+
+	db := httputils.GetDatabase(r)
+	user := httputils.GetCurrentUser(r)
+
+	resp, err := ac.accessControlService.GetAssignableUsers(db, user, resourceType, resourceID, pagination)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, ac.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, resp)
 }
 
 // Task Collaborators
-
-// AddTaskCollaborator godoc
-//
-//	@Tags			access-control
-//	@Summary		Add a collaborator to a task
-//	@Description	Add a user as a collaborator to a task with specified permissions (edit or manage). Only users with manage permission can add collaborators.
-//	@Accept			json
-//	@Produce		json
-//	@Param			resource_id	path		int						true	"Task ID"
-//	@Param			body		body		schemas.AddCollaborator	true	"Collaborator details"
-//	@Failure		400			{object}	httputils.ValidationErrorResponse
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/tasks/{resource_id}/collaborators [post]
-func (ac *accessControlRoute) AddTaskCollaborator(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
-		return
-	}
-	taskID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
-		return
-	}
-
-	var request schemas.AddCollaborator
-	err = httputils.ShouldBindJSON(r.Body, &request)
-	if err != nil {
-		httputils.HandleValidationError(w, err)
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	user := httputils.GetCurrentUser(r)
-
-	err = ac.accessControlService.AddCollaborator(db, user, models.ResourceTypeTask, taskID, request.UserID, request.Permission)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, ac.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator added successfully"))
-}
-
-// GetTaskCollaborators godoc
-//
-//	@Tags			access-control
-//	@Summary		Get collaborators for a task
-//	@Description	Get all collaborators for a specific task. Users with edit permission or higher can see collaborators.
-//	@Produce		json
-//	@Param			resource_id	path		int	true	"Task ID"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[[]schemas.Collaborator]
-//	@Router			/access-control/tasks/{resource_id}/collaborators [get]
-func (ac *accessControlRoute) GetTaskCollaborators(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
-		return
-	}
-	taskID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	user := httputils.GetCurrentUser(r)
-
-	collaborators, err := ac.accessControlService.GetCollaborators(db, user, models.ResourceTypeTask, taskID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, ac.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, collaborators)
-}
-
-// UpdateTaskCollaborator godoc
-//
-//	@Tags			access-control
-//	@Summary		Update a task collaborator's permission
-//	@Description	Update the permission level of a collaborator for a task. Only users with manage permission can update collaborators.
-//	@Accept			json
-//	@Produce		json
-//	@Param			resource_id	path		int							true	"Task ID"
-//	@Param			user_id		path		int							true	"User ID"
-//	@Param			body		body		schemas.UpdateCollaborator	true	"New permission"
-//	@Failure		400			{object}	httputils.ValidationErrorResponse
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/tasks/{resource_id}/collaborators/{user_id} [put]
-func (ac *accessControlRoute) UpdateTaskCollaborator(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
-		return
-	}
-	taskID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
-		return
-	}
-
-	userIDStr := httputils.GetPathValue(r, "user_id")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
-		return
-	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	var request schemas.UpdateCollaborator
-	err = httputils.ShouldBindJSON(r.Body, &request)
-	if err != nil {
-		httputils.HandleValidationError(w, err)
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	user := httputils.GetCurrentUser(r)
-
-	err = ac.accessControlService.UpdateCollaborator(db, user, models.ResourceTypeTask, taskID, userID, request.Permission)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, ac.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator permission updated successfully"))
-}
-
-// RemoveTaskCollaborator godoc
-//
-//	@Tags			access-control
-//	@Summary		Remove a collaborator from a task
-//	@Description	Remove a user's collaborator access to a task. Only users with manage permission can remove collaborators. Cannot remove the creator.
-//	@Produce		json
-//	@Param			resource_id	path		int	true	"Task ID"
-//	@Param			user_id		path		int	true	"User ID"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/access-control/tasks/{resource_id}/collaborators/{user_id} [delete]
-func (ac *accessControlRoute) RemoveTaskCollaborator(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	resourceIDStr := httputils.GetPathValue(r, "resource_id")
-	if resourceIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
-		return
-	}
-	taskID, err := strconv.ParseInt(resourceIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
-		return
-	}
-
-	userIDStr := httputils.GetPathValue(r, "user_id")
-	if userIDStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "User ID cannot be empty")
-		return
-	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	user := httputils.GetCurrentUser(r)
-
-	err = ac.accessControlService.RemoveCollaborator(db, user, models.ResourceTypeTask, taskID, userID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, ac.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Collaborator removed successfully"))
-}
 
 func NewAccessControlRoute(accessControlService service.AccessControlService) AccessControlRoute {
 	route := &accessControlRoute{
@@ -468,47 +340,39 @@ func NewAccessControlRoute(accessControlService service.AccessControlService) Ac
 }
 
 func RegisterAccessControlRoutes(mux *mux.Router, route AccessControlRoute) {
-	// Contest collaborators
-	mux.HandleFunc("/contests/{resource_id}/collaborators", func(w http.ResponseWriter, r *http.Request) {
+	// Configurable set of resource types; extend this slice to add more resources.
+	resourceTypes := []string{"contests", "tasks"}
+	rtPattern := strings.Join(resourceTypes, "|")
+
+	// Generic collaborators collection route
+	mux.HandleFunc("/resources/{resource_type:"+rtPattern+"}/{resource_id}/collaborators", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			route.GetContestCollaborators(w, r)
+			route.GetCollaborators(w, r)
 		case http.MethodPost:
-			route.AddContestCollaborator(w, r)
+			route.AddCollaborator(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 
-	mux.HandleFunc("/contests/{resource_id}/collaborators/{user_id}", func(w http.ResponseWriter, r *http.Request) {
+	// Generic single collaborator route
+	mux.HandleFunc("/resources/{resource_type:"+rtPattern+"}/{resource_id}/collaborators/{user_id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPut:
-			route.UpdateContestCollaborator(w, r)
+			route.UpdateCollaborator(w, r)
 		case http.MethodDelete:
-			route.RemoveContestCollaborator(w, r)
+			route.RemoveCollaborator(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 
-	// Task collaborators
-	mux.HandleFunc("/tasks/{resource_id}/collaborators", func(w http.ResponseWriter, r *http.Request) {
+	// Assignable users route
+	mux.HandleFunc("/resources/{resource_type:"+rtPattern+"}/{resource_id}/assignable", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			route.GetTaskCollaborators(w, r)
-		case http.MethodPost:
-			route.AddTaskCollaborator(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/tasks/{resource_id}/collaborators/{user_id}", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPut:
-			route.UpdateTaskCollaborator(w, r)
-		case http.MethodDelete:
-			route.RemoveTaskCollaborator(w, r)
+			route.GetAssignableUsers(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

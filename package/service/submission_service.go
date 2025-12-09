@@ -811,7 +811,7 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 }
 
 func (ss *submissionService) GetTaskStatsForContest(db database.Database, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
-	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +850,7 @@ func (ss *submissionService) GetTaskStatsForContest(db database.Database, user *
 }
 
 func (ss *submissionService) GetUserStatsForContestTask(db database.Database, user *schemas.User, contestID, taskID int64) ([]schemas.TaskUserStats, error) {
-	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}
@@ -892,7 +892,7 @@ func (ss *submissionService) GetUserStatsForContestTask(db database.Database, us
 }
 
 func (ss *submissionService) GetUserStatsForContest(db database.Database, user *schemas.User, contestID int64, userID *int64) ([]schemas.UserContestStats, error) {
-	err := ss.accessControlService.CanUserAccess(db, models.ResourceTypeContest, contestID, user, types.PermissionEdit)
+	err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit)
 	if err != nil {
 		return nil, err
 	}

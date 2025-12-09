@@ -19,25 +19,28 @@ import (
 type AccessControlService interface {
 	// CanUserAccess checks if a user can access a resource with the required permission.
 	// Checks in order: admin role → creator → required minimal permission
-	CanUserAccess(db database.Database, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error
+	CanUserAccess(db database.Database, resourceType types.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error
 
 	// AddCollaborator adds a collaborator with specified permission to a resource.
-	AddCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error
+	AddCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64, permission types.Permission) error
 
 	// GetCollaborators retrieves all collaborators for a resource.
-	GetCollaborators(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error)
+	GetCollaborators(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64) ([]schemas.Collaborator, error)
+
+	// GetAssignableUsers returns users (teachers) that currently have no access to the resource and can be granted access. Supports pagination.
+	GetAssignableUsers(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, params schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.User], error)
 
 	// UpdateCollaborator updates a collaborator's permission.
-	UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error
+	UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64, permission types.Permission) error
 
 	// RemoveCollaborator removes a collaborator from a resource.
-	RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64) error
+	RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64) error
 
 	// GetUserPermission gets a user's permission level for a resource.
-	GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID int64, userID int64) (types.Permission, error)
+	GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID int64, userID int64) (types.Permission, error)
 
 	// GrantOwnerAccess auto-grants owner permission to the creator/owner of a resource.
-	GrantOwnerAccess(db database.Database, resourceType models.ResourceType, resourceID int64, ownerID int64) error
+	GrantOwnerAccess(db database.Database, resourceType types.ResourceType, resourceID int64, ownerID int64) error
 }
 
 type accessControlService struct {
@@ -50,7 +53,7 @@ type accessControlService struct {
 
 // CanUserAccess checks if a user can access a resource with the required permission.
 // Checks in order: admin role → creator → collaborator permissions.
-func (acs *accessControlService) CanUserAccess(db database.Database, resourceType models.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
+func (acs *accessControlService) CanUserAccess(db database.Database, resourceType types.ResourceType, resourceID int64, user *schemas.User, requiredPermission types.Permission) error {
 	if user.Role == types.UserRoleAdmin {
 		return nil
 	}
@@ -69,7 +72,7 @@ func (acs *accessControlService) CanUserAccess(db database.Database, resourceTyp
 }
 
 // AddCollaborator adds a collaborator with specified permission to a resource.
-func (acs *accessControlService) AddCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error {
+func (acs *accessControlService) AddCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64, permission types.Permission) error {
 	// Owner permission cannot be manually assigned
 	if permission == types.PermissionOwner {
 		return errors.ErrForbidden
@@ -131,7 +134,7 @@ func (acs *accessControlService) AddCollaborator(db database.Database, currentUs
 }
 
 // GetCollaborators retrieves all collaborators for a resource and converts them to schema objects. Requires edit permission.
-func (acs *accessControlService) GetCollaborators(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
+func (acs *accessControlService) GetCollaborators(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64) ([]schemas.Collaborator, error) {
 	// Check if resource exists first before checking permissions
 	exists, err := acs.checkResourceExists(db, resourceType, resourceID)
 	if err != nil {
@@ -162,8 +165,53 @@ func (acs *accessControlService) GetCollaborators(db database.Database, currentU
 	return result, nil
 }
 
+// GetAssignableUsers returns users (teachers) that currently have no access to the resource and can be granted access.
+// Requires manage permission. Performs existence check first. Supports pagination via params.
+func (acs *accessControlService) GetAssignableUsers(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, params schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.User], error) {
+	// Check if resource exists
+	exists, err := acs.checkResourceExists(db, resourceType, resourceID)
+	if err != nil {
+		acs.logger.Errorw("Error checking resource existence", "error", err, "resourceType", resourceType, "resourceID", resourceID)
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.ErrNotFound
+	}
+
+	// Require manage permission
+	if err := acs.CanUserAccess(db, resourceType, resourceID, currentUser, types.PermissionManage); err != nil {
+		if !errors.Is(err, errors.ErrForbidden) {
+			acs.logger.Errorw("Error checking permission", "error", err, "resourceType", resourceType, "resourceID", resourceID, "userID", currentUser.ID)
+		}
+		return nil, err
+	}
+
+	// Use repository-level query to fetch assignable teachers without access, with pagination and sorting
+	usersModels, total, err := acs.accessControlRepository.GetAssignableUsers(db, resourceType, resourceID, params.Limit, params.Offset, params.Sort)
+	if err != nil {
+		acs.logger.Errorw("Error fetching assignable users", "error", err, "resourceType", resourceType, "resourceID", resourceID, "limit", params.Limit, "offset", params.Offset, "sort", params.Sort)
+		return nil, err
+	}
+
+	assignable := make([]schemas.User, 0, len(usersModels))
+	for i := range usersModels {
+		u := usersModels[i]
+		assignable = append(assignable, schemas.User{
+			ID:        u.ID,
+			Name:      u.Name,
+			Surname:   u.Surname,
+			Email:     u.Email,
+			Username:  u.Username,
+			Role:      u.Role,
+			CreatedAt: u.CreatedAt,
+		})
+	}
+	resp := schemas.NewPaginatedResult(assignable, params.Offset, params.Limit, total)
+	return &resp, nil
+}
+
 // UpdateCollaborator updates a collaborator's permission.
-func (acs *accessControlService) UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64, permission types.Permission) error {
+func (acs *accessControlService) UpdateCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64, permission types.Permission) error {
 	// Cannot assign owner via update
 	if permission == types.PermissionOwner {
 		return errors.ErrCannotAssignOwner
@@ -203,7 +251,7 @@ func (acs *accessControlService) UpdateCollaborator(db database.Database, curren
 }
 
 // RemoveCollaborator removes a collaborator from a resource.
-func (acs *accessControlService) RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType models.ResourceType, resourceID int64, userID int64) error {
+func (acs *accessControlService) RemoveCollaborator(db database.Database, currentUser *schemas.User, resourceType types.ResourceType, resourceID int64, userID int64) error {
 	// Actor must have manage permission on the resource
 	err := acs.CanUserAccess(db, resourceType, resourceID, currentUser, types.PermissionManage)
 	if err != nil {
@@ -237,7 +285,7 @@ func (acs *accessControlService) RemoveCollaborator(db database.Database, curren
 }
 
 // GetUserPermission gets a user's permission level for a resource.
-func (acs *accessControlService) GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID int64, userID int64) (types.Permission, error) {
+func (acs *accessControlService) GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID int64, userID int64) (types.Permission, error) {
 	permission, err := acs.accessControlRepository.GetUserPermission(db, resourceType, resourceID, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -250,7 +298,7 @@ func (acs *accessControlService) GetUserPermission(db database.Database, resourc
 }
 
 // GrantOwnerAccess auto-grants owner permission to the creator/owner of a resource.
-func (acs *accessControlService) GrantOwnerAccess(db database.Database, resourceType models.ResourceType, resourceID int64, ownerID int64) error {
+func (acs *accessControlService) GrantOwnerAccess(db database.Database, resourceType types.ResourceType, resourceID int64, ownerID int64) error {
 	access := &models.AccessControl{
 		ResourceType: resourceType,
 		ResourceID:   resourceID,
@@ -289,9 +337,9 @@ func accessControlToCollaborator(access *models.AccessControl) *schemas.Collabor
 	}
 }
 
-func (acs *accessControlService) checkResourceExists(db database.Database, resourceType models.ResourceType, resourceID int64) (bool, error) {
+func (acs *accessControlService) checkResourceExists(db database.Database, resourceType types.ResourceType, resourceID int64) (bool, error) {
 	switch resourceType {
-	case models.ResourceTypeContest:
+	case types.ResourceTypeContest:
 		_, err := acs.contestRepository.Get(db, resourceID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -300,7 +348,7 @@ func (acs *accessControlService) checkResourceExists(db database.Database, resou
 			return false, err
 		}
 		return true, nil
-	case models.ResourceTypeTask:
+	case types.ResourceTypeTask:
 		_, err := acs.taskRepository.Get(db, resourceID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {

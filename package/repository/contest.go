@@ -188,7 +188,7 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 	// Base query joining access control entries for contests
 	baseQuery := tx.Model(&models.Contest{}).
 		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
-			models.ResourceTypeContest, userID)
+			types.ResourceTypeContest, userID)
 
 	err := baseQuery.Count(&totalCount).Error
 	if err != nil {
@@ -199,7 +199,7 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 	paginatedQuery, err := utils.ApplyPaginationAndSort(tx.Model(&models.Contest{}).
 		Select("contests.*", "ac.permission as permission_type").
 		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
-			models.ResourceTypeContest, userID), limit, offset, sort)
+			types.ResourceTypeContest, userID), limit, offset, sort)
 	if err != nil {
 		return nil, 0, err
 	}

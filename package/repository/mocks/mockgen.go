@@ -86,7 +86,7 @@ func (mr *MockAccessControlRepositoryMockRecorder) AddTaskCollaborator(db, taskI
 }
 
 // GetAccess mocks base method.
-func (m *MockAccessControlRepository) GetAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (*models.AccessControl, error) {
+func (m *MockAccessControlRepository) GetAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (*models.AccessControl, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccess", db, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(*models.AccessControl)
@@ -98,6 +98,22 @@ func (m *MockAccessControlRepository) GetAccess(db database.Database, resourceTy
 func (mr *MockAccessControlRepositoryMockRecorder) GetAccess(db, resourceType, resourceID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccess", reflect.TypeOf((*MockAccessControlRepository)(nil).GetAccess), db, resourceType, resourceID, userID)
+}
+
+// GetAssignableUsers mocks base method.
+func (m *MockAccessControlRepository) GetAssignableUsers(db database.Database, resourceType types.ResourceType, resourceID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableUsers", db, resourceType, resourceID, limit, offset, sort)
+	ret0, _ := ret[0].([]models.User)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAssignableUsers indicates an expected call of GetAssignableUsers.
+func (mr *MockAccessControlRepositoryMockRecorder) GetAssignableUsers(db, resourceType, resourceID, limit, offset, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableUsers", reflect.TypeOf((*MockAccessControlRepository)(nil).GetAssignableUsers), db, resourceType, resourceID, limit, offset, sort)
 }
 
 // GetContestCollaborators mocks base method.
@@ -116,7 +132,7 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetContestCollaborators(db, c
 }
 
 // GetResourceAccess mocks base method.
-func (m *MockAccessControlRepository) GetResourceAccess(db database.Database, resourceType models.ResourceType, resourceID int64) ([]models.AccessControl, error) {
+func (m *MockAccessControlRepository) GetResourceAccess(db database.Database, resourceType types.ResourceType, resourceID int64) ([]models.AccessControl, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResourceAccess", db, resourceType, resourceID)
 	ret0, _ := ret[0].([]models.AccessControl)
@@ -161,7 +177,7 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetUserContestPermission(db, 
 }
 
 // GetUserPermission mocks base method.
-func (m *MockAccessControlRepository) GetUserPermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64) (types.Permission, error) {
+func (m *MockAccessControlRepository) GetUserPermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64) (types.Permission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserPermission", db, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(types.Permission)
@@ -191,7 +207,7 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetUserTaskPermission(db, tas
 }
 
 // RemoveAccess mocks base method.
-func (m *MockAccessControlRepository) RemoveAccess(db database.Database, resourceType models.ResourceType, resourceID, userID int64) error {
+func (m *MockAccessControlRepository) RemoveAccess(db database.Database, resourceType types.ResourceType, resourceID, userID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveAccess", db, resourceType, resourceID, userID)
 	ret0, _ := ret[0].(error)
@@ -247,7 +263,7 @@ func (mr *MockAccessControlRepositoryMockRecorder) UpdateContestCollaboratorPerm
 }
 
 // UpdatePermission mocks base method.
-func (m *MockAccessControlRepository) UpdatePermission(db database.Database, resourceType models.ResourceType, resourceID, userID int64, permission types.Permission) error {
+func (m *MockAccessControlRepository) UpdatePermission(db database.Database, resourceType types.ResourceType, resourceID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePermission", db, resourceType, resourceID, userID, permission)
 	ret0, _ := ret[0].(error)
