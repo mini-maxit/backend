@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/queue"
 	"github.com/mini-maxit/backend/package/repository"
@@ -252,7 +253,7 @@ func (qs *queueService) UpdateWorkerStatus(receivedStatus schemas.StatusResponse
 	for _, ws := range receivedStatus.WorkerStatus {
 		statuses = append(statuses, schemas.WorkerStatus{
 			ID:                  ws.ID,
-			Status:              ws.Status.String(),
+			Status:              types.IntToWorkerStatusType(ws.Status),
 			ProcessingMessageID: ws.ProcessingMessageID,
 		})
 	}

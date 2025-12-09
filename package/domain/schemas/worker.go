@@ -1,11 +1,15 @@
 package schemas
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type WorkerStatus struct {
-	ID                  int     `json:"id"`
-	Status              string  `json:"status"`
-	ProcessingMessageID *string `json:"processingMessageId,omitempty"`
+	ID                  int                    `json:"id"`
+	Status              types.WorkerStatusType `json:"status"`
+	ProcessingMessageID *string                `json:"processingMessageId,omitempty"`
 }
 
 type WorkersStatus struct {
