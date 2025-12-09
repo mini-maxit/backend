@@ -27,6 +27,7 @@ type ContestsManagementRoute interface {
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 	GetManageableContests(w http.ResponseWriter, r *http.Request)
+	GetAllContests(w http.ResponseWriter, r *http.Request)
 	GetContestTaskStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserSubmissions(w http.ResponseWriter, r *http.Request)
@@ -512,10 +513,10 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 //	@Param		offset	query		int		false	"Offset"
 //	@Param		sort	query		string	false	"Sort"
 //	@Failure	400		{object}	httputils.APIError
-//	@Failure	403		{object}	httputils.APIError
-//	@Failure	500		{object}	httputils.APIError
-//	@Success	200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.CreatedContest]]
-//	@Router		/contests-management/contests/created [get]
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedContest]]
+//	@Router			/contests-management/contests/managed [get]
 func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -946,7 +947,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableGroups(w http.ResponseWriter
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedContest]]
-//	@Router			/contests-management/contests [get]
+//	@Router			/contests-management/contests/managed [get]
 func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -966,19 +967,53 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+// GetAllContests godoc
+//
+//	@Tags			contests-management, admin
+//	@Summary		Get all contests (admin only)
+//	@Description	Returns all contests in the system. Accessible only to admins.
+//	@Produce		json
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.CreatedContest]]
+//	@Router			/contests-management/contests [get]
+func (cr *contestsManagementRouteImpl) GetAllContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	db := httputils.GetDatabase(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	response, err := cr.contestService.GetAllContests(db, currentUser, paginationParams)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, response)
+}
+
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			route.CreateContest(w, r)
 		case http.MethodGet:
-			route.GetManageableContests(w, r)
+			route.GetAllContests(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 
 	mux.HandleFunc("/contests/created", route.GetCreatedContests)
+	mux.HandleFunc("/contests/managed", route.GetManageableContests)
 
 	mux.HandleFunc("/contests/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

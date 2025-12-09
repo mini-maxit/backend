@@ -254,6 +254,21 @@ func (mr *MockContestServiceMockRecorder) Edit(db, currentUser, contestID, editI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestService)(nil).Edit), db, currentUser, contestID, editInfo)
 }
 
+// GetAllContests mocks base method.
+func (m *MockContestService) GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllContests", db, currentUser, paginationParams)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.CreatedContest])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllContests indicates an expected call of GetAllContests.
+func (mr *MockContestServiceMockRecorder) GetAllContests(db, currentUser, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContests", reflect.TypeOf((*MockContestService)(nil).GetAllContests), db, currentUser, paginationParams)
+}
+
 // GetAssignableGroups mocks base method.
 func (m *MockContestService) GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
 	m.ctrl.T.Helper()
