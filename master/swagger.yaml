@@ -1741,8 +1741,7 @@ paths:
       - contests
   /contests-management/contests:
     get:
-      description: Get all contests where the current user is the creator or has collaborator
-        access (view, edit, or manage) with pagination metadata
+      description: Returns all contests in the system. Accessible only to admins.
       parameters:
       - description: Limit
         in: query
@@ -1762,7 +1761,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-ManagedContest'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_CreatedContest'
         "400":
           description: Bad Request
           schema:
@@ -1775,9 +1774,10 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: Get contests manageable by the current user
+      summary: Get all contests (admin only)
       tags:
       - contests-management
+      - admin
     post:
       consumes:
       - application/json
@@ -2459,11 +2459,10 @@ paths:
       summary: Get overall user statistics for a contest
       tags:
       - contests-management
-  /contests-management/contests/created:
+  /contests-management/contests/managed:
     get:
-      deprecated: true
-      description: Get all contests created by the currently authenticated user with
-        pagination metadata
+      description: Get all contests where the current user is the creator or has collaborator
+        access (view, edit, or manage) with pagination metadata
       parameters:
       - description: Limit
         in: query
@@ -2483,7 +2482,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_CreatedContest'
+            $ref: '#/definitions/APIResponse-PaginatedResult-ManagedContest'
         "400":
           description: Bad Request
           schema:
@@ -2496,8 +2495,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/APIError'
-      summary: This endpoint is deprecated and will be removed in future versions.
-        Please use the /contests-management/contests endpoint instead.
+      summary: Get contests manageable by the current user
       tags:
       - contests-management
   /contests/{id}:
