@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	AccessTokenDuration  = time.Hour * 3      // 3 hour
 	RefreshTokenDuration = time.Hour * 24 * 7 // 7 days
 	TokenTypeBearer      = "Bearer"
 	TokenTypeAccess      = "access"
@@ -32,18 +31,20 @@ type JWTService interface {
 }
 
 type jwtService struct {
-	userRepository repository.UserRepository
-	secretKey      []byte
-	logger         *zap.SugaredLogger
+	userRepository      repository.UserRepository
+	secretKey           []byte
+	logger              *zap.SugaredLogger
+	accessTokenDuration time.Duration
 }
 
 // NewJWTService creates a new JWT service instance
-func NewJWTService(userRepository repository.UserRepository, secretKey string) JWTService {
+func NewJWTService(userRepository repository.UserRepository, secretKey string, accessTokenDuration time.Duration) JWTService {
 	log := utils.NewNamedLogger("jwt_service")
 	return &jwtService{
-		userRepository: userRepository,
-		secretKey:      []byte(secretKey),
-		logger:         log,
+		userRepository:      userRepository,
+		secretKey:           []byte(secretKey),
+		logger:              log,
+		accessTokenDuration: accessTokenDuration,
 	}
 }
 
@@ -137,7 +138,7 @@ func (j *jwtService) GenerateTokens(db database.Database, userId int64) (*schema
 		Type:     TokenTypeRefresh,
 	}
 
-	accessToken, err := j.generateToken(accessClaims, AccessTokenDuration)
+	accessToken, err := j.generateToken(accessClaims, j.accessTokenDuration)
 	if err != nil {
 		j.logger.Errorf("Error generating access token: %v", err)
 		return nil, err
@@ -152,7 +153,7 @@ func (j *jwtService) GenerateTokens(db database.Database, userId int64) (*schema
 	return &schemas.JWTTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresAt:    now.Add(AccessTokenDuration),
+		ExpiresAt:    now.Add(j.accessTokenDuration),
 	}, nil
 }
 

@@ -81,6 +81,10 @@ func NewListener(
 func (ql *listener) Start() error {
 	ql.logger.Info("Starting queue listener...")
 
+	if err := ql.queueService.PublishHandshake(); err != nil {
+		ql.logger.Warnf("Failed to publish handshake after reconnect: %v", err)
+		return err
+	}
 	// Register callback to send handshake on reconnection
 	ql.queueClient.OnReconnect(func() {
 		ql.logger.Info("Queue reconnected, sending handshake...")

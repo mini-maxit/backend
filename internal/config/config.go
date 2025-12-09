@@ -27,8 +27,9 @@ type DBConfig struct {
 }
 
 type APIConfig struct {
-	Port             uint16
-	RefreshTokenPath string
+	Port               uint16
+	RefreshTokenPath   string
+	AccessTokenMinutes uint16
 }
 
 type CORSConfig struct {
@@ -54,11 +55,12 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultAPIPort             = "8080"
-	defaultAPIRefreshTokenPath = "/api/v1/auth/refresh"
-	defaultQueueName           = "worker_queue"
-	defaultResponseQueueName   = "worker_response_queue"
-	defaultCORSAllowedOrigins  = "http://localhost:3000,http://localhost:5173"
+	defaultAPIPort               = "8080"
+	defaultAPIRefreshTokenPath   = "/api/v1/auth/refresh"
+	defaultQueueName             = "worker_queue"
+	defaultResponseQueueName     = "worker_response_queue"
+	defaultCORSAllowedOrigins    = "http://localhost:3000,http://localhost:5173"
+	defaultAccessTokenMinutesStr = "180"
 )
 
 // NewConfig creates new Config instance
@@ -92,6 +94,8 @@ const (
 //   - QUEUE_PASSWORD - broker password. Required
 //
 //   - JWT_SECRET_KEY - secret key for JWT token signing. Required
+//
+//   - JWT_ACCESS_TOKEN_MINUTES - access token lifetime in minutes. Default is 180
 //
 //   - LANGUAGES - comma-separated list of languages with their version,
 //     e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will expand to [DefaultLanguages]
@@ -132,6 +136,17 @@ func NewConfig() *Config {
 		log.Warnf("API_REFRESH_TOKEN_PATH is not set. Using default path %s", defaultAPIRefreshTokenPath)
 		refreshTokenPath = defaultAPIRefreshTokenPath
 	}
+
+	accessTokenMinutesStr := os.Getenv("JWT_ACCESS_TOKEN_MINUTES")
+	if accessTokenMinutesStr == "" {
+		log.Warnf("JWT_ACCESS_TOKEN_MINUTES is not set. Using default value %s", defaultAccessTokenMinutesStr)
+		accessTokenMinutesStr = defaultAccessTokenMinutesStr
+	}
+	accessTokenMinutesParsed, err := strconv.ParseUint(accessTokenMinutesStr, 10, 16)
+	if err != nil {
+		log.Panicf("invalid JWT_ACCESS_TOKEN_MINUTES value %s", accessTokenMinutesStr)
+	}
+	accessTokenMinutes := uint16(accessTokenMinutesParsed)
 
 	fileStorageHost := os.Getenv("FILE_STORAGE_HOST")
 	if fileStorageHost == "" {
@@ -203,8 +218,9 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 			Name:     dbName,
 		},
 		API: APIConfig{
-			Port:             appPort,
-			RefreshTokenPath: refreshTokenPath,
+			Port:               appPort,
+			RefreshTokenPath:   refreshTokenPath,
+			AccessTokenMinutes: accessTokenMinutes,
 		},
 		Broker: BrokerConfig{
 			QueueName:         queueName,

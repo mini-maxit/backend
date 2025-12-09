@@ -3,6 +3,7 @@ package initialization
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/api/http/routes"
 	"github.com/mini-maxit/backend/internal/api/queue"
@@ -94,7 +95,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		cfg.Broker.QueueName,
 		cfg.Broker.ResponseQueueName,
 	)
-	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey)
+	jwtService := service.NewJWTService(userRepository, cfg.JWTSecretKey, time.Minute*time.Duration(cfg.API.AccessTokenMinutes))
 	authService := service.NewAuthService(userRepository, jwtService)
 
 	// Create AccessControlService first
