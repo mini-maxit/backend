@@ -46,6 +46,8 @@ type ContestService interface {
 	GetUserContests(db database.Database, userID int64) (*schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
 	AddTaskToContest(db database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
+	// RemoveTaskFromContest removes a task from a contest
+	RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error
 	// GetRegistrationRequests retrieves pending registration requests for a contest
 	GetRegistrationRequests(db database.Database, currentUser *schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
 	// ApproveRegistrationRequest approves a pending registration request for a contest
@@ -672,6 +674,25 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 	}
 
 	return cs.contestRepository.AddTaskToContest(db, taskContest)
+}
+
+func (cs *contestService) RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error {
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+
+	// Verify the task is currently assigned to the contest
+	_, err = cs.contestRepository.GetContestTask(db, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrTaskNotInContest
+		}
+		return err
+	}
+
+	// Remove the task from the contest (submissions are preserved due to nullable ContestID)
+	return cs.contestRepository.RemoveTaskFromContest(db, contestID, taskID)
 }
 
 func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.CreatedContest {

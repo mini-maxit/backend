@@ -1920,3 +1920,91 @@ func TestContestService_GetAssignableGroups(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
+
+func TestContestService_RemoveTaskFromContest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	t.Run("success", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(1)
+		taskID := int64(2)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{
+			ContestID: contestID,
+			TaskID:    taskID,
+		}, nil).Times(1)
+		cr.EXPECT().RemoveTaskFromContest(db, contestID, taskID).Return(nil).Times(1)
+
+		err := cs.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+		require.NoError(t, err)
+	})
+
+	t.Run("contest not found", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(999)
+		taskID := int64(2)
+
+		cr.EXPECT().Get(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		err := cs.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+		require.Error(t, err)
+	})
+
+	t.Run("no permission", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
+		contestID := int64(1)
+		taskID := int64(2)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+
+		err := cs.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("task not in contest", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(1)
+		taskID := int64(999)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		err := cs.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrTaskNotInContest)
+	})
+
+	t.Run("repository error", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+		contestID := int64(1)
+		taskID := int64(2)
+
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{
+			ContestID: contestID,
+			TaskID:    taskID,
+		}, nil).Times(1)
+		cr.EXPECT().RemoveTaskFromContest(db, contestID, taskID).Return(errors.ErrDatabaseConnection).Times(1)
+
+		err := cs.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, errors.ErrDatabaseConnection)
+	})
+}

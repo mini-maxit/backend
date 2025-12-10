@@ -645,3 +645,163 @@ func TestApproveRegistrationRequest(t *testing.T) {
 		assert.Equal(t, "Registration request approved successfully", response.Data.Message)
 	})
 }
+
+func TestRemoveTaskFromContest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cs := mock_service.NewMockContestService(ctrl)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestsManagementRoute(cs, ss)
+	db := &testutils.MockDatabase{}
+
+	router := mux.NewRouter()
+	router.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
+		route.RemoveTaskFromContest(w, r)
+	})
+
+	handler := httputils.MockDatabaseMiddleware(router, db)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				t.Logf("Recovered from panic: %v", rec)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			}
+		}()
+		// Mock user and add to context
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  "admin",
+			Email: "test@example.com",
+		}
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only DELETE", func(t *testing.T) {
+		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/tasks", nil)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("Failed to make request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid contest ID", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/invalid/tasks", nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Empty body", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", nil)
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("Task not in contest", func(t *testing.T) {
+		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrTaskNotInContest)
+
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Not authorized", func(t *testing.T) {
+		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrForbidden)
+
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("Contest not found", func(t *testing.T) {
+		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrNotFound)
+
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
+
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var response httputils.APIResponse[httputils.MessageResponse]
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		assert.True(t, response.Ok)
+		assert.Equal(t, "Tasks removed from contest successfully", response.Data.Message)
+	})
+}

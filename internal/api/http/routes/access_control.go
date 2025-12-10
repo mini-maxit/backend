@@ -66,13 +66,13 @@ type accessControlRoute struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			resource_type	path		string					true	"Resource type (contests|tasks)"
-//	@Param			resource_id	path		int						true	"Resource ID"
-//	@Param			body		body		schemas.AddCollaborator	true	"Collaborator details"
-//	@Failure		400			{object}	httputils.ValidationErrorResponse
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Param			resource_id		path		int						true	"Resource ID"
+//	@Param			body			body		schemas.AddCollaborator	true	"Collaborator details"
+//	@Failure		400				{object}	httputils.ValidationErrorResponse
+//	@Failure		403				{object}	httputils.APIError
+//	@Failure		404				{object}	httputils.APIError
+//	@Failure		500				{object}	httputils.APIError
+//	@Success		200				{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators [post]
 func (ac *accessControlRoute) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 	// Generic handler retained
@@ -120,11 +120,11 @@ func (ac *accessControlRoute) AddCollaborator(w http.ResponseWriter, r *http.Req
 //	@Produce		json
 //	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
 //	@Param			resource_id		path		int		true	"Resource ID"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[[]schemas.Collaborator]
+//	@Failure		400				{object}	httputils.APIError
+//	@Failure		403				{object}	httputils.APIError
+//	@Failure		404				{object}	httputils.APIError
+//	@Failure		500				{object}	httputils.APIError
+//	@Success		200				{object}	httputils.APIResponse[[]schemas.Collaborator]
 //	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators [get]
 func (ac *accessControlRoute) GetCollaborators(w http.ResponseWriter, r *http.Request) {
 	// Generic handler retained
@@ -165,14 +165,14 @@ func (ac *accessControlRoute) GetCollaborators(w http.ResponseWriter, r *http.Re
 //	@Accept			json
 //	@Produce		json
 //	@Param			resource_type	path		string						true	"Resource type (contests|tasks)"
-//	@Param			resource_id	path		int							true	"Resource ID"
-//	@Param			user_id		path		int							true	"User ID"
-//	@Param			body		body		schemas.UpdateCollaborator	true	"New permission"
-//	@Failure		400			{object}	httputils.ValidationErrorResponse
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Param			resource_id		path		int							true	"Resource ID"
+//	@Param			user_id			path		int							true	"User ID"
+//	@Param			body			body		schemas.UpdateCollaborator	true	"New permission"
+//	@Failure		400				{object}	httputils.ValidationErrorResponse
+//	@Failure		403				{object}	httputils.APIError
+//	@Failure		404				{object}	httputils.APIError
+//	@Failure		500				{object}	httputils.APIError
+//	@Success		200				{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators/{user_id} [put]
 func (ac *accessControlRoute) UpdateCollaborator(w http.ResponseWriter, r *http.Request) {
 	// Generic handler retained
@@ -227,11 +227,11 @@ func (ac *accessControlRoute) UpdateCollaborator(w http.ResponseWriter, r *http.
 //	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
 //	@Param			resource_id		path		int		true	"Resource ID"
 //	@Param			user_id			path		int		true	"User ID"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Failure		400				{object}	httputils.APIError
+//	@Failure		403				{object}	httputils.APIError
+//	@Failure		404				{object}	httputils.APIError
+//	@Failure		500				{object}	httputils.APIError
+//	@Success		200				{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/access-control/resources/{resource_type}/{resource_id}/collaborators/{user_id} [delete]
 func (ac *accessControlRoute) RemoveCollaborator(w http.ResponseWriter, r *http.Request) {
 	// Generic handler retained
@@ -281,11 +281,11 @@ func (ac *accessControlRoute) RemoveCollaborator(w http.ResponseWriter, r *http.
 //	@Param			limit			query		int		false	"Pagination limit"
 //	@Param			offset			query		int		false	"Pagination offset"
 //	@Param			sort			query		string	false	"Sort fields, e.g. 'id:asc,created_at:desc'"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Failure		400				{object}	httputils.APIError
+//	@Failure		403				{object}	httputils.APIError
+//	@Failure		404				{object}	httputils.APIError
+//	@Failure		500				{object}	httputils.APIError
+//	@Success		200				{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
 //	@Router			/access-control/resources/{resource_type}/{resource_id}/assignable [get]
 func (ac *accessControlRoute) GetAssignableUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

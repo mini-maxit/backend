@@ -66,6 +66,8 @@ type ContestRepository interface {
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(db database.Database, taskContest models.ContestTask) error
+	// RemoveTaskFromContest removes a task from a contest
+	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
 	GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
 	// DeleteRegistrationRequest deletes a pending registration request
@@ -799,6 +801,12 @@ func (cr *contestRepository) AddTaskToContest(db database.Database, taskContest 
 		return err
 	}
 	return nil
+}
+
+func (cr *contestRepository) RemoveTaskFromContest(db database.Database, contestID, taskID int64) error {
+	tx := db.GetInstance()
+	err := tx.Where("contest_id = ? AND task_id = ?", contestID, taskID).Delete(&models.ContestTask{}).Error
+	return err
 }
 
 func (cr *contestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
