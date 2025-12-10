@@ -37,6 +37,10 @@ type ContestsManagementRoute interface {
 	RemoveGroupFromContest(w http.ResponseWriter, r *http.Request)
 	GetContestGroups(w http.ResponseWriter, r *http.Request)
 	GetAssignableGroups(w http.ResponseWriter, r *http.Request)
+	GetContestParticipants(w http.ResponseWriter, r *http.Request)
+	GetAssignableParticipants(w http.ResponseWriter, r *http.Request)
+	AddParticipantsToContest(w http.ResponseWriter, r *http.Request)
+	RemoveParticipantsFromContest(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -1019,6 +1023,221 @@ func (cr *contestsManagementRouteImpl) GetAssignableGroups(w http.ResponseWriter
 	httputils.ReturnSuccess(w, http.StatusOK, groups)
 }
 
+// GetContestParticipants godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get contest participants
+//	@Description	Get users assigned as participants to a contest with pagination (only accessible by contest collaborators with edit permission)
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Router			/contests-management/contests/{id}/participants [get]
+func (cr *contestsManagementRouteImpl) GetContestParticipants(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	participants, err := cr.contestService.GetContestParticipants(db, currentUser, contestID, paginationParams)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, participants)
+}
+
+// GetAssignableParticipants godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get assignable participants for a contest
+//	@Description	Get users that can be assigned as participants to a contest with pagination (only accessible by contest collaborators with edit permission)
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Router			/contests-management/contests/{id}/participants/assignable [get]
+func (cr *contestsManagementRouteImpl) GetAssignableParticipants(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	assignableUsers, err := cr.contestService.GetAssignableParticipants(db, currentUser, contestID, paginationParams)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, assignableUsers)
+}
+
+// AddParticipantsToContest godoc
+//
+//	@Tags			contests-management
+//	@Summary		Add participants to a contest
+//	@Description	Add multiple users as participants to a specific contest (only accessible by contest collaborators with edit permission)
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			body	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		409		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/participants [post]
+func (cr *contestsManagementRouteImpl) AddParticipantsToContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	// Parse user IDs from request body
+	var req struct {
+		UserIDs []int64 `json:"userIds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(req.UserIDs) == 0 {
+		httputils.ReturnError(w, http.StatusBadRequest, "User IDs cannot be empty")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	// Add participants
+	err = cr.contestService.AddParticipantsToContest(db, currentUser, contestID, req.UserIDs)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Participants added to contest successfully"))
+}
+
+// RemoveParticipantsFromContest godoc
+//
+//	@Tags			contests-management
+//	@Summary		Remove participants from a contest
+//	@Description	Remove multiple users from contest participants (only accessible by contest collaborators with edit permission)
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			body	body		[]int	true	"User IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/participants [delete]
+func (cr *contestsManagementRouteImpl) RemoveParticipantsFromContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	// Parse user IDs from request body
+	var req struct {
+		UserIDs []int64 `json:"userIds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(req.UserIDs) == 0 {
+		httputils.ReturnError(w, http.StatusBadRequest, "User IDs cannot be empty")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	// Remove participants
+	err = cr.contestService.RemoveParticipantsFromContest(db, currentUser, contestID, req.UserIDs)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Participants removed from contest successfully"))
+}
+
 // GetManageableContests godoc
 //
 //	@Tags			contests-management
@@ -1158,6 +1377,21 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			route.AddGroupToContest(w, r)
 		case http.MethodDelete:
 			route.RemoveGroupFromContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	// Participant management endpoints
+	mux.HandleFunc("/contests/{id}/participants/assignable", route.GetAssignableParticipants)
+	mux.HandleFunc("/contests/{id}/participants", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetContestParticipants(w, r)
+		case http.MethodPost:
+			route.AddParticipantsToContest(w, r)
+		case http.MethodDelete:
+			route.RemoveParticipantsFromContest(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}

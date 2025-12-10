@@ -89,6 +89,14 @@ type ContestRepository interface {
 	GetContestGroups(db database.Database, contestID int64) ([]models.Group, error)
 	// GetAssignableGroups retrieves all groups NOT assigned to a contest
 	GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error)
+	// GetContestParticipants retrieves all users assigned as participants to a contest
+	GetContestParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error)
+	// GetAssignableParticipants retrieves all users NOT assigned as participants to a contest with pagination
+	GetAssignableParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error)
+	// AddParticipantsToContest adds multiple users as participants to a contest
+	AddParticipantsToContest(db database.Database, contestID int64, userIDs []int64) error
+	// RemoveParticipantsFromContest removes multiple users from contest participants
+	RemoveParticipantsFromContest(db database.Database, contestID int64, userIDs []int64) error
 }
 
 type contestRepository struct{}
@@ -1018,6 +1026,88 @@ func (cr *contestRepository) GetAssignableGroups(db database.Database, contestID
 		return nil, err
 	}
 	return groups, nil
+}
+
+func (cr *contestRepository) GetContestParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	tx := db.GetInstance()
+	var users []models.User
+	var totalCount int64
+
+	// Get total count of participants
+	if err := tx.Model(&models.User{}).
+		Joins(fmt.Sprintf("JOIN %s ON contest_participants.user_id = users.id", database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Where("contest_participants.contest_id = ?", contestID).
+		Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and sorting
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.User{}).
+		Joins(fmt.Sprintf("JOIN %s ON contest_participants.user_id = users.id", database.ResolveTableName(tx, &models.ContestParticipant{}))).
+		Where("contest_participants.contest_id = ?", contestID).
+		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, totalCount, nil
+}
+
+func (cr *contestRepository) GetAssignableParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	tx := db.GetInstance()
+	var users []models.User
+	var totalCount int64
+
+	// Get total count of assignable users (not already participants)
+	if err := tx.Model(&models.User{}).
+		Where("id NOT IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
+				Select("user_id").
+				Where("contest_id = ?", contestID),
+		).
+		Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and sorting
+	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedTx.Model(&models.User{}).
+		Where("id NOT IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
+				Select("user_id").
+				Where("contest_id = ?", contestID),
+		).
+		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, totalCount, nil
+}
+
+func (cr *contestRepository) AddParticipantsToContest(db database.Database, contestID int64, userIDs []int64) error {
+	tx := db.GetInstance()
+	participants := make([]models.ContestParticipant, len(userIDs))
+	for i, userID := range userIDs {
+		participants[i] = models.ContestParticipant{
+			ContestID: contestID,
+			UserID:    userID,
+		}
+	}
+	return tx.Create(&participants).Error
+}
+
+func (cr *contestRepository) RemoveParticipantsFromContest(db database.Database, contestID int64, userIDs []int64) error {
+	tx := db.GetInstance()
+	err := tx.Where("contest_id = ? AND user_id IN ?", contestID, userIDs).Delete(&models.ContestParticipant{}).Error
+	return err
 }
 
 func NewContestRepository() ContestRepository {

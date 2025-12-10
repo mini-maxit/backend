@@ -71,6 +71,20 @@ func (mr *MockAccessControlRepositoryMockRecorder) AddContestCollaborator(db, co
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddContestCollaborator", reflect.TypeOf((*MockAccessControlRepository)(nil).AddContestCollaborator), db, contestID, userID, permission)
 }
 
+// AddGroupCollaborator mocks base method.
+func (m *MockAccessControlRepository) AddGroupCollaborator(db database.Database, groupID, userID int64, permission types.Permission) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddGroupCollaborator", db, groupID, userID, permission)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddGroupCollaborator indicates an expected call of AddGroupCollaborator.
+func (mr *MockAccessControlRepositoryMockRecorder) AddGroupCollaborator(db, groupID, userID, permission any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddGroupCollaborator", reflect.TypeOf((*MockAccessControlRepository)(nil).AddGroupCollaborator), db, groupID, userID, permission)
+}
+
 // AddTaskCollaborator mocks base method.
 func (m *MockAccessControlRepository) AddTaskCollaborator(db database.Database, taskID, userID int64, permission types.Permission) error {
 	m.ctrl.T.Helper()
@@ -131,6 +145,21 @@ func (mr *MockAccessControlRepositoryMockRecorder) GetContestCollaborators(db, c
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestCollaborators", reflect.TypeOf((*MockAccessControlRepository)(nil).GetContestCollaborators), db, contestID)
 }
 
+// GetGroupCollaborators mocks base method.
+func (m *MockAccessControlRepository) GetGroupCollaborators(db database.Database, groupID int64) ([]models.AccessControl, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGroupCollaborators", db, groupID)
+	ret0, _ := ret[0].([]models.AccessControl)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGroupCollaborators indicates an expected call of GetGroupCollaborators.
+func (mr *MockAccessControlRepositoryMockRecorder) GetGroupCollaborators(db, groupID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupCollaborators", reflect.TypeOf((*MockAccessControlRepository)(nil).GetGroupCollaborators), db, groupID)
+}
+
 // GetResourceAccess mocks base method.
 func (m *MockAccessControlRepository) GetResourceAccess(db database.Database, resourceType types.ResourceType, resourceID int64) ([]models.AccessControl, error) {
 	m.ctrl.T.Helper()
@@ -174,6 +203,21 @@ func (m *MockAccessControlRepository) GetUserContestPermission(db database.Datab
 func (mr *MockAccessControlRepositoryMockRecorder) GetUserContestPermission(db, contestID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserContestPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).GetUserContestPermission), db, contestID, userID)
+}
+
+// GetUserGroupPermission mocks base method.
+func (m *MockAccessControlRepository) GetUserGroupPermission(db database.Database, groupID, userID int64) (types.Permission, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserGroupPermission", db, groupID, userID)
+	ret0, _ := ret[0].(types.Permission)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserGroupPermission indicates an expected call of GetUserGroupPermission.
+func (mr *MockAccessControlRepositoryMockRecorder) GetUserGroupPermission(db, groupID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserGroupPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).GetUserGroupPermission), db, groupID, userID)
 }
 
 // GetUserPermission mocks base method.
@@ -234,6 +278,20 @@ func (mr *MockAccessControlRepositoryMockRecorder) RemoveContestCollaborator(db,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveContestCollaborator", reflect.TypeOf((*MockAccessControlRepository)(nil).RemoveContestCollaborator), db, contestID, userID)
 }
 
+// RemoveGroupCollaborator mocks base method.
+func (m *MockAccessControlRepository) RemoveGroupCollaborator(db database.Database, groupID, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveGroupCollaborator", db, groupID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveGroupCollaborator indicates an expected call of RemoveGroupCollaborator.
+func (mr *MockAccessControlRepositoryMockRecorder) RemoveGroupCollaborator(db, groupID, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveGroupCollaborator", reflect.TypeOf((*MockAccessControlRepository)(nil).RemoveGroupCollaborator), db, groupID, userID)
+}
+
 // RemoveTaskCollaborator mocks base method.
 func (m *MockAccessControlRepository) RemoveTaskCollaborator(db database.Database, taskID, userID int64) error {
 	m.ctrl.T.Helper()
@@ -260,6 +318,20 @@ func (m *MockAccessControlRepository) UpdateContestCollaboratorPermission(db dat
 func (mr *MockAccessControlRepositoryMockRecorder) UpdateContestCollaboratorPermission(db, contestID, userID, permission any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContestCollaboratorPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).UpdateContestCollaboratorPermission), db, contestID, userID, permission)
+}
+
+// UpdateGroupCollaboratorPermission mocks base method.
+func (m *MockAccessControlRepository) UpdateGroupCollaboratorPermission(db database.Database, groupID, userID int64, permission types.Permission) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateGroupCollaboratorPermission", db, groupID, userID, permission)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateGroupCollaboratorPermission indicates an expected call of UpdateGroupCollaboratorPermission.
+func (mr *MockAccessControlRepositoryMockRecorder) UpdateGroupCollaboratorPermission(db, groupID, userID, permission any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGroupCollaboratorPermission", reflect.TypeOf((*MockAccessControlRepository)(nil).UpdateGroupCollaboratorPermission), db, groupID, userID, permission)
 }
 
 // UpdatePermission mocks base method.
@@ -1659,6 +1731,20 @@ func (mr *MockContestRepositoryMockRecorder) AddGroupToContest(db, contestID, gr
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddGroupToContest", reflect.TypeOf((*MockContestRepository)(nil).AddGroupToContest), db, contestID, groupID)
 }
 
+// AddParticipantsToContest mocks base method.
+func (m *MockContestRepository) AddParticipantsToContest(db database.Database, contestID int64, userIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddParticipantsToContest", db, contestID, userIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddParticipantsToContest indicates an expected call of AddParticipantsToContest.
+func (mr *MockContestRepositoryMockRecorder) AddParticipantsToContest(db, contestID, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddParticipantsToContest", reflect.TypeOf((*MockContestRepository)(nil).AddParticipantsToContest), db, contestID, userIDs)
+}
+
 // AddTaskToContest mocks base method.
 func (m *MockContestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
 	m.ctrl.T.Helper()
@@ -1852,6 +1938,22 @@ func (mr *MockContestRepositoryMockRecorder) GetAssignableGroups(db, contestID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableGroups", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableGroups), db, contestID)
 }
 
+// GetAssignableParticipants mocks base method.
+func (m *MockContestRepository) GetAssignableParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableParticipants", db, contestID, limit, offset, sort)
+	ret0, _ := ret[0].([]models.User)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAssignableParticipants indicates an expected call of GetAssignableParticipants.
+func (mr *MockContestRepositoryMockRecorder) GetAssignableParticipants(db, contestID, limit, offset, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableParticipants", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableParticipants), db, contestID, limit, offset, sort)
+}
+
 // GetAssignableTasks mocks base method.
 func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error) {
 	m.ctrl.T.Helper()
@@ -1880,6 +1982,22 @@ func (m *MockContestRepository) GetContestGroups(db database.Database, contestID
 func (mr *MockContestRepositoryMockRecorder) GetContestGroups(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestGroups", reflect.TypeOf((*MockContestRepository)(nil).GetContestGroups), db, contestID)
+}
+
+// GetContestParticipants mocks base method.
+func (m *MockContestRepository) GetContestParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestParticipants", db, contestID, limit, offset, sort)
+	ret0, _ := ret[0].([]models.User)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetContestParticipants indicates an expected call of GetContestParticipants.
+func (mr *MockContestRepositoryMockRecorder) GetContestParticipants(db, contestID, limit, offset, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestParticipants", reflect.TypeOf((*MockContestRepository)(nil).GetContestParticipants), db, contestID, limit, offset, sort)
 }
 
 // GetContestTask mocks base method.
@@ -2153,6 +2271,20 @@ func (m *MockContestRepository) RemoveGroupFromContest(db database.Database, con
 func (mr *MockContestRepositoryMockRecorder) RemoveGroupFromContest(db, contestID, groupID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveGroupFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveGroupFromContest), db, contestID, groupID)
+}
+
+// RemoveParticipantsFromContest mocks base method.
+func (m *MockContestRepository) RemoveParticipantsFromContest(db database.Database, contestID int64, userIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveParticipantsFromContest", db, contestID, userIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveParticipantsFromContest indicates an expected call of RemoveParticipantsFromContest.
+func (mr *MockContestRepositoryMockRecorder) RemoveParticipantsFromContest(db, contestID, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveParticipantsFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveParticipantsFromContest), db, contestID, userIDs)
 }
 
 // RemoveTaskFromContest mocks base method.

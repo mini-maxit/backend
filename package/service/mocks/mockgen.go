@@ -196,6 +196,20 @@ func (mr *MockContestServiceMockRecorder) AddGroupToContest(db, currentUser, con
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddGroupToContest", reflect.TypeOf((*MockContestService)(nil).AddGroupToContest), db, currentUser, contestID, groupID)
 }
 
+// AddParticipantsToContest mocks base method.
+func (m *MockContestService) AddParticipantsToContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddParticipantsToContest", db, currentUser, contestID, userIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddParticipantsToContest indicates an expected call of AddParticipantsToContest.
+func (mr *MockContestServiceMockRecorder) AddParticipantsToContest(db, currentUser, contestID, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddParticipantsToContest", reflect.TypeOf((*MockContestService)(nil).AddParticipantsToContest), db, currentUser, contestID, userIDs)
+}
+
 // AddTaskToContest mocks base method.
 func (m *MockContestService) AddTaskToContest(db database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
 	m.ctrl.T.Helper()
@@ -298,6 +312,21 @@ func (mr *MockContestServiceMockRecorder) GetAssignableGroups(db, currentUser, c
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableGroups", reflect.TypeOf((*MockContestService)(nil).GetAssignableGroups), db, currentUser, contestID)
 }
 
+// GetAssignableParticipants mocks base method.
+func (m *MockContestService) GetAssignableParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssignableParticipants", db, currentUser, contestID, paginationParams)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.User])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssignableParticipants indicates an expected call of GetAssignableParticipants.
+func (mr *MockContestServiceMockRecorder) GetAssignableParticipants(db, currentUser, contestID, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableParticipants", reflect.TypeOf((*MockContestService)(nil).GetAssignableParticipants), db, currentUser, contestID, paginationParams)
+}
+
 // GetAssignableTasks mocks base method.
 func (m *MockContestService) GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Task, error) {
 	m.ctrl.T.Helper()
@@ -326,6 +355,21 @@ func (m *MockContestService) GetContestGroups(db database.Database, currentUser 
 func (mr *MockContestServiceMockRecorder) GetContestGroups(db, currentUser, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestGroups", reflect.TypeOf((*MockContestService)(nil).GetContestGroups), db, currentUser, contestID)
+}
+
+// GetContestParticipants mocks base method.
+func (m *MockContestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestParticipants", db, currentUser, contestID, paginationParams)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.User])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestParticipants indicates an expected call of GetContestParticipants.
+func (mr *MockContestServiceMockRecorder) GetContestParticipants(db, currentUser, contestID, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestParticipants", reflect.TypeOf((*MockContestService)(nil).GetContestParticipants), db, currentUser, contestID, paginationParams)
 }
 
 // GetContestTask mocks base method.
@@ -608,6 +652,20 @@ func (m *MockContestService) RemoveGroupFromContest(db database.Database, curren
 func (mr *MockContestServiceMockRecorder) RemoveGroupFromContest(db, currentUser, contestID, groupID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveGroupFromContest", reflect.TypeOf((*MockContestService)(nil).RemoveGroupFromContest), db, currentUser, contestID, groupID)
+}
+
+// RemoveParticipantsFromContest mocks base method.
+func (m *MockContestService) RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveParticipantsFromContest", db, currentUser, contestID, userIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveParticipantsFromContest indicates an expected call of RemoveParticipantsFromContest.
+func (mr *MockContestServiceMockRecorder) RemoveParticipantsFromContest(db, currentUser, contestID, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveParticipantsFromContest", reflect.TypeOf((*MockContestService)(nil).RemoveParticipantsFromContest), db, currentUser, contestID, userIDs)
 }
 
 // RemoveTaskFromContest mocks base method.

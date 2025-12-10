@@ -78,6 +78,14 @@ type ContestService interface {
 	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
 	// GetAssignableGroups retrieves groups that can be assigned to a contest (only accessible by contest collaborators)
 	GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
+	// GetContestParticipants retrieves users assigned as participants to a contest (only accessible by contest collaborators)
+	GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
+	// GetAssignableParticipants retrieves users that can be assigned as participants to a contest (only accessible by contest collaborators)
+	GetAssignableParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
+	// AddParticipantsToContest adds multiple users as participants to a contest (only accessible by contest collaborators with edit permission)
+	AddParticipantsToContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
+	// RemoveParticipantsFromContest removes multiple users from contest participants (only accessible by contest collaborators with edit permission)
+	RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -1307,6 +1315,129 @@ func (cs *contestService) GetAssignableGroups(db database.Database, currentUser 
 	}
 
 	return result, nil
+}
+
+func (cs *contestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.User]{}, err
+	}
+
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = "name:asc"
+	}
+
+	// Get participants
+	participants, totalCount, err := cs.contestRepository.GetContestParticipants(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.User]{}, err
+	}
+
+	// Convert to schemas
+	result := make([]schemas.User, len(participants))
+	for i, user := range participants {
+		result[i] = schemas.User{
+			ID:        user.ID,
+			Name:      user.Name,
+			Surname:   user.Surname,
+			Email:     user.Email,
+			Username:  user.Username,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt,
+		}
+	}
+
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func (cs *contestService) GetAssignableParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.User]{}, err
+	}
+
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = "name:asc"
+	}
+
+	// Get assignable participants
+	assignableUsers, totalCount, err := cs.contestRepository.GetAssignableParticipants(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.User]{}, err
+	}
+
+	// Convert to schemas
+	result := make([]schemas.User, len(assignableUsers))
+	for i, user := range assignableUsers {
+		result[i] = schemas.User{
+			ID:        user.ID,
+			Name:      user.Name,
+			Surname:   user.Surname,
+			Email:     user.Email,
+			Username:  user.Username,
+			Role:      user.Role,
+			CreatedAt: user.CreatedAt,
+		}
+	}
+
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func (cs *contestService) AddParticipantsToContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+
+	// Verify all users exist
+	for _, userID := range userIDs {
+		_, err := cs.userRepository.Get(db, userID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.ErrNotFound
+			}
+			return err
+		}
+	}
+
+	// Check if any user is already a participant
+	for _, userID := range userIDs {
+		isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, userID)
+		if err != nil {
+			return err
+		}
+		if isParticipant {
+			return errors.ErrAlreadyParticipant
+		}
+	}
+
+	// Add participants to contest
+	return cs.contestRepository.AddParticipantsToContest(db, contestID, userIDs)
+}
+
+func (cs *contestService) RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error {
+	// Check if user has edit permission for the contest
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+
+	// Verify all users are currently participants
+	for _, userID := range userIDs {
+		isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, userID)
+		if err != nil {
+			return err
+		}
+		if !isParticipant {
+			return errors.ErrNotContestParticipant
+		}
+	}
+
+	// Remove participants from contest
+	return cs.contestRepository.RemoveParticipantsFromContest(db, contestID, userIDs)
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, groupRepository repository.GroupRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
