@@ -2064,6 +2064,10 @@ paths:
         in: query
         name: sort
         type: string
+      - description: Task ID
+        in: query
+        name: taskId
+        type: integer
       produces:
       - application/json
       responses:
