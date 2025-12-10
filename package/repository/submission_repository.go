@@ -436,7 +436,7 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 	submission := models.Submission{}
 	err := tx.Model(&models.Submission{}).
 		Where("task_id = ? AND user_id = ?", taskID, userID).
-		Order("submitted_at DESC").
+		Order("\"order\" DESC").
 		First(&submission).Error
 	if err != nil {
 		return nil, err
