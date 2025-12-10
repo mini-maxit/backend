@@ -130,8 +130,7 @@ func (cs *contestService) Create(db database.Database, currentUser *schemas.User
 
 	// Automatically grant owner permission to the creator (immutable highest level)
 	if err := cs.accessControlService.GrantOwnerAccess(db, types.ResourceTypeContest, contestID, currentUser.ID); err != nil {
-		cs.logger.Warnf("Failed to grant owner permission: %v", err)
-		// Don't fail the creation if we can't add owner permission entry
+		return -1, err
 	}
 
 	return contestID, nil

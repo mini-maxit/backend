@@ -34,6 +34,13 @@ type AccessControlRepository interface {
 	GetUserTaskPermission(db database.Database, taskID, userID int64) (types.Permission, error)
 	UpdateTaskCollaboratorPermission(db database.Database, taskID, userID int64, permission types.Permission) error
 	RemoveTaskCollaborator(db database.Database, taskID, userID int64) error
+
+	// Convenience methods for groups
+	AddGroupCollaborator(db database.Database, groupID, userID int64, permission types.Permission) error
+	GetGroupCollaborators(db database.Database, groupID int64) ([]models.AccessControl, error)
+	GetUserGroupPermission(db database.Database, groupID, userID int64) (types.Permission, error)
+	UpdateGroupCollaboratorPermission(db database.Database, groupID, userID int64, permission types.Permission) error
+	RemoveGroupCollaborator(db database.Database, groupID, userID int64) error
 }
 
 type accessControlRepository struct{}
@@ -162,6 +169,34 @@ func (r *accessControlRepository) UpdateTaskCollaboratorPermission(db database.D
 
 func (r *accessControlRepository) RemoveTaskCollaborator(db database.Database, taskID, userID int64) error {
 	return r.RemoveAccess(db, types.ResourceTypeTask, taskID, userID)
+}
+
+// Group Convenience Methods
+
+func (r *accessControlRepository) AddGroupCollaborator(db database.Database, groupID, userID int64, permission types.Permission) error {
+	access := &models.AccessControl{
+		ResourceType: types.ResourceTypeGroup,
+		ResourceID:   groupID,
+		UserID:       userID,
+		Permission:   permission,
+	}
+	return r.AddAccess(db, access)
+}
+
+func (r *accessControlRepository) GetGroupCollaborators(db database.Database, groupID int64) ([]models.AccessControl, error) {
+	return r.GetResourceAccess(db, types.ResourceTypeGroup, groupID)
+}
+
+func (r *accessControlRepository) GetUserGroupPermission(db database.Database, groupID, userID int64) (types.Permission, error) {
+	return r.GetUserPermission(db, types.ResourceTypeGroup, groupID, userID)
+}
+
+func (r *accessControlRepository) UpdateGroupCollaboratorPermission(db database.Database, groupID, userID int64, permission types.Permission) error {
+	return r.UpdatePermission(db, types.ResourceTypeGroup, groupID, userID, permission)
+}
+
+func (r *accessControlRepository) RemoveGroupCollaborator(db database.Database, groupID, userID int64) error {
+	return r.RemoveAccess(db, types.ResourceTypeGroup, groupID, userID)
 }
 
 func NewAccessControlRepository() AccessControlRepository {

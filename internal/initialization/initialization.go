@@ -99,7 +99,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	authService := service.NewAuthService(userRepository, jwtService)
 
 	// Create AccessControlService first
-	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository, taskRepository, contestRepository)
+	accessControlService := service.NewAccessControlService(accessControlRepository, userRepository, taskRepository, contestRepository, groupRepository)
 
 	// Create TaskService (needs AccessControlService)
 	taskService := service.NewTaskService(
@@ -116,7 +116,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	contestService := service.NewContestService(contestRepository, userRepository, submissionRepository, taskRepository, groupRepository, accessControlService, taskService)
 	userService := service.NewUserService(userRepository, contestService)
-	groupService := service.NewGroupService(groupRepository, userRepository, userService)
+	groupService := service.NewGroupService(groupRepository, userRepository, userService, accessControlService)
 	langService := service.NewLanguageService(langRepository)
 	submissionService := service.NewSubmissionService(
 		accessControlService,

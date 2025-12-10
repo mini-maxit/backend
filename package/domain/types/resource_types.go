@@ -8,4 +8,6 @@ const (
 	ResourceTypeContest ResourceType = "contest"
 	// ResourceTypeTask represents a task resource.
 	ResourceTypeTask ResourceType = "task"
+	// ResourceTypeGroup represents a group resource.
+	ResourceTypeGroup ResourceType = "group"
 )

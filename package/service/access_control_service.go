@@ -48,6 +48,7 @@ type accessControlService struct {
 	userRepository          repository.UserRepository
 	taskRepository          repository.TaskRepository
 	contestRepository       repository.ContestRepository
+	groupRepository         repository.GroupRepository
 	logger                  *zap.SugaredLogger
 }
 
@@ -104,14 +105,19 @@ func (acs *accessControlService) AddCollaborator(db database.Database, currentUs
 		return err
 	}
 
-	// Check if target user exists
-	_, err = acs.userRepository.Get(db, userID)
+	// Check if target user exists and get their details
+	targetUser, err := acs.userRepository.Get(db, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
 		}
 		acs.logger.Errorw("Error getting user", "error", err, "userID", userID)
 		return err
+	}
+
+	// Only teachers can be added as collaborators
+	if targetUser.Role != types.UserRoleTeacher {
+		return errors.ErrForbidden
 	}
 
 	access := &models.AccessControl{
@@ -357,6 +363,15 @@ func (acs *accessControlService) checkResourceExists(db database.Database, resou
 			return false, err
 		}
 		return true, nil
+	case types.ResourceTypeGroup:
+		_, err := acs.groupRepository.Get(db, resourceID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
 	default:
 		return false, errors.ErrInvalidData
 	}
@@ -368,6 +383,7 @@ func NewAccessControlService(
 	userRepository repository.UserRepository,
 	taskRepository repository.TaskRepository,
 	contestRepository repository.ContestRepository,
+	groupRepository repository.GroupRepository,
 ) AccessControlService {
 	log := utils.NewNamedLogger("access_control_service")
 	return &accessControlService{
@@ -375,6 +391,7 @@ func NewAccessControlService(
 		userRepository:          userRepository,
 		taskRepository:          taskRepository,
 		contestRepository:       contestRepository,
+		groupRepository:         groupRepository,
 		logger:                  log,
 	}
 }
