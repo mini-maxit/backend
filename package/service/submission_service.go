@@ -119,6 +119,32 @@ func (ss *submissionService) getFilteredSubmissions(
 		return nil, 0, errors.ErrPermissionDenied
 	}
 
+	// Enforce access control for provided filters
+	if contestID != nil {
+		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, *contestID, user, types.PermissionEdit); err != nil {
+			ss.logger.Errorf("Access denied for contest %v: %v", *contestID, err)
+			return nil, 0, err
+		}
+	}
+	if taskID != nil {
+		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, *taskID, user, types.PermissionEdit); err != nil {
+			ss.logger.Errorf("Access denied for task %v: %v", *taskID, err)
+			return nil, 0, err
+		}
+	}
+	// If both filters are present, ensure the task belongs to the contest
+	if contestID != nil && taskID != nil {
+		inContest, err := ss.contestService.IsTaskInContest(db, *contestID, *taskID)
+		if err != nil {
+			ss.logger.Errorf("Error verifying task %v is in contest %v: %v", *taskID, *contestID, err)
+			return nil, 0, err
+		}
+		if !inContest {
+			ss.logger.Errorf("Task %v is not part of contest %v", *taskID, *contestID)
+			return nil, 0, errors.ErrPermissionDenied
+		}
+	}
+
 	// Fetch submissions based on filters and user role
 	limit := paginationParams.Limit
 	offset := paginationParams.Offset

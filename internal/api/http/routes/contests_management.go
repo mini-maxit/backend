@@ -463,6 +463,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
+//	@Param			taskId	query		int		false	"Task ID"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
@@ -492,8 +493,31 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	// TODO: add role check for teacher/admin
-	response, err := cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams)
+	// Optional filtering by taskId
+	var taskIDPtr *int64
+	if v, ok := queryParams["taskId"]; ok {
+		switch t := v.(type) {
+		case string:
+			if t != "" {
+				tid, perr := strconv.ParseInt(t, 10, 64)
+				if perr != nil {
+					httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+					return
+				}
+				taskIDPtr = &tid
+			}
+		default:
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+			return
+		}
+	}
+
+	var response *schemas.PaginatedResult[[]schemas.Submission]
+	if taskIDPtr != nil {
+		response, err = cr.submissionService.GetAll(db, currentUser, nil, taskIDPtr, &contestID, paginationParams)
+	} else {
+		response, err = cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams)
+	}
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
