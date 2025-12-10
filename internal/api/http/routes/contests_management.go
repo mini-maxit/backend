@@ -277,18 +277,18 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 // RemoveTaskFromContest godoc
 //
 //	@Tags			contests-management
-//	@Summary		Remove a task from a contest
-//	@Description	Remove a task from a specific contest. Existing submissions are preserved.
+//	@Summary		Remove tasks from a contest
+//	@Description	Batch remove tasks from a specific contest. Existing submissions are preserved.
 //	@Produce		json
-//	@Param			id		path		int	true	"Contest ID"
-//	@Param			taskId	path		int	true	"Task ID"
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			body	body		[]int	true	"Task IDs"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests-management/contests/{id}/tasks/{taskId} [delete]
+//	@Router			/contests-management/contests/{id}/tasks [delete]
 func (cr *contestsManagementRouteImpl) RemoveTaskFromContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -306,27 +306,31 @@ func (cr *contestsManagementRouteImpl) RemoveTaskFromContest(w http.ResponseWrit
 		return
 	}
 
-	taskStr := httputils.GetPathValue(r, "taskId")
-	if taskStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
+	// Parse task IDs from request body
+	var req struct {
+		TaskIDs []int64 `json:"taskIds"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	taskID, err := strconv.ParseInt(taskStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+	if len(req.TaskIDs) == 0 {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task IDs cannot be empty")
 		return
 	}
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	err = cr.contestService.RemoveTaskFromContest(db, currentUser, contestID, taskID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
+	// Batch remove tasks
+	for _, taskID := range req.TaskIDs {
+		if err := cr.contestService.RemoveTaskFromContest(db, currentUser, contestID, taskID); err != nil {
+			httputils.HandleServiceError(w, err, db, cr.logger)
+			return
+		}
 	}
 
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task removed from contest successfully"))
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Tasks removed from contest successfully"))
 }
 
 // GetRegistrationRequests godoc
@@ -1123,13 +1127,6 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			route.GetContestTasks(w, r)
 		case http.MethodPost:
 			route.AddTaskToContest(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/contests/{id}/tasks/{taskId}", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
 		case http.MethodDelete:
 			route.RemoveTaskFromContest(w, r)
 		default:

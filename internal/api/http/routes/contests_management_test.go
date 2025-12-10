@@ -654,7 +654,7 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	db := &testutils.MockDatabase{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{id}/tasks/{taskId}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		route.RemoveTaskFromContest(w, r)
 	})
 
@@ -682,7 +682,7 @@ func TestRemoveTaskFromContest(t *testing.T) {
 		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch}
 
 		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/1/tasks/2", nil)
+			req, err := http.NewRequest(method, server.URL+"/1/tasks", nil)
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
@@ -697,7 +697,7 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	})
 
 	t.Run("Invalid contest ID", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/invalid/tasks/2", nil)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/invalid/tasks", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -710,8 +710,8 @@ func TestRemoveTaskFromContest(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
-	t.Run("Invalid task ID", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks/invalid", nil)
+	t.Run("Empty body", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", nil)
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -727,7 +727,9 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	t.Run("Task not in contest", func(t *testing.T) {
 		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrTaskNotInContest)
 
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks/2", nil)
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -743,7 +745,9 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrForbidden)
 
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks/2", nil)
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -759,7 +763,9 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	t.Run("Contest not found", func(t *testing.T) {
 		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(errors.ErrNotFound)
 
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks/2", nil)
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -775,7 +781,9 @@ func TestRemoveTaskFromContest(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		cs.EXPECT().RemoveTaskFromContest(gomock.Any(), gomock.Any(), int64(1), int64(2)).Return(nil)
 
-		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks/2", nil)
+		body := bytes.NewBufferString(`{"taskIds":[2]}`)
+		req, err := http.NewRequest(http.MethodDelete, server.URL+"/1/tasks", body)
+		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}
@@ -794,6 +802,6 @@ func TestRemoveTaskFromContest(t *testing.T) {
 		}
 
 		assert.True(t, response.Ok)
-		assert.Equal(t, "Task removed from contest successfully", response.Data.Message)
+		assert.Equal(t, "Tasks removed from contest successfully", response.Data.Message)
 	})
 }
