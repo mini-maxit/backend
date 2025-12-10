@@ -1094,16 +1094,14 @@ func (cr *contestRepository) GetAssignableParticipants(db database.Database, con
 
 func (cr *contestRepository) AddParticipantsToContest(db database.Database, contestID int64, userIDs []int64) error {
 	tx := db.GetInstance()
-	for _, userID := range userIDs {
-		participant := &models.ContestParticipant{
+	participants := make([]models.ContestParticipant, len(userIDs))
+	for i, userID := range userIDs {
+		participants[i] = models.ContestParticipant{
 			ContestID: contestID,
 			UserID:    userID,
 		}
-		if err := tx.Create(participant).Error; err != nil {
-			return err
-		}
 	}
-	return nil
+	return tx.Create(&participants).Error
 }
 
 func (cr *contestRepository) RemoveParticipantsFromContest(db database.Database, contestID int64, userIDs []int64) error {

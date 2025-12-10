@@ -1184,6 +1184,7 @@ func (cr *contestsManagementRouteImpl) AddParticipantsToContest(w http.ResponseW
 //	@Tags			contests-management
 //	@Summary		Remove participants from a contest
 //	@Description	Remove multiple users from contest participants (only accessible by contest collaborators with edit permission)
+//	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int		true	"Contest ID"
 //	@Param			body	body		[]int	true	"User IDs"
