@@ -2127,6 +2127,55 @@ paths:
       tags:
       - contests-management
   /contests-management/contests/{id}/tasks:
+    delete:
+      consumes:
+      - application/json
+      description: Batch remove tasks from a specific contest. Existing submissions
+        are preserved.
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task IDs
+        in: body
+        name: body
+        required: true
+        schema:
+          items:
+            type: integer
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Remove tasks from a contest
+      tags:
+      - contests-management
     get:
       description: Get all tasks associated with a specific contest
       parameters:
