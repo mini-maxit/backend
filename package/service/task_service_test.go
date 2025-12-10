@@ -1371,7 +1371,7 @@ func TestCreateTaskErrors(t *testing.T) {
 		assert.Equal(t, int64(0), taskID)
 	})
 
-	t.Run("Error granting owner access continues", func(t *testing.T) {
+	t.Run("Error granting owner access", func(t *testing.T) {
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
@@ -1382,7 +1382,7 @@ func TestCreateTaskErrors(t *testing.T) {
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
 
 		taskID, err := ts.Create(db, adminUser, task)
-		require.NoError(t, err) // Should not fail even if GrantOwnerAccess fails
-		assert.Equal(t, int64(1), taskID)
+		require.Error(t, err)
+		assert.Equal(t, int64(-1), taskID)
 	})
 }
