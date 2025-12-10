@@ -1067,6 +1067,8 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			route.GetContestTasks(w, r)
 		case http.MethodPost:
 			route.AddTaskToContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 

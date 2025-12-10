@@ -15,7 +15,6 @@ import (
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type SubmissionService interface {
@@ -614,13 +613,9 @@ func (ss *submissionService) Submit(
 		}
 	}
 	// Upload solution file to storage
-	latest, err := ss.submissionRepository.GetLatestForTaskByUser(db, user.ID, taskID)
+	latest, err := ss.submissionRepository.GetLatestForTaskByUser(db, taskID, user.ID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			latest = nil
-		} else {
-			return -1, err
-		}
+		return -1, err
 	}
 	newOrder := 1
 	if latest != nil {

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
+	"gorm.io/gorm"
 )
 
 type SubmissionRepository interface {
@@ -428,6 +430,7 @@ func (us *submissionRepository) GetAllForTaskByUser(
 	return submissions, totalCount, nil
 }
 
+//nolint:nilnil // This function intentionally maps all error codes exhaustively
 func (sr *submissionRepository) GetLatestForTaskByUser(
 	db database.Database,
 	taskID, userID int64,
@@ -439,6 +442,9 @@ func (sr *submissionRepository) GetLatestForTaskByUser(
 		Order("submitted_at DESC").
 		First(&submission).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &submission, nil
