@@ -610,6 +610,20 @@ func (mr *MockContestServiceMockRecorder) RemoveGroupFromContest(db, currentUser
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveGroupFromContest", reflect.TypeOf((*MockContestService)(nil).RemoveGroupFromContest), db, currentUser, contestID, groupID)
 }
 
+// RemoveTaskFromContest mocks base method.
+func (m *MockContestService) RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTaskFromContest", db, currentUser, contestID, taskID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTaskFromContest indicates an expected call of RemoveTaskFromContest.
+func (mr *MockContestServiceMockRecorder) RemoveTaskFromContest(db, currentUser, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskFromContest", reflect.TypeOf((*MockContestService)(nil).RemoveTaskFromContest), db, currentUser, contestID, taskID)
+}
+
 // ValidateContestSubmission mocks base method.
 func (m *MockContestService) ValidateContestSubmission(db database.Database, contestID, taskID, userID int64) error {
 	m.ctrl.T.Helper()

@@ -162,7 +162,7 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 
 	// Contest task errors
 	case errors.CodeTaskNotInContest:
-		return http.StatusBadRequest
+		return http.StatusNotFound
 
 	// Language errors
 	case errors.CodeInvalidLanguage:

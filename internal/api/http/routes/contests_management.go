@@ -21,6 +21,7 @@ type ContestsManagementRoute interface {
 	GetContestTasks(w http.ResponseWriter, r *http.Request)
 	GetAssignableTasks(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
+	RemoveTaskFromContest(w http.ResponseWriter, r *http.Request)
 	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
@@ -271,6 +272,61 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task added to contest successfully"))
+}
+
+// RemoveTaskFromContest godoc
+//
+//	@Tags			contests-management
+//	@Summary		Remove a task from a contest
+//	@Description	Remove a task from a specific contest. Existing submissions are preserved.
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			taskId	path		int	true	"Task ID"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/tasks/{taskId} [delete]
+func (cr *contestsManagementRouteImpl) RemoveTaskFromContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskStr := httputils.GetPathValue(r, "taskId")
+	if taskStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	err = cr.contestService.RemoveTaskFromContest(db, currentUser, contestID, taskID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task removed from contest successfully"))
 }
 
 // GetRegistrationRequests godoc
@@ -1067,6 +1123,15 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			route.GetContestTasks(w, r)
 		case http.MethodPost:
 			route.AddTaskToContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/tasks/{taskId}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodDelete:
+			route.RemoveTaskFromContest(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
