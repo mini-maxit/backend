@@ -279,6 +279,7 @@ func (cr *contestsManagementRouteImpl) AddTaskToContest(w http.ResponseWriter, r
 //	@Tags			contests-management
 //	@Summary		Remove tasks from a contest
 //	@Description	Batch remove tasks from a specific contest. Existing submissions are preserved.
+//	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int		true	"Contest ID"
 //	@Param			body	body		[]int	true	"Task IDs"
@@ -597,10 +598,10 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 //	@Param		offset	query		int		false	"Offset"
 //	@Param		sort	query		string	false	"Sort"
 //	@Failure	400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedContest]]
-//	@Router			/contests-management/contests/managed [get]
+//	@Failure	403		{object}	httputils.APIError
+//	@Failure	500		{object}	httputils.APIError
+//	@Success	200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedContest]]
+//	@Router		/contests-management/contests/managed [get]
 func (cr *contestsManagementRouteImpl) GetCreatedContests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -820,14 +821,14 @@ func (cr *contestsManagementRouteImpl) GetContestUserStats(w http.ResponseWriter
 //	@Description	Add a group as participants to a specific contest (only accessible by contest collaborators with edit permission)
 //	@Accept			json
 //	@Produce		json
-//	@Param			id			path		int		true	"Contest ID"
-//	@Param			body		body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		405			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			body	body		[]int	true	"Group IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/contests-management/contests/{id}/groups [post]
 func (cr *contestsManagementRouteImpl) AddGroupToContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -879,14 +880,14 @@ func (cr *contestsManagementRouteImpl) AddGroupToContest(w http.ResponseWriter, 
 //	@Summary		Remove a group from a contest
 //	@Description	Remove a group from contest participants (only accessible by contest collaborators with edit permission)
 //	@Produce		json
-//	@Param			id			path		int		true	"Contest ID"
-//	@Param			body		body		[]int	true	"Group IDs"
-//	@Failure		400			{object}	httputils.APIError
-//	@Failure		403			{object}	httputils.APIError
-//	@Failure		404			{object}	httputils.APIError
-//	@Failure		405			{object}	httputils.APIError
-//	@Failure		500			{object}	httputils.APIError
-//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			body	body		[]int	true	"Group IDs"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/contests-management/contests/{id}/groups [delete]
 func (cr *contestsManagementRouteImpl) RemoveGroupFromContest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

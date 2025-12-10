@@ -683,15 +683,12 @@ func (cs *contestService) RemoveTaskFromContest(db database.Database, currentUse
 	}
 
 	// Verify the task is currently assigned to the contest
-	contestTask, err := cs.contestRepository.GetContestTask(db, contestID, taskID)
+	_, err = cs.contestRepository.GetContestTask(db, contestID, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrTaskNotInContest
 		}
 		return err
-	}
-	if contestTask == nil {
-		return errors.ErrTaskNotInContest
 	}
 
 	// Remove the task from the contest (submissions are preserved due to nullable ContestID)
