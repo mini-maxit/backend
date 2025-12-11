@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"archive/zip"
+	stderrors "errors"
 	"fmt"
 	"os"
 	"testing"
@@ -770,5 +771,618 @@ func TestPutLimit(t *testing.T) {
 
 		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
 		require.NoError(t, err)
+	})
+}
+
+func TestGetMyLiveTasks(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, sr, cr, nil)
+
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0}
+
+	t.Run("Success with no tasks", func(t *testing.T) {
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(map[int64][]models.Task{}, nil).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Empty(t, result.Contests)
+	})
+
+	t.Run("Success with tasks in one contest", func(t *testing.T) {
+		contestID := int64(1)
+		taskID := int64(1)
+		contestTasksMap := map[int64][]models.Task{
+			contestID: {
+				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+			},
+		}
+		contest := &models.Contest{
+			ID:   contestID,
+			Name: "Test Contest",
+		}
+
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		sr.EXPECT().GetAttemptCountForTaskByUser(db, taskID, studentUser.ID).Return(2, nil).Times(1)
+		sr.EXPECT().GetBestScoreForTaskByUser(db, taskID, studentUser.ID).Return(float64(80.0), nil).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Len(t, result.Contests, 1)
+		assert.Equal(t, contestID, result.Contests[0].ContestID)
+		assert.Equal(t, "Test Contest", result.Contests[0].ContestName)
+		assert.Len(t, result.Contests[0].Tasks, 1)
+		assert.Equal(t, taskID, result.Contests[0].Tasks[0].ID)
+		assert.Equal(t, 2, result.Contests[0].Tasks[0].AttemptsSummary.AttemptCount)
+		assert.InEpsilon(t, float64(80.0), result.Contests[0].Tasks[0].AttemptsSummary.BestScore, 0.001)
+	})
+
+	t.Run("Success with no attempts", func(t *testing.T) {
+		contestID := int64(1)
+		taskID := int64(1)
+		contestTasksMap := map[int64][]models.Task{
+			contestID: {
+				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+			},
+		}
+		contest := &models.Contest{
+			ID:   contestID,
+			Name: "Test Contest",
+		}
+
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		sr.EXPECT().GetAttemptCountForTaskByUser(db, taskID, studentUser.ID).Return(0, nil).Times(1)
+		// GetBestScoreForTaskByUser should NOT be called when attemptCount is 0
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Len(t, result.Contests, 1)
+		assert.Equal(t, 0, result.Contests[0].Tasks[0].AttemptsSummary.AttemptCount)
+		assert.InDelta(t, float64(0), result.Contests[0].Tasks[0].AttemptsSummary.BestScore, 0.001)
+	})
+
+	t.Run("Error getting live tasks", func(t *testing.T) {
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.Error(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("Error getting contest skips contest", func(t *testing.T) {
+		contestID := int64(1)
+		taskID := int64(1)
+		contestTasksMap := map[int64][]models.Task{
+			contestID: {
+				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+			},
+		}
+
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		// Contest should be skipped due to error
+		assert.Empty(t, result.Contests)
+	})
+
+	t.Run("Error getting attempt count skips task", func(t *testing.T) {
+		contestID := int64(1)
+		taskID := int64(1)
+		contestTasksMap := map[int64][]models.Task{
+			contestID: {
+				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+			},
+		}
+		contest := &models.Contest{
+			ID:   contestID,
+			Name: "Test Contest",
+		}
+
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		sr.EXPECT().GetAttemptCountForTaskByUser(db, taskID, studentUser.ID).Return(0, gorm.ErrInvalidDB).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Len(t, result.Contests, 1)
+		// Task should be skipped due to error
+		assert.Empty(t, result.Contests[0].Tasks)
+	})
+
+	t.Run("Error getting best score skips task", func(t *testing.T) {
+		contestID := int64(1)
+		taskID := int64(1)
+		contestTasksMap := map[int64][]models.Task{
+			contestID: {
+				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+			},
+		}
+		contest := &models.Contest{
+			ID:   contestID,
+			Name: "Test Contest",
+		}
+
+		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
+		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		sr.EXPECT().GetAttemptCountForTaskByUser(db, taskID, studentUser.ID).Return(2, nil).Times(1)
+		sr.EXPECT().GetBestScoreForTaskByUser(db, taskID, studentUser.ID).Return(float64(0), gorm.ErrInvalidDB).Times(1)
+
+		result, err := ts.GetMyLiveTasks(db, studentUser, paginationParams)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Len(t, result.Contests, 1)
+		// Task should be skipped due to error
+		assert.Empty(t, result.Contests[0].Tasks)
+	})
+}
+
+func TestProcessAndUpload(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	db := &testutils.MockDatabase{}
+	fsMock := filestorage.NewMockFileStorageService(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+
+	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, nil, acs)
+
+	taskID := int64(1)
+	archivePath := "/test/archive.zip"
+	task := &models.Task{
+		ID:        taskID,
+		Title:     "Test Task",
+		CreatedBy: teacherUser.ID,
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename:   "description.pdf",
+				Path:       "task/1/description.pdf",
+				Bucket:     "maxit",
+				ServerType: "filestorage",
+			},
+			InputFiles: []filestorage.UploadedFile{
+				{Filename: "1.in", Path: "task/1/input/1.in", Bucket: "maxit", ServerType: "filestorage"},
+			},
+			OutputFiles: []filestorage.UploadedFile{
+				{Filename: "1.out", Path: "task/1/output/1.out", Bucket: "maxit", ServerType: "filestorage"},
+			},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(3) // description, input, output files
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().Create(db, gomock.Any()).Return(nil).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.NoError(t, err)
+	})
+
+	t.Run("Permission denied", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrForbidden).Times(1)
+
+		err := ts.ProcessAndUpload(db, studentUser, taskID, archivePath)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("Task not found", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+	})
+
+	t.Run("Invalid archive structure", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(stderrors.New("invalid archive")).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to validate archive structure")
+	})
+
+	t.Run("Upload task error", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(nil, stderrors.New("upload failed")).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to upload task archive")
+	})
+
+	t.Run("Save description file error", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles:  []filestorage.UploadedFile{},
+			OutputFiles: []filestorage.UploadedFile{},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to save description file")
+	})
+
+	t.Run("Get task error after upload", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles:  []filestorage.UploadedFile{},
+			OutputFiles: []filestorage.UploadedFile{},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(1)
+		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+	})
+
+	t.Run("Update task error", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles:  []filestorage.UploadedFile{},
+			OutputFiles: []filestorage.UploadedFile{},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(1)
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to update task with description file")
+	})
+
+	t.Run("Save input file error", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles: []filestorage.UploadedFile{
+				{Filename: "1.in", Path: "task/1/input/1.in"},
+			},
+			OutputFiles: []filestorage.UploadedFile{
+				{Filename: "1.out", Path: "task/1/output/1.out"},
+			},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(1) // description file
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1) // input file
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to save input file")
+	})
+
+	t.Run("Save output file error", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles: []filestorage.UploadedFile{
+				{Filename: "1.in", Path: "task/1/input/1.in"},
+			},
+			OutputFiles: []filestorage.UploadedFile{
+				{Filename: "1.out", Path: "task/1/output/1.out"},
+			},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(2) // description file + input file
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1) // output file
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to save output file")
+	})
+
+	t.Run("Create test case error", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles: []filestorage.UploadedFile{
+				{Filename: "1.in", Path: "task/1/input/1.in"},
+			},
+			OutputFiles: []filestorage.UploadedFile{
+				{Filename: "1.out", Path: "task/1/output/1.out"},
+			},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(3) // description + input + output files
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().Create(db, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to save input output")
+	})
+
+	t.Run("Success with multiple input output files", func(t *testing.T) {
+		uploadedFiles := &filestorage.UploadedTaskFiles{
+			DescriptionFile: filestorage.UploadedFile{
+				Filename: "description.pdf",
+				Path:     "task/1/description.pdf",
+			},
+			InputFiles: []filestorage.UploadedFile{
+				{Filename: "1.in", Path: "task/1/input/1.in"},
+				{Filename: "2.in", Path: "task/1/input/2.in"},
+				{Filename: "3.in", Path: "task/1/input/3.in"},
+			},
+			OutputFiles: []filestorage.UploadedFile{
+				{Filename: "1.out", Path: "task/1/output/1.out"},
+				{Filename: "2.out", Path: "task/1/output/2.out"},
+				{Filename: "3.out", Path: "task/1/output/3.out"},
+			},
+		}
+
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
+		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
+		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(7) // 1 description + 3 input + 3 output
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().Create(db, gomock.Any()).Return(nil).Times(3) // 3 test cases
+
+		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
+		require.NoError(t, err)
+	})
+}
+
+func TestGetLimitsNotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	db := &testutils.MockDatabase{}
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
+	taskID := int64(1)
+
+	t.Run("Task not found", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		result, err := ts.GetLimits(db, teacherUser, taskID)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+		assert.Nil(t, result)
+	})
+
+	t.Run("Error getting test cases", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		io.EXPECT().GetByTask(db, taskID).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		result, err := ts.GetLimits(db, teacherUser, taskID)
+		require.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestPutLimitsErrors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	db := &testutils.MockDatabase{}
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
+	taskID := int64(1)
+
+	t.Run("Permission denied", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.ErrForbidden).Times(1)
+
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
+				{Order: 1, TimeLimit: 20, MemoryLimit: 20},
+			},
+		}
+		err := ts.PutLimits(db, studentUser, taskID, newLimits)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("Task not found", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
+				{Order: 1, TimeLimit: 20, MemoryLimit: 20},
+			},
+		}
+		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+	})
+
+	t.Run("Error getting test case ID", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().GetTestCaseID(db, taskID, 1).Return(int64(0), gorm.ErrRecordNotFound).Times(1)
+
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
+				{Order: 1, TimeLimit: 20, MemoryLimit: 20},
+			},
+		}
+		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
+		require.Error(t, err)
+	})
+
+	t.Run("Error getting test case", func(t *testing.T) {
+		ioID := int64(1)
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().GetTestCaseID(db, taskID, 1).Return(ioID, nil).Times(1)
+		io.EXPECT().Get(db, ioID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
+				{Order: 1, TimeLimit: 20, MemoryLimit: 20},
+			},
+		}
+		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
+		require.Error(t, err)
+	})
+
+	t.Run("Error putting test case", func(t *testing.T) {
+		ioID := int64(1)
+		testCase := &models.TestCase{
+			ID:          ioID,
+			TaskID:      taskID,
+			Order:       1,
+			TimeLimit:   10,
+			MemoryLimit: 10,
+		}
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		io.EXPECT().GetTestCaseID(db, taskID, 1).Return(ioID, nil).Times(1)
+		io.EXPECT().Get(db, ioID).Return(testCase, nil).Times(1)
+		io.EXPECT().Put(db, gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
+
+		newLimits := schemas.PutTestCaseLimitsRequest{
+			Limits: []schemas.PutTestCase{
+				{Order: 1, TimeLimit: 20, MemoryLimit: 20},
+			},
+		}
+		err := ts.PutLimits(db, teacherUser, taskID, newLimits)
+		require.Error(t, err)
+	})
+}
+
+func TestCreateTaskErrors(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
+
+	t.Run("Error getting task by title", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: adminUser.ID,
+		}
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrInvalidDB).Times(1)
+
+		taskID, err := ts.Create(db, adminUser, task)
+		require.Error(t, err)
+		assert.Equal(t, int64(0), taskID)
+	})
+
+	t.Run("Error getting user", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: adminUser.ID,
+		}
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().Get(gomock.Any(), adminUser.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
+
+		taskID, err := ts.Create(db, adminUser, task)
+		require.Error(t, err)
+		assert.Equal(t, int64(0), taskID)
+	})
+
+	t.Run("Error creating task", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: adminUser.ID,
+		}
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().Get(gomock.Any(), adminUser.ID).Return(&models.User{ID: adminUser.ID}, nil).Times(1)
+		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(0), gorm.ErrInvalidDB).Times(1)
+
+		taskID, err := ts.Create(db, adminUser, task)
+		require.Error(t, err)
+		assert.Equal(t, int64(0), taskID)
+	})
+
+	t.Run("Error granting owner access", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Test Task",
+			CreatedBy: adminUser.ID,
+		}
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().Get(gomock.Any(), adminUser.ID).Return(&models.User{ID: adminUser.ID}, nil).Times(1)
+		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(gorm.ErrInvalidDB).Times(1)
+
+		taskID, err := ts.Create(db, adminUser, task)
+		require.Error(t, err)
+		assert.Equal(t, int64(-1), taskID)
 	})
 }
