@@ -28,6 +28,9 @@ jobs:
       - name: Run tests
         run: go test -coverprofile=coverage.txt ./...
 
+      - name: Exclude mockgen.go from coverage
+        run: grep -v "mockgen.go" coverage.txt > coverage.txt.tmp && mv coverage.txt.tmp coverage.txt
+
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
         with:
