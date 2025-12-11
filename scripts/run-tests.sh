@@ -5,8 +5,9 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_DB=test-maxit
 POSTGRES_CONTAINER_NAME=maxit-testdb
 BROKER_CONTAINER_NAME=maxit-testbroker
-COVERAGE_FILE="coverage.out"
+COVERAGE_FILE="${COVERAGE_FILE:-coverage.out}"
 COVERAGE_HTML="coverage.html"
+GENERATE_HTML="${GENERATE_HTML:-true}"
 
 # Function to check if Docker is running
 check_docker() {
@@ -39,9 +40,14 @@ generate_coverage() {
   echo -e "\033[32mRunning tests with coverage...\033[0m"
   go test -v ./... -cover -coverprofile=$COVERAGE_FILE
   if [ $? -eq 0 ]; then
-    echo -e "\033[32mTests completed successfully. Generating HTML coverage report: $COVERAGE_HTML\033[0m"
-    go tool cover -html=$COVERAGE_FILE -o $COVERAGE_HTML
-    echo -e "\033[32mCoverage report generated: $COVERAGE_HTML\033[0m"
+    echo -e "\033[32mTests completed successfully. Excluding mockgen.go files from coverage...\033[0m"
+    grep -v "mockgen.go" $COVERAGE_FILE > ${COVERAGE_FILE}.filtered || cp $COVERAGE_FILE ${COVERAGE_FILE}.filtered
+    mv ${COVERAGE_FILE}.filtered $COVERAGE_FILE
+    if [ "$GENERATE_HTML" = "true" ]; then
+      echo -e "\033[32mGenerating HTML coverage report: $COVERAGE_HTML\033[0m"
+      go tool cover -html=$COVERAGE_FILE -o $COVERAGE_HTML
+      echo -e "\033[32mCoverage report generated: $COVERAGE_HTML\033[0m"
+    fi
   else
     echo -e "\033[31mTests failed. See output above for details.\033[0m"
     exit 1
