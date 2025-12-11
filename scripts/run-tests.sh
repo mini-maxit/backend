@@ -40,7 +40,8 @@ generate_coverage() {
   go test -v ./... -cover -coverprofile=$COVERAGE_FILE
   if [ $? -eq 0 ]; then
     echo -e "\033[32mTests completed successfully. Excluding mockgen.go files from coverage...\033[0m"
-    grep -v "mockgen.go" $COVERAGE_FILE > ${COVERAGE_FILE}.tmp && mv ${COVERAGE_FILE}.tmp $COVERAGE_FILE
+    grep -v "mockgen.go" $COVERAGE_FILE > ${COVERAGE_FILE}.tmp || cp $COVERAGE_FILE ${COVERAGE_FILE}.tmp
+    mv ${COVERAGE_FILE}.tmp $COVERAGE_FILE
     echo -e "\033[32mGenerating HTML coverage report: $COVERAGE_HTML\033[0m"
     go tool cover -html=$COVERAGE_FILE -o $COVERAGE_HTML
     echo -e "\033[32mCoverage report generated: $COVERAGE_HTML\033[0m"
