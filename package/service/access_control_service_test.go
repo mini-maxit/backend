@@ -18,7 +18,7 @@ import (
 )
 
 func TestCanUserAccess(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 
 	t.Run("Admin user has access", func(t *testing.T) {
@@ -29,7 +29,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		adminUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		err := acs.CanUserAccess(db, resourceType, resourceID, adminUser, types.PermissionEdit)
@@ -44,7 +45,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionOwner, nil).Times(1)
@@ -60,7 +62,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionManage, nil).Times(1)
@@ -76,7 +79,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionEdit, nil).Times(1)
@@ -92,7 +96,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionEdit, nil).Times(1)
@@ -108,7 +113,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 3, Role: types.UserRoleStudent}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.Permission(""), gorm.ErrRecordNotFound).Times(1)
@@ -124,7 +130,8 @@ func TestCanUserAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 4, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.Permission(""), assert.AnError).Times(1)
@@ -135,7 +142,7 @@ func TestCanUserAccess(t *testing.T) {
 }
 
 func TestAddCollaborator(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 	collaboratorID := int64(10)
 
@@ -147,7 +154,8 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionOwner)
@@ -162,7 +170,8 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionEdit, nil).Times(1)
@@ -178,7 +187,8 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -195,11 +205,12 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
-		contestResourceType := models.ResourceTypeContest
+		contestResourceType := types.ResourceTypeContest
 		cr.EXPECT().Get(db, resourceID).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		err := acs.AddCollaborator(db, currentUser, contestResourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.ErrorIs(t, err, errors.ErrNotFound)
@@ -213,7 +224,8 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -231,7 +243,8 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -250,13 +263,14 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
 		acr.EXPECT().GetAccess(db, resourceType, resourceID, collaboratorID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID}, nil).Times(1)
+		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID, Role: types.UserRoleTeacher}, nil).Times(1)
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(nil).Times(1)
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.NoError(t, err)
@@ -270,13 +284,14 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
 		acr.EXPECT().GetAccess(db, resourceType, resourceID, collaboratorID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID}, nil).Times(1)
+		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID, Role: types.UserRoleTeacher}, nil).Times(1)
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(gorm.ErrDuplicatedKey).Times(1)
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.ErrorIs(t, err, errors.ErrAccessAlreadyExists)
@@ -290,13 +305,14 @@ func TestAddCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 5, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionManage, nil).Times(1)
 		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
 		acr.EXPECT().GetAccess(db, resourceType, resourceID, collaboratorID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID}, nil).Times(1)
+		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID, Role: types.UserRoleTeacher}, nil).Times(1)
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(nil).Times(1)
 		err := acs.AddCollaborator(db, user, resourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.NoError(t, err)
@@ -304,7 +320,7 @@ func TestAddCollaborator(t *testing.T) {
 }
 
 func TestGetCollaborators(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 
 	t.Run("User without edit permission cannot get collaborators", func(t *testing.T) {
@@ -315,16 +331,19 @@ func TestGetCollaborators(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleStudent}
+		// GetCollaborators checks resource existence BEFORE checking permissions
+		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.Permission(""), gorm.ErrRecordNotFound).Times(1)
 		collaborators, err := acs.GetCollaborators(db, user, resourceType, resourceID)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 		assert.Nil(t, collaborators)
 	})
 
-	t.Run("Resource not found but continues to GetResourceAccess", func(t *testing.T) {
+	t.Run("Resource not found returns not found error", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		db := &testutils.MockDatabase{}
@@ -332,18 +351,16 @@ func TestGetCollaborators(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
-		// Note: The current implementation of GetCollaborators ignores the boolean return value
-		// from checkResourceExists. When checkResourceExists returns (false, nil) for a non-existent
-		// resource, the code continues to GetResourceAccess instead of returning an error.
-		// This test documents the actual behavior rather than the expected behavior.
 		user := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
+		// checkResourceExists checks the boolean and returns ErrNotFound if !exists
 		tr.EXPECT().Get(db, resourceID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		acr.EXPECT().GetResourceAccess(db, resourceType, resourceID).Return([]models.AccessControl{}, nil).Times(1)
+		// GetResourceAccess should NOT be called because the resource doesn't exist
 		collaborators, err := acs.GetCollaborators(db, user, resourceType, resourceID)
-		require.NoError(t, err)
-		assert.Empty(t, collaborators)
+		require.ErrorIs(t, err, errors.ErrNotFound)
+		assert.Nil(t, collaborators)
 	})
 
 	t.Run("Success returns collaborators", func(t *testing.T) {
@@ -354,7 +371,8 @@ func TestGetCollaborators(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		now := time.Now()
@@ -395,7 +413,8 @@ func TestGetCollaborators(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
@@ -413,7 +432,8 @@ func TestGetCollaborators(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		tr.EXPECT().Get(db, resourceID).Return(&models.Task{ID: resourceID}, nil).Times(1)
@@ -425,7 +445,7 @@ func TestGetCollaborators(t *testing.T) {
 }
 
 func TestUpdateCollaborator(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 	collaboratorID := int64(10)
 
@@ -437,7 +457,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		err := acs.UpdateCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionOwner)
@@ -452,7 +473,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionEdit, nil).Times(1)
@@ -468,7 +490,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -485,7 +508,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -504,7 +528,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -524,7 +549,8 @@ func TestUpdateCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -538,7 +564,7 @@ func TestUpdateCollaborator(t *testing.T) {
 }
 
 func TestRemoveCollaborator(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 	collaboratorID := int64(10)
 
@@ -550,7 +576,8 @@ func TestRemoveCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		user := &schemas.User{ID: 2, Role: types.UserRoleTeacher}
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, user.ID).Return(types.PermissionEdit, nil).Times(1)
@@ -566,7 +593,8 @@ func TestRemoveCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -583,7 +611,8 @@ func TestRemoveCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -602,7 +631,8 @@ func TestRemoveCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -622,7 +652,8 @@ func TestRemoveCollaborator(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
@@ -636,7 +667,7 @@ func TestRemoveCollaborator(t *testing.T) {
 }
 
 func TestGetUserPermission(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 	userID := int64(10)
 
@@ -648,7 +679,8 @@ func TestGetUserPermission(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, userID).Return(types.PermissionEdit, nil).Times(1)
 		permission, err := acs.GetUserPermission(db, resourceType, resourceID, userID)
@@ -664,7 +696,8 @@ func TestGetUserPermission(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, userID).Return(types.Permission(""), gorm.ErrRecordNotFound).Times(1)
 		permission, err := acs.GetUserPermission(db, resourceType, resourceID, userID)
@@ -680,7 +713,8 @@ func TestGetUserPermission(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		acr.EXPECT().GetUserPermission(db, resourceType, resourceID, userID).Return(types.Permission(""), assert.AnError).Times(1)
 		permission, err := acs.GetUserPermission(db, resourceType, resourceID, userID)
@@ -690,7 +724,7 @@ func TestGetUserPermission(t *testing.T) {
 }
 
 func TestGrantOwnerAccess(t *testing.T) {
-	resourceType := models.ResourceTypeTask
+	resourceType := types.ResourceTypeTask
 	resourceID := int64(1)
 	ownerID := int64(10)
 
@@ -702,7 +736,8 @@ func TestGrantOwnerAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		acr.EXPECT().AddAccess(db, gomock.Any()).DoAndReturn(func(_ interface{}, access *models.AccessControl) error {
 			assert.Equal(t, resourceType, access.ResourceType)
@@ -723,7 +758,8 @@ func TestGrantOwnerAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(assert.AnError).Times(1)
 		err := acs.GrantOwnerAccess(db, resourceType, resourceID, ownerID)
@@ -738,9 +774,10 @@ func TestGrantOwnerAccess(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
-		contestResourceType := models.ResourceTypeContest
+		contestResourceType := types.ResourceTypeContest
 		acr.EXPECT().AddAccess(db, gomock.Any()).DoAndReturn(func(_ interface{}, access *models.AccessControl) error {
 			assert.Equal(t, contestResourceType, access.ResourceType)
 			assert.Equal(t, resourceID, access.ResourceID)
@@ -765,11 +802,12 @@ func TestCheckResourceExists(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
-		invalidResourceType := models.ResourceType("invalid")
+		invalidResourceType := types.ResourceType("invalid")
 		err := acs.AddCollaborator(db, currentUser, invalidResourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.ErrorIs(t, err, errors.ErrInvalidData)
 	})
@@ -782,11 +820,12 @@ func TestCheckResourceExists(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
-		resourceType := models.ResourceTypeTask
+		resourceType := types.ResourceTypeTask
 		tr.EXPECT().Get(db, resourceID).Return(nil, assert.AnError).Times(1)
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.Error(t, err)
@@ -801,11 +840,12 @@ func TestCheckResourceExists(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
-		resourceType := models.ResourceTypeContest
+		resourceType := types.ResourceTypeContest
 		cr.EXPECT().Get(db, resourceID).Return(nil, assert.AnError).Times(1)
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionEdit)
 		require.Error(t, err)
@@ -814,7 +854,7 @@ func TestCheckResourceExists(t *testing.T) {
 }
 
 func TestAddCollaboratorWithContestResource(t *testing.T) {
-	resourceType := models.ResourceTypeContest
+	resourceType := types.ResourceTypeContest
 	resourceID := int64(1)
 	collaboratorID := int64(10)
 
@@ -826,13 +866,14 @@ func TestAddCollaboratorWithContestResource(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		// Admin user - CanUserAccess returns early without calling GetUserPermission
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		cr.EXPECT().Get(db, resourceID).Return(&models.Contest{ID: resourceID}, nil).Times(1)
 		acr.EXPECT().GetAccess(db, resourceType, resourceID, collaboratorID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID}, nil).Times(1)
+		ur.EXPECT().Get(db, collaboratorID).Return(&models.User{ID: collaboratorID, Role: types.UserRoleTeacher}, nil).Times(1)
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(nil).Times(1)
 		err := acs.AddCollaborator(db, currentUser, resourceType, resourceID, collaboratorID, types.PermissionManage)
 		require.NoError(t, err)
@@ -840,7 +881,7 @@ func TestAddCollaboratorWithContestResource(t *testing.T) {
 }
 
 func TestGetCollaboratorsWithContestResource(t *testing.T) {
-	resourceType := models.ResourceTypeContest
+	resourceType := types.ResourceTypeContest
 	resourceID := int64(1)
 
 	t.Run("Success returns contest collaborators", func(t *testing.T) {
@@ -851,7 +892,8 @@ func TestGetCollaboratorsWithContestResource(t *testing.T) {
 		ur := mock_repository.NewMockUserRepository(ctrl)
 		tr := mock_repository.NewMockTaskRepository(ctrl)
 		cr := mock_repository.NewMockContestRepository(ctrl)
-		acs := service.NewAccessControlService(acr, ur, tr, cr)
+		gr := mock_repository.NewMockGroupRepository(ctrl)
+		acs := service.NewAccessControlService(acr, ur, tr, cr, gr)
 
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		now := time.Now()
