@@ -848,35 +848,8 @@ definitions:
     properties:
       checkedAt:
         type: string
-      contestId:
-        type: integer
-      id:
-        type: integer
-      language:
-        $ref: '#/definitions/LanguageConfig'
-      languageId:
-        type: integer
-      order:
-        type: integer
-      result:
-        $ref: '#/definitions/SubmissionResult'
-      status:
-        $ref: '#/definitions/SubmissionStatus'
-      submittedAt:
-        type: string
-      task:
-        $ref: '#/definitions/Task'
-      taskId:
-        type: integer
-      user:
-        $ref: '#/definitions/User'
-      userId:
-        type: integer
-    type: object
-  SubmissionDetailed:
-    properties:
-      checkedAt:
-        type: string
+      contest:
+        $ref: '#/definitions/BaseContest'
       contestId:
         type: integer
       fileUrl:
@@ -897,12 +870,37 @@ definitions:
         type: string
       task:
         $ref: '#/definitions/Task'
-      taskId:
-        type: integer
       user:
         $ref: '#/definitions/User'
-      userId:
+    type: object
+  SubmissionDetailed:
+    properties:
+      checkedAt:
+        type: string
+      contest:
+        $ref: '#/definitions/BaseContest'
+      contestId:
         type: integer
+      fileUrl:
+        type: string
+      id:
+        type: integer
+      language:
+        $ref: '#/definitions/LanguageConfig'
+      languageId:
+        type: integer
+      order:
+        type: integer
+      result:
+        $ref: '#/definitions/SubmissionResult'
+      status:
+        $ref: '#/definitions/SubmissionStatus'
+      submittedAt:
+        type: string
+      task:
+        $ref: '#/definitions/Task'
+      user:
+        $ref: '#/definitions/User'
     type: object
   SubmissionResult:
     properties:
