@@ -96,14 +96,10 @@ func TestGetAll(t *testing.T) {
 		submissions := []schemas.Submission{
 			{
 				ID:     1,
-				TaskID: 1,
-				UserID: 1,
 				Status: types.SubmissionStatusEvaluated,
 			},
 			{
 				ID:     2,
-				TaskID: 2,
-				UserID: 1,
 				Status: types.SubmissionStatusReceived,
 			},
 		}
@@ -187,8 +183,6 @@ func TestGetByID(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		submission := schemas.SubmissionDetailed{
 			Submission: schemas.Submission{ID: 1,
-				TaskID: 1,
-				UserID: 1,
 				Status: types.SubmissionStatusEvaluated},
 		}
 		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(&submission, nil).Times(1)
@@ -271,8 +265,8 @@ func TestGetAllForTask(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		submissions := schemas.NewPaginatedResult([]schemas.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusEvaluated},
-			{ID: 2, TaskID: 1, UserID: 2, Status: types.SubmissionStatusReceived},
+			{ID: 1, Status: types.SubmissionStatusEvaluated},
+			{ID: 2, Status: types.SubmissionStatusReceived},
 		}, 2, 1, 2)
 		ss.EXPECT().GetAllForTask(gomock.Any(), int64(1), gomock.Any(), gomock.Any()).Return(&submissions, nil).Times(1)
 

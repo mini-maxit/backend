@@ -818,11 +818,26 @@ func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult
 }
 
 func (ss *submissionService) modelToSchema(submission *models.Submission) *schemas.Submission {
+	var contest *schemas.BaseContest
+	if submission.ContestID != nil && submission.Contest != nil {
+		contest = &schemas.BaseContest{
+			ID:          submission.Contest.ID,
+			Name:        submission.Contest.Name,
+			Description: submission.Contest.Description,
+			CreatedBy:   submission.Contest.CreatedBy,
+			StartAt:     submission.Contest.StartAt,
+			EndAt:       submission.Contest.EndAt,
+		}
+	}
+
+	// Safely compute file URL if file info is available
+	var fileURL string
+	if submission.File.Path != "" && ss.filestorage != nil {
+		fileURL = ss.filestorage.GetFileURL(submission.File.Path)
+	}
+
 	return &schemas.Submission{
 		ID:          submission.ID,
-		TaskID:      submission.TaskID,
-		UserID:      submission.UserID,
-		ContestID:   submission.ContestID,
 		Order:       submission.Order,
 		LanguageID:  submission.LanguageID,
 		Status:      submission.Status,
@@ -832,7 +847,8 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 		Task:        *TaskToSchema(&submission.Task),
 		User:        *UserToSchema(&submission.User),
 		Result:      ss.resultModelToSchema(submission.Result),
-	}
+		FileURL:     fileURL,
+		Contest:     contest}
 }
 
 func (ss *submissionService) GetTaskStatsForContest(db database.Database, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {

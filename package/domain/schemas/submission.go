@@ -8,8 +8,6 @@ import (
 
 type Submission struct {
 	ID          int64                  `json:"id"`
-	TaskID      int64                  `json:"taskId"`
-	UserID      int64                  `json:"userId"`
 	ContestID   *int64                 `json:"contestId,omitempty"`
 	Order       int                    `json:"order"`
 	LanguageID  int64                  `json:"languageId"`
@@ -17,9 +15,11 @@ type Submission struct {
 	SubmittedAt time.Time              `json:"submittedAt"`
 	CheckedAt   time.Time              `json:"checkedAt"`
 	Language    LanguageConfig         `json:"language"`
+	FileURL     string                 `json:"fileUrl"`
 	Task        Task                   `json:"task"`
 	User        User                   `json:"user"`
 	Result      *SubmissionResult      `json:"result"`
+	Contest     *BaseContest           `json:"contest,omitempty"`
 }
 
 type SubmissionDetailed struct {

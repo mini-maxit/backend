@@ -280,8 +280,8 @@ func TestGetAll(t *testing.T) {
 					TotalPages:  1,
 				},
 				Items: []schemas.Submission{
-					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+					{ID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 2, Status: types.SubmissionStatusEvaluated},
 				},
 			},
 			expectedErr: false,
@@ -305,8 +305,8 @@ func TestGetAll(t *testing.T) {
 					TotalPages:  1,
 				},
 				Items: []schemas.Submission{
-					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
-					{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+					{ID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 2, Status: types.SubmissionStatusEvaluated},
 				},
 			},
 			expectedErr: false,
@@ -329,7 +329,7 @@ func TestGetAll(t *testing.T) {
 					TotalPages:  1,
 				},
 				Items: []schemas.Submission{
-					{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+					{ID: 1, Status: types.SubmissionStatusReceived},
 				},
 			},
 			expectedErr: false,
