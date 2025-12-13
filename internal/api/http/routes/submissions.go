@@ -123,7 +123,7 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 //
 //	@Produce		json
 //	@Param			id	path		int	true	"Submission ID"
-//	@Success		200	{object}	httputils.APIResponse[schemas.Submission]
+//	@Success		200	{object}	httputils.APIResponse[schemas.SubmissionDetailed]
 //	@Failure		400	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
 //	@Router			/submissions/{id} [get]
