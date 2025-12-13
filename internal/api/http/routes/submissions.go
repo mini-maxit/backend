@@ -145,9 +145,7 @@ func (s *SumbissionImpl) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	submission, err := s.submissionService.Get(db, submissionID, currentUser)
 	if err != nil {
-		db.Rollback()
-		s.logger.Errorw("Failed to get submission", "error", err)
-		httputils.ReturnError(w, http.StatusInternalServerError, "Submission service temporarily unavailable")
+		httputils.HandleServiceError(w, err, db, s.logger)
 		return
 	}
 

@@ -22,6 +22,11 @@ type Submission struct {
 	Result      *SubmissionResult      `json:"result"`
 }
 
+type SubmissionDetailed struct {
+	Submission
+	FileURL string `json:"fileUrl"`
+}
+
 type SubmissionShort struct {
 	ID            int64 `json:"id"`
 	TaskID        int64 `json:"taskId"`

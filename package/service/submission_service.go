@@ -33,7 +33,7 @@ type SubmissionService interface {
 	// GetAvailableLanguages retrieves all available languages.
 	GetAvailableLanguages(db database.Database) ([]schemas.LanguageConfig, error)
 	// Get retrieves a specific submission based on the submission ID and user's role.
-	Get(db database.Database, submissionID int64, user *schemas.User) (schemas.Submission, error)
+	Get(db database.Database, submissionID int64, user *schemas.User) (*schemas.SubmissionDetailed, error)
 	// MarkComplete marks a submission as complete.
 	MarkComplete(db database.Database, submissionID int64) error
 	// MarkFailed marks a submission as failed with an error message.
@@ -246,11 +246,11 @@ func (ss *submissionService) modelsToSchemas(submissionModels []models.Submissio
 	return result
 }
 
-func (ss *submissionService) Get(db database.Database, submissionID int64, user *schemas.User) (schemas.Submission, error) {
+func (ss *submissionService) Get(db database.Database, submissionID int64, user *schemas.User) (*schemas.SubmissionDetailed, error) {
 	submissionModel, err := ss.submissionRepository.Get(db, submissionID)
 	if err != nil {
 		ss.logger.Errorf("Error getting submission: %v", err.Error())
-		return schemas.Submission{}, err
+		return nil, err
 	}
 
 	switch user.Role {
@@ -260,17 +260,25 @@ func (ss *submissionService) Get(db database.Database, submissionID int64, user 
 		// Student is only allowed to view their own submissions
 		if submissionModel.UserID != user.ID {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, errors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
-		// Teacher is only allowed to view submissions for tasks they created
-		if submissionModel.Task.CreatedBy != user.ID {
+		// Teacher is only allowed to view submissions of contest they manage or if this is not a contest submission, for tasks they manage
+		if submissionModel.ContestID != nil {
+			if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, *submissionModel.ContestID, user, types.PermissionManage); err != nil {
+				return nil, errors.ErrPermissionDenied
+			}
+		} else if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, submissionModel.TaskID, user, types.PermissionManage); err != nil {
 			ss.logger.Errorf("User %v is not allowed to view submission %v", user.ID, submissionID)
-			return schemas.Submission{}, errors.ErrPermissionDenied
+			return nil, errors.ErrPermissionDenied
 		}
 	}
 
-	return *ss.modelToSchema(submissionModel), nil
+	submission := schemas.SubmissionDetailed{
+		Submission: *ss.modelToSchema(submissionModel),
+		FileURL:    ss.filestorage.GetFileURL(submissionModel.File.Path),
+	}
+	return &submission, nil
 }
 
 func (ss *submissionService) GetAllForUser(
@@ -433,12 +441,7 @@ func (ss *submissionService) GetAllForContest(
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
-		contest, er := ss.contestService.GetDetailed(db, user, contestID)
-		if er != nil {
-			ss.logger.Errorf("Error getting contest: %v", er.Error())
-			return nil, er
-		}
-		if contest.CreatedBy != user.ID {
+		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit); err != nil {
 			return nil, errors.ErrPermissionDenied
 		}
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)

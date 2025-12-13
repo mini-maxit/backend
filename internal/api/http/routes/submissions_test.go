@@ -173,7 +173,7 @@ func TestGetByID(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(schemas.Submission{}, gorm.ErrInvalidDB).Times(1)
+		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(nil, gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL + "/1")
 		require.NoError(t, err)
@@ -181,17 +181,17 @@ func TestGetByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		assert.Contains(t, string(bodyBytes), "Submission service temporarily unavailable")
+		assert.Contains(t, string(bodyBytes), "Internal server error")
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		submission := schemas.Submission{
-			ID:     1,
-			TaskID: 1,
-			UserID: 1,
-			Status: types.SubmissionStatusEvaluated,
+		submission := schemas.SubmissionDetailed{
+			Submission: schemas.Submission{ID: 1,
+				TaskID: 1,
+				UserID: 1,
+				Status: types.SubmissionStatusEvaluated},
 		}
-		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(submission, nil).Times(1)
+		ss.EXPECT().Get(gomock.Any(), int64(1), gomock.Any()).Return(&submission, nil).Times(1)
 
 		resp, err := http.Get(server.URL + "/1")
 		require.NoError(t, err)
@@ -199,7 +199,7 @@ func TestGetByID(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		response := &httputils.APIResponse[schemas.Submission]{}
+		response := &httputils.APIResponse[schemas.SubmissionDetailed]{}
 		err = json.Unmarshal(bodyBytes, response)
 		require.NoError(t, err)
 		assert.Equal(t, submission, response.Data)

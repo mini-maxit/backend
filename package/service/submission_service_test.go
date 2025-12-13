@@ -24,6 +24,7 @@ import (
 // testSetup holds all mocks and the service for testing
 type testSetup struct {
 	ctrl                       *gomock.Controller
+	accessControlService       *mock_service.MockAccessControlService
 	contestService             *mock_service.MockContestService
 	fileRepository             *mock_repository.MockFile
 	submissionRepository       *mock_repository.MockSubmissionRepository
@@ -90,6 +91,7 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 		taskService:                taskService,
 		userService:                userService,
 		queueService:               queueService,
+		accessControlService:       acs,
 		service:                    svc,
 	}
 }
@@ -413,6 +415,18 @@ func TestGet(t *testing.T) {
 			expectedSubmission: nil,
 			expectedErr:        true,
 		},
+		{
+			name: "Teacher has contest manage permission",
+			user: &schemas.User{Role: "teacher", ID: 2},
+			expectedSubmission: &models.Submission{
+				ID:        1,
+				TaskID:    1,
+				UserID:    2,
+				Task:      models.Task{CreatedBy: 3},
+				ContestID: func() *int64 { v := int64(10); return &v }(),
+			},
+			expectedErr: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -423,11 +437,34 @@ func TestGet(t *testing.T) {
 				setup.submissionRepository.EXPECT().Get(gomock.Any(), int64(1)).Return(nil, gorm.ErrRecordNotFound).Times(1)
 			}
 
+			// Expect access control checks for teacher role
+			if tc.user.Role == "teacher" && tc.expectedSubmission != nil {
+				// If this is the contest path (task check fails, contest check passes)
+				if tc.expectedSubmission.ContestID != nil && !tc.expectedErr && tc.name == "Teacher has contest manage permission" {
+					setup.accessControlService.EXPECT().
+						CanUserAccess(gomock.Any(), types.ResourceTypeContest, *tc.expectedSubmission.ContestID, tc.user, types.PermissionManage).
+						Return(nil).
+						Times(1)
+				} else {
+					if tc.expectedErr {
+						setup.accessControlService.EXPECT().
+							CanUserAccess(gomock.Any(), types.ResourceTypeTask, tc.expectedSubmission.TaskID, tc.user, types.PermissionManage).
+							Return(assert.AnError).
+							Times(1)
+					} else {
+						setup.accessControlService.EXPECT().
+							CanUserAccess(gomock.Any(), types.ResourceTypeTask, tc.expectedSubmission.TaskID, tc.user, types.PermissionManage).
+							Return(nil).
+							Times(1)
+					}
+				}
+			}
+
 			submission, err := setup.service.Get(nil, 1, tc.user)
 
 			if tc.expectedErr {
 				require.Error(t, err)
-				assert.Equal(t, schemas.Submission{}, submission)
+				assert.Nil(t, submission)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, int64(1), submission.ID)

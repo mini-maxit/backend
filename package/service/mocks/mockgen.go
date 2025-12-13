@@ -1301,10 +1301,10 @@ func (mr *MockSubmissionServiceMockRecorder) CreateSubmissionResult(db, submissi
 }
 
 // Get mocks base method.
-func (m *MockSubmissionService) Get(db database.Database, submissionID int64, user *schemas.User) (schemas.Submission, error) {
+func (m *MockSubmissionService) Get(db database.Database, submissionID int64, user *schemas.User) (*schemas.SubmissionDetailed, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", db, submissionID, user)
-	ret0, _ := ret[0].(schemas.Submission)
+	ret0, _ := ret[0].(*schemas.SubmissionDetailed)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
