@@ -130,7 +130,7 @@ func (tr *taskRepository) GetTimeLimits(db database.Database, taskID int64) ([]i
 	// Sort by order
 	timeLimits := make([]int64, len(testCases))
 	for _, testCase := range testCases {
-		timeLimits[testCase.Order-1] = testCase.TimeLimit
+		timeLimits[testCase.Order-1] = testCase.TimeLimitMs
 	}
 	return timeLimits, nil
 }
@@ -145,7 +145,7 @@ func (tr *taskRepository) GetMemoryLimits(db database.Database, taskID int64) ([
 	// Sort by order
 	memoryLimits := make([]int64, len(testCases))
 	for _, testCase := range testCases {
-		memoryLimits[testCase.Order-1] = testCase.MemoryLimit
+		memoryLimits[testCase.Order-1] = testCase.MemoryLimitKB
 	}
 	return memoryLimits, nil
 }

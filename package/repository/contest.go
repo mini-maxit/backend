@@ -614,7 +614,7 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(db database.Database, 
 func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
 	tx := db.GetInstance()
 	var relations []models.ContestTask
-	err := tx.Model(&models.ContestTask{}).
+	err := tx.Unscoped().Model(&models.ContestTask{}).
 		Where("contest_id = ?", contestID).
 		Preload("Task").
 		Preload("Task.Author").

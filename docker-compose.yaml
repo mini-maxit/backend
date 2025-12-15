@@ -45,7 +45,7 @@ services:
     volumes:
       - file-storage-media:/app/file-storage-media
   worker:
-    image: maxit/worker
+    image: ghcr.io/mini-maxit/worker:latest
     pull_policy: never
     depends_on:
       - file-storage
@@ -71,6 +71,7 @@ services:
     environment:
       - BACKEND_API_URL=http://backend:8000/api/v1
       - ORIGIN=http://localhost:3000
+      - BODY_SIZE_LIMIT=20M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s

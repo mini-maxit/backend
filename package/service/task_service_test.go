@@ -565,46 +565,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	})
 }
 
-func TestCreateTestCase(t *testing.T) {
-	db := &testutils.MockDatabase{}
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	gr := mock_repository.NewMockGroupRepository(ctrl)
-	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockTestCaseRepository(ctrl)
-	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-	task := &models.Task{
-		ID:        int64(1),
-		CreatedBy: teacherUser.ID,
-	}
-
-	t.Run("Success", func(t *testing.T) {
-		io.EXPECT().DeleteAll(db, task.ID).Return(nil).Times(1)
-		tr.EXPECT().Get(db, task.ID).Return(task, nil).Times(1)
-		io.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(4)
-		pathToArchive := createTestArchive(t, "valid")
-		err := ts.CreateTestCase(db, task.ID, pathToArchive)
-		require.NoError(t, err)
-	})
-
-	t.Run("Nonexistent task", func(t *testing.T) {
-		pathToArchive := createTestArchive(t, "valid")
-		defer os.Remove(pathToArchive)
-		tr.EXPECT().Get(db, task.ID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		err := ts.CreateTestCase(db, task.ID, pathToArchive)
-		require.ErrorIs(t, err, errors.ErrNotFound)
-	})
-
-	t.Run("Invalid archive path", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(task, nil).Times(1)
-
-		err := ts.CreateTestCase(db, task.ID, "INVALIDPATH")
-		require.Error(t, err)
-	})
-}
-
 func TestParseTestCase(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -705,11 +665,11 @@ func TestGetLimits(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		io.EXPECT().GetByTask(db, taskID).Return([]models.TestCase{{
-			ID:          1,
-			TaskID:      taskID,
-			Order:       1,
-			TimeLimit:   10,
-			MemoryLimit: 10,
+			ID:            1,
+			TaskID:        taskID,
+			Order:         1,
+			TimeLimitMs:   10,
+			MemoryLimitKB: 10,
 		}}, nil).Times(1)
 		tr.EXPECT().Get(db, taskID).Return(&models.Task{
 			ID: 1,
@@ -735,11 +695,11 @@ func TestPutLimit(t *testing.T) {
 	taskID := int64(1)
 	ioID := int64(1)
 	testCase := &models.TestCase{
-		ID:          ioID,
-		TaskID:      taskID,
-		Order:       1,
-		TimeLimit:   10,
-		MemoryLimit: 10,
+		ID:            ioID,
+		TaskID:        taskID,
+		Order:         1,
+		TimeLimitMs:   10,
+		MemoryLimitKB: 10,
 	}
 
 	t.Run("Success", func(t *testing.T) {
@@ -760,11 +720,11 @@ func TestPutLimit(t *testing.T) {
 			},
 		}
 		expectedModel := &models.TestCase{
-			ID:          ioID,
-			TaskID:      taskID,
-			Order:       testCase.Order,
-			TimeLimit:   newLimits.Limits[0].TimeLimit,
-			MemoryLimit: newLimits.Limits[0].MemoryLimit,
+			ID:            ioID,
+			TaskID:        taskID,
+			Order:         testCase.Order,
+			TimeLimitMs:   newLimits.Limits[0].TimeLimit,
+			MemoryLimitKB: newLimits.Limits[0].MemoryLimit,
 		}
 		io.EXPECT().Put(db, expectedModel).Return(nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -1298,11 +1258,11 @@ func TestPutLimitsErrors(t *testing.T) {
 	t.Run("Error putting test case", func(t *testing.T) {
 		ioID := int64(1)
 		testCase := &models.TestCase{
-			ID:          ioID,
-			TaskID:      taskID,
-			Order:       1,
-			TimeLimit:   10,
-			MemoryLimit: 10,
+			ID:            ioID,
+			TaskID:        taskID,
+			Order:         1,
+			TimeLimitMs:   10,
+			MemoryLimitKB: 10,
 		}
 		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)

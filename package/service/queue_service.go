@@ -161,8 +161,8 @@ func (qs *queueService) PublishSubmission(db database.Database, submissionID int
 				Bucket:     tr.DiffFile.Bucket,
 				Path:       tr.DiffFile.Path,
 			},
-			TimeLimitMs:   tr.TestCase.TimeLimit,
-			MemoryLimitKB: tr.TestCase.MemoryLimit,
+			TimeLimitMs:   tr.TestCase.TimeLimitMs,
+			MemoryLimitKB: tr.TestCase.MemoryLimitKB,
 		})
 	}
 

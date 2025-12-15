@@ -861,20 +861,6 @@ func (mr *MockTaskServiceMockRecorder) Create(db, currentUser, task any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTaskService)(nil).Create), db, currentUser, task)
 }
 
-// CreateTestCase mocks base method.
-func (m *MockTaskService) CreateTestCase(db database.Database, taskID int64, archivePath string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTestCase", db, taskID, archivePath)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateTestCase indicates an expected call of CreateTestCase.
-func (mr *MockTaskServiceMockRecorder) CreateTestCase(db, taskID, archivePath any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTestCase", reflect.TypeOf((*MockTaskService)(nil).CreateTestCase), db, taskID, archivePath)
-}
-
 // Delete mocks base method.
 func (m *MockTaskService) Delete(db database.Database, currentUser *schemas.User, taskID int64) error {
 	m.ctrl.T.Helper()

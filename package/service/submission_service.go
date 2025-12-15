@@ -565,7 +565,8 @@ func (ss *submissionService) CreateSubmissionResult(
 			testResult.StatusCode = types.TestResultStatusCodeInvalid
 		}
 		testResult.Passed = &responseTestResult.Passed
-		testResult.ExecutionTime = responseTestResult.ExecutionTime
+		testResult.ExecutionTimeS = responseTestResult.ExecutionTime
+		testResult.PeakMemoryKB = responseTestResult.PeakMem
 		testResult.ErrorMessage = responseTestResult.ErrorMessage
 		err = ss.testResultRepository.Put(db, testResult)
 		if err != nil {
@@ -731,7 +732,7 @@ func (ss *submissionService) createSubmissionResult(db database.Database, submis
 			SubmissionResultID: submissionResultID,
 			TestCaseID:         inputOutput.ID,
 			Passed:             &falseVal,
-			ExecutionTime:      float64(-1),
+			ExecutionTimeS:     float64(-1),
 			StatusCode:         types.TestResultStatusCodeNotExecuted,
 			ErrorMessage:       "Not executed",
 			StderrFileID:       stderrFileMode.ID,
@@ -794,7 +795,7 @@ func (ss *submissionService) testResultsModelToSchema(testResults []models.TestR
 			ID:                 testResult.ID,
 			SubmissionResultID: testResult.SubmissionResultID,
 			TestCaseID:         testResult.TestCaseID,
-			ExecutionTimeMs:    testResult.ExecutionTime * 1000,
+			ExecutionTimeMs:    testResult.ExecutionTimeS * 1000,
 			Passed:             *testResult.Passed,
 			Code:               testResult.StatusCode.String(),
 			ErrorMessage:       testResult.ErrorMessage,

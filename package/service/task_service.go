@@ -21,8 +21,6 @@ import (
 type TaskService interface {
 	// Create creates a new task.
 	Create(db database.Database, currentUser *schemas.User, task *schemas.Task) (int64, error)
-	// CreateTestCase creates input and output files for a task.
-	CreateTestCase(db database.Database, taskID int64, archivePath string) error
 	// Delete deletes a task.
 	Delete(db database.Database, currentUser *schemas.User, taskID int64) error
 	// Edit edits an existing task.
@@ -341,39 +339,6 @@ func (ts *taskService) ParseTestCase(archivePath string) (int, error) {
 	return len(inputFiles), nil
 }
 
-func (ts *taskService) CreateTestCase(db database.Database, taskID int64, archivePath string) error {
-	_, err := ts.taskRepository.Get(db, taskID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNotFound
-		}
-		return err
-	}
-	numFiles, err := ts.ParseTestCase(archivePath)
-	if err != nil {
-		return fmt.Errorf("failed to parse input and output files: %w", err)
-	}
-	// Remove existing input output files
-	err = ts.testCaseRepository.DeleteAll(db, taskID)
-	if err != nil {
-		return fmt.Errorf("failed to delete existing input output files: %w", err)
-	}
-
-	for i := 1; i <= numFiles; i++ {
-		io := &models.TestCase{
-			TaskID:      taskID,
-			Order:       i,
-			TimeLimit:   1, // Hardcode for now
-			MemoryLimit: 1, // Hardcode for now
-		}
-		err = ts.testCaseRepository.Create(db, io)
-		if err != nil {
-			return fmt.Errorf("failed to create input output: %w", err)
-		}
-	}
-	return nil
-}
-
 func (ts *taskService) ProcessAndUpload(db database.Database, currentUser *schemas.User, taskID int64, archivePath string) error {
 	// Check permissions using collaborator system - need edit permission
 	err := ts.hasTaskPermission(db, taskID, currentUser, types.PermissionEdit)
@@ -440,12 +405,12 @@ func (ts *taskService) ProcessAndUpload(db database.Database, currentUser *schem
 			return fmt.Errorf("failed to save output file: %w", err)
 		}
 		err = ts.testCaseRepository.Create(db, &models.TestCase{
-			TaskID:       taskID,
-			InputFileID:  inputFile.ID,
-			OutputFileID: outputFile.ID,
-			Order:        i + 1,
-			TimeLimit:    1, // Hardcode for now
-			MemoryLimit:  1, // Hardcode for now
+			TaskID:        taskID,
+			InputFileID:   inputFile.ID,
+			OutputFileID:  outputFile.ID,
+			Order:         i + 1,
+			TimeLimitMs:   1000,  // Hardcode for now
+			MemoryLimitKB: 20000, // Hardcode for now
 		})
 		if err != nil {
 			return fmt.Errorf("failed to save input output: %w", err)
@@ -499,8 +464,8 @@ func (ts *taskService) PutLimits(
 			return err
 		}
 
-		current.MemoryLimit = io.MemoryLimit
-		current.TimeLimit = io.TimeLimit
+		current.MemoryLimitKB = io.MemoryLimit
+		current.TimeLimitMs = io.TimeLimit
 
 		err = ts.testCaseRepository.Put(db, current)
 		if err != nil {
@@ -536,8 +501,8 @@ func TestCaseToSchema(model *models.TestCase) *schemas.TestCase {
 		ID:          model.ID,
 		TaskID:      model.TaskID,
 		Order:       model.Order,
-		TimeLimit:   model.TimeLimit,
-		MemoryLimit: model.MemoryLimit,
+		TimeLimit:   model.TimeLimitMs,
+		MemoryLimit: model.MemoryLimitKB,
 	}
 }
 
@@ -604,7 +569,6 @@ func (ts *taskService) enrichTaskWithAttempts(
 	var bestScore float64
 	if attemptCount > 0 {
 		bestScore, err = ts.submissionRepository.GetBestScoreForTaskByUser(db, task.ID, userID)
-		ts.logger.Infof("Best score for task %d and user %d: %v", task.ID, userID, bestScore)
 		if err != nil {
 			return nil, err
 		}
