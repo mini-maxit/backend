@@ -49,7 +49,7 @@ type TestResult struct {
 	SubmissionResultID int64   `json:"submissionResultId"`
 	TestCaseID         int64   `json:"testCaseId"`
 	ExecutionTimeMs    float64 `json:"executionTimeMs"`
-	PeakMemoryKB       float64 `json:"peakMemoryKb"`
+	PeakMemoryKB       int64   `json:"peakMemoryKb"`
 	Passed             bool    `json:"passed"`
 	Code               string  `json:"code"`
 	ErrorMessage       string  `json:"errorMessage"`
