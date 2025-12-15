@@ -1055,7 +1055,7 @@ definitions:
       passed:
         type: boolean
       peakMemoryKb:
-        type: number
+        type: integer
       submissionResultId:
         type: integer
       testCaseId:
