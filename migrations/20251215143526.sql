@@ -1,5 +1,7 @@
 -- Modify "test_results" table
-ALTER TABLE "maxit"."test_results" ADD COLUMN "peak_memory" bigint NOT NULL;
+ALTER TABLE "maxit"."test_results" ADD COLUMN "peak_memory" bigint NOT NULL DEFAULT 0;
+-- Drop peak memory DEFAULT
+ALTER TABLE "maxit"."test_results" ALTER COLUMN "peak_memory" DROP DEFAULT;
 -- Rename a column from "time_limit" to "time_limit_ms"
 ALTER TABLE "maxit"."test_cases" RENAME COLUMN "time_limit" TO "time_limit_ms";
 -- Rename a column from "memory_limit" to "memory_limit_kb"
