@@ -450,17 +450,12 @@ func TestEditTask(t *testing.T) {
 	})
 
 	t.Run("Update isVisible", func(t *testing.T) {
-		task := &models.Task{
-			ID:        taskID,
-			Title:     "Test Task",
-			CreatedBy: adminUser.ID,
-			IsVisible: true,
-		}
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Edit(db, taskID, gomock.Any()).DoAndReturn(func(db database.Database, id int64, updatedTask *models.Task) error {
+		tr.EXPECT().Edit(db, taskID, gomock.Any()).DoAndReturn(func(db database.Database, id int64, updates map[string]any) error {
 			// Verify that IsVisible was updated
-			assert.False(t, updatedTask.IsVisible)
+			isVisible, ok := updates["is_visible"].(bool)
+			require.True(t, ok)
+			assert.False(t, isVisible)
 			return nil
 		}).Times(1)
 
@@ -955,7 +950,7 @@ func TestProcessAndUpload(t *testing.T) {
 			},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
@@ -1024,27 +1019,6 @@ func TestProcessAndUpload(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to save description file")
 	})
 
-	t.Run("Get task error after upload", func(t *testing.T) {
-		uploadedFiles := &filestorage.UploadedTaskFiles{
-			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
-			},
-			InputFiles:  []filestorage.UploadedFile{},
-			OutputFiles: []filestorage.UploadedFile{},
-		}
-
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
-		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
-		fr.EXPECT().Create(db, gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-
-		err := ts.ProcessAndUpload(db, teacherUser, taskID, archivePath)
-		require.ErrorIs(t, err, errors.ErrNotFound)
-	})
-
 	t.Run("Update task error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
@@ -1055,7 +1029,7 @@ func TestProcessAndUpload(t *testing.T) {
 			OutputFiles: []filestorage.UploadedFile{},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
@@ -1081,7 +1055,7 @@ func TestProcessAndUpload(t *testing.T) {
 			},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
@@ -1108,7 +1082,7 @@ func TestProcessAndUpload(t *testing.T) {
 			},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
@@ -1135,7 +1109,7 @@ func TestProcessAndUpload(t *testing.T) {
 			},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)
@@ -1166,7 +1140,7 @@ func TestProcessAndUpload(t *testing.T) {
 			},
 		}
 
-		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(2)
+		tr.EXPECT().Get(db, taskID).Return(task, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		fsMock.EXPECT().ValidateArchiveStructure(archivePath).Return(nil).Times(1)
 		fsMock.EXPECT().UploadTask(taskID, archivePath).Return(uploadedFiles, nil).Times(1)

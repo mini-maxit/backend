@@ -14,8 +14,8 @@ type TaskRepository interface {
 	Create(db database.Database, task *models.Task) (int64, error)
 	// Delete deletes a task. It does not actually delete the task from the database, but performs a soft delete.
 	Delete(db database.Database, taskID int64) error
-	// Edit edits a task, by setting the fields of the task to the fields of the function argument.
-	Edit(db database.Database, taskID int64, task *models.Task) error
+	// Edit edits a task, by updating only the fields provided in the updates map.
+	Edit(db database.Database, taskID int64, updates map[string]any) error
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
 	GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
 	// GetAll returns all tasks. The tasks are paginated.
@@ -150,9 +150,9 @@ func (tr *taskRepository) GetMemoryLimits(db database.Database, taskID int64) ([
 	return memoryLimits, nil
 }
 
-func (tr *taskRepository) Edit(db database.Database, taskID int64, task *models.Task) error {
+func (tr *taskRepository) Edit(db database.Database, taskID int64, updates map[string]any) error {
 	tx := db.GetInstance()
-	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Updates(task).Error
+	err := tx.Model(&models.Task{}).Where("id = ?", taskID).Updates(updates).Error
 	if err != nil {
 		return err
 	}

@@ -63,16 +63,17 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 		httputils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
 		return
 	}
-
-	// Optional visibility flag (defaults to false)
-	isVisible := false
-	if isVisibleParam := r.FormValue("isVisible"); isVisibleParam != "" {
-		parsed, err := strconv.ParseBool(isVisibleParam)
+	isVisibleStr := r.FormValue("isVisible")
+	var isVisible bool
+	var err error
+	if isVisibleStr != "" {
+		isVisible, err = strconv.ParseBool(isVisibleStr)
 		if err != nil {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid isVisible value. Expected 'true' or 'false'.")
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid value for isVisible. Must be true or false.")
 			return
 		}
-		isVisible = parsed
+	} else {
+		isVisible = false
 	}
 
 	// Extract the uploaded file
@@ -103,8 +104,8 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	// Create empty task to get the task ID
 	task := schemas.Task{
 		Title:     title,
-		CreatedBy: currentUser.ID,
 		IsVisible: isVisible,
+		CreatedBy: currentUser.ID,
 	}
 
 	db := httputils.GetDatabase(r)
@@ -130,14 +131,15 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 //	@Description	Updates a task by ID
 //	@Consumes		multipart/form-data
 //	@Produce		json
-//	@Param			id		path		int		true	"Task ID"
-//	@Param			title	formData	string	false	"New title for the task"
-//	@Param			archive	formData	file	false	"New archive for the task"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Param			id			path		int		true	"Task ID"
+//	@Param			title		formData	string	false	"New title for the task"
+//	@Param			isVisible	formData	bool	false	"Visibility of the task"
+//	@Param			archive		formData	file	false	"New archive for the task"
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		403			{object}	httputils.APIError
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/tasks-management/tasks/{id} [patch]
 func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPatch {
@@ -161,6 +163,15 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	newTitle := r.FormValue("title")
 	if newTitle != "" {
 		request.Title = &newTitle
+	}
+	newIsVisible := r.FormValue("isVisible")
+	if newIsVisible != "" {
+		isVisible, parseErr := strconv.ParseBool(newIsVisible)
+		if parseErr != nil {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid value for isVisible. Must be true or false.")
+			return
+		}
+		request.IsVisible = &isVisible
 	}
 
 	db := httputils.GetDatabase(r)

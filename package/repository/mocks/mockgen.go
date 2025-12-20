@@ -1183,17 +1183,17 @@ func (mr *MockTaskRepositoryMockRecorder) Delete(db, taskID any) *gomock.Call {
 }
 
 // Edit mocks base method.
-func (m *MockTaskRepository) Edit(db database.Database, taskID int64, task *models.Task) error {
+func (m *MockTaskRepository) Edit(db database.Database, taskID int64, updates map[string]any) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Edit", db, taskID, task)
+	ret := m.ctrl.Call(m, "Edit", db, taskID, updates)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Edit indicates an expected call of Edit.
-func (mr *MockTaskRepositoryMockRecorder) Edit(db, taskID, task any) *gomock.Call {
+func (mr *MockTaskRepositoryMockRecorder) Edit(db, taskID, updates any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockTaskRepository)(nil).Edit), db, taskID, task)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockTaskRepository)(nil).Edit), db, taskID, updates)
 }
 
 // Get mocks base method.

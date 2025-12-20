@@ -234,16 +234,23 @@ func (ts *taskService) Edit(db database.Database, currentUser *schemas.User, tas
 		return err
 	}
 
-	currentTask, err := ts.taskRepository.Get(db, taskID)
-	if err != nil {
-		ts.logger.Errorf("Error getting task: %v", err.Error())
-		return err
+	updates := map[string]interface{}{}
+
+	if updateInfo.Title != nil {
+		updates["title"] = *updateInfo.Title
+	}
+	if updateInfo.IsVisible != nil {
+		updates["is_visible"] = *updateInfo.IsVisible
 	}
 
-	ts.updateModel(currentTask, updateInfo)
+	ts.logger.Infof("Updating task ID %d with updates: %+v", taskID, updates)
 
-	// Update the task
-	err = ts.taskRepository.Edit(db, taskID, currentTask)
+	if len(updates) == 0 {
+		// Nothing to update
+		return nil
+	}
+
+	err = ts.taskRepository.Edit(db, taskID, updates)
 	if err != nil {
 		ts.logger.Errorf("Error updating task: %v", err.Error())
 		return err
@@ -367,15 +374,10 @@ func (ts *taskService) ProcessAndUpload(db database.Database, currentUser *schem
 	if err != nil {
 		return fmt.Errorf("failed to save description file: %w", err)
 	}
-	currentTask, err := ts.taskRepository.Get(db, taskID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNotFound
-		}
-		return fmt.Errorf("failed to get task: %w", err)
+	edit := map[string]any{
+		"description_file_id": descriptionFile.ID,
 	}
-	currentTask.DescriptionFileID = descriptionFile.ID
-	err = ts.taskRepository.Edit(db, taskID, currentTask)
+	err = ts.taskRepository.Edit(db, taskID, edit)
 	if err != nil {
 		return fmt.Errorf("failed to update task with description file: %w", err)
 	}
