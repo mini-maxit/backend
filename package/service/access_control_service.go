@@ -115,8 +115,8 @@ func (acs *accessControlService) AddCollaborator(db database.Database, currentUs
 		return err
 	}
 
-	// Only teachers can be added as collaborators
-	if targetUser.Role != types.UserRoleTeacher {
+	// Students cannot be added as collaborators
+	if targetUser.Role == types.UserRoleStudent {
 		return errors.ErrForbidden
 	}
 

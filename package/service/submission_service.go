@@ -528,12 +528,14 @@ func (ss *submissionService) CreateSubmissionResult(
 	responseMessage schemas.QueueResponseMessage,
 ) (int64, error) {
 	submissionResultResponse := schemas.SubmissionResultWorkerResponse{}
+	ss.logger.Infof("Submission payload %s", string(responseMessage.Payload))
 
 	err := json.Unmarshal(responseMessage.Payload, &submissionResultResponse)
 	if err != nil {
 		ss.logger.Errorf("Error unmarshalling task response: %v", err.Error())
 		return -1, err
 	}
+	ss.logger.Infof("Parsed payload %v", submissionResultResponse)
 
 	submissionResult, err := ss.submissionResultRepository.GetBySubmission(db, submissionID)
 	if err != nil {
@@ -553,7 +555,8 @@ func (ss *submissionService) CreateSubmissionResult(
 		return -1, err
 	}
 	// Save test results
-	for _, responseTestResult := range submissionResultResponse.TestResults {
+	for i, responseTestResult := range submissionResultResponse.TestResults {
+		ss.logger.Infof("Processing test result: %d", i)
 		testResult, err := ss.testResultRepository.GetBySubmissionAndOrder(db, submissionID, responseTestResult.Order)
 		if err != nil {
 			ss.logger.Errorf("Error getting test result: %v", err.Error())
@@ -565,8 +568,9 @@ func (ss *submissionService) CreateSubmissionResult(
 			testResult.StatusCode = types.TestResultStatusCodeInvalid
 		}
 		testResult.Passed = &responseTestResult.Passed
-		testResult.ExecutionTimeS = responseTestResult.ExecutionTime
-		testResult.PeakMemoryKB = responseTestResult.PeakMem
+		testResult.ExecutionTimeS = &responseTestResult.ExecutionTime
+		testResult.PeakMemoryKB = &responseTestResult.PeakMem
+		testResult.ExitCode = &responseTestResult.ExitCode
 		testResult.ErrorMessage = responseTestResult.ErrorMessage
 		err = ss.testResultRepository.Put(db, testResult)
 		if err != nil {
@@ -727,12 +731,13 @@ func (ss *submissionService) createSubmissionResult(db database.Database, submis
 			return -1, err
 		}
 
-		falseVal := false
 		testResult := models.TestResult{
 			SubmissionResultID: submissionResultID,
 			TestCaseID:         inputOutput.ID,
-			Passed:             &falseVal,
-			ExecutionTimeS:     float64(-1),
+			Passed:             nil,
+			ExecutionTimeS:     nil,
+			PeakMemoryKB:       nil,
+			ExitCode:           nil,
 			StatusCode:         types.TestResultStatusCodeNotExecuted,
 			ErrorMessage:       "Not executed",
 			StderrFileID:       stderrFileMode.ID,
@@ -791,13 +796,18 @@ func NewSubmissionService(
 func (ss *submissionService) testResultsModelToSchema(testResults []models.TestResult) []schemas.TestResult {
 	var result []schemas.TestResult
 	for _, testResult := range testResults {
+		var executionTimeMs *float64 = nil
+		if testResult.ExecutionTimeS != nil {
+			v := (*testResult.ExecutionTimeS * 1000)
+			executionTimeMs = &v
+		}
 		result = append(result, schemas.TestResult{
 			ID:                 testResult.ID,
 			SubmissionResultID: testResult.SubmissionResultID,
 			TestCaseID:         testResult.TestCaseID,
-			ExecutionTimeMs:    testResult.ExecutionTimeS * 1000,
+			ExecutionTimeMs:    executionTimeMs,
 			PeakMemoryKB:       testResult.PeakMemoryKB,
-			Passed:             *testResult.Passed,
+			Passed:             testResult.Passed,
 			Code:               testResult.StatusCode.String(),
 			ErrorMessage:       testResult.ErrorMessage,
 		})

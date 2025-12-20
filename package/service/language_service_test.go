@@ -86,10 +86,6 @@ func TestLanguageServiceInit(t *testing.T) {
 
 		lr.EXPECT().GetAll(db).Return(existingLanguages, nil).Times(1)
 
-		// Expect enabling of disabled language
-		lr.EXPECT().MarkEnabled(db, int64(2)).Return(nil).Times(1)
-		lr.EXPECT().MarkEnabled(db, int64(1)).Return(nil).Times(1)
-
 		// Expect creates for new language-version combinations
 		lr.EXPECT().Create(db, &models.LanguageConfig{
 			Type:          "javascript",
@@ -114,8 +110,6 @@ func TestLanguageServiceInit(t *testing.T) {
 		}
 
 		lr.EXPECT().GetAll(db).Return(existingLanguages, nil).Times(1)
-
-		lr.EXPECT().MarkEnabled(db, int64(1)).Return(nil).Times(1)
 
 		// Expect creates for new language-version combinations
 		lr.EXPECT().Create(db, &models.LanguageConfig{
