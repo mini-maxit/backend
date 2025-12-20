@@ -36,6 +36,7 @@ type tasksManagementRoute struct {
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			title	formData	string	true	"Name of the task"
+//	@Param			isVisible	formData	boolean	false	"Task visibility (default: false)"
 //	@Param			archive	formData	file	true	"Task archive"
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		400		{object}	httputils.APIError
@@ -61,6 +62,17 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	if title == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
 		return
+	}
+
+	// Optional visibility flag (defaults to false)
+	isVisible := false
+	if isVisibleParam := r.FormValue("isVisible"); isVisibleParam != "" {
+		parsed, err := strconv.ParseBool(isVisibleParam)
+		if err != nil {
+			httputils.ReturnError(w, http.StatusBadRequest, "Invalid isVisible value. Expected 'true' or 'false'.")
+			return
+		}
+		isVisible = parsed
 	}
 
 	// Extract the uploaded file
@@ -92,6 +104,7 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	task := schemas.Task{
 		Title:     title,
 		CreatedBy: currentUser.ID,
+		IsVisible: isVisible,
 	}
 
 	db := httputils.GetDatabase(r)

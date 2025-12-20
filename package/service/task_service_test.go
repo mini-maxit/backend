@@ -136,12 +136,34 @@ func TestCreateTask(t *testing.T) {
 		}
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		tr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
+		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, task *models.Task) (int64, error) {
+			assert.False(t, task.IsVisible) // Default is false
+			return int64(1), nil
+		}).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		taskID, err := ts.Create(db, adminUser, task)
 		require.NoError(t, err)
 		assert.NotEqual(t, 0, taskID)
+	})
+
+	t.Run("Custom visibility", func(t *testing.T) {
+		task := &schemas.Task{
+			Title:     "Visible Task",
+			CreatedBy: adminUser.ID,
+			IsVisible: true,
+		}
+		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
+		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, model *models.Task) (int64, error) {
+			assert.True(t, model.IsVisible)
+			return int64(2), nil
+		}).Times(1)
+		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+		taskID, err := ts.Create(db, adminUser, task)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2), taskID)
 	})
 
 	t.Run("Non unique title", func(t *testing.T) {
