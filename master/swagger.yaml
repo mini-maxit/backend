@@ -1050,6 +1050,8 @@ definitions:
         type: string
       executionTimeMs:
         type: number
+      exitCode:
+        type: integer
       id:
         type: integer
       passed:
