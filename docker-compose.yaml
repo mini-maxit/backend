@@ -61,8 +61,7 @@ services:
       - RESPONSE_QUEUE_NAME=worker_response_queue
       - WORKER_QUEUE_NAME=worker_queue
   frontend:
-    image: maxit/frontend
-    pull_policy: never
+    image: ghcr.io/mini-maxit/frontend:latest
     ports:
       - "3000:3000"
     depends_on:

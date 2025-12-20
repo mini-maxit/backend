@@ -43,6 +43,7 @@ type QueueTestResult struct {
 	Passed        bool                       `json:"passed"`
 	ExecutionTime float64                    `json:"execution_time"`
 	PeakMem       int64                      `json:"peak_memory"`
+	ExitCode      int                        `json:"exit_code"`
 	StatusCode    types.TestResultStatusCode `json:"status_code"`
 	ErrorMessage  string                     `json:"error_message"`
 	Order         int                        `json:"order"`
