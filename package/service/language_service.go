@@ -19,7 +19,7 @@ type LanguageService interface {
 	//
 	// It should be called during application initialization.
 	// Method initializes languages in the database if they are not already present.
-	// If language is already present in the database, and is not disabled it skips it. Otherwise, it enables it.
+	// If language is already present in the database skips adding it, otherwise adds it as enabled.
 	// If language is not in enabled languages, but is present in the database, it is marked as disabled.
 	Init(db database.Database, enabledLanguages schemas.HandShakeResponsePayload) error
 }
@@ -51,10 +51,6 @@ func (l *languageService) Init(db database.Database, workerLanguages schemas.Han
 				if existingLanguage.Type == language.Type && existingLanguage.Version == language.Version {
 					found = true
 					existingLanguages = append(existingLanguages[:i], existingLanguages[i+1:]...)
-					err := l.languageRepository.MarkEnabled(db, existingLanguage.ID)
-					if err != nil {
-						l.logger.Errorf("Error marking language enabled: %v", err.Error())
-					}
 					break
 				}
 			}

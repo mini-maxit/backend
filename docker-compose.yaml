@@ -46,7 +46,6 @@ services:
       - file-storage-media:/app/file-storage-media
   worker:
     image: ghcr.io/mini-maxit/worker:latest
-    pull_policy: never
     depends_on:
       - file-storage
     volumes:
