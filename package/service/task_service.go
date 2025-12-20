@@ -86,7 +86,7 @@ func (ts *taskService) Create(db database.Database, currentUser *schemas.User, t
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 		Author:    *author,
-		IsVisible: true, // Default to globally visible
+		IsVisible: task.IsVisible,
 	}
 	taskID, err := ts.taskRepository.Create(db, &model)
 	if err != nil {
