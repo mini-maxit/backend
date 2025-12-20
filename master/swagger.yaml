@@ -3607,6 +3607,10 @@ paths:
         name: title
         required: true
         type: string
+      - description: 'Task visibility (default: false)'
+        in: formData
+        name: isVisible
+        type: boolean
       - description: Task archive
         in: formData
         name: archive
