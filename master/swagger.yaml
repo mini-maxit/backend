@@ -3685,6 +3685,10 @@ paths:
         in: formData
         name: title
         type: string
+      - description: Visibility of the task
+        in: formData
+        name: isVisible
+        type: boolean
       - description: New archive for the task
         in: formData
         name: archive
