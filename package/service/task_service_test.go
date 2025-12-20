@@ -121,21 +121,15 @@ func createTestArchive(t *testing.T, caseType string) string {
 
 func TestCreateTask(t *testing.T) {
 	db := &testutils.MockDatabase{}
-	newTaskService := func(ctrl *gomock.Controller) (service.TaskService, *mock_repository.MockTaskRepository, *mock_repository.MockUserRepository, *mock_service.MockAccessControlService) {
-		fr := mock_repository.NewMockFile(ctrl)
-		gr := mock_repository.NewMockGroupRepository(ctrl)
-		tr := mock_repository.NewMockTaskRepository(ctrl)
-		io := mock_repository.NewMockTestCaseRepository(ctrl)
-		ur := mock_repository.NewMockUserRepository(ctrl)
-		acs := mock_service.NewMockAccessControlService(ctrl)
-		ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
-		return ts, tr, ur, acs
-	}
-
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	fr := mock_repository.NewMockFile(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	io := mock_repository.NewMockTestCaseRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	t.Run("Success", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		ts, tr, ur, acs := newTaskService(ctrl)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
@@ -154,18 +148,15 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Custom visibility", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		ts, tr, ur, acs := newTaskService(ctrl)
 		task := &schemas.Task{
-			Title:     "Hidden Task",
+			Title:     "Visible Task",
 			CreatedBy: adminUser.ID,
-			IsVisible: false,
+			IsVisible: true,
 		}
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, model *models.Task) (int64, error) {
-			assert.False(t, model.IsVisible)
+			assert.True(t, model.IsVisible)
 			return int64(2), nil
 		}).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -176,9 +167,6 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Non unique title", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		ts, tr, _, _ := newTaskService(ctrl)
 		task := &schemas.Task{
 			Title:     "Test Task",
 			CreatedBy: adminUser.ID,
@@ -194,9 +182,6 @@ func TestCreateTask(t *testing.T) {
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		ts, _, _, _ := newTaskService(ctrl)
 		taskID, err := ts.Create(db, studentUser, &schemas.Task{
 			Title:     "Test Student Task",
 			CreatedBy: studentUser.ID,
