@@ -1616,33 +1616,33 @@ func (mr *MockContestRepositoryMockRecorder) DeleteRegistrationRequest(db, reque
 }
 
 // Edit mocks base method.
-func (m *MockContestRepository) Edit(db database.Database, contestID int64, contest *models.Contest) (*models.Contest, error) {
+func (m *MockContestRepository) Edit(db database.Database, contestID int64, updates map[string]any) (*models.Contest, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Edit", db, contestID, contest)
+	ret := m.ctrl.Call(m, "Edit", db, contestID, updates)
 	ret0, _ := ret[0].(*models.Contest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Edit indicates an expected call of Edit.
-func (mr *MockContestRepositoryMockRecorder) Edit(db, contestID, contest any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) Edit(db, contestID, updates any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestRepository)(nil).Edit), db, contestID, contest)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestRepository)(nil).Edit), db, contestID, updates)
 }
 
 // EditWithStats mocks base method.
-func (m *MockContestRepository) EditWithStats(db database.Database, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+func (m *MockContestRepository) EditWithStats(db database.Database, contestID int64, updates map[string]any) (*models.ContestWithStats, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EditWithStats", db, contestID, contest)
+	ret := m.ctrl.Call(m, "EditWithStats", db, contestID, updates)
 	ret0, _ := ret[0].(*models.ContestWithStats)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EditWithStats indicates an expected call of EditWithStats.
-func (mr *MockContestRepositoryMockRecorder) EditWithStats(db, contestID, contest any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) EditWithStats(db, contestID, updates any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditWithStats", reflect.TypeOf((*MockContestRepository)(nil).EditWithStats), db, contestID, contest)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditWithStats", reflect.TypeOf((*MockContestRepository)(nil).EditWithStats), db, contestID, updates)
 }
 
 // Get mocks base method.

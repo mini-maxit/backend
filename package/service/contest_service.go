@@ -327,23 +327,68 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 		return nil, err
 	}
 
-	model, err := cs.contestRepository.Get(db, contestID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.ErrNotFound
+	editMap := make(map[string]any)
+	if editInfo.Name != nil {
+		editMap["name"] = *editInfo.Name
+	}
+	if editInfo.Description != nil {
+		editMap["description"] = *editInfo.Description
+	}
+
+	var startAt time.Time
+	var endAt *time.Time
+
+	// Fetch current contest times if needed
+	needCurrent := (editInfo.StartAt == nil || editInfo.EndAt == nil)
+	var contest *models.Contest
+	if needCurrent {
+		contest, err = cs.contestRepository.Get(db, contestID)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
 	}
 
-	// Check permissions using collaborator system
+	// Determine startAt and endAt values for validation
+	if editInfo.StartAt != nil {
+		startAt = *editInfo.StartAt
+	} else if contest != nil {
+		startAt = contest.StartAt
+	}
+	if editInfo.EndAt != nil {
+		endAt = editInfo.EndAt
+	} else if contest != nil {
+		endAt = contest.EndAt
+	}
 
-	cs.updateModel(model, editInfo)
+	// Only validate if both are set (either by edit or from DB)
+	if endAt != nil {
+		if startAt.After(*endAt) {
+			return nil, errors.ErrEndBeforeStart
+		}
+		if endAt.Before(startAt) {
+			return nil, errors.ErrEndBeforeStart
+		}
+	}
 
-	newModel, err := cs.contestRepository.EditWithStats(db, contestID, model)
+	if editInfo.StartAt != nil {
+		editMap["start_at"] = *editInfo.StartAt
+	}
+	if editInfo.EndAt != nil {
+		editMap["end_at"] = editInfo.EndAt
+	}
+	if editInfo.IsRegistrationOpen != nil {
+		editMap["is_registration_open"] = *editInfo.IsRegistrationOpen
+	}
+	if editInfo.IsSubmissionOpen != nil {
+		editMap["is_submission_open"] = *editInfo.IsSubmissionOpen
+	}
+	if editInfo.IsVisible != nil {
+		editMap["is_visible"] = *editInfo.IsVisible
+	}
+	newModel, err := cs.contestRepository.EditWithStats(db, contestID, editMap)
 	if err != nil {
 		return nil, err
 	}
-
 	return ContestWithStatsToCreatedContest(newModel), nil
 }
 

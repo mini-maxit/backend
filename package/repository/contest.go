@@ -41,9 +41,9 @@ type ContestRepository interface {
 	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
 	GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
-	Edit(db database.Database, contestID int64, contest *models.Contest) (*models.Contest, error)
+	Edit(db database.Database, contestID int64, updates map[string]any) (*models.Contest, error)
 	// EditWithStats updates a contest and returns it with participant and task counts
-	EditWithStats(db database.Database, contestID int64, contest *models.Contest) (*models.ContestWithStats, error)
+	EditWithStats(db database.Database, contestID int64, updates map[string]any) (*models.ContestWithStats, error)
 	// Delete removes a contest
 	Delete(db database.Database, contestID int64) error
 	// CreatePendingRegistration creates a pending registration request
@@ -266,9 +266,9 @@ func (cr *contestRepository) GetAllForCreatorWithStats(db database.Database, cre
 	return contests, nil
 }
 
-func (cr *contestRepository) Edit(db database.Database, contestID int64, contest *models.Contest) (*models.Contest, error) {
+func (cr *contestRepository) Edit(db database.Database, contestID int64, updates map[string]any) (*models.Contest, error) {
 	tx := db.GetInstance()
-	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
+	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(updates).Error
 	if err != nil {
 		return nil, err
 	}
@@ -277,10 +277,10 @@ func (cr *contestRepository) Edit(db database.Database, contestID int64, contest
 	return &updatedContest, err
 }
 
-func (cr *contestRepository) EditWithStats(db database.Database, contestID int64, contest *models.Contest) (*models.ContestWithStats, error) {
+func (cr *contestRepository) EditWithStats(db database.Database, contestID int64, updates map[string]any) (*models.ContestWithStats, error) {
 	tx := db.GetInstance()
 	// First update the contest
-	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(contest).Error
+	err := tx.Model(&models.Contest{}).Where("id = ?", contestID).Updates(updates).Error
 	if err != nil {
 		return nil, err
 	}
