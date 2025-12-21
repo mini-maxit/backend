@@ -29,7 +29,7 @@ func TestGetAllLanguages(t *testing.T) {
 	router := mux.NewRouter()
 	router.HandleFunc("/languages", func(w http.ResponseWriter, r *http.Request) {
 		route.GetAllLanguages(w, r)
-	})
+	}).Methods(http.MethodGet)
 
 	handler := httputils.MockDatabaseMiddleware(router, db)
 
@@ -43,24 +43,6 @@ func TestGetAllLanguages(t *testing.T) {
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	}))
 	defer server.Close()
-
-	t.Run("Accept only GET", func(t *testing.T) {
-		methods := []string{http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
-
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/languages", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
 
 	t.Run("Success", func(t *testing.T) {
 		expectedLanguages := []schemas.LanguageConfig{
@@ -119,7 +101,7 @@ func TestToggleLanguageVisibility(t *testing.T) {
 	router := mux.NewRouter()
 	router.HandleFunc("/languages/{id}", func(w http.ResponseWriter, r *http.Request) {
 		route.ToggleLanguageVisibility(w, r)
-	})
+	}).Methods(http.MethodPatch)
 
 	handler := httputils.MockDatabaseMiddleware(router, db)
 
@@ -133,24 +115,6 @@ func TestToggleLanguageVisibility(t *testing.T) {
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	}))
 	defer server.Close()
-
-	t.Run("Accept only PATCH", func(t *testing.T) {
-		methods := []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete}
-
-		for _, method := range methods {
-			req, err := http.NewRequest(method, server.URL+"/languages/1", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Fatalf("Failed to make request: %v", err)
-			}
-			defer resp.Body.Close()
-
-			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-		}
-	})
 
 	t.Run("Invalid language ID", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPatch, server.URL+"/languages/invalid", nil)

@@ -31,11 +31,6 @@ type languagesManagementRoute struct {
 //	@Success		200	{object}	httputils.APIResponse[[]schemas.LanguageConfig]
 //	@Router			/languages-management/languages [get]
 func (lr *languagesManagementRoute) GetAllLanguages(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
 	db := httputils.GetDatabase(r)
 
 	languages, err := lr.languageService.GetAll(db)
@@ -60,11 +55,6 @@ func (lr *languagesManagementRoute) GetAllLanguages(w http.ResponseWriter, r *ht
 //	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
 //	@Router			/languages-management/languages/{id} [patch]
 func (lr *languagesManagementRoute) ToggleLanguageVisibility(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPatch {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
 	languageIDStr := httputils.GetPathValue(r, "id")
 	if languageIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Language ID is required.")
