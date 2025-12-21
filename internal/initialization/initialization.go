@@ -24,17 +24,17 @@ type Initialization struct {
 	JWTService   service.JWTService
 	QueueService service.QueueService
 
-	AuthRoute                  routes.AuthRoute
-	ContestRoute               routes.ContestRoute
-	ContestManagementRoute     routes.ContestsManagementRoute
-	GroupRoute                 routes.GroupRoute
-	SubmissionRoute            routes.SubmissionRoutes
-	TaskRoute                  routes.TaskRoute
-	TaskManagementRoute        routes.TasksManagementRoute
-	AccessControlRoute         routes.AccessControlRoute
-	UserRoute                  routes.UserRoute
-	WorkerRoute                routes.WorkerRoute
-	LanguagesManagementRoute   routes.LanguagesManagementRoute
+	AuthRoute                routes.AuthRoute
+	ContestRoute             routes.ContestRoute
+	ContestManagementRoute   routes.ContestsManagementRoute
+	GroupRoute               routes.GroupRoute
+	SubmissionRoute          routes.SubmissionRoutes
+	TaskRoute                routes.TaskRoute
+	TaskManagementRoute      routes.TasksManagementRoute
+	AccessControlRoute       routes.AccessControlRoute
+	UserRoute                routes.UserRoute
+	WorkerRoute              routes.WorkerRoute
+	LanguagesManagementRoute routes.LanguagesManagementRoute
 
 	QueueListener queue.Listener
 
