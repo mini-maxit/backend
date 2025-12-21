@@ -24,16 +24,17 @@ type Initialization struct {
 	JWTService   service.JWTService
 	QueueService service.QueueService
 
-	AuthRoute              routes.AuthRoute
-	ContestRoute           routes.ContestRoute
-	ContestManagementRoute routes.ContestsManagementRoute
-	GroupRoute             routes.GroupRoute
-	SubmissionRoute        routes.SubmissionRoutes
-	TaskRoute              routes.TaskRoute
-	TaskManagementRoute    routes.TasksManagementRoute
-	AccessControlRoute     routes.AccessControlRoute
-	UserRoute              routes.UserRoute
-	WorkerRoute            routes.WorkerRoute
+	AuthRoute                  routes.AuthRoute
+	ContestRoute               routes.ContestRoute
+	ContestManagementRoute     routes.ContestsManagementRoute
+	GroupRoute                 routes.GroupRoute
+	SubmissionRoute            routes.SubmissionRoutes
+	TaskRoute                  routes.TaskRoute
+	TaskManagementRoute        routes.TasksManagementRoute
+	AccessControlRoute         routes.AccessControlRoute
+	UserRoute                  routes.UserRoute
+	WorkerRoute                routes.WorkerRoute
+	LanguagesManagementRoute   routes.LanguagesManagementRoute
 
 	QueueListener queue.Listener
 
@@ -147,6 +148,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	accessControlRoute := routes.NewAccessControlRoute(accessControlService)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
+	languagesManagementRoute := routes.NewLanguagesManagementRoute(langService)
 
 	// Queue listener - uses the same queue client as queue service
 	queueListener := queue.NewListener(
@@ -171,16 +173,17 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		JWTService:   jwtService,
 		QueueService: queueService,
 
-		AuthRoute:              authRoute,
-		ContestRoute:           contestRoute,
-		ContestManagementRoute: contestManagementRoute,
-		GroupRoute:             groupRoute,
-		SubmissionRoute:        submissionRoute,
-		TaskRoute:              taskRoute,
-		TaskManagementRoute:    tasksManagementRoute,
-		AccessControlRoute:     accessControlRoute,
-		UserRoute:              userRoute,
-		WorkerRoute:            workerRoute,
+		AuthRoute:                authRoute,
+		ContestRoute:             contestRoute,
+		ContestManagementRoute:   contestManagementRoute,
+		GroupRoute:               groupRoute,
+		SubmissionRoute:          submissionRoute,
+		TaskRoute:                taskRoute,
+		TaskManagementRoute:      tasksManagementRoute,
+		AccessControlRoute:       accessControlRoute,
+		UserRoute:                userRoute,
+		WorkerRoute:              workerRoute,
+		LanguagesManagementRoute: languagesManagementRoute,
 
 		QueueListener: queueListener,
 	}
