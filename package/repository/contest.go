@@ -187,13 +187,15 @@ func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID in
 }
 
 // GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator)
-// It returns contests with pagination and total count.
+// It returns contests with pagination and total count, including participant and task counts.
 func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
 	tx := db.GetInstance()
 	var contests []models.ManagedContest
 	var totalCount int64
 
 	accessControlTable := database.ResolveTableName(tx, &models.AccessControl{})
+	contestParticipantTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	contestTaskTable := database.ResolveTableName(tx, &models.ContestTask{})
 
 	// Base query joining access control entries for contests
 	baseQuery := tx.Model(&models.Contest{}).
@@ -205,11 +207,33 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 		return nil, 0, err
 	}
 
-	// Apply pagination and sorting to the joined query
-	paginatedQuery, err := utils.ApplyPaginationAndSort(tx.Model(&models.Contest{}).
-		Select("contests.*", "ac.permission as permission_type").
-		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
-			types.ResourceTypeContest, userID), limit, offset, sort)
+	// Use JOIN-based approach for participant_count and task_count
+	paginatedQuery, err := utils.ApplyPaginationAndSort(
+		tx.Model(&models.Contest{}).
+			Select(`contests.*,
+				ac.permission as permission_type,
+				COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+				COALESCE(contest_task_count.count, 0) as task_count
+			`).
+			Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
+				types.ResourceTypeContest, userID).
+			Joins(fmt.Sprintf(`LEFT JOIN (
+				SELECT contest_id, COUNT(*) as count
+				FROM %s
+				GROUP BY contest_id
+			) as direct_participants ON contests.id = direct_participants.contest_id`, contestParticipantTable)).
+			Joins(fmt.Sprintf(`LEFT JOIN (
+				SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+				FROM %s cpg
+				JOIN %s ug ON cpg.group_id = ug.group_id
+				GROUP BY cpg.contest_id
+			) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
+			Joins(fmt.Sprintf(`LEFT JOIN (
+				SELECT contest_id, COUNT(*) as count
+				FROM %s
+				GROUP BY contest_id
+			) as contest_task_count ON contests.id = contest_task_count.contest_id`, contestTaskTable)),
+		limit, offset, sort)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -221,7 +245,6 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 
 	return contests, totalCount, nil
 }
-
 func (cr *contestRepository) GetAllForCreatorWithStats(db database.Database, creatorID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
 	tx := db.GetInstance()
 	var contests []models.ContestWithStats

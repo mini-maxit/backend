@@ -1238,6 +1238,8 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 					StartAt:     model.StartAt,
 					EndAt:       model.EndAt,
 				},
+				TaskCount:        model.TaskCount,
+				ParticipantCount: model.ParticipantCount,
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
 			IsVisible:          model.IsVisible,

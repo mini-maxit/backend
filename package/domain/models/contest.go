@@ -85,5 +85,7 @@ type ParticipantContestStats struct {
 
 type ManagedContest struct {
 	Contest
-	PermissionType types.Permission `gorm:"column:permission_type"`
+	TaskCount        int64            `gorm:"column:task_count"`
+	ParticipantCount int64            `gorm:"column:participant_count"`
+	PermissionType   types.Permission `gorm:"column:permission_type"`
 }
