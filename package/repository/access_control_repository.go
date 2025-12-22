@@ -106,7 +106,7 @@ func (r *accessControlRepository) GetAssignableUsers(db database.Database, resou
 	accessControlsTable := database.ResolveTableName(tx, &models.AccessControl{})
 	var total int64
 	if err := tx.Model(&models.User{}).
-		Where("role = ?", types.UserRoleTeacher).
+		Where("role = ? OR role = ?", types.UserRoleTeacher, types.UserRoleAdmin).
 		Where(fmt.Sprintf("NOT EXISTS (SELECT 1 FROM %s ac WHERE ac.user_id = users.id AND ac.resource_type = ? AND ac.resource_id = ?)", accessControlsTable), resourceType, resourceID).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
