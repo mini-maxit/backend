@@ -537,6 +537,7 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 	now := time.Now()
 	for _, rel := range relations {
 		taskStatus := getTaskStatus(rel.StartAt, rel.EndAt, now)
+		cs.logger.Infof("Task %d status: %s", rel.TaskID, taskStatus)
 
 		// only include tasks matching the status
 		if taskStatus != status {
@@ -1081,12 +1082,15 @@ func (cs *contestService) GetContestTask(db database.Database, currentUser *sche
 		return nil, errors.ErrForbidden
 	}
 
-	_, err = cs.contestRepository.GetContestTask(db, contestID, taskID)
+	contestTask, err := cs.contestRepository.GetContestTask(db, contestID, taskID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.ErrNotFound
 		}
 		return nil, err
+	}
+	if contestTask.StartAt.After(time.Now()) {
+		return nil, errors.ErrTaskNotStarted
 	}
 
 	task, err := cs.taskService.Get(db, currentUser, taskID)

@@ -653,7 +653,7 @@ func (cr *contestRepository) GetVisibleContestTasksWithSettings(db database.Data
 	tx := db.GetInstance()
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).
-		Where("contest_id = ? AND start_at < now()", contestID).
+		Where("contest_id = ? AND start_at <= now()", contestID).
 		Preload("Task").
 		Preload("Task.Author").
 		Find(&relations).Error

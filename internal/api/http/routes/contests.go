@@ -340,7 +340,10 @@ func (cr *ContestRouteImpl) GetMyActiveContests(w http.ResponseWriter, r *http.R
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
 	}
-	httputils.ReturnSuccess(w, http.StatusOK, combined.Ongoing)
+	result := make([]schemas.ContestWithStats, 0)
+	result = append(result, combined.Ongoing...)
+	result = append(result, combined.Upcoming...)
+	httputils.ReturnSuccess(w, http.StatusOK, result)
 }
 
 // GetMyPastContests godoc
