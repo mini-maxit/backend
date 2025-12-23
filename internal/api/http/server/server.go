@@ -93,6 +93,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	contestManagementMux := mux.NewRouter()
 	routes.RegisterContestsManagementRoute(contestManagementMux, init.ContestManagementRoute)
 
+	// Languages management routes
+	languagesManagementMux := mux.NewRouter()
+	routes.RegisterLanguagesManagementRoutes(languagesManagementMux, init.LanguagesManagementRoute)
+
 	// Worker routes
 	workerMux := mux.NewRouter()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
@@ -107,6 +111,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.PathPrefix("/groups-management/").Handler(http.StripPrefix("/groups-management", groupMux))
 	secureMux.PathPrefix("/contests-management/").Handler(http.StripPrefix("/contests-management", contestManagementMux))
 	secureMux.PathPrefix("/contests").Handler(contestMux)
+	secureMux.PathPrefix("/languages-management/").Handler(http.StripPrefix("/languages-management", languagesManagementMux))
 	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
 
 	// API routes
