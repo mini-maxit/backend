@@ -67,7 +67,7 @@ type accessControlRoute struct {
 //	@Description	Add a user as a collaborator to a resource (contest, task, etc.) with specified permissions (edit or manage). Only users with manage permission can add collaborators.
 //	@Accept			json
 //	@Produce		json
-//	@Param			resource_type	path		string					true	"Resource type (contests|tasks)"
+//	@Param			resource_type	path		string					true	"Resource type (contests)"
 //	@Param			resource_id		path		int						true	"Resource ID"
 //	@Param			body			body		schemas.AddCollaborator	true	"Collaborator details"
 //	@Failure		400				{object}	httputils.ValidationErrorResponse
@@ -120,7 +120,7 @@ func (ac *accessControlRoute) AddCollaborator(w http.ResponseWriter, r *http.Req
 //	@Summary		Get collaborators for a resource
 //	@Description	Get all collaborators for a specific resource. Users with edit permission or higher can see collaborators.
 //	@Produce		json
-//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks|groups)"
 //	@Param			resource_id		path		int		true	"Resource ID"
 //	@Failure		400				{object}	httputils.APIError
 //	@Failure		403				{object}	httputils.APIError
@@ -166,7 +166,7 @@ func (ac *accessControlRoute) GetCollaborators(w http.ResponseWriter, r *http.Re
 //	@Description	Update the permission level of a collaborator for a resource. Only users with manage permission can update collaborators.
 //	@Accept			json
 //	@Produce		json
-//	@Param			resource_type	path		string						true	"Resource type (contests|tasks)"
+//	@Param			resource_type	path		string						true	"Resource type (contests|tasks|groups)"
 //	@Param			resource_id		path		int							true	"Resource ID"
 //	@Param			user_id			path		int							true	"User ID"
 //	@Param			body			body		schemas.UpdateCollaborator	true	"New permission"
@@ -226,7 +226,7 @@ func (ac *accessControlRoute) UpdateCollaborator(w http.ResponseWriter, r *http.
 //	@Summary		Remove a collaborator from a resource
 //	@Description	Remove a user's collaborator access to a resource. Only users with manage permission can remove collaborators. Cannot remove the creator.
 //	@Produce		json
-//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks|groups)"
 //	@Param			resource_id		path		int		true	"Resource ID"
 //	@Param			user_id			path		int		true	"User ID"
 //	@Failure		400				{object}	httputils.APIError
@@ -278,7 +278,7 @@ func (ac *accessControlRoute) RemoveCollaborator(w http.ResponseWriter, r *http.
 //	@Summary		Get assignable users for a resource
 //	@Description	List users (teachers) who can be granted access for the given resource. Only users with manage permission can view assignable users. Returned users do not currently have any access entry for the resource.
 //	@Produce		json
-//	@Param			resource_type	path		string	true	"Resource type (contests|tasks)"
+//	@Param			resource_type	path		string	true	"Resource type (contests|tasks|groups)"
 //	@Param			resource_id		path		int		true	"Resource ID"
 //	@Param			limit			query		int		false	"Pagination limit"
 //	@Param			offset			query		int		false	"Pagination offset"
