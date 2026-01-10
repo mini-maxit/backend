@@ -1291,7 +1291,7 @@ paths:
         Only users with manage permission can view assignable users. Returned users
         do not currently have any access entry for the resource.
       parameters:
-      - description: Resource type (contests|tasks)
+      - description: Resource type (contests|tasks|groups)
         in: path
         name: resource_type
         required: true
@@ -1344,7 +1344,7 @@ paths:
       description: Get all collaborators for a specific resource. Users with edit
         permission or higher can see collaborators.
       parameters:
-      - description: Resource type (contests|tasks)
+      - description: Resource type (contests|tasks|groups)
         in: path
         name: resource_type
         required: true
@@ -1387,7 +1387,7 @@ paths:
         with specified permissions (edit or manage). Only users with manage permission
         can add collaborators.
       parameters:
-      - description: Resource type (contests|tasks)
+      - description: Resource type (contests)
         in: path
         name: resource_type
         required: true
@@ -1434,7 +1434,7 @@ paths:
       description: Remove a user's collaborator access to a resource. Only users with
         manage permission can remove collaborators. Cannot remove the creator.
       parameters:
-      - description: Resource type (contests|tasks)
+      - description: Resource type (contests|tasks|groups)
         in: path
         name: resource_type
         required: true
@@ -1481,7 +1481,7 @@ paths:
       description: Update the permission level of a collaborator for a resource. Only
         users with manage permission can update collaborators.
       parameters:
-      - description: Resource type (contests|tasks)
+      - description: Resource type (contests|tasks|groups)
         in: path
         name: resource_type
         required: true
