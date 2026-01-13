@@ -12,3 +12,4 @@ docs/*
 # Build artifacts
 /app
 /loader
+/generate-test-data
