@@ -1529,20 +1529,6 @@ func (mr *MockContestRepositoryMockRecorder) AddParticipantsToContest(db, contes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddParticipantsToContest", reflect.TypeOf((*MockContestRepository)(nil).AddParticipantsToContest), db, contestID, userIDs)
 }
 
-// AddTaskToContest mocks base method.
-func (m *MockContestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTaskToContest", db, taskContest)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddTaskToContest indicates an expected call of AddTaskToContest.
-func (mr *MockContestRepositoryMockRecorder) AddTaskToContest(db, taskContest any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTaskToContest", reflect.TypeOf((*MockContestRepository)(nil).AddTaskToContest), db, taskContest)
-}
-
 // Create mocks base method.
 func (m *MockContestRepository) Create(db database.Database, contest *models.Contest) (int64, error) {
 	m.ctrl.T.Helper()
@@ -2083,6 +2069,20 @@ func (m *MockContestRepository) RemoveTaskFromContest(db database.Database, cont
 func (mr *MockContestRepositoryMockRecorder) RemoveTaskFromContest(db, contestID, taskID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveTaskFromContest), db, contestID, taskID)
+}
+
+// SaveContestTask mocks base method.
+func (m *MockContestRepository) SaveContestTask(db database.Database, taskContest models.ContestTask) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveContestTask", db, taskContest)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveContestTask indicates an expected call of SaveContestTask.
+func (mr *MockContestRepositoryMockRecorder) SaveContestTask(db, taskContest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContestTask", reflect.TypeOf((*MockContestRepository)(nil).SaveContestTask), db, taskContest)
 }
 
 // UpdateRegistrationRequestStatus mocks base method.

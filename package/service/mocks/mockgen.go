@@ -282,6 +282,21 @@ func (mr *MockContestServiceMockRecorder) Edit(db, currentUser, contestID, editI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestService)(nil).Edit), db, currentUser, contestID, editInfo)
 }
 
+// EditContestTask mocks base method.
+func (m *MockContestService) EditContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64, settings *schemas.ContestTaskSettings) (*schemas.ContestTaskSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditContestTask", db, currentUser, contestID, taskID, settings)
+	ret0, _ := ret[0].(*schemas.ContestTaskSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditContestTask indicates an expected call of EditContestTask.
+func (mr *MockContestServiceMockRecorder) EditContestTask(db, currentUser, contestID, taskID, settings any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditContestTask", reflect.TypeOf((*MockContestService)(nil).EditContestTask), db, currentUser, contestID, taskID, settings)
+}
+
 // GetAllContests mocks base method.
 func (m *MockContestService) GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error) {
 	m.ctrl.T.Helper()
@@ -385,6 +400,21 @@ func (m *MockContestService) GetContestTask(db database.Database, currentUser *s
 func (mr *MockContestServiceMockRecorder) GetContestTask(db, currentUser, contestID, taskID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTask", reflect.TypeOf((*MockContestService)(nil).GetContestTask), db, currentUser, contestID, taskID)
+}
+
+// GetContestTaskSettings mocks base method.
+func (m *MockContestService) GetContestTaskSettings(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.ContestTaskSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContestTaskSettings", db, currentUser, contestID, taskID)
+	ret0, _ := ret[0].(*schemas.ContestTaskSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContestTaskSettings indicates an expected call of GetContestTaskSettings.
+func (mr *MockContestServiceMockRecorder) GetContestTaskSettings(db, currentUser, contestID, taskID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContestTaskSettings", reflect.TypeOf((*MockContestService)(nil).GetContestTaskSettings), db, currentUser, contestID, taskID)
 }
 
 // GetContestsCreatedByUser mocks base method.

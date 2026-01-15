@@ -86,6 +86,11 @@ type ContestService interface {
 	AddParticipantsToContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
 	// RemoveParticipantsFromContest removes multiple users from contest participants (only accessible by contest collaborators with edit permission)
 	RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
+
+	// GetContestTaskSettings retrieves settings for a specific task within a contest (only accessible by contest collaborators)
+	GetContestTaskSettings(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.ContestTaskSettings, error)
+	// EditContestTask updates settings for a specific task within a contest (only accessible by contest collaborators with edit permission)
+	EditContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64, settings *schemas.ContestTaskSettings) (*schemas.ContestTaskSettings, error)
 }
 
 const defaultContestSort = "created_at:desc"
@@ -726,7 +731,7 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 		IsSubmissionOpen: true,
 	}
 
-	return cs.contestRepository.AddTaskToContest(db, taskContest)
+	return cs.contestRepository.SaveContestTask(db, taskContest)
 }
 
 func (cs *contestService) RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error {
@@ -1489,6 +1494,57 @@ func (cs *contestService) RemoveParticipantsFromContest(db database.Database, cu
 
 	// Remove participants from contest
 	return cs.contestRepository.RemoveParticipantsFromContest(db, contestID, userIDs)
+}
+
+func (cs *contestService) GetContestTaskSettings(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.ContestTaskSettings, error) {
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return nil, err
+	}
+
+	settingsModel, err := cs.contestRepository.GetContestTask(db, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrTaskNotInContest
+		}
+		return nil, err
+	}
+	settings := &schemas.ContestTaskSettings{
+		StartAt:          settingsModel.StartAt,
+		EndAt:            settingsModel.EndAt,
+		IsSubmissionOpen: settingsModel.IsSubmissionOpen,
+	}
+	return settings, nil
+}
+
+func (cs *contestService) EditContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64, settings *schemas.ContestTaskSettings) (*schemas.ContestTaskSettings, error) {
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return nil, err
+	}
+
+	settingsModel, err := cs.contestRepository.GetContestTask(db, contestID, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrTaskNotInContest
+		}
+		return nil, err
+	}
+	settingsModel.StartAt = settings.StartAt
+	settingsModel.EndAt = settings.EndAt
+	settingsModel.IsSubmissionOpen = settings.IsSubmissionOpen
+
+	err = cs.contestRepository.SaveContestTask(db, *settingsModel)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &schemas.ContestTaskSettings{
+		StartAt:          settingsModel.StartAt,
+		EndAt:            settingsModel.EndAt,
+		IsSubmissionOpen: settingsModel.IsSubmissionOpen,
+	}
+	return response, nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, groupRepository repository.GroupRepository, accessControlService AccessControlService, taskService TaskService) ContestService {

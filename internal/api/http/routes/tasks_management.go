@@ -35,13 +35,13 @@ type tasksManagementRoute struct {
 //	@Description	Uploads a task to the FileStorage service
 //	@Accept			multipart/form-data
 //	@Produce		json
-//	@Param			title	formData	string	true	"Name of the task"
+//	@Param			title		formData	string	true	"Name of the task"
 //	@Param			isVisible	formData	boolean	false	"Task visibility (default: false)"
-//	@Param			archive	formData	file	true	"Task archive"
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.TaskCreateResponse]
+//	@Param			archive		formData	file	true	"Task archive"
+//	@Failure		405			{object}	httputils.APIError
+//	@Failure		400			{object}	httputils.APIError
+//	@Failure		500			{object}	httputils.APIError
+//	@Success		200			{object}	httputils.APIResponse[schemas.TaskCreateResponse]
 //	@Router			/tasks-management/tasks/ [post]
 func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
