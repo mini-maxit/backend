@@ -64,7 +64,7 @@ type ContestRepository interface {
 	GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
-	// AddTasksToContest assigns tasks to a contest
+	// SaveContestTask creates or updates a contest-task assignment
 	SaveContestTask(db database.Database, taskContest models.ContestTask) error
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
