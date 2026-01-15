@@ -78,7 +78,7 @@ func EndAtAfterStartAt(sl validator.StructLevel) {
 			sl.Current().FieldByName("EndAt").Interface(),
 			"EndAt",
 			"end_at",
-			"endat_after_startat",
+			"end_at_after_start_at",
 			"",
 		)
 	}
