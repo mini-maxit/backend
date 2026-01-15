@@ -1341,7 +1341,7 @@ func (cr *contestsManagementRouteImpl) EditContestTask(w http.ResponseWriter, r 
 	}
 
 	taskIDStr := httputils.GetPathValue(r, "taskID")
-	if contestStr == "" {
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
 		return
 	}
@@ -1401,7 +1401,7 @@ func (cr *contestsManagementRouteImpl) GetContestTask(w http.ResponseWriter, r *
 	}
 
 	taskIDStr := httputils.GetPathValue(r, "taskID")
-	if contestStr == "" {
+	if taskIDStr == "" {
 		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
 		return
 	}
