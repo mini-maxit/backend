@@ -6,8 +6,10 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"gorm.io/gorm"
@@ -65,6 +67,23 @@ func PasswordValidator(fl validator.FieldLevel) bool {
 		specialChar.MatchString(password)
 }
 
+func EndAtAfterStartAt(sl validator.StructLevel) {
+	endAtField := sl.Current().FieldByName("EndAt").Interface().(*time.Time)
+	if endAtField == nil {
+		return
+	}
+	startAtField := sl.Current().FieldByName("StartAt").Interface().(time.Time)
+	if endAtField.Before(startAtField) {
+		sl.ReportError(
+			sl.Current().FieldByName("EndAt").Interface(),
+			"EndAt",
+			"end_at",
+			"endat_after_startat",
+			"",
+		)
+	}
+}
+
 // NewValidator creates a new validator with custom validators.
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
@@ -86,6 +105,8 @@ func NewValidator() (*validator.Validate, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	validate.RegisterStructValidation(EndAtAfterStartAt, schemas.ContestTaskSettings{})
 	return validate, nil
 }
 

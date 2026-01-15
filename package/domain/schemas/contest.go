@@ -118,3 +118,9 @@ type ContestResults struct {
 	Contest     BaseContest  `json:"contest"`
 	TaskResults []TaskResult `json:"taskResults"`
 }
+
+type ContestTaskSettings struct {
+	StartAt          time.Time  `json:"startAt"`
+	EndAt            *time.Time `json:"endAt,omitempty"`
+	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
+}

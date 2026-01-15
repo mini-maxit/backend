@@ -65,7 +65,7 @@ type ContestRepository interface {
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
-	AddTaskToContest(db database.Database, taskContest models.ContestTask) error
+	SaveContestTask(db database.Database, taskContest models.ContestTask) error
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
@@ -825,9 +825,9 @@ func (cr *contestRepository) GetContestsForUserWithStats(db database.Database, u
 	return contests, nil
 }
 
-func (cr *contestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
+func (cr *contestRepository) SaveContestTask(db database.Database, taskContest models.ContestTask) error {
 	tx := db.GetInstance()
-	err := tx.Create(&taskContest).Error
+	err := tx.Save(&taskContest).Error
 	if err != nil {
 		return err
 	}

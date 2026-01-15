@@ -15,32 +15,34 @@ import (
 )
 
 type ContestsManagementRoute interface {
-	CreateContest(w http.ResponseWriter, r *http.Request)
-	EditContest(w http.ResponseWriter, r *http.Request)
-	DeleteContest(w http.ResponseWriter, r *http.Request)
-	GetContestTasks(w http.ResponseWriter, r *http.Request)
-	GetAssignableTasks(w http.ResponseWriter, r *http.Request)
+	AddGroupToContest(w http.ResponseWriter, r *http.Request)
+	AddParticipantsToContest(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
-	RemoveTaskFromContest(w http.ResponseWriter, r *http.Request)
-	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
-	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
-	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
-	GetCreatedContests(w http.ResponseWriter, r *http.Request)
-	GetManageableContests(w http.ResponseWriter, r *http.Request)
+	CreateContest(w http.ResponseWriter, r *http.Request)
+	DeleteContest(w http.ResponseWriter, r *http.Request)
+	EditContest(w http.ResponseWriter, r *http.Request)
+	EditContestTask(w http.ResponseWriter, r *http.Request)
 	GetAllContests(w http.ResponseWriter, r *http.Request)
+	GetAssignableGroups(w http.ResponseWriter, r *http.Request)
+	GetAssignableParticipants(w http.ResponseWriter, r *http.Request)
+	GetAssignableTasks(w http.ResponseWriter, r *http.Request)
+	GetContestGroups(w http.ResponseWriter, r *http.Request)
+	GetContestParticipants(w http.ResponseWriter, r *http.Request)
+	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
+	GetContestTask(w http.ResponseWriter, r *http.Request)
 	GetContestTaskStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserSubmissions(w http.ResponseWriter, r *http.Request)
+	GetContestTasks(w http.ResponseWriter, r *http.Request)
 	GetContestUserStats(w http.ResponseWriter, r *http.Request)
-	AddGroupToContest(w http.ResponseWriter, r *http.Request)
+	GetCreatedContests(w http.ResponseWriter, r *http.Request)
+	GetManageableContests(w http.ResponseWriter, r *http.Request)
+	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
+	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	RemoveGroupFromContest(w http.ResponseWriter, r *http.Request)
-	GetContestGroups(w http.ResponseWriter, r *http.Request)
-	GetAssignableGroups(w http.ResponseWriter, r *http.Request)
-	GetContestParticipants(w http.ResponseWriter, r *http.Request)
-	GetAssignableParticipants(w http.ResponseWriter, r *http.Request)
-	AddParticipantsToContest(w http.ResponseWriter, r *http.Request)
 	RemoveParticipantsFromContest(w http.ResponseWriter, r *http.Request)
+	RemoveTaskFromContest(w http.ResponseWriter, r *http.Request)
 }
 
 type contestsManagementRouteImpl struct {
@@ -1304,6 +1306,106 @@ func (cr *contestsManagementRouteImpl) GetAllContests(w http.ResponseWriter, r *
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+func (cr *contestsManagementRouteImpl) EditContestTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskIDStr := httputils.GetPathValue(r, "taskID")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	var request schemas.ContestTaskSettings
+	err = httputils.ShouldBindJSON(r.Body, &request)
+	if err != nil {
+		httputils.HandleValidationError(w, err)
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	db := httputils.GetDatabase(r)
+
+	response, err := cr.contestService.EditContestTask(db, currentUser, contestID, taskID, &request)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+	httputils.ReturnSuccess(w, http.StatusOK, response)
+}
+
+// GetContestTask godoc
+//
+//	@Tags			contests-management
+//	@Summary		Get a specific task in a contest
+//	@Description	Get the settings/details for a specific task assigned to a contest
+//	@Produce		json
+//	@Param			id		path		int	true	"Contest ID"
+//	@Param			taskID	path		int	true	"Task ID"
+//	@Success		200		{object}	httputils.APIResponse[schemas.ContestTaskSettings]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/tasks/{taskID} [get]
+func (cr *contestsManagementRouteImpl) GetContestTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
+		return
+	}
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskIDStr := httputils.GetPathValue(r, "taskID")
+	if contestStr == "" {
+		httputils.ReturnError(w, http.StatusBadRequest, "Task ID cannot be empty")
+		return
+	}
+	taskID, err := strconv.ParseInt(taskIDStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	currentUser := httputils.GetCurrentUser(r)
+	db := httputils.GetDatabase(r)
+
+	settings, err := cr.contestService.GetContestTaskSettings(db, currentUser, contestID, taskID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, settings)
+}
+
 func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRoute) {
 	mux.HandleFunc("/contests", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -1349,6 +1451,17 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			route.AddTaskToContest(w, r)
 		case http.MethodDelete:
 			route.RemoveTaskFromContest(w, r)
+		default:
+			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+	})
+
+	mux.HandleFunc("/contests/{id}/tasks/{taskID}", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			route.GetContestTask(w, r)
+		case http.MethodPut:
+			route.EditContestTask(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
