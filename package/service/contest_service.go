@@ -87,8 +87,9 @@ type ContestService interface {
 	// RemoveParticipantsFromContest removes multiple users from contest participants (only accessible by contest collaborators with edit permission)
 	RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
 
+	// GetContestTaskSettings retrieves settings for a specific task within a contest (only accessible by contest collaborators)
 	GetContestTaskSettings(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.ContestTaskSettings, error)
-
+	// EditContestTask updates settings for a specific task within a contest (only accessible by contest collaborators with edit permission)
 	EditContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64, settings *schemas.ContestTaskSettings) (*schemas.ContestTaskSettings, error)
 }
 
