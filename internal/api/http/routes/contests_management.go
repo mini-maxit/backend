@@ -1306,6 +1306,23 @@ func (cr *contestsManagementRouteImpl) GetAllContests(w http.ResponseWriter, r *
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+// EditContestTask godoc
+//
+//	@Tags			contests-management
+//	@Summary		Edit a specific task in a contest
+//	@Description	Edit the settings/details for a specific task assigned to a contest
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int							true	"Contest ID"
+//	@Param			taskID	path		int							true	"Task ID"
+//	@Param			body	body		schemas.ContestTaskSettings	true	"Contest Task Settings"
+//	@Success		200		{object}	httputils.APIResponse[schemas.ContestTaskSettings]
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Router			/contests-management/contests/{id}/tasks/{taskID} [put]
 func (cr *contestsManagementRouteImpl) EditContestTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
