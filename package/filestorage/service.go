@@ -44,8 +44,12 @@ type FileStorageService interface {
 
 	UploadSolutionFile(taskID, userID int64, newOrder int, filePath string) (*UploadedFile, error)
 
-	//
+	// GetFileURL returns the direct URL to access a file (no signature, no expiration)
 	GetFileURL(path string) string
+
+	// GetSignedFileURL generates a signed URL with expiration for the given file path.
+	// The ttlSeconds parameter specifies how long the URL should be valid.
+	GetSignedFileURL(path string, ttlSeconds uint16) (string, error)
 
 	GetTestResultStdoutPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
 	GetTestResultStderrPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
@@ -313,14 +317,15 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 }
 
 type fileStorageService struct {
-	decompressor Decompressor
-	validator    ArchiveValidator
-	storage      filestorage.FileStorage
-	bucketName   string
-	logger       *zap.SugaredLogger
+	decompressor      Decompressor
+	validator         ArchiveValidator
+	storage           filestorage.FileStorage
+	bucketName        string
+	signedURLGenerator *utils.SignedURLGenerator
+	logger            *zap.SugaredLogger
 }
 
-func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
+func NewFileStorageService(fileStorageURL string, signedURLSecretKey string, signedURLTTLSeconds uint16) (FileStorageService, error) {
 	validator := NewArchiveValidator()
 
 	// Configure validation rules
@@ -352,12 +357,16 @@ func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file storage: %w", err)
 	}
+
+	signedURLGenerator := utils.NewSignedURLGenerator(signedURLSecretKey, signedURLTTLSeconds)
+
 	return &fileStorageService{
-		decompressor: &decompressor{},
-		validator:    validator,
-		storage:      storage,
-		bucketName:   "maxit",
-		logger:       utils.NewNamedLogger("file-storage"),
+		decompressor:       &decompressor{},
+		validator:          validator,
+		storage:            storage,
+		bucketName:         "maxit",
+		signedURLGenerator: signedURLGenerator,
+		logger:             utils.NewNamedLogger("file-storage"),
 	}, nil
 }
 
@@ -554,6 +563,18 @@ func (f *fileStorageService) ensureBucketExists() error {
 
 func (f *fileStorageService) GetFileURL(path string) string {
 	return f.storage.GetFileURL(f.bucketName, path)
+}
+
+func (f *fileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
+	baseURL := f.storage.GetFileURL(f.bucketName, path)
+	
+	// Create a temporary generator with the specified TTL
+	generator := utils.NewSignedURLGenerator(
+		string(f.signedURLGenerator.GetSecretKey()),
+		ttlSeconds,
+	)
+	
+	return generator.GenerateSignedURL(baseURL)
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {

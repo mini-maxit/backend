@@ -53,6 +53,21 @@ func (mr *MockFileStorageServiceMockRecorder) GetFileURL(path any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileURL", reflect.TypeOf((*MockFileStorageService)(nil).GetFileURL), path)
 }
 
+// GetSignedFileURL mocks base method.
+func (m *MockFileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSignedFileURL", path, ttlSeconds)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSignedFileURL indicates an expected call of GetSignedFileURL.
+func (mr *MockFileStorageServiceMockRecorder) GetSignedFileURL(path, ttlSeconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSignedFileURL", reflect.TypeOf((*MockFileStorageService)(nil).GetSignedFileURL), path, ttlSeconds)
+}
+
 // GetTestResultDiffPath mocks base method.
 func (m *MockFileStorageService) GetTestResultDiffPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile {
 	m.ctrl.T.Helper()
