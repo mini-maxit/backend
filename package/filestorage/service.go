@@ -317,12 +317,12 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 }
 
 type fileStorageService struct {
-	decompressor      Decompressor
-	validator         ArchiveValidator
-	storage           filestorage.FileStorage
-	bucketName        string
+	decompressor       Decompressor
+	validator          ArchiveValidator
+	storage            filestorage.FileStorage
+	bucketName         string
 	signedURLGenerator *utils.SignedURLGenerator
-	logger            *zap.SugaredLogger
+	logger             *zap.SugaredLogger
 }
 
 func NewFileStorageService(fileStorageURL string, signedURLSecretKey string, signedURLTTLSeconds uint16) (FileStorageService, error) {
@@ -567,13 +567,13 @@ func (f *fileStorageService) GetFileURL(path string) string {
 
 func (f *fileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
 	baseURL := f.storage.GetFileURL(f.bucketName, path)
-	
+
 	// Create a temporary generator with the specified TTL
 	generator := utils.NewSignedURLGenerator(
 		string(f.signedURLGenerator.GetSecretKey()),
 		ttlSeconds,
 	)
-	
+
 	return generator.GenerateSignedURL(baseURL)
 }
 

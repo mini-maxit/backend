@@ -9,15 +9,15 @@ import (
 )
 
 type Config struct {
-	FileStorageURL       string
-	DB                   DBConfig
-	API                  APIConfig
-	Broker               BrokerConfig
-	CORS                 CORSConfig
-	JWTSecretKey         string
-	Dump                 bool
-	SignedURLTTLSeconds  uint16
-	SignedURLSecretKey   string
+	FileStorageURL      string
+	DB                  DBConfig
+	API                 APIConfig
+	Broker              BrokerConfig
+	CORS                CORSConfig
+	JWTSecretKey        string
+	Dump                bool
+	SignedURLTTLSeconds uint16
+	SignedURLSecretKey  string
 }
 
 type DBConfig struct {
@@ -57,12 +57,12 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultAPIPort               = "8080"
-	defaultAPIRefreshTokenPath   = "/api/v1/auth/refresh"
-	defaultQueueName             = "worker_queue"
-	defaultResponseQueueName     = "worker_response_queue"
-	defaultCORSAllowedOrigins    = "http://localhost:3000,http://localhost:5173"
-	defaultAccessTokenMinutesStr = "180"
+	defaultAPIPort                = "8080"
+	defaultAPIRefreshTokenPath    = "/api/v1/auth/refresh"
+	defaultQueueName              = "worker_queue"
+	defaultResponseQueueName      = "worker_response_queue"
+	defaultCORSAllowedOrigins     = "http://localhost:3000,http://localhost:5173"
+	defaultAccessTokenMinutesStr  = "180"
 	defaultSignedURLTTLSecondsStr = "300" // 5 minutes
 )
 
