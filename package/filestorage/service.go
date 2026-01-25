@@ -567,14 +567,7 @@ func (f *fileStorageService) GetFileURL(path string) string {
 
 func (f *fileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
 	baseURL := f.storage.GetFileURL(f.bucketName, path)
-
-	// Create a temporary generator with the specified TTL
-	generator := utils.NewSignedURLGenerator(
-		string(f.signedURLGenerator.GetSecretKey()),
-		ttlSeconds,
-	)
-
-	return generator.GenerateSignedURL(baseURL)
+	return f.signedURLGenerator.GenerateSignedURLWithTTL(baseURL, ttlSeconds)
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {

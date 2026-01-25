@@ -34,21 +34,29 @@ func NewSignedURLGenerator(secretKey string, ttlSeconds uint16) *SignedURLGenera
 	}
 }
 
-// GetSecretKey returns the secret key (for internal use)
-func (g *SignedURLGenerator) GetSecretKey() []byte {
-	return g.secretKey
-}
-
 // GenerateSignedURL generates a signed URL with expiration
 // The signature and expiration are added as query parameters
+// If ttlSeconds is 0, uses the default TTL from the generator
 func (g *SignedURLGenerator) GenerateSignedURL(baseURL string) (string, error) {
+	return g.GenerateSignedURLWithTTL(baseURL, 0)
+}
+
+// GenerateSignedURLWithTTL generates a signed URL with custom TTL
+// If ttlSeconds is 0, uses the default TTL from the generator
+func (g *SignedURLGenerator) GenerateSignedURLWithTTL(baseURL string, ttlSeconds uint16) (string, error) {
 	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse base URL: %w", err)
 	}
 
+	// Use custom TTL if provided, otherwise use default
+	ttl := g.ttl
+	if ttlSeconds > 0 {
+		ttl = time.Duration(ttlSeconds) * time.Second
+	}
+
 	// Calculate expiration time
-	expiresAt := time.Now().Add(g.ttl).Unix()
+	expiresAt := time.Now().Add(ttl).Unix()
 
 	// Get existing query parameters
 	queryParams := parsedURL.Query()
