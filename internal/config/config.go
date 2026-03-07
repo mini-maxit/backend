@@ -12,14 +12,14 @@ import (
 type Config struct {
 	FileStorageURL       string
 	FileStoragePublicURL string
-	DB                  DBConfig
-	API                 APIConfig
-	Broker              BrokerConfig
-	CORS                CORSConfig
-	JWTSecretKey        string
-	Dump                bool
-	SignedURLTTLSeconds uint16
-	SignedURLSecretKey  string
+	DB                   DBConfig
+	API                  APIConfig
+	Broker               BrokerConfig
+	CORS                 CORSConfig
+	JWTSecretKey         string
+	Dump                 bool
+	SignedURLTTLSeconds  uint16
+	SignedURLSecretKey   string
 }
 
 type DBConfig struct {
@@ -268,10 +268,10 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 		},
 		FileStorageURL:       fileStorageURL,
 		FileStoragePublicURL: fileStoragePublicURL,
-		JWTSecretKey:        jwtSecretKey,
-		Dump:                dump,
-		SignedURLTTLSeconds: signedURLTTLSeconds,
-		SignedURLSecretKey:  signedURLSecretKey,
+		JWTSecretKey:         jwtSecretKey,
+		Dump:                 dump,
+		SignedURLTTLSeconds:  signedURLTTLSeconds,
+		SignedURLSecretKey:   signedURLSecretKey,
 	}
 }
 
