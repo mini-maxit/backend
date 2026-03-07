@@ -152,10 +152,7 @@ func (ts *taskService) Get(db database.Database, currentUser *schemas.User, task
 		return nil, err
 	}
 
-	// Generate signed URL for the description file
-	// Authorization is enforced by the route handler, so if we reach here, user is authorized
-	// Use a fixed TTL from config for simplicity and security
-	descriptionURL, err := ts.filestorage.GetSignedFileURL(task.DescriptionFile.Path, 300)
+	descriptionURL, err := ts.filestorage.GetSignedFileURL(task.DescriptionFile.Path, 0)
 	if err != nil {
 		ts.logger.Errorf("Error generating signed URL: %v", err.Error())
 		return nil, fmt.Errorf("failed to generate signed URL: %w", err)

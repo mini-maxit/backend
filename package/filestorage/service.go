@@ -357,6 +357,17 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSec
 		},
 	})
 
+	if signedURLSecretKey == "" {
+		return nil, errors.New("signing secret is required for signed URL generation")
+	}
+	if signedURLTTLSeconds == 0 {
+		return nil, errors.New("signed URL TTL must be greater than 0")
+	}
+	parsedPublicURL, parseErr := url.Parse(publicURL)
+	if parseErr != nil || !parsedPublicURL.IsAbs() {
+		return nil, fmt.Errorf("publicURL must be a valid absolute URL, got: %q", publicURL)
+	}
+
 	config := filestorage.FileStorageConfig{
 		URL:     fileStorageURL,
 		Version: "v1",
