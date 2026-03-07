@@ -296,7 +296,7 @@ func TestGetTask(t *testing.T) {
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
 	config := testutils.NewTestConfig()
-	fs, err := filestorage.NewFileStorageService(config.FileStorageURL, "test-secret", 300)
+	fs, err := filestorage.NewFileStorageService(config.FileStorageURL, "http://localhost:8888", "test-secret", 300)
 	require.NoError(t, err)
 	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil, nil)
 

@@ -4,15 +4,21 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mini-maxit/backend/package/utils"
 	"github.com/mini-maxit/file-storage/pkg/filestorage"
@@ -317,15 +323,17 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 }
 
 type fileStorageService struct {
-	decompressor       Decompressor
-	validator          ArchiveValidator
-	storage            filestorage.FileStorage
-	bucketName         string
-	signedURLGenerator *utils.SignedURLGenerator
-	logger             *zap.SugaredLogger
+	decompressor      Decompressor
+	validator         ArchiveValidator
+	storage           filestorage.FileStorage
+	bucketName        string
+	publicURL         string
+	signingSecret     string
+	defaultTTLSeconds uint16
+	logger            *zap.SugaredLogger
 }
 
-func NewFileStorageService(fileStorageURL string, signedURLSecretKey string, signedURLTTLSeconds uint16) (FileStorageService, error) {
+func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSecretKey string, signedURLTTLSeconds uint16) (FileStorageService, error) {
 	validator := NewArchiveValidator()
 
 	// Configure validation rules
@@ -358,15 +366,15 @@ func NewFileStorageService(fileStorageURL string, signedURLSecretKey string, sig
 		return nil, fmt.Errorf("failed to create file storage: %w", err)
 	}
 
-	signedURLGenerator := utils.NewSignedURLGenerator(signedURLSecretKey, signedURLTTLSeconds)
-
 	return &fileStorageService{
-		decompressor:       &decompressor{},
-		validator:          validator,
-		storage:            storage,
-		bucketName:         "maxit",
-		signedURLGenerator: signedURLGenerator,
-		logger:             utils.NewNamedLogger("file-storage"),
+		decompressor:      &decompressor{},
+		validator:         validator,
+		storage:           storage,
+		bucketName:        "maxit",
+		publicURL:         publicURL,
+		signingSecret:     signedURLSecretKey,
+		defaultTTLSeconds: signedURLTTLSeconds,
+		logger:            utils.NewNamedLogger("file-storage"),
 	}, nil
 }
 
@@ -565,9 +573,24 @@ func (f *fileStorageService) GetFileURL(path string) string {
 	return f.storage.GetFileURL(f.bucketName, path)
 }
 
-func (f *fileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
-	baseURL := f.storage.GetFileURL(f.bucketName, path)
-	return f.signedURLGenerator.GenerateSignedURLWithTTL(baseURL, ttlSeconds)
+func (f *fileStorageService) GetSignedFileURL(filePath string, ttlSeconds uint16) (string, error) {
+	objectPath := fmt.Sprintf("/buckets/%s/%s", f.bucketName, filePath)
+	ttl := time.Duration(f.defaultTTLSeconds) * time.Second
+	if ttlSeconds > 0 {
+		ttl = time.Duration(ttlSeconds) * time.Second
+	}
+	expiresAt := time.Now().Add(ttl).Unix()
+
+	// Sign using the same format as file-storage urlsigner: "path:expires"
+	stringToSign := fmt.Sprintf("%s:%d", objectPath, expiresAt)
+	h := hmac.New(sha256.New, []byte(f.signingSecret))
+	h.Write([]byte(stringToSign))
+	signature := base64.URLEncoding.EncodeToString(h.Sum(nil))
+
+	values := url.Values{}
+	values.Set("expires", strconv.FormatInt(expiresAt, 10))
+	values.Set("signature", signature)
+	return f.publicURL + objectPath + "?" + values.Encode(), nil
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {

@@ -57,7 +57,7 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 	userService := mock_service.NewMockUserService(ctrl)
 	queueService := mock_service.NewMockQueueService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	fs, err := filestorage.NewFileStorageService("dummy", "test-secret", 300)
+	fs, err := filestorage.NewFileStorageService("dummy", "http://localhost:8888", "test-secret", 300)
 	require.NoError(t, err)
 
 	svc := service.NewSubmissionService(

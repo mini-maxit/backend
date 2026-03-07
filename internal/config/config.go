@@ -3,13 +3,15 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
 type Config struct {
-	FileStorageURL      string
+	FileStorageURL       string
+	FileStoragePublicURL string
 	DB                  DBConfig
 	API                 APIConfig
 	Broker              BrokerConfig
@@ -167,6 +169,12 @@ func NewConfig() *Config {
 
 	fileStorageURL := "http://" + fileStorageHost + ":" + fileStoragePortStr
 
+	fileStoragePublicURL := strings.TrimSuffix(os.Getenv("FILE_STORAGE_PUBLIC_URL"), "/")
+	if fileStoragePublicURL == "" {
+		log.Warnf("FILE_STORAGE_PUBLIC_URL is not set. Signed URLs will use internal address %s and will not be reachable by browsers", fileStorageURL)
+		fileStoragePublicURL = fileStorageURL
+	}
+
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
 		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", defaultQueueName)
@@ -258,7 +266,8 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 			AllowedOrigins:   corsAllowedOrigins,
 			AllowCredentials: corsAllowCredentials,
 		},
-		FileStorageURL:      fileStorageURL,
+		FileStorageURL:       fileStorageURL,
+		FileStoragePublicURL: fileStoragePublicURL,
 		JWTSecretKey:        jwtSecretKey,
 		Dump:                dump,
 		SignedURLTTLSeconds: signedURLTTLSeconds,
