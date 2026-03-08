@@ -1,4 +1,4 @@
-package utils
+package utils_test
 
 import (
 	"crypto/hmac"
@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mini-maxit/backend/package/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +17,7 @@ import (
 const testBaseURL = "http://example.com/file.pdf"
 
 func TestSignedURLGenerator_GenerateSignedURL(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 
 	signedURL, err := generator.GenerateSignedURL(testBaseURL)
 	require.NoError(t, err)
@@ -38,7 +39,7 @@ func TestSignedURLGenerator_GenerateSignedURL(t *testing.T) {
 }
 
 func TestSignedURLGenerator_GenerateSignedURL_WithExistingQueryParams(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 	baseURL := "http://example.com/file.pdf?existing=param&another=value"
 
 	signedURL, err := generator.GenerateSignedURL(baseURL)
@@ -55,7 +56,7 @@ func TestSignedURLGenerator_GenerateSignedURL_WithExistingQueryParams(t *testing
 }
 
 func TestSignedURLGenerator_VerifySignedURL_Valid(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 
 	signedURL, err := generator.GenerateSignedURL(testBaseURL)
 	require.NoError(t, err)
@@ -66,7 +67,7 @@ func TestSignedURLGenerator_VerifySignedURL_Valid(t *testing.T) {
 }
 
 func TestSignedURLGenerator_VerifySignedURL_Expired(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 
 	// Manually create an expired signed URL
 	parsedURL, err := url.Parse(testBaseURL)
@@ -90,11 +91,11 @@ func TestSignedURLGenerator_VerifySignedURL_Expired(t *testing.T) {
 
 	// Verify should fail due to expiration
 	err = generator.VerifySignedURL(expiredURL)
-	assert.ErrorIs(t, err, ErrSignedURLExpired, "expired URL should return ErrSignedURLExpired")
+	assert.ErrorIs(t, err, utils.ErrSignedURLExpired, "expired URL should return utils.ErrSignedURLExpired")
 }
 
 func TestSignedURLGenerator_VerifySignedURL_InvalidSignature(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 
 	signedURL, err := generator.GenerateSignedURL(testBaseURL)
 	require.NoError(t, err)
@@ -110,12 +111,12 @@ func TestSignedURLGenerator_VerifySignedURL_InvalidSignature(t *testing.T) {
 
 	// Verify should fail due to invalid signature
 	err = generator.VerifySignedURL(tamperedURL)
-	assert.ErrorIs(t, err, ErrSignedURLInvalidSignature, "tampered URL should return ErrSignedURLInvalidSignature")
+	assert.ErrorIs(t, err, utils.ErrSignedURLInvalidSignature, "tampered URL should return utils.ErrSignedURLInvalidSignature")
 }
 
 func TestSignedURLGenerator_VerifySignedURL_WrongSecretKey(t *testing.T) {
-	generator1 := NewSignedURLGenerator("secret-key-1", 300)
-	generator2 := NewSignedURLGenerator("secret-key-2", 300)
+	generator1 := utils.NewSignedURLGenerator("secret-key-1", 300)
+	generator2 := utils.NewSignedURLGenerator("secret-key-2", 300)
 
 	// Generate URL with generator1
 	signedURL, err := generator1.GenerateSignedURL(testBaseURL)
@@ -123,28 +124,28 @@ func TestSignedURLGenerator_VerifySignedURL_WrongSecretKey(t *testing.T) {
 
 	// Try to verify with generator2 (different secret)
 	err = generator2.VerifySignedURL(signedURL)
-	assert.ErrorIs(t, err, ErrSignedURLInvalidSignature, "URL signed with different key should fail verification")
+	assert.ErrorIs(t, err, utils.ErrSignedURLInvalidSignature, "URL signed with different key should fail verification")
 }
 
 func TestSignedURLGenerator_VerifySignedURL_MissingExpires(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 	invalidURL := "http://example.com/file.pdf?signature=abc123"
 
 	err := generator.VerifySignedURL(invalidURL)
-	assert.ErrorIs(t, err, ErrSignedURLMissingParams, "URL without expires should return ErrSignedURLMissingParams")
+	assert.ErrorIs(t, err, utils.ErrSignedURLMissingParams, "URL without expires should return utils.ErrSignedURLMissingParams")
 }
 
 func TestSignedURLGenerator_VerifySignedURL_MissingSignature(t *testing.T) {
-	generator := NewSignedURLGenerator("test-secret-key", 300)
+	generator := utils.NewSignedURLGenerator("test-secret-key", 300)
 	invalidURL := "http://example.com/file.pdf?expires=123456789"
 
 	err := generator.VerifySignedURL(invalidURL)
-	assert.ErrorIs(t, err, ErrSignedURLMissingParams, "URL without signature should return ErrSignedURLMissingParams")
+	assert.ErrorIs(t, err, utils.ErrSignedURLMissingParams, "URL without signature should return utils.ErrSignedURLMissingParams")
 }
 
 func TestSignedURLGenerator_TTLDuration(t *testing.T) {
 	ttlSeconds := uint16(120)
-	generator := NewSignedURLGenerator("test-secret-key", ttlSeconds)
+	generator := utils.NewSignedURLGenerator("test-secret-key", ttlSeconds)
 
 	signedURL, err := generator.GenerateSignedURL(testBaseURL)
 	require.NoError(t, err)
