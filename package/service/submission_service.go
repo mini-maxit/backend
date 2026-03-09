@@ -852,7 +852,12 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 	// Safely compute file URL if file info is available
 	var fileURL string
 	if submission.File.Path != "" && ss.filestorage != nil {
-		fileURL = ss.filestorage.GetInternalFileURL(submission.File.Path)
+		signed, err := ss.filestorage.GetSignedFileURL(submission.File.Path, 0)
+		if err != nil {
+			ss.logger.Errorw("Failed to sign submission file URL", "path", submission.File.Path, "error", err)
+		} else {
+			fileURL = signed
+		}
 	}
 
 	return &schemas.Submission{

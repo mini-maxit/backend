@@ -365,6 +365,30 @@ func TestGetAll(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllSignedURLs(t *testing.T) {
+	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
+
+	setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
+		{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, File: models.File{Path: "tasks/1/submissions/1/solution.py"}},
+		{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+	}, int64(2), nil).Times(1)
+
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: ""}
+	result, err := setup.service.GetAll(nil, &schemas.User{Role: "admin"}, nil, nil, nil, paginationParams)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	for _, s := range result.Items {
+		if s.FileURL != "" {
+			assert.Contains(t, s.FileURL, "expires=", "list file URL must be signed")
+			assert.Contains(t, s.FileURL, "signature=", "list file URL must be signed")
+		}
+	}
+}
+
 func TestGet(t *testing.T) {
 	setup := setupSubmissionServiceTest(t)
 	defer setup.ctrl.Finish()
