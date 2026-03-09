@@ -276,7 +276,7 @@ func (ss *submissionService) Get(db database.Database, submissionID int64, user 
 
 	submission := schemas.SubmissionDetailed{
 		Submission: *ss.modelToSchema(submissionModel),
-		FileURL:    ss.filestorage.GetFileURL(submissionModel.File.Path),
+		FileURL:    ss.filestorage.GetInternalFileURL(submissionModel.File.Path),
 	}
 	return &submission, nil
 }
@@ -845,7 +845,7 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 	// Safely compute file URL if file info is available
 	var fileURL string
 	if submission.File.Path != "" && ss.filestorage != nil {
-		fileURL = ss.filestorage.GetFileURL(submission.File.Path)
+		fileURL = ss.filestorage.GetInternalFileURL(submission.File.Path)
 	}
 
 	return &schemas.Submission{

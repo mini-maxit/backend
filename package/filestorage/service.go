@@ -50,7 +50,9 @@ type FileStorageService interface {
 
 	UploadSolutionFile(taskID, userID int64, newOrder int, filePath string) (*UploadedFile, error)
 
-	// GetInternalFileURL returns the direct URL to a file. Internal use only — never embed in API responses.
+	// GetInternalFileURL returns the raw, unsigned URL directly from the storage backend.
+	// This URL bypasses the signing gateway and must never be returned in API responses.
+	// Use GetSignedFileURL to produce URLs safe for client consumption.
 	GetInternalFileURL(path string) string
 
 	// GetSignedFileURL generates a signed URL with expiration for the given file path.
