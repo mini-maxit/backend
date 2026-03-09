@@ -295,10 +295,11 @@ func TestGetTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
-	config := testutils.NewTestConfig()
-	fs, err := filestorage.NewFileStorageService(config.FileStorageURL, "http://localhost:8888", "test-secret", 300)
-	require.NoError(t, err)
-	ts := service.NewTaskService(fs, fr, tr, io, ur, gr, nil, nil, nil)
+	fsMock := filestorage.NewMockFileStorageService(ctrl)
+	fsMock.EXPECT().GetSignedFileURL(gomock.Any(), gomock.Any()).
+		Return("http://localhost:8888/buckets/maxit/path?expires=9999999999&signature=fakesig", nil).
+		AnyTimes()
+	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, nil, nil)
 
 	task := &schemas.Task{
 		Title:     "Test Task",

@@ -19,7 +19,6 @@ type Config struct {
 	JWTSecretKey         string
 	Dump                 bool
 	SignedURLTTLSeconds  uint16
-	SignedURLSecretKey   string
 }
 
 type DBConfig struct {
@@ -103,8 +102,6 @@ const (
 //   - JWT_ACCESS_TOKEN_MINUTES - access token lifetime in minutes. Default is 180
 //
 //   - SIGNED_URL_TTL_SECONDS - time-to-live for signed file URLs in seconds. Default is 300 (5 minutes)
-//
-//   - SIGNED_URL_SECRET_KEY - secret key for signing file URLs. Default is JWT_SECRET_KEY if not set
 //
 //   - LANGUAGES - comma-separated list of languages with their version,
 //     e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will expand to [DefaultLanguages]
@@ -235,12 +232,6 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 	}
 	signedURLTTLSeconds := uint16(signedURLTTLSecondsParsed)
 
-	signedURLSecretKey := os.Getenv("SIGNED_URL_SECRET_KEY")
-	if signedURLSecretKey == "" {
-		log.Warnf("SIGNED_URL_SECRET_KEY is not set. Using JWT_SECRET_KEY as fallback")
-		signedURLSecretKey = jwtSecretKey
-	}
-
 	return &Config{
 		DB: DBConfig{
 			Host:     dbHost,
@@ -271,7 +262,6 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 		JWTSecretKey:         jwtSecretKey,
 		Dump:                 dump,
 		SignedURLTTLSeconds:  signedURLTTLSeconds,
-		SignedURLSecretKey:   signedURLSecretKey,
 	}
 }
 

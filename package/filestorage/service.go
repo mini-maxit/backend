@@ -4,9 +4,6 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -16,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -330,12 +326,11 @@ type fileStorageService struct {
 	storage           filestorage.FileStorage
 	bucketName        string
 	publicURL         string
-	signingSecret     string
 	defaultTTLSeconds uint16
 	logger            *zap.SugaredLogger
 }
 
-func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSecretKey string, signedURLTTLSeconds uint16) (FileStorageService, error) {
+func NewFileStorageService(fileStorageURL string, publicURL string, signedURLTTLSeconds uint16) (FileStorageService, error) {
 	validator := NewArchiveValidator()
 
 	// Configure validation rules
@@ -359,9 +354,6 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSec
 		},
 	})
 
-	if signedURLSecretKey == "" {
-		return nil, errors.New("signing secret is required for signed URL generation")
-	}
 	if signedURLTTLSeconds == 0 {
 		return nil, errors.New("signed URL TTL must be greater than 0")
 	}
@@ -385,7 +377,6 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSec
 		storage:           storage,
 		bucketName:        "maxit",
 		publicURL:         publicURL,
-		signingSecret:     signedURLSecretKey,
 		defaultTTLSeconds: signedURLTTLSeconds,
 		logger:            utils.NewNamedLogger("file-storage"),
 	}, nil
@@ -587,23 +578,15 @@ func (f *fileStorageService) GetInternalFileURL(path string) string {
 }
 
 func (f *fileStorageService) GetSignedFileURL(filePath string, ttlSeconds uint16) (string, error) {
-	objectPath := fmt.Sprintf("/buckets/%s/%s", f.bucketName, filePath)
 	ttl := time.Duration(f.defaultTTLSeconds) * time.Second
 	if ttlSeconds > 0 {
 		ttl = time.Duration(ttlSeconds) * time.Second
 	}
-	expiresAt := time.Now().Add(ttl).Unix()
-
-	// Sign using the same format as file-storage urlsigner: "path:expires"
-	stringToSign := fmt.Sprintf("%s:%d", objectPath, expiresAt)
-	h := hmac.New(sha256.New, []byte(f.signingSecret))
-	h.Write([]byte(stringToSign))
-	signature := base64.URLEncoding.EncodeToString(h.Sum(nil))
-
-	values := url.Values{}
-	values.Set("expires", strconv.FormatInt(expiresAt, 10))
-	values.Set("signature", signature)
-	return f.publicURL + objectPath + "?" + values.Encode(), nil
+	signedPath, err := f.storage.GetSignedFilePath(f.bucketName, filePath, ttl)
+	if err != nil {
+		return "", fmt.Errorf("failed to get signed URL: %w", err)
+	}
+	return f.publicURL + signedPath, nil
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {

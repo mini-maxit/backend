@@ -37,6 +37,7 @@ type testSetup struct {
 	taskService                *mock_service.MockTaskService
 	userService                *mock_service.MockUserService
 	queueService               *mock_service.MockQueueService
+	fileStorageService         *filestorage.MockFileStorageService
 	service                    service.SubmissionService
 }
 
@@ -57,13 +58,16 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 	userService := mock_service.NewMockUserService(ctrl)
 	queueService := mock_service.NewMockQueueService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	fs, err := filestorage.NewFileStorageService("dummy", "http://localhost:8888", "test-secret", 300)
-	require.NoError(t, err)
+	fsMock := filestorage.NewMockFileStorageService(ctrl)
+	// By default allow any GetSignedFileURL call to return a fake signed URL
+	fsMock.EXPECT().GetSignedFileURL(gomock.Any(), gomock.Any()).
+		Return("http://localhost:8888/buckets/maxit/path?expires=9999999999&signature=fakesig", nil).
+		AnyTimes()
 
 	svc := service.NewSubmissionService(
 		acs,
 		contestService,
-		fs,
+		fsMock,
 		fileRepository,
 		submissionRepository,
 		submissionResultRepository,
@@ -92,6 +96,7 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 		userService:                userService,
 		queueService:               queueService,
 		accessControlService:       acs,
+		fileStorageService:         fsMock,
 		service:                    svc,
 	}
 }

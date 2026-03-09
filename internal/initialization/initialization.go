@@ -66,7 +66,6 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	filestorage, err := filestorage.NewFileStorageService(
 		cfg.FileStorageURL,
 		cfg.FileStoragePublicURL,
-		cfg.SignedURLSecretKey,
 		cfg.SignedURLTTLSeconds,
 	)
 	if err != nil {
