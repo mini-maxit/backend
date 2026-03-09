@@ -7,7 +7,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
-	github.com/mini-maxit/file-storage v0.3.4-0.20260309164314-80609b6a7218
+	github.com/mini-maxit/file-storage v0.4.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.5.2
