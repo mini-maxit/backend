@@ -4,6 +4,9 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,8 +50,8 @@ type FileStorageService interface {
 
 	UploadSolutionFile(taskID, userID int64, newOrder int, filePath string) (*UploadedFile, error)
 
-	// GetFileURL returns the direct URL to access a file (no signature, no expiration)
-	GetFileURL(path string) string
+	// GetInternalFileURL returns the direct URL to a file. Internal use only — never embed in API responses.
+	GetInternalFileURL(path string) string
 
 	// GetSignedFileURL generates a signed URL with expiration for the given file path.
 	// The ttlSeconds parameter specifies how long the URL should be valid.
@@ -324,6 +328,7 @@ type fileStorageService struct {
 	storage           filestorage.FileStorage
 	bucketName        string
 	publicURL         string
+	signingSecret     string
 	defaultTTLSeconds uint16
 	logger            *zap.SugaredLogger
 }
@@ -364,9 +369,8 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSec
 	}
 
 	config := filestorage.FileStorageConfig{
-		URL:           fileStorageURL,
-		Version:       "v1",
-		SigningSecret: signedURLSecretKey,
+		URL:     fileStorageURL,
+		Version: "v1",
 	}
 	storage, err := filestorage.NewFileStorage(config)
 	if err != nil {
@@ -379,6 +383,7 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLSec
 		storage:           storage,
 		bucketName:        "maxit",
 		publicURL:         publicURL,
+		signingSecret:     signedURLSecretKey,
 		defaultTTLSeconds: signedURLTTLSeconds,
 		logger:            utils.NewNamedLogger("file-storage"),
 	}, nil
@@ -575,20 +580,28 @@ func (f *fileStorageService) ensureBucketExists() error {
 	return nil
 }
 
-func (f *fileStorageService) GetFileURL(path string) string {
+func (f *fileStorageService) GetInternalFileURL(path string) string {
 	return f.storage.GetFileURL(f.bucketName, path)
 }
 
 func (f *fileStorageService) GetSignedFileURL(filePath string, ttlSeconds uint16) (string, error) {
+	objectPath := fmt.Sprintf("/buckets/%s/%s", f.bucketName, filePath)
 	ttl := time.Duration(f.defaultTTLSeconds) * time.Second
 	if ttlSeconds > 0 {
 		ttl = time.Duration(ttlSeconds) * time.Second
 	}
-	signedPath, err := f.storage.GetSignedFileURL(f.bucketName, filePath, ttl)
-	if err != nil {
-		return "", err
-	}
-	return f.publicURL + signedPath, nil
+	expiresAt := time.Now().Add(ttl).Unix()
+
+	// Sign using the same format as file-storage urlsigner: "path:expires"
+	stringToSign := fmt.Sprintf("%s:%d", objectPath, expiresAt)
+	h := hmac.New(sha256.New, []byte(f.signingSecret))
+	h.Write([]byte(stringToSign))
+	signature := base64.URLEncoding.EncodeToString(h.Sum(nil))
+
+	values := url.Values{}
+	values.Set("expires", strconv.FormatInt(expiresAt, 10))
+	values.Set("signature", signature)
+	return f.publicURL + objectPath + "?" + values.Encode(), nil
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {
