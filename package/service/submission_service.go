@@ -279,8 +279,10 @@ func (ss *submissionService) Get(db database.Database, submissionID int64, user 
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate signed URL for submission file: %w", err)
 	}
+	submissionSchema := ss.modelToSchema(submissionModel)
+	submissionSchema.FileURL = fileURL
 	submission := schemas.SubmissionDetailed{
-		Submission: *ss.modelToSchema(submissionModel),
+		Submission: *submissionSchema,
 		FileURL:    fileURL,
 	}
 	return &submission, nil

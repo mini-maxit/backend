@@ -471,33 +471,32 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
-}
 
-func TestSubmissionService_Get(t *testing.T) {
-	setup := setupSubmissionServiceTest(t)
-	defer setup.ctrl.Finish()
+	t.Run("file URL is signed", func(t *testing.T) {
+		filePath := "tasks/1/users/1/submissions/1/solution.py"
+		expectedSubmission := &models.Submission{
+			ID:     1,
+			TaskID: 1,
+			UserID: 1,
+			Status: types.SubmissionStatusReceived,
+			File:   models.File{Path: filePath},
+		}
 
-	filePath := "tasks/1/users/1/submissions/1/solution.py"
-	expectedSubmission := &models.Submission{
-		ID:     1,
-		TaskID: 1,
-		UserID: 1,
-		Status: types.SubmissionStatusReceived,
-		File:   models.File{Path: filePath},
-	}
+		setup.submissionRepository.EXPECT().
+			Get(gomock.Any(), int64(1)).
+			Return(expectedSubmission, nil).
+			Times(1)
 
-	setup.submissionRepository.EXPECT().
-		Get(gomock.Any(), int64(1)).
-		Return(expectedSubmission, nil).
-		Times(1)
+		user := &schemas.User{Role: "admin"}
+		result, err := setup.service.Get(nil, 1, user)
 
-	user := &schemas.User{Role: "admin"}
-	result, err := setup.service.Get(nil, 1, user)
-
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Contains(t, result.FileURL, "expires=", "file URL must be signed")
-	assert.Contains(t, result.FileURL, "signature=", "file URL must be signed")
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Contains(t, result.FileURL, "expires=", "file URL must be signed")
+		assert.Contains(t, result.FileURL, "signature=", "file URL must be signed")
+		assert.Contains(t, result.Submission.FileURL, "expires=", "embedded file URL must also be signed")
+		assert.Contains(t, result.Submission.FileURL, "signature=", "embedded file URL must also be signed")
+	})
 }
 
 func TestSubmissionGetAllForUser(t *testing.T) {
