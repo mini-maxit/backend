@@ -1,4 +1,15 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ../deployment/nginx/conf/nginx.local.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - file-storage
+    restart: unless-stopped
   rabbitmq:
     image: rabbitmq:3.13-management
     ports:
@@ -22,8 +33,9 @@ services:
       - DB_HOST=db
       - DUMP=true
       - QUEUE_HOST=rabbitmq
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:4173,http://localhost:5173
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://localhost:4173,http://localhost:5173
       - CORS_ALLOW_CREDENTIALS=true
+      - FILE_STORAGE_PUBLIC_URL=http://localhost/files
   db:
     image: postgres:17
     ports:
@@ -36,10 +48,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
   file-storage:
     ports:
-      - "8888:8081"
-      - "8889:8080"
+      - "8888:8888"  # public server (for signed URL access)
+      - "8080:8080"  # internal server (for backend/worker)
     image: maxit/file-storage
     pull_policy: never
     volumes:
@@ -67,8 +81,8 @@ services:
     depends_on:
       - backend
     environment:
-      - PUBLIC_BACKEND_API_URL=http://localhost:8000/api/v1
-      - ORIGIN=http://localhost:3000
+      - PUBLIC_BACKEND_API_URL=http://localhost/api/v1
+      - ORIGIN=http://localhost
       - BODY_SIZE_LIMIT=20M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
@@ -80,3 +94,4 @@ volumes:
   file-storage-media:
   jobs-data:
     name: jobs-data
+  db-data:
