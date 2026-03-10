@@ -39,7 +39,7 @@ type UserRouteImpl struct {
 //	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Router			/users/ [get]
+//	@Router			/users [get]
 func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -238,9 +238,9 @@ func NewUserRoute(userService service.UserService) UserRoute {
 }
 
 func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
-	mux.HandleFunc("/", route.GetAllUsers)
-	mux.HandleFunc("/me", route.GetMe)
-	mux.HandleFunc("/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/users", route.GetAllUsers)
+	mux.HandleFunc("/users/me", route.GetMe)
+	mux.HandleFunc("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			route.GetUserByID(w, r)
@@ -250,5 +250,5 @@ func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-	mux.HandleFunc("/{id}/password", route.ChangePassword)
+	mux.HandleFunc("/users/{id}/password", route.ChangePassword)
 }
