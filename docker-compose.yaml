@@ -54,8 +54,7 @@ services:
     ports:
       - "8888:8888"  # public server (for signed URL access)
       - "8080:8080"  # internal server (for backend/worker)
-    image: maxit/file-storage
-    pull_policy: never
+    image: ghcr.io/mini-maxit/file-storage:latest
     volumes:
       - file-storage-media:/app/file-storage-media
   worker:
