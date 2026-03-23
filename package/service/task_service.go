@@ -141,7 +141,7 @@ func (ts *taskService) GetAll(db database.Database, _ *schemas.User, paginationP
 	return result, nil
 }
 
-func (ts *taskService) Get(db database.Database, _ *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
+func (ts *taskService) Get(db database.Database, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
@@ -152,28 +152,16 @@ func (ts *taskService) Get(db database.Database, _ *schemas.User, taskID int64) 
 		return nil, err
 	}
 
-	// switch types.UserRole(currentUser.Role) {
-	// case types.UserRoleStudent:
-	// 	// Check if the task is assigned to the user
-	// 	isAssigned, err := ts.taskRepository.IsTaskAssignedToUser(db, taskID, currentUser.ID)
-	// 	if err != nil {
-	// 		ts.logger.Errorf("Error checking if task is assigned to user: %v", err.Error())
-	// 		return nil, err
-	// 	}
-	// 	if !isAssigned {
-	// 		return nil, errors.ErrNotAuthorized
-	// 	}
-	// case types.UserRoleTeacher:
-	// 	// Check if the task is created by the user
-	// 	if task.CreatedBy != currentUser.ID {
-	// 		return nil, errors.ErrNotAuthorized
-	// 	}
-	// }
+	descriptionURL, err := ts.filestorage.GetSignedFileURL(task.DescriptionFile.Path, 0)
+	if err != nil {
+		ts.logger.Errorf("Error generating signed URL: %v", err.Error())
+		return nil, fmt.Errorf("failed to generate signed URL: %w", err)
+	}
 
 	result := &schemas.TaskDetailed{
 		ID:             task.ID,
 		Title:          task.Title,
-		DescriptionURL: ts.filestorage.GetFileURL(task.DescriptionFile.Path),
+		DescriptionURL: descriptionURL,
 		CreatedBy:      task.CreatedBy,
 		CreatedByName:  task.Author.Name,
 		CreatedAt:      task.CreatedAt,

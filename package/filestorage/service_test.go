@@ -441,12 +441,12 @@ func TestEnsureBucketExists_SuccessAndError(t *testing.T) {
 	})
 }
 
-func TestGetFileURL(t *testing.T) {
+func TestGetInternalFileURL(t *testing.T) {
 	svc := NewTestableFileStorageService(nil, nil, "maxit")
 	fs := &fakeStorage{}
 	svc.storage = fs
 
-	url := svc.GetFileURL("task/1/description.pdf")
+	url := svc.GetInternalFileURL("task/1/description.pdf")
 	assert.Equal(t, "http://fake/maxit/task/1/description.pdf", url)
 }
 

@@ -37,6 +37,7 @@ type testSetup struct {
 	taskService                *mock_service.MockTaskService
 	userService                *mock_service.MockUserService
 	queueService               *mock_service.MockQueueService
+	fileStorageService         *filestorage.MockFileStorageService
 	service                    service.SubmissionService
 }
 
@@ -57,13 +58,16 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 	userService := mock_service.NewMockUserService(ctrl)
 	queueService := mock_service.NewMockQueueService(ctrl)
 	acs := mock_service.NewMockAccessControlService(ctrl)
-	fs, err := filestorage.NewFileStorageService("dummy")
-	require.NoError(t, err)
+	fsMock := filestorage.NewMockFileStorageService(ctrl)
+	// By default allow any GetSignedFileURL call to return a fake signed URL
+	fsMock.EXPECT().GetSignedFileURL(gomock.Any(), gomock.Any()).
+		Return("http://localhost:8888/buckets/maxit/path?expires=9999999999&signature=fakesig", nil).
+		AnyTimes()
 
 	svc := service.NewSubmissionService(
 		acs,
 		contestService,
-		fs,
+		fsMock,
 		fileRepository,
 		submissionRepository,
 		submissionResultRepository,
@@ -92,6 +96,7 @@ func setupSubmissionServiceTest(t *testing.T) *testSetup {
 		userService:                userService,
 		queueService:               queueService,
 		accessControlService:       acs,
+		fileStorageService:         fsMock,
 		service:                    svc,
 	}
 }
@@ -365,6 +370,30 @@ func TestGetAll(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllSignedURLs(t *testing.T) {
+	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
+
+	setup.submissionRepository.EXPECT().GetAll(gomock.Any(), 10, 0, "submitted_at:desc").Return([]models.Submission{
+		{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, File: models.File{Path: "tasks/1/submissions/1/solution.py"}},
+		{ID: 2, TaskID: 2, UserID: 2, Status: types.SubmissionStatusEvaluated},
+	}, int64(2), nil).Times(1)
+
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: ""}
+	result, err := setup.service.GetAll(nil, &schemas.User{Role: "admin"}, nil, nil, nil, paginationParams)
+
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	for _, s := range result.Items {
+		if s.FileURL != "" {
+			assert.Contains(t, s.FileURL, "expires=", "list file URL must be signed")
+			assert.Contains(t, s.FileURL, "signature=", "list file URL must be signed")
+		}
+	}
+}
+
 func TestGet(t *testing.T) {
 	setup := setupSubmissionServiceTest(t)
 	defer setup.ctrl.Finish()
@@ -471,6 +500,32 @@ func TestGet(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("file URL is signed", func(t *testing.T) {
+		filePath := "tasks/1/users/1/submissions/1/solution.py"
+		expectedSubmission := &models.Submission{
+			ID:     1,
+			TaskID: 1,
+			UserID: 1,
+			Status: types.SubmissionStatusReceived,
+			File:   models.File{Path: filePath},
+		}
+
+		setup.submissionRepository.EXPECT().
+			Get(gomock.Any(), int64(1)).
+			Return(expectedSubmission, nil).
+			Times(1)
+
+		user := &schemas.User{Role: "admin"}
+		result, err := setup.service.Get(nil, 1, user)
+
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Contains(t, result.FileURL, "expires=", "file URL must be signed")
+		assert.Contains(t, result.FileURL, "signature=", "file URL must be signed")
+		assert.Contains(t, result.Submission.FileURL, "expires=", "embedded file URL must also be signed")
+		assert.Contains(t, result.Submission.FileURL, "signature=", "embedded file URL must also be signed")
+	})
 }
 
 func TestSubmissionGetAllForUser(t *testing.T) {

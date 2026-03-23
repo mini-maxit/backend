@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mini-maxit/backend/package/utils"
 	"github.com/mini-maxit/file-storage/pkg/filestorage"
@@ -44,8 +46,14 @@ type FileStorageService interface {
 
 	UploadSolutionFile(taskID, userID int64, newOrder int, filePath string) (*UploadedFile, error)
 
-	//
-	GetFileURL(path string) string
+	// GetInternalFileURL returns the raw, unsigned URL directly from the storage backend.
+	// This URL bypasses the signing gateway and must never be returned in API responses.
+	// Use GetSignedFileURL to produce URLs safe for client consumption.
+	GetInternalFileURL(path string) string
+
+	// GetSignedFileURL generates a signed URL with expiration for the given file path.
+	// The ttlSeconds parameter specifies how long the URL should be valid.
+	GetSignedFileURL(path string, ttlSeconds uint16) (string, error)
 
 	GetTestResultStdoutPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
 	GetTestResultStderrPath(taskID, userID int64, submissionOrder, testCaseOrder int) *UploadedFile
@@ -313,14 +321,16 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 }
 
 type fileStorageService struct {
-	decompressor Decompressor
-	validator    ArchiveValidator
-	storage      filestorage.FileStorage
-	bucketName   string
-	logger       *zap.SugaredLogger
+	decompressor      Decompressor
+	validator         ArchiveValidator
+	storage           filestorage.FileStorage
+	bucketName        string
+	publicURL         string
+	defaultTTLSeconds uint16
+	logger            *zap.SugaredLogger
 }
 
-func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
+func NewFileStorageService(fileStorageURL string, publicURL string, signedURLTTLSeconds uint16) (FileStorageService, error) {
 	validator := NewArchiveValidator()
 
 	// Configure validation rules
@@ -344,6 +354,14 @@ func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
 		},
 	})
 
+	if signedURLTTLSeconds == 0 {
+		return nil, errors.New("signed URL TTL must be greater than 0")
+	}
+	parsedPublicURL, parseErr := url.Parse(publicURL)
+	if parseErr != nil || !parsedPublicURL.IsAbs() {
+		return nil, fmt.Errorf("publicURL must be a valid absolute URL, got: %q", publicURL)
+	}
+
 	config := filestorage.FileStorageConfig{
 		URL:     fileStorageURL,
 		Version: "v1",
@@ -352,12 +370,15 @@ func NewFileStorageService(fileStorageURL string) (FileStorageService, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file storage: %w", err)
 	}
+
 	return &fileStorageService{
-		decompressor: &decompressor{},
-		validator:    validator,
-		storage:      storage,
-		bucketName:   "maxit",
-		logger:       utils.NewNamedLogger("file-storage"),
+		decompressor:      &decompressor{},
+		validator:         validator,
+		storage:           storage,
+		bucketName:        "maxit",
+		publicURL:         publicURL,
+		defaultTTLSeconds: signedURLTTLSeconds,
+		logger:            utils.NewNamedLogger("file-storage"),
 	}, nil
 }
 
@@ -552,8 +573,20 @@ func (f *fileStorageService) ensureBucketExists() error {
 	return nil
 }
 
-func (f *fileStorageService) GetFileURL(path string) string {
+func (f *fileStorageService) GetInternalFileURL(path string) string {
 	return f.storage.GetFileURL(f.bucketName, path)
+}
+
+func (f *fileStorageService) GetSignedFileURL(filePath string, ttlSeconds uint16) (string, error) {
+	ttl := time.Duration(f.defaultTTLSeconds) * time.Second
+	if ttlSeconds > 0 {
+		ttl = time.Duration(ttlSeconds) * time.Second
+	}
+	signedPath, err := f.storage.GetSignedFilePath(f.bucketName, filePath, ttl)
+	if err != nil {
+		return "", fmt.Errorf("failed to get signed URL: %w", err)
+	}
+	return f.publicURL + signedPath, nil
 }
 
 func (f *fileStorageService) UploadSolutionFile(taskID, userID int64, order int, filePath string) (*UploadedFile, error) {

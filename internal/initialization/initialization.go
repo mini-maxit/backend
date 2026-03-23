@@ -63,7 +63,11 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	accessControlRepository := repository.NewAccessControlRepository()
 
 	// Services
-	filestorage, err := filestorage.NewFileStorageService(cfg.FileStorageURL)
+	filestorage, err := filestorage.NewFileStorageService(
+		cfg.FileStorageURL,
+		cfg.FileStoragePublicURL,
+		cfg.SignedURLTTLSeconds,
+	)
 	if err != nil {
 		log.Panicf("Failed to create file storage service: %s", err.Error())
 	}

@@ -39,18 +39,33 @@ func (m *MockFileStorageService) EXPECT() *MockFileStorageServiceMockRecorder {
 	return m.recorder
 }
 
-// GetFileURL mocks base method.
-func (m *MockFileStorageService) GetFileURL(path string) string {
+// GetInternalFileURL mocks base method.
+func (m *MockFileStorageService) GetInternalFileURL(path string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFileURL", path)
+	ret := m.ctrl.Call(m, "GetInternalFileURL", path)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// GetFileURL indicates an expected call of GetFileURL.
-func (mr *MockFileStorageServiceMockRecorder) GetFileURL(path any) *gomock.Call {
+// GetInternalFileURL indicates an expected call of GetInternalFileURL.
+func (mr *MockFileStorageServiceMockRecorder) GetInternalFileURL(path any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileURL", reflect.TypeOf((*MockFileStorageService)(nil).GetFileURL), path)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInternalFileURL", reflect.TypeOf((*MockFileStorageService)(nil).GetInternalFileURL), path)
+}
+
+// GetSignedFileURL mocks base method.
+func (m *MockFileStorageService) GetSignedFileURL(path string, ttlSeconds uint16) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSignedFileURL", path, ttlSeconds)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSignedFileURL indicates an expected call of GetSignedFileURL.
+func (mr *MockFileStorageServiceMockRecorder) GetSignedFileURL(path, ttlSeconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSignedFileURL", reflect.TypeOf((*MockFileStorageService)(nil).GetSignedFileURL), path, ttlSeconds)
 }
 
 // GetTestResultDiffPath mocks base method.

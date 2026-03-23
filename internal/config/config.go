@@ -3,19 +3,22 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
 )
 
 type Config struct {
-	FileStorageURL string
-	DB             DBConfig
-	API            APIConfig
-	Broker         BrokerConfig
-	CORS           CORSConfig
-	JWTSecretKey   string
-	Dump           bool
+	FileStorageURL       string
+	FileStoragePublicURL string
+	DB                   DBConfig
+	API                  APIConfig
+	Broker               BrokerConfig
+	CORS                 CORSConfig
+	JWTSecretKey         string
+	Dump                 bool
+	SignedURLTTLSeconds  uint16
 }
 
 type DBConfig struct {
@@ -55,12 +58,13 @@ type BrokerConfig struct {
 }
 
 const (
-	defaultAPIPort               = "8080"
-	defaultAPIRefreshTokenPath   = "/api/v1/auth/refresh"
-	defaultQueueName             = "worker_queue"
-	defaultResponseQueueName     = "worker_response_queue"
-	defaultCORSAllowedOrigins    = "http://localhost:3000,http://localhost:5173"
-	defaultAccessTokenMinutesStr = "180"
+	defaultAPIPort                = "8080"
+	defaultAPIRefreshTokenPath    = "/api/v1/auth/refresh"
+	defaultQueueName              = "worker_queue"
+	defaultResponseQueueName      = "worker_response_queue"
+	defaultCORSAllowedOrigins     = "http://localhost:3000,http://localhost:5173"
+	defaultAccessTokenMinutesStr  = "180"
+	defaultSignedURLTTLSecondsStr = "300" // 5 minutes
 )
 
 // NewConfig creates new Config instance
@@ -96,6 +100,8 @@ const (
 //   - JWT_SECRET_KEY - secret key for JWT token signing. Required
 //
 //   - JWT_ACCESS_TOKEN_MINUTES - access token lifetime in minutes. Default is 180
+//
+//   - SIGNED_URL_TTL_SECONDS - time-to-live for signed file URLs in seconds. Default is 300 (5 minutes)
 //
 //   - LANGUAGES - comma-separated list of languages with their version,
 //     e.g. "c:99,c:11,c:18,cpp:11,cpp:14,cpp:17,cpp:20,cpp:23". Default will expand to [DefaultLanguages]
@@ -160,6 +166,12 @@ func NewConfig() *Config {
 
 	fileStorageURL := "http://" + fileStorageHost + ":" + fileStoragePortStr
 
+	fileStoragePublicURL := strings.TrimSuffix(os.Getenv("FILE_STORAGE_PUBLIC_URL"), "/")
+	if fileStoragePublicURL == "" {
+		log.Warnf("FILE_STORAGE_PUBLIC_URL is not set. Signed URLs will use internal address %s and will not be reachable by browsers", fileStorageURL)
+		fileStoragePublicURL = fileStorageURL
+	}
+
 	queueName := os.Getenv("QUEUE_NAME")
 	if queueName == "" {
 		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", defaultQueueName)
@@ -209,6 +221,17 @@ func NewConfig() *Config {
 More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials`)
 	}
 
+	signedURLTTLSecondsStr := os.Getenv("SIGNED_URL_TTL_SECONDS")
+	if signedURLTTLSecondsStr == "" {
+		log.Warnf("SIGNED_URL_TTL_SECONDS is not set. Using default value %s", defaultSignedURLTTLSecondsStr)
+		signedURLTTLSecondsStr = defaultSignedURLTTLSecondsStr
+	}
+	signedURLTTLSecondsParsed, err := strconv.ParseUint(signedURLTTLSecondsStr, 10, 16)
+	if err != nil {
+		log.Panicf("invalid SIGNED_URL_TTL_SECONDS value %s", signedURLTTLSecondsStr)
+	}
+	signedURLTTLSeconds := uint16(signedURLTTLSecondsParsed)
+
 	return &Config{
 		DB: DBConfig{
 			Host:     dbHost,
@@ -234,9 +257,11 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 			AllowedOrigins:   corsAllowedOrigins,
 			AllowCredentials: corsAllowCredentials,
 		},
-		FileStorageURL: fileStorageURL,
-		JWTSecretKey:   jwtSecretKey,
-		Dump:           dump,
+		FileStorageURL:       fileStorageURL,
+		FileStoragePublicURL: fileStoragePublicURL,
+		JWTSecretKey:         jwtSecretKey,
+		Dump:                 dump,
+		SignedURLTTLSeconds:  signedURLTTLSeconds,
 	}
 }
 

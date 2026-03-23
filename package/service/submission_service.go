@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"time"
 
@@ -274,9 +275,15 @@ func (ss *submissionService) Get(db database.Database, submissionID int64, user 
 		}
 	}
 
+	fileURL, err := ss.filestorage.GetSignedFileURL(submissionModel.File.Path, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate signed URL for submission file: %w", err)
+	}
+	submissionSchema := ss.modelToSchema(submissionModel)
+	submissionSchema.FileURL = fileURL
 	submission := schemas.SubmissionDetailed{
-		Submission: *ss.modelToSchema(submissionModel),
-		FileURL:    ss.filestorage.GetFileURL(submissionModel.File.Path),
+		Submission: *submissionSchema,
+		FileURL:    fileURL,
 	}
 	return &submission, nil
 }
@@ -845,7 +852,12 @@ func (ss *submissionService) modelToSchema(submission *models.Submission) *schem
 	// Safely compute file URL if file info is available
 	var fileURL string
 	if submission.File.Path != "" && ss.filestorage != nil {
-		fileURL = ss.filestorage.GetFileURL(submission.File.Path)
+		signed, err := ss.filestorage.GetSignedFileURL(submission.File.Path, 0)
+		if err != nil {
+			ss.logger.Errorw("Failed to sign submission file URL", "path", submission.File.Path, "error", err)
+		} else {
+			fileURL = signed
+		}
 	}
 
 	return &schemas.Submission{
