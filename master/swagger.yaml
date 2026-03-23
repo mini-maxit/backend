@@ -3886,7 +3886,7 @@ paths:
       summary: Get my assigned tasks
       tags:
       - tasks
-  /users/:
+  /users:
     get:
       description: Get all users
       parameters:
