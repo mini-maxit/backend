@@ -1546,6 +1546,20 @@ func (mr *MockLanguageServiceMockRecorder) Init(db, enabledLanguages any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockLanguageService)(nil).Init), db, enabledLanguages)
 }
 
+// ToggleLanguageVisibility mocks base method.
+func (m *MockLanguageService) ToggleLanguageVisibility(db database.Database, languageID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ToggleLanguageVisibility", db, languageID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ToggleLanguageVisibility indicates an expected call of ToggleLanguageVisibility.
+func (mr *MockLanguageServiceMockRecorder) ToggleLanguageVisibility(db, languageID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleLanguageVisibility", reflect.TypeOf((*MockLanguageService)(nil).ToggleLanguageVisibility), db, languageID)
+}
+
 // MockJWTService is a mock of JWTService interface.
 type MockJWTService struct {
 	ctrl     *gomock.Controller

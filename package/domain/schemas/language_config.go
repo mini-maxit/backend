@@ -5,4 +5,5 @@ type LanguageConfig struct {
 	Type          string `json:"language"`
 	Version       string `json:"version"`
 	FileExtension string `json:"fileExtension"`
+	IsDisabled    bool   `json:"isDisabled"`
 }

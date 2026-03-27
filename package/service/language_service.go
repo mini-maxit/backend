@@ -4,6 +4,7 @@ import (
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/repository"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -15,6 +16,8 @@ type LanguageService interface {
 	GetAll(db database.Database) ([]schemas.LanguageConfig, error)
 	// GetAllEnabled retrieves all enabled language configurations from the database.
 	GetAllEnabled(db database.Database) ([]schemas.LanguageConfig, error)
+	// ToggleLanguageVisibility toggles the visibility (enabled/disabled) state of a language.
+	ToggleLanguageVisibility(db database.Database, languageID int64) error
 	// Init initializes languages in the database
 	//
 	// It should be called during application initialization.
@@ -102,12 +105,58 @@ func (l *languageService) GetAllEnabled(db database.Database) ([]schemas.Languag
 	return result, nil
 }
 
+func (l *languageService) ToggleLanguageVisibility(db database.Database, languageID int64) error {
+	// Get the language to check its current state
+	languages, err := l.languageRepository.GetAll(db)
+	if err != nil {
+		l.logger.Errorf("Error getting languages: %v", err.Error())
+		return err
+	}
+
+	var found bool
+	var currentlyDisabled bool
+	for _, lang := range languages {
+		if lang.ID == languageID {
+			found = true
+			if lang.IsDisabled != nil {
+				currentlyDisabled = *lang.IsDisabled
+			}
+			break
+		}
+	}
+
+	if !found {
+		l.logger.Errorf("Language with ID %d not found", languageID)
+		return errors.ErrNotFound
+	}
+
+	// Toggle the state
+	if currentlyDisabled {
+		err = l.languageRepository.MarkEnabled(db, languageID)
+	} else {
+		err = l.languageRepository.MarkDisabled(db, languageID)
+	}
+
+	if err != nil {
+		l.logger.Errorf("Error toggling language visibility: %v", err.Error())
+		return err
+	}
+
+	l.logger.Infof("Language %d visibility toggled successfully", languageID)
+	return nil
+}
+
 func LanguageToSchema(language *models.LanguageConfig) *schemas.LanguageConfig {
+	isDisabled := false
+	if language.IsDisabled != nil {
+		isDisabled = *language.IsDisabled
+	}
 	return &schemas.LanguageConfig{
 		ID:            language.ID,
 		Type:          language.Type,
 		Version:       language.Version,
 		FileExtension: language.FileExtension,
+		IsDisabled:    isDisabled,
 	}
 }
 
