@@ -1046,6 +1046,8 @@ definitions:
     properties:
       code:
         type: string
+      diffUrl:
+        type: string
       errorMessage:
         type: string
       executionTimeMs:
@@ -1058,6 +1060,10 @@ definitions:
         type: boolean
       peakMemoryKb:
         type: integer
+      stderrUrl:
+        type: string
+      stdoutUrl:
+        type: string
       submissionResultId:
         type: integer
       testCaseId:
