@@ -30,8 +30,8 @@ func setupAccessControlTest(t *testing.T) (*gomock.Controller, *mock_service.Moc
 	currentUser := schemas.User{
 		ID:      1,
 		Name:    "Test",
-		Surname: "User",
-		Email:   "test@email.com",
+		Surname: testSurname,
+		Email:   testUserEmail,
 		Role:    types.UserRoleAdmin,
 	}
 	return ctrl, acs, route, db, currentUser
@@ -209,7 +209,7 @@ func TestGetContestCollaborators(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		expectedCollaborators := []schemas.Collaborator{
-			{UserID: 1, UserName: "User1", UserEmail: "user1@email.com", Permission: types.PermissionOwner, AddedAt: "2024-01-01T00:00:00Z"},
+			{UserID: 1, UserName: testUserName, UserEmail: testUser1Email, Permission: types.PermissionOwner, AddedAt: "2024-01-01T00:00:00Z"},
 			{UserID: 2, UserName: "User2", UserEmail: "user2@email.com", Permission: types.PermissionEdit, AddedAt: "2024-01-02T00:00:00Z"},
 		}
 
@@ -491,7 +491,7 @@ func TestGetTaskCollaborators(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		expectedCollaborators := []schemas.Collaborator{
-			{UserID: 1, UserName: "User1", UserEmail: "user1@email.com", Permission: types.PermissionOwner, AddedAt: "2024-01-01T00:00:00Z"},
+			{UserID: 1, UserName: testUserName, UserEmail: testUser1Email, Permission: types.PermissionOwner, AddedAt: "2024-01-01T00:00:00Z"},
 		}
 
 		acs.EXPECT().GetCollaborators(gomock.Any(), gomock.Any(), gomock.Any(), int64(1)).Return(expectedCollaborators, nil).Times(1)

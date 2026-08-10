@@ -20,6 +20,13 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	testContestName      = "Test Contest"
+	testSortByStartTime  = "start_time"
+	testCreatorName      = "Creator"
+	testOngoingTaskTitle = "Ongoing Task"
+)
+
 func TestContestService_GetMyContestResults(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -205,7 +212,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 	contestWithStats := &models.ContestWithStats{
 		Contest: models.Contest{
 			ID:          1,
-			Name:        "Test Contest",
+			Name:        testContestName,
 			Description: "Test Description",
 			StartAt:     startTime,
 			EndAt:       &endTime,
@@ -222,7 +229,7 @@ func TestContestWithStatsToSchema(t *testing.T) {
 
 	assert.NotNil(t, result)
 	assert.Equal(t, int64(1), result.ID)
-	assert.Equal(t, "Test Contest", result.Name)
+	assert.Equal(t, testContestName, result.Name)
 	assert.Equal(t, "Test Description", result.Description)
 	assert.Equal(t, startTime, result.StartAt)
 	assert.Equal(t, &endTime, result.EndAt)
@@ -239,7 +246,7 @@ func TestContestWithStatsToSchemaWithNilUserInfo(t *testing.T) {
 	contestWithStats := &models.ContestWithStats{
 		Contest: models.Contest{
 			ID:          1,
-			Name:        "Test Contest",
+			Name:        testContestName,
 			Description: "Test Description",
 			StartAt:     startTime,
 			EndAt:       &endTime,
@@ -256,7 +263,7 @@ func TestContestWithStatsToSchemaWithNilUserInfo(t *testing.T) {
 
 	assert.NotNil(t, result)
 	assert.Equal(t, int64(1), result.ID)
-	assert.Equal(t, "Test Contest", result.Name)
+	assert.Equal(t, testContestName, result.Name)
 	assert.Equal(t, "Test Description", result.Description)
 	assert.Equal(t, startTime, result.StartAt)
 	assert.Equal(t, &endTime, result.EndAt)
@@ -343,7 +350,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 		queryParams := schemas.PaginationParams{
 			Limit:  10,
 			Offset: 0,
-			Sort:   "start_time",
+			Sort:   testSortByStartTime,
 		}
 
 		visible := true
@@ -359,7 +366,7 @@ func TestContestService_GetPastContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(contestsWithStats, int64(1), nil).Times(1)
 
 		result, err := cs.GetPastContests(db, currentUser, queryParams)
 
@@ -379,10 +386,10 @@ func TestContestService_GetPastContests(t *testing.T) {
 		queryParams := schemas.PaginationParams{
 			Limit:  10,
 			Offset: 0,
-			Sort:   "start_time",
+			Sort:   testSortByStartTime,
 		}
 
-		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
 		result, err := cs.GetPastContests(db, currentUser, queryParams)
 
@@ -414,7 +421,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 		queryParams := schemas.PaginationParams{
 			Limit:  10,
 			Offset: 0,
-			Sort:   "start_time",
+			Sort:   testSortByStartTime,
 		}
 
 		visible := true
@@ -430,7 +437,7 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 			},
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(contestsWithStats, int64(1), nil).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(contestsWithStats, int64(1), nil).Times(1)
 
 		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
 
@@ -450,10 +457,10 @@ func TestContestService_GetUpcomingContests(t *testing.T) {
 		queryParams := schemas.PaginationParams{
 			Limit:  10,
 			Offset: 0,
-			Sort:   "start_time",
+			Sort:   testSortByStartTime,
 		}
 
-		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, "start_time").Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
+		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
 
 		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
 
@@ -487,13 +494,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -526,13 +533,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2, // Same as current user
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -618,7 +625,7 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
@@ -642,13 +649,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -681,13 +688,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -712,13 +719,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -742,13 +749,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -773,13 +780,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -812,13 +819,13 @@ func TestContestService_ApproveRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -867,13 +874,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -905,13 +912,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -996,7 +1003,7 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
@@ -1020,13 +1027,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -1059,13 +1066,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -1090,13 +1097,13 @@ func TestContestService_RejectRegistrationRequest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 		}
 
 		user := &models.User{
 			ID:       userID,
-			Username: "testuser",
+			Username: testUsername,
 		}
 
 		request := &models.ContestRegistrationRequests{
@@ -1145,7 +1152,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
-				Name:      "Test Contest",
+				Name:      testContestName,
 				CreatedBy: 2,
 				IsVisible: visible,
 			},
@@ -1158,7 +1165,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, contestID, result.ID)
-		assert.Equal(t, "Test Contest", result.Name)
+		assert.Equal(t, testContestName, result.Name)
 	})
 
 	t.Run("successful retrieval - invisible contest by admin", func(t *testing.T) {
@@ -1172,7 +1179,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
-				Name:      "Test Contest",
+				Name:      testContestName,
 				CreatedBy: 2,
 				IsVisible: visible,
 			},
@@ -1200,7 +1207,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
-				Name:      "Test Contest",
+				Name:      testContestName,
 				CreatedBy: 2,
 				IsVisible: visible,
 			},
@@ -1228,7 +1235,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
-				Name:      "Test Contest",
+				Name:      testContestName,
 				CreatedBy: 2,
 				IsVisible: visible,
 			},
@@ -1257,7 +1264,7 @@ func TestContestService_GetDetailed(t *testing.T) {
 		contest := &repository.ContestDetailed{
 			Contest: models.Contest{
 				ID:        contestID,
-				Name:      "Test Contest",
+				Name:      testContestName,
 				CreatedBy: 2,
 				IsVisible: visible,
 			},
@@ -1333,7 +1340,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1349,9 +1356,9 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 				TaskID:    1,
 				Task: models.Task{
 					ID:    1,
-					Title: "Test Task",
+					Title: testTaskTitle,
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          time.Now().Add(-1 * time.Hour),
@@ -1367,8 +1374,8 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].Task.ID)
-		assert.Equal(t, "Test Task", result[0].Task.Title)
-		assert.Equal(t, "Creator", result[0].CreatorName)
+		assert.Equal(t, testTaskTitle, result[0].Task.Title)
+		assert.Equal(t, testCreatorName, result[0].CreatorName)
 	})
 
 	t.Run("successful retrieval - user with edit permission", func(t *testing.T) {
@@ -1380,7 +1387,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1396,9 +1403,9 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 				TaskID:    1,
 				Task: models.Task{
 					ID:    1,
-					Title: "Test Task",
+					Title: testTaskTitle,
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          time.Now().Add(-1 * time.Hour),
@@ -1424,7 +1431,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1451,7 +1458,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1468,9 +1475,9 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 				TaskID:    1,
 				Task: models.Task{
 					ID:    1,
-					Title: "Ongoing Task",
+					Title: testOngoingTaskTitle,
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          now.Add(-2 * time.Hour),
@@ -1484,7 +1491,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 					ID:    2,
 					Title: "Past Task",
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          now.Add(-3 * time.Hour),
@@ -1499,7 +1506,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Len(t, result, 1) // Only ongoing task
-		assert.Equal(t, "Ongoing Task", result[0].Task.Title)
+		assert.Equal(t, testOngoingTaskTitle, result[0].Task.Title)
 	})
 
 	t.Run("filter by status - past", func(t *testing.T) {
@@ -1512,7 +1519,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1529,9 +1536,9 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 				TaskID:    1,
 				Task: models.Task{
 					ID:    1,
-					Title: "Ongoing Task",
+					Title: testOngoingTaskTitle,
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          now.Add(-2 * time.Hour),
@@ -1545,7 +1552,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 					ID:    2,
 					Title: "Past Task",
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          now.Add(-3 * time.Hour),
@@ -1573,7 +1580,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}
@@ -1592,7 +1599,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 					ID:    1,
 					Title: "Upcoming Task",
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          futureStart,
@@ -1604,9 +1611,9 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 				TaskID:    2,
 				Task: models.Task{
 					ID:    2,
-					Title: "Ongoing Task",
+					Title: testOngoingTaskTitle,
 					Author: models.User{
-						Name: "Creator",
+						Name: testCreatorName,
 					},
 				},
 				StartAt:          now.Add(-1 * time.Hour),
@@ -1633,7 +1640,7 @@ func TestContestService_GetVisibleTasksForContest(t *testing.T) {
 
 		contest := &models.Contest{
 			ID:        contestID,
-			Name:      "Test Contest",
+			Name:      testContestName,
 			CreatedBy: 2,
 			IsVisible: visible,
 		}

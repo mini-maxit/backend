@@ -55,8 +55,8 @@ func TestGetContest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -145,8 +145,8 @@ func TestRegisterForContest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
+			Role:  testStudent,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -397,8 +397,8 @@ func TestGetMyContestResults(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
+			Role:  testStudent,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -522,8 +522,8 @@ func TestGetContestTasks(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
+			Role:  testStudent,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))

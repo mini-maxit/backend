@@ -30,7 +30,7 @@ func TestLogin(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
@@ -88,7 +88,7 @@ func TestLogin(t *testing.T) {
 			Password string `json:"password"`
 		}{
 			Email:    "invalid@email.com",
-			Password: "password",
+			Password: testPassword,
 		}
 		jsonBody, err := json.Marshal(reqBody)
 		if err != nil {
@@ -119,7 +119,7 @@ func TestLogin(t *testing.T) {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}{
-			Email:    "email@email.com",
+			Email:    testLoginEmail,
 			Password: "invalid",
 		}
 		jsonBody, err := json.Marshal(reqBody)
@@ -149,8 +149,8 @@ func TestLogin(t *testing.T) {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}{
-			Email:    "email@email.com",
-			Password: "password",
+			Email:    testLoginEmail,
+			Password: testPassword,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -181,8 +181,8 @@ func TestLogin(t *testing.T) {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}{
-			Email:    "test@email.com",
-			Password: "password",
+			Email:    testUserEmail,
+			Password: testPassword,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -191,7 +191,7 @@ func TestLogin(t *testing.T) {
 
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
-			RefreshToken: "refresh_token",
+			RefreshToken: refreshTokenCookieName,
 		}
 
 		as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -234,7 +234,7 @@ func TestRegister(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
@@ -243,7 +243,7 @@ func TestRegister(t *testing.T) {
 	correctRequest := schemas.UserRegisterRequest{
 		Name:            "name",
 		Surname:         "surname",
-		Email:           "email@email.com",
+		Email:           testLoginEmail,
 		Username:        "username",
 		Password:        "HardPassowrd123!",
 		ConfirmPassword: "HardPassowrd123!",
@@ -346,7 +346,7 @@ func TestRegister(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		expectedTokens := &schemas.JWTTokens{
 			AccessToken:  "access_token",
-			RefreshToken: "refresh_token",
+			RefreshToken: refreshTokenCookieName,
 		}
 
 		as.EXPECT().Register(gomock.Any(), gomock.Any()).Return(expectedTokens, nil).Times(1)
@@ -383,7 +383,7 @@ func TestRegister(t *testing.T) {
 			}
 		}
 		assert.NotNil(t, refreshTokenCookie)
-		assert.Equal(t, "refresh_token", refreshTokenCookie.Value)
+		assert.Equal(t, refreshTokenCookieName, refreshTokenCookie.Value)
 	})
 }
 
@@ -394,7 +394,7 @@ func TestRefreshToken(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
 	server := httptest.NewServer(handler)
@@ -448,7 +448,7 @@ func TestRefreshToken(t *testing.T) {
 
 		// Add refresh token cookie
 		req.AddCookie(&http.Cookie{
-			Name:  "refresh_token",
+			Name:  refreshTokenCookieName,
 			Value: "invalid_refresh_token",
 		})
 
@@ -479,7 +479,7 @@ func TestRefreshToken(t *testing.T) {
 
 		// Add refresh token cookie
 		req.AddCookie(&http.Cookie{
-			Name:  "refresh_token",
+			Name:  refreshTokenCookieName,
 			Value: "valid_refresh_token",
 		})
 
@@ -517,7 +517,7 @@ func TestRefreshToken(t *testing.T) {
 
 		// Add refresh token cookie
 		req.AddCookie(&http.Cookie{
-			Name:  "refresh_token",
+			Name:  refreshTokenCookieName,
 			Value: "valid_refresh_token",
 		})
 
@@ -544,7 +544,7 @@ func TestRefreshToken(t *testing.T) {
 		cookies := resp.Cookies()
 		var refreshTokenCookie *http.Cookie
 		for _, cookie := range cookies {
-			if cookie.Name == "refresh_token" {
+			if cookie.Name == refreshTokenCookieName {
 				refreshTokenCookie = cookie
 				break
 			}
@@ -552,4 +552,51 @@ func TestRefreshToken(t *testing.T) {
 		assert.NotNil(t, refreshTokenCookie)
 		assert.Equal(t, "new_refresh_token", refreshTokenCookie.Value)
 	})
+}
+
+func TestRefreshTokenCookieSecureFlag(t *testing.T) {
+	testCases := []struct {
+		name          string
+		cookieSecure  bool
+		expectedValue bool
+	}{
+		{"Secure enabled", true, true},
+		{"Secure disabled", false, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			us := mock_service.NewMockUserService(ctrl)
+			as := mock_service.NewMockAuthService(ctrl)
+			route := routes.NewAuthRoute(us, as, "/auth/refresh", tc.cookieSecure)
+
+			tokens := &schemas.JWTTokens{AccessToken: "access", RefreshToken: "refresh"}
+			as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(tokens, nil)
+
+			db := &testutils.MockDatabase{}
+			handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
+			server := httptest.NewServer(handler)
+			defer server.Close()
+
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(`{"email":"a@b.c","password":"password"}`))
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+			cookies := resp.Cookies()
+			var refreshTokenCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == refreshTokenCookieName {
+					refreshTokenCookie = cookie
+					break
+				}
+			}
+			require.NotNil(t, refreshTokenCookie)
+			assert.Equal(t, tc.expectedValue, refreshTokenCookie.Secure, "cookie Secure flag")
+		})
+	}
 }

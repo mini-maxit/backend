@@ -29,6 +29,20 @@ var (
 	adminUser   = &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 )
 
+const (
+	testTaskTitle             = "Test Task"
+	sortIDAsc                 = "id:asc"
+	testTaskOneTitle          = "Task 1"
+	testDescriptionFilename   = "description.pdf"
+	testDescriptionFilePath   = "task/1/description.pdf"
+	testInputFilename         = "1.in"
+	testInputFilePath         = "task/1/input/1.in"
+	testOutputFilename        = "1.out"
+	testOutputFilePath        = "task/1/output/1.out"
+	testBucket                = "maxit"
+	testFilestorageServerType = "filestorage"
+)
+
 func addDescription(t *testing.T, zipWriter *zip.Writer) {
 	// Create description.pdf
 	descriptionFile, err := zipWriter.Create("folder/description.pdf")
@@ -76,7 +90,7 @@ func createTestArchive(t *testing.T, caseType string) string {
 		addInputOutputFiles(t, zipWriter, 4, "folder", "folder")
 	case "single_file":
 		// Create only one input and output file
-		_, err := zipWriter.Create("1.in")
+		_, err := zipWriter.Create(testInputFilename)
 		require.NoError(t, err)
 	case "nonexistent_file":
 		// Create an invalid archive
@@ -131,7 +145,7 @@ func TestCreateTask(t *testing.T) {
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, acs)
 	t.Run("Success", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
@@ -168,7 +182,7 @@ func TestCreateTask(t *testing.T) {
 
 	t.Run("Non unique title", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(&models.Task{
@@ -204,7 +218,7 @@ func TestGetTaskByTitle(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		taskID := int64(1)
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(&models.Task{
@@ -237,7 +251,7 @@ func TestGetAllTasks(t *testing.T) {
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 
-	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
 
 	t.Run("No tasks", func(t *testing.T) {
 		tr.EXPECT().GetAll(db,
@@ -254,7 +268,7 @@ func TestGetAllTasks(t *testing.T) {
 		tasks := []models.Task{
 			{
 				ID:        1,
-				Title:     "Test Task",
+				Title:     testTaskTitle,
 				CreatedBy: teacherUser.ID,
 				IsVisible: true,
 			},
@@ -302,7 +316,7 @@ func TestGetTask(t *testing.T) {
 	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, nil, nil)
 
 	task := &schemas.Task{
-		Title:     "Test Task",
+		Title:     testTaskTitle,
 		CreatedBy: adminUser.ID,
 	}
 
@@ -426,7 +440,7 @@ func TestEditTask(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().Get(db, taskID).Return(&models.Task{
@@ -478,7 +492,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 	fr := mock_repository.NewMockFile(ctrl)
 	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
 	taskID := int64(1)
-	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
+	queryParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
 
 	t.Run("No tasks", func(t *testing.T) {
 		tr.EXPECT().GetAllCreated(
@@ -496,7 +510,7 @@ func TestGetAllCreatedTasks(t *testing.T) {
 
 	t.Run("Success with admin", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetAllCreated(
@@ -782,12 +796,12 @@ func TestGetMyLiveTasks(t *testing.T) {
 		taskID := int64(1)
 		contestTasksMap := map[int64][]models.Task{
 			contestID: {
-				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+				{ID: taskID, Title: testTaskOneTitle, CreatedBy: teacherUser.ID},
 			},
 		}
 		contest := &models.Contest{
 			ID:   contestID,
-			Name: "Test Contest",
+			Name: testContestName,
 		}
 
 		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
@@ -800,7 +814,7 @@ func TestGetMyLiveTasks(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Len(t, result.Contests, 1)
 		assert.Equal(t, contestID, result.Contests[0].ContestID)
-		assert.Equal(t, "Test Contest", result.Contests[0].ContestName)
+		assert.Equal(t, testContestName, result.Contests[0].ContestName)
 		assert.Len(t, result.Contests[0].Tasks, 1)
 		assert.Equal(t, taskID, result.Contests[0].Tasks[0].ID)
 		assert.Equal(t, 2, result.Contests[0].Tasks[0].AttemptsSummary.AttemptCount)
@@ -812,12 +826,12 @@ func TestGetMyLiveTasks(t *testing.T) {
 		taskID := int64(1)
 		contestTasksMap := map[int64][]models.Task{
 			contestID: {
-				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+				{ID: taskID, Title: testTaskOneTitle, CreatedBy: teacherUser.ID},
 			},
 		}
 		contest := &models.Contest{
 			ID:   contestID,
-			Name: "Test Contest",
+			Name: testContestName,
 		}
 
 		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
@@ -846,7 +860,7 @@ func TestGetMyLiveTasks(t *testing.T) {
 		taskID := int64(1)
 		contestTasksMap := map[int64][]models.Task{
 			contestID: {
-				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+				{ID: taskID, Title: testTaskOneTitle, CreatedBy: teacherUser.ID},
 			},
 		}
 
@@ -865,12 +879,12 @@ func TestGetMyLiveTasks(t *testing.T) {
 		taskID := int64(1)
 		contestTasksMap := map[int64][]models.Task{
 			contestID: {
-				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+				{ID: taskID, Title: testTaskOneTitle, CreatedBy: teacherUser.ID},
 			},
 		}
 		contest := &models.Contest{
 			ID:   contestID,
-			Name: "Test Contest",
+			Name: testContestName,
 		}
 
 		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
@@ -890,12 +904,12 @@ func TestGetMyLiveTasks(t *testing.T) {
 		taskID := int64(1)
 		contestTasksMap := map[int64][]models.Task{
 			contestID: {
-				{ID: taskID, Title: "Task 1", CreatedBy: teacherUser.ID},
+				{ID: taskID, Title: testTaskOneTitle, CreatedBy: teacherUser.ID},
 			},
 		}
 		contest := &models.Contest{
 			ID:   contestID,
-			Name: "Test Contest",
+			Name: testContestName,
 		}
 
 		tr.EXPECT().GetLiveAssignedTasksGroupedByContest(db, studentUser.ID, paginationParams.Limit, paginationParams.Offset).Return(contestTasksMap, nil).Times(1)
@@ -931,23 +945,23 @@ func TestProcessAndUpload(t *testing.T) {
 	archivePath := "/test/archive.zip"
 	task := &models.Task{
 		ID:        taskID,
-		Title:     "Test Task",
+		Title:     testTaskTitle,
 		CreatedBy: teacherUser.ID,
 	}
 
 	t.Run("Success", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename:   "description.pdf",
-				Path:       "task/1/description.pdf",
-				Bucket:     "maxit",
-				ServerType: "filestorage",
+				Filename:   testDescriptionFilename,
+				Path:       testDescriptionFilePath,
+				Bucket:     testBucket,
+				ServerType: testFilestorageServerType,
 			},
 			InputFiles: []filestorage.UploadedFile{
-				{Filename: "1.in", Path: "task/1/input/1.in", Bucket: "maxit", ServerType: "filestorage"},
+				{Filename: testInputFilename, Path: testInputFilePath, Bucket: testBucket, ServerType: testFilestorageServerType},
 			},
 			OutputFiles: []filestorage.UploadedFile{
-				{Filename: "1.out", Path: "task/1/output/1.out", Bucket: "maxit", ServerType: "filestorage"},
+				{Filename: testOutputFilename, Path: testOutputFilePath, Bucket: testBucket, ServerType: testFilestorageServerType},
 			},
 		}
 
@@ -1002,8 +1016,8 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Save description file error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles:  []filestorage.UploadedFile{},
 			OutputFiles: []filestorage.UploadedFile{},
@@ -1023,8 +1037,8 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Update task error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles:  []filestorage.UploadedFile{},
 			OutputFiles: []filestorage.UploadedFile{},
@@ -1045,14 +1059,14 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Save input file error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles: []filestorage.UploadedFile{
-				{Filename: "1.in", Path: "task/1/input/1.in"},
+				{Filename: testInputFilename, Path: testInputFilePath},
 			},
 			OutputFiles: []filestorage.UploadedFile{
-				{Filename: "1.out", Path: "task/1/output/1.out"},
+				{Filename: testOutputFilename, Path: testOutputFilePath},
 			},
 		}
 
@@ -1072,14 +1086,14 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Save output file error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles: []filestorage.UploadedFile{
-				{Filename: "1.in", Path: "task/1/input/1.in"},
+				{Filename: testInputFilename, Path: testInputFilePath},
 			},
 			OutputFiles: []filestorage.UploadedFile{
-				{Filename: "1.out", Path: "task/1/output/1.out"},
+				{Filename: testOutputFilename, Path: testOutputFilePath},
 			},
 		}
 
@@ -1099,14 +1113,14 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Create test case error", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles: []filestorage.UploadedFile{
-				{Filename: "1.in", Path: "task/1/input/1.in"},
+				{Filename: testInputFilename, Path: testInputFilePath},
 			},
 			OutputFiles: []filestorage.UploadedFile{
-				{Filename: "1.out", Path: "task/1/output/1.out"},
+				{Filename: testOutputFilename, Path: testOutputFilePath},
 			},
 		}
 
@@ -1126,16 +1140,16 @@ func TestProcessAndUpload(t *testing.T) {
 	t.Run("Success with multiple input output files", func(t *testing.T) {
 		uploadedFiles := &filestorage.UploadedTaskFiles{
 			DescriptionFile: filestorage.UploadedFile{
-				Filename: "description.pdf",
-				Path:     "task/1/description.pdf",
+				Filename: testDescriptionFilename,
+				Path:     testDescriptionFilePath,
 			},
 			InputFiles: []filestorage.UploadedFile{
-				{Filename: "1.in", Path: "task/1/input/1.in"},
+				{Filename: testInputFilename, Path: testInputFilePath},
 				{Filename: "2.in", Path: "task/1/input/2.in"},
 				{Filename: "3.in", Path: "task/1/input/3.in"},
 			},
 			OutputFiles: []filestorage.UploadedFile{
-				{Filename: "1.out", Path: "task/1/output/1.out"},
+				{Filename: testOutputFilename, Path: testOutputFilePath},
 				{Filename: "2.out", Path: "task/1/output/2.out"},
 				{Filename: "3.out", Path: "task/1/output/3.out"},
 			},
@@ -1291,7 +1305,7 @@ func TestCreateTaskErrors(t *testing.T) {
 
 	t.Run("Error getting task by title", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrInvalidDB).Times(1)
@@ -1303,7 +1317,7 @@ func TestCreateTaskErrors(t *testing.T) {
 
 	t.Run("Error getting user", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
@@ -1316,7 +1330,7 @@ func TestCreateTaskErrors(t *testing.T) {
 
 	t.Run("Error creating task", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
@@ -1330,7 +1344,7 @@ func TestCreateTaskErrors(t *testing.T) {
 
 	t.Run("Error granting owner access", func(t *testing.T) {
 		task := &schemas.Task{
-			Title:     "Test Task",
+			Title:     testTaskTitle,
 			CreatedBy: adminUser.ID,
 		}
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)

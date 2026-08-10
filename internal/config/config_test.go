@@ -9,46 +9,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const baseDBUser = "user"
+
 // All environment variables used by NewConfig.
 var allEnvVars = []string{
-	"DB_HOST",
-	"DB_PORT",
-	"DB_USER",
-	"DB_PASSWORD",
-	"DB_NAME",
-	"APP_PORT",
-	"API_REFRESH_TOKEN_PATH",
-	"FILE_STORAGE_HOST",
-	"FILE_STORAGE_PORT",
-	"QUEUE_NAME",
-	"RESPONSE_QUEUE_NAME",
-	"QUEUE_HOST",
-	"QUEUE_PORT",
-	"QUEUE_USER",
-	"QUEUE_PASSWORD",
-	"JWT_SECRET_KEY",
-	"DUMP",
+	envDBHost,
+	envDBPort,
+	envDBUser,
+	envDBPassword,
+	envDBName,
+	envAPPPort,
+	envRefreshToken,
+	envFileStorageHost,
+	envFileStoragePort,
+	envQueueName,
+	envResponseQueue,
+	envQueueHost,
+	envQueuePort,
+	envQueueUser,
+	envQueuePassword,
+	envJWTSecretKey,
+	envDump,
 }
 
 // Base valid environment values.
 var baseEnv = map[string]string{
-	"DB_HOST":                "localhost",
-	"DB_PORT":                "5432",
-	"DB_USER":                "user",
-	"DB_PASSWORD":            "pass",
-	"DB_NAME":                "appdb",
-	"APP_PORT":               "9090",
-	"API_REFRESH_TOKEN_PATH": "/api/v1/auth/refresh-custom",
-	"FILE_STORAGE_HOST":      "filesvc",
-	"FILE_STORAGE_PORT":      "9100",
-	"QUEUE_NAME":             "custom_worker_queue",
-	"RESPONSE_QUEUE_NAME":    "custom_worker_response_queue",
-	"QUEUE_HOST":             "queuehost",
-	"QUEUE_PORT":             "5673",
-	"QUEUE_USER":             "queueuser",
-	"QUEUE_PASSWORD":         "queuepass",
-	"JWT_SECRET_KEY":         "supersecret",
-	"DUMP":                   "true",
+	envDBHost:          "localhost",
+	envDBPort:          "5432",
+	envDBUser:          baseDBUser,
+	envDBPassword:      "pass",
+	envDBName:          "appdb",
+	envAPPPort:         "9090",
+	envRefreshToken:    "/api/v1/auth/refresh-custom",
+	envFileStorageHost: "filesvc",
+	envFileStoragePort: "9100",
+	envQueueName:       "custom_worker_queue",
+	envResponseQueue:   "custom_worker_response_queue",
+	envQueueHost:       "queuehost",
+	envQueuePort:       "5673",
+	envQueueUser:       "queueuser",
+	envQueuePassword:   "queuepass",
+	envJWTSecretKey:    "supersecret",
+	envDump:            "true",
 }
 
 func unsetAll() {
@@ -71,29 +73,29 @@ func TestNewConfig_SuccessFullEnv(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	// DB
-	require.Equal(t, baseEnv["DB_HOST"], cfg.DB.Host)
+	require.Equal(t, baseEnv[envDBHost], cfg.DB.Host)
 	require.Equal(t, uint16(5432), cfg.DB.Port)
-	require.Equal(t, baseEnv["DB_USER"], cfg.DB.User)
-	require.Equal(t, baseEnv["DB_PASSWORD"], cfg.DB.Password)
-	require.Equal(t, baseEnv["DB_NAME"], cfg.DB.Name)
+	require.Equal(t, baseEnv[envDBUser], cfg.DB.User)
+	require.Equal(t, baseEnv[envDBPassword], cfg.DB.Password)
+	require.Equal(t, baseEnv[envDBName], cfg.DB.Name)
 
 	// API
 	require.Equal(t, uint16(9090), cfg.API.Port)
-	require.Equal(t, baseEnv["API_REFRESH_TOKEN_PATH"], cfg.API.RefreshTokenPath)
+	require.Equal(t, baseEnv[envRefreshToken], cfg.API.RefreshTokenPath)
 
 	// Broker
-	require.Equal(t, baseEnv["QUEUE_NAME"], cfg.Broker.QueueName)
-	require.Equal(t, baseEnv["RESPONSE_QUEUE_NAME"], cfg.Broker.ResponseQueueName)
-	require.Equal(t, baseEnv["QUEUE_HOST"], cfg.Broker.Host)
+	require.Equal(t, baseEnv[envQueueName], cfg.Broker.QueueName)
+	require.Equal(t, baseEnv[envResponseQueue], cfg.Broker.ResponseQueueName)
+	require.Equal(t, baseEnv[envQueueHost], cfg.Broker.Host)
 	require.Equal(t, uint16(5673), cfg.Broker.Port)
-	require.Equal(t, baseEnv["QUEUE_USER"], cfg.Broker.User)
-	require.Equal(t, baseEnv["QUEUE_PASSWORD"], cfg.Broker.Password)
+	require.Equal(t, baseEnv[envQueueUser], cfg.Broker.User)
+	require.Equal(t, baseEnv[envQueuePassword], cfg.Broker.Password)
 
 	// File storage URL composition
-	require.Equal(t, "http://"+baseEnv["FILE_STORAGE_HOST"]+":"+baseEnv["FILE_STORAGE_PORT"], cfg.FileStorageURL)
+	require.Equal(t, "http://"+baseEnv[envFileStorageHost]+":"+baseEnv[envFileStoragePort], cfg.FileStorageURL)
 
 	// JWT
-	require.Equal(t, baseEnv["JWT_SECRET_KEY"], cfg.JWTSecretKey)
+	require.Equal(t, baseEnv[envJWTSecretKey], cfg.JWTSecretKey)
 
 	// Dump flag
 	require.True(t, cfg.Dump)
@@ -104,16 +106,16 @@ func TestNewConfig_DefaultsAndOptionalMissing(t *testing.T) {
 
 	// Required variables only (omit optional ones)
 	minimal := map[string]string{
-		"DB_PORT":           "5432",
-		"DB_USER":           "user",
-		"DB_NAME":           "db",
-		"FILE_STORAGE_HOST": "fs",
-		"FILE_STORAGE_PORT": "9000",
-		"QUEUE_HOST":        "qhost",
-		"QUEUE_PORT":        "5672",
-		"QUEUE_USER":        "quser",
-		"QUEUE_PASSWORD":    "qpass",
-		"JWT_SECRET_KEY":    "secret",
+		envDBPort:          "5432",
+		envDBUser:          baseDBUser,
+		envDBName:          "db",
+		envFileStorageHost: "fs",
+		envFileStoragePort: "9000",
+		envQueueHost:       "qhost",
+		envQueuePort:       "5672",
+		envQueueUser:       "quser",
+		envQueuePassword:   "qpass",
+		envJWTSecretKey:    "secret",
 		// Omit APP_PORT, API_REFRESH_TOKEN_PATH, QUEUE_NAME, RESPONSE_QUEUE_NAME, DB_HOST, DB_PASSWORD, DUMP
 	}
 	setEnv(minimal)
@@ -139,16 +141,16 @@ func TestNewConfig_DefaultsAndOptionalMissing(t *testing.T) {
 func TestNewConfig_DumpFlagFalseWhenMissing(t *testing.T) {
 	unsetAll()
 	env := map[string]string{
-		"DB_PORT":           "5432",
-		"DB_USER":           "user",
-		"DB_NAME":           "db",
-		"FILE_STORAGE_HOST": "fs",
-		"FILE_STORAGE_PORT": "9000",
-		"QUEUE_HOST":        "qhost",
-		"QUEUE_PORT":        "5672",
-		"QUEUE_USER":        "quser",
-		"QUEUE_PASSWORD":    "qpass",
-		"JWT_SECRET_KEY":    "secret",
+		envDBPort:          "5432",
+		envDBUser:          baseDBUser,
+		envDBName:          "db",
+		envFileStorageHost: "fs",
+		envFileStoragePort: "9000",
+		envQueueHost:       "qhost",
+		envQueuePort:       "5672",
+		envQueueUser:       "quser",
+		envQueuePassword:   "qpass",
+		envJWTSecretKey:    "secret",
 	}
 	setEnv(env)
 
@@ -159,16 +161,16 @@ func TestNewConfig_DumpFlagFalseWhenMissing(t *testing.T) {
 
 func TestNewConfig_PanicsWhenRequiredMissing(t *testing.T) {
 	requiredMissing := []string{
-		"DB_PORT",
-		"DB_USER",
-		"DB_NAME",
-		"FILE_STORAGE_HOST",
-		"FILE_STORAGE_PORT",
-		"QUEUE_HOST",
-		"QUEUE_PORT",
-		"QUEUE_USER",
-		"QUEUE_PASSWORD",
-		"JWT_SECRET_KEY",
+		envDBPort,
+		envDBUser,
+		envDBName,
+		envFileStorageHost,
+		envFileStoragePort,
+		envQueueHost,
+		envQueuePort,
+		envQueueUser,
+		envQueuePassword,
+		envJWTSecretKey,
 	}
 
 	for _, missing := range requiredMissing {
@@ -198,23 +200,23 @@ func TestNewConfig_PanicsOnInvalidPortValues(t *testing.T) {
 	}{
 		{
 			name: "invalid DB_PORT",
-			vars: map[string]string{"DB_PORT": "notint"},
+			vars: map[string]string{envDBPort: "notint"},
 		},
 		{
 			name: "invalid APP_PORT",
-			vars: map[string]string{"APP_PORT": "invalid"},
+			vars: map[string]string{envAPPPort: "invalid"},
 		},
 		{
 			name: "invalid FILE_STORAGE_PORT",
-			vars: map[string]string{"FILE_STORAGE_PORT": "bad"},
+			vars: map[string]string{envFileStoragePort: "bad"},
 		},
 		{
 			name: "invalid QUEUE_PORT",
-			vars: map[string]string{"QUEUE_PORT": "oops"},
+			vars: map[string]string{envQueuePort: "oops"},
 		},
 		{
 			name: "out_of_range DB_PORT",
-			vars: map[string]string{"DB_PORT": "70000"},
+			vars: map[string]string{envDBPort: "70000"},
 		},
 	}
 

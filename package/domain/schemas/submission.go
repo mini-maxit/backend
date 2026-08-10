@@ -54,6 +54,9 @@ type TestResult struct {
 	ExitCode           *int     `json:"exitCode"`
 	Code               string   `json:"code"`
 	ErrorMessage       string   `json:"errorMessage"`
+	StdoutURL          string   `json:"stdoutUrl,omitempty"`
+	StderrURL          string   `json:"stderrUrl,omitempty"`
+	DiffURL            string   `json:"diffUrl,omitempty"`
 }
 
 // ContestTaskStats contains aggregated statistics for a task in a contest

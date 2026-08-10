@@ -18,6 +18,13 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	testFirstName   = "name"
+	testUserSurname = "surname"
+	testPassword    = "Password123!"
+	testUserEmail   = "email5@email.com"
+)
+
 func TestRegister(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -30,19 +37,19 @@ func TestRegister(t *testing.T) {
 	t.Run("get user by email when user exists", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(db, "email2@email.com").Return(&models.User{
 			ID:           1,
-			Name:         "name",
-			Surname:      "surname",
+			Name:         testFirstName,
+			Surname:      testUserSurname,
 			Email:        "email2@email.com",
 			Username:     "username2",
-			PasswordHash: "password",
+			PasswordHash: testPasswordHash,
 		}, nil).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
+			Name:     testFirstName,
+			Surname:  testUserSurname,
 			Email:    "email2@email.com",
 			Username: "username",
-			Password: "Password123!",
+			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, errors.ErrUserAlreadyExists)
@@ -58,11 +65,11 @@ func TestRegister(t *testing.T) {
 		}, nil).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
+			Name:     testFirstName,
+			Surname:  testUserSurname,
 			Email:    "email3@email.com",
 			Username: "username3",
-			Password: "Password123!",
+			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
 		require.NoError(t, err)
@@ -75,11 +82,11 @@ func TestRegister(t *testing.T) {
 	t.Run("unexpected repository error", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(db, "email4@email.com").Return(nil, gorm.ErrInvalidDB).Times(1)
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
+			Name:     testFirstName,
+			Surname:  testUserSurname,
 			Email:    "email4@email.com",
 			Username: "username4",
-			Password: "Password123!",
+			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, gorm.ErrInvalidDB)
@@ -87,15 +94,15 @@ func TestRegister(t *testing.T) {
 	})
 
 	t.Run("failed to create user", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().GetByEmail(db, testUserEmail).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		ur.EXPECT().Create(db, gomock.Any()).Return(int64(0), gorm.ErrInvalidDB).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{
-			Name:     "name",
-			Surname:  "surname",
-			Email:    "email5@email.com",
+			Name:     testFirstName,
+			Surname:  testUserSurname,
+			Email:    testUserEmail,
 			Username: "username5",
-			Password: "Password123!",
+			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
 		require.ErrorIs(t, err, gorm.ErrInvalidDB)
@@ -112,15 +119,15 @@ func TestLogin(t *testing.T) {
 	as := service.NewAuthService(ur, js)
 	db := &testutils.MockDatabase{}
 
-	password := "Password123!"
+	password := testPassword
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
 	user := &models.User{
 		ID:           1,
-		Name:         "name",
-		Surname:      "surname",
-		Email:        "email5@email.com",
+		Name:         testFirstName,
+		Surname:      testUserSurname,
+		Email:        testUserEmail,
 		Username:     "username",
 		PasswordHash: string(hash),
 	}
@@ -130,7 +137,7 @@ func TestLogin(t *testing.T) {
 
 		userLogin := schemas.UserLoginRequest{
 			Email:    "nonexistent@email.com",
-			Password: "password",
+			Password: testPasswordHash,
 		}
 
 		response, err := as.Login(db, userLogin)
@@ -139,10 +146,10 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("compare password hash fails", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(user, nil).Times(1)
+		ur.EXPECT().GetByEmail(db, testUserEmail).Return(user, nil).Times(1)
 
 		userLogin := schemas.UserLoginRequest{
-			Email:    "email5@email.com",
+			Email:    testUserEmail,
 			Password: "wrongpassword",
 		}
 
@@ -152,14 +159,14 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("successful user login", func(t *testing.T) {
-		ur.EXPECT().GetByEmail(db, "email5@email.com").Return(user, nil).Times(1)
+		ur.EXPECT().GetByEmail(db, testUserEmail).Return(user, nil).Times(1)
 		js.EXPECT().GenerateTokens(db, user.ID).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
 			RefreshToken: "refresh-token",
 		}, nil).Times(1)
 
 		userLogin := schemas.UserLoginRequest{
-			Email:    "email5@email.com",
+			Email:    testUserEmail,
 			Password: password,
 		}
 

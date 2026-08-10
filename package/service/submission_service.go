@@ -817,9 +817,25 @@ func (ss *submissionService) testResultsModelToSchema(testResults []models.TestR
 			Passed:             testResult.Passed,
 			Code:               testResult.StatusCode.String(),
 			ErrorMessage:       testResult.ErrorMessage,
+			StdoutURL:          ss.signedFileURL(testResult.StdoutFile.Path),
+			StderrURL:          ss.signedFileURL(testResult.StderrFile.Path),
+			DiffURL:            ss.signedFileURL(testResult.DiffFile.Path),
 		})
 	}
 	return result
+}
+
+// signedFileURL returns a signed URL for the given storage path, or an empty string if signing fails or path is empty.
+func (ss *submissionService) signedFileURL(path string) string {
+	if path == "" || ss.filestorage == nil {
+		return ""
+	}
+	signed, err := ss.filestorage.GetSignedFileURL(path, 0)
+	if err != nil {
+		ss.logger.Errorw("Failed to sign file URL", "path", path, "error", err)
+		return ""
+	}
+	return signed
 }
 
 func (ss *submissionService) resultModelToSchema(result *models.SubmissionResult) *schemas.SubmissionResult {

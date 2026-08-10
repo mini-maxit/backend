@@ -23,6 +23,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	oldPass = "OldPass123!"
+	newPass = "NewPass123!"
+)
+
 func TestGetAllUsers(t *testing.T) {
 	// Setup
 	ctrl := gomock.NewController(t)
@@ -92,7 +97,7 @@ func TestGetAllUsers(t *testing.T) {
 		defer server.Close()
 
 		expectedUsers := []schemas.User{
-			{ID: 1, Name: "User1", Email: "user1@email.com", Role: types.UserRoleStudent},
+			{ID: 1, Name: testUserName, Email: testUser1Email, Role: types.UserRoleStudent},
 			{ID: 2, Name: "User2", Email: "user2@email.com", Role: types.UserRoleAdmin},
 		}
 
@@ -239,8 +244,8 @@ func TestGetUserByID(t *testing.T) {
 		expectedUser := &schemas.User{
 			ID:      1,
 			Name:    "Test",
-			Surname: "User",
-			Email:   "test@email.com",
+			Surname: testSurname,
+			Email:   testUserEmail,
 			Role:    types.UserRoleStudent,
 		}
 
@@ -269,7 +274,7 @@ func TestEditUser(t *testing.T) {
 	currentUser := schemas.User{
 		ID:      1,
 		Name:    "Current",
-		Surname: "User",
+		Surname: testSurname,
 		Email:   "current@email.com",
 		Role:    types.UserRoleAdmin,
 	}
@@ -451,7 +456,7 @@ func TestChangePassword(t *testing.T) {
 	currentUser := schemas.User{
 		ID:      1,
 		Name:    "Current",
-		Surname: "User",
+		Surname: testSurname,
 		Email:   "current@email.com",
 		Role:    types.UserRoleAdmin,
 	}
@@ -489,9 +494,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/password", bytes.NewBuffer(jsonBody))
@@ -510,9 +515,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/abc/password", bytes.NewBuffer(jsonBody))
@@ -548,9 +553,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/999/password", bytes.NewBuffer(jsonBody))
@@ -572,9 +577,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2/password", bytes.NewBuffer(jsonBody))
@@ -596,9 +601,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/2/password", bytes.NewBuffer(jsonBody))
@@ -621,8 +626,8 @@ func TestChangePassword(t *testing.T) {
 		})
 		reqBody := schemas.UserChangePassword{
 			OldPassword:        "WrongOldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
@@ -644,9 +649,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
@@ -668,9 +673,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
@@ -692,9 +697,9 @@ func TestChangePassword(t *testing.T) {
 			route.ChangePassword(w, r.WithContext(ctx))
 		})
 		reqBody := schemas.UserChangePassword{
-			OldPassword:        "OldPass123!",
-			NewPassword:        "NewPass123!",
-			NewPasswordConfirm: "NewPass123!",
+			OldPassword:        oldPass,
+			NewPassword:        newPass,
+			NewPasswordConfirm: newPass,
 		}
 		jsonBody, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest(http.MethodPatch, "/1/password", bytes.NewBuffer(jsonBody))
@@ -775,9 +780,9 @@ func TestGetMe(t *testing.T) {
 		adminUser := schemas.User{
 			ID:       2,
 			Name:     "Admin",
-			Surname:  "User",
+			Surname:  testSurname,
 			Email:    "admin@example.com",
-			Username: "admin",
+			Username: testAdmin,
 			Role:     types.UserRoleAdmin,
 		}
 

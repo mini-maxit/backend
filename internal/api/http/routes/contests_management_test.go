@@ -22,6 +22,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	testContestName        = "Test Contest"
+	testContestDescription = "Test Description"
+)
+
 func TestCreateContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)
@@ -39,8 +44,8 @@ func TestCreateContest(t *testing.T) {
 		// Mock user and add to context
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
@@ -96,8 +101,8 @@ func TestCreateContest(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		body := schemas.CreateContest{
-			Name:        "Test Contest",
-			Description: "Test Description",
+			Name:        testContestName,
+			Description: testContestDescription,
 			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
@@ -118,8 +123,8 @@ func TestCreateContest(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		body := schemas.CreateContest{
-			Name:        "Test Contest",
-			Description: "Test Description",
+			Name:        testContestName,
+			Description: testContestDescription,
 			StartAt:     time.Now().Add(1 * time.Hour),
 		}
 		jsonBody, err := json.Marshal(body)
@@ -157,8 +162,8 @@ func TestEditContest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -273,7 +278,7 @@ func TestEditContest(t *testing.T) {
 					ID:          1,
 					Name:        "Updated Contest",
 					CreatedBy:   1,
-					Description: "Test Description",
+					Description: testContestDescription,
 				},
 				IsSubmissionOpen: isSubmissionOpen,
 			},
@@ -316,8 +321,8 @@ func TestDeleteContest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -409,8 +414,8 @@ func TestGetRegistrationRequests(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -471,7 +476,7 @@ func TestGetRegistrationRequests(t *testing.T) {
 					Surname:  "Doe",
 					Email:    "john@example.com",
 					Username: "johndoe",
-					Role:     "student",
+					Role:     testStudent,
 				},
 				CreatedAt: time.Now(),
 			},
@@ -518,8 +523,8 @@ func TestApproveRegistrationRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -669,8 +674,8 @@ func TestRemoveTaskFromContest(t *testing.T) {
 		// Mock user and add to context
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)

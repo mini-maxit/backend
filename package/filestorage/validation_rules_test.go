@@ -16,15 +16,15 @@ func setupTestDirectory(t *testing.T) string {
 	tempDir := t.TempDir()
 
 	// Create input directory with valid files
-	inputDir := filepath.Join(tempDir, "input")
+	inputDir := filepath.Join(tempDir, inputDirectoryName)
 	require.NoError(t, os.MkdirAll(inputDir, 0755))
 
 	// Create output directory with valid files
-	outputDir := filepath.Join(tempDir, "output")
+	outputDir := filepath.Join(tempDir, outputDirectoryName)
 	require.NoError(t, os.MkdirAll(outputDir, 0755))
 
 	// Create description.pdf
-	descPath := filepath.Join(tempDir, "description.pdf")
+	descPath := filepath.Join(tempDir, descriptionFilename)
 	require.NoError(t, os.WriteFile(descPath, []byte("test description"), 0644))
 
 	// Create input files
@@ -57,7 +57,7 @@ func TestArchiveValidatorAddRule(t *testing.T) {
 	t.Run("Add multiple rules", func(t *testing.T) {
 		validator := NewArchiveValidator()
 		validator.AddRule(&NonEmptyArchiveRule{})
-		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
+		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{inputDirectoryName, outputDirectoryName}})
 		assert.NotNil(t, validator)
 	})
 }
@@ -70,7 +70,7 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		validator.AddRule(&NonEmptyArchiveRule{})
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -86,7 +86,7 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		validator.AddRule(&NonEmptyArchiveRule{})
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -104,7 +104,7 @@ func TestArchiveValidatorValidate(t *testing.T) {
 		validator := NewArchiveValidator()
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -118,10 +118,10 @@ func TestArchiveValidatorValidate(t *testing.T) {
 
 		validator := NewArchiveValidator()
 		validator.AddRule(&NonEmptyArchiveRule{})
-		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{"input", "output"}})
+		validator.AddRule(&RequiredEntriesRule{RequiredEntries: []string{inputDirectoryName, outputDirectoryName}})
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -145,7 +145,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -157,7 +157,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 		tempDir := t.TempDir()
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -172,7 +172,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 
 	t.Run("Validate fails with invalid path", func(t *testing.T) {
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  "/nonexistent/path",
 		}
 
@@ -188,7 +188,7 @@ func TestNonEmptyArchiveRule(t *testing.T) {
 
 func TestRequiredEntriesRule(t *testing.T) {
 	t.Run("Name returns correct value", func(t *testing.T) {
-		rule := &RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
+		rule := &RequiredEntriesRule{RequiredEntries: []string{inputDirectoryName, outputDirectoryName}}
 		assert.Equal(t, "required-entries", rule.Name())
 	})
 
@@ -196,11 +196,11 @@ func TestRequiredEntriesRule(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
 		rule := &RequiredEntriesRule{
-			RequiredEntries: []string{"input", "output", "description.pdf"},
+			RequiredEntries: []string{inputDirectoryName, outputDirectoryName, descriptionFilename},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -210,14 +210,14 @@ func TestRequiredEntriesRule(t *testing.T) {
 
 	t.Run("Validate fails with missing entry", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "input"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, inputDirectoryName), 0755))
 
 		rule := &RequiredEntriesRule{
-			RequiredEntries: []string{"input", "output"},
+			RequiredEntries: []string{inputDirectoryName, outputDirectoryName},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -235,11 +235,11 @@ func TestRequiredEntriesRule(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(tempDir, "extra.txt"), []byte("extra"), 0644))
 
 		rule := &RequiredEntriesRule{
-			RequiredEntries: []string{"input", "output", "description.pdf"},
+			RequiredEntries: []string{inputDirectoryName, outputDirectoryName, descriptionFilename},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -253,10 +253,10 @@ func TestRequiredEntriesRule(t *testing.T) {
 	})
 
 	t.Run("Validate fails with invalid path", func(t *testing.T) {
-		rule := &RequiredEntriesRule{RequiredEntries: []string{"input", "output"}}
+		rule := &RequiredEntriesRule{RequiredEntries: []string{inputDirectoryName, outputDirectoryName}}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  "/nonexistent/path",
 		}
 
@@ -274,8 +274,8 @@ func TestDirectoryFilesRule(t *testing.T) {
 	t.Run("Name returns correct value with directory name", func(t *testing.T) {
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 			},
 		}
 		assert.Equal(t, "directory-files-input", rule.Name())
@@ -286,14 +286,14 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 				RequireSequential:  true,
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -303,19 +303,19 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 	t.Run("Validate fails with subdirectory in directory", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.MkdirAll(filepath.Join(inputDir, "subdir"), 0755))
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -329,19 +329,19 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 	t.Run("Validate fails with wrong extension", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.json"), []byte("test"), 0644))
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt", ".in"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt, ".in"},
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -355,21 +355,21 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 	t.Run("Validate fails with non-sequential naming", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte("test"), 0644))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "3.txt"), []byte("test"), 0644)) // Skipped 2
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 				RequireSequential:  true,
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -383,20 +383,20 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 	t.Run("Validate fails with empty file", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte{}, 0644)) // Empty file
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 				RequireSequential:  true,
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -413,13 +413,13 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -433,21 +433,21 @@ func TestDirectoryFilesRule(t *testing.T) {
 
 	t.Run("Validate success without sequential requirement", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "test1.txt"), []byte("test"), 0644))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "test2.txt"), []byte("test"), 0644))
 
 		rule := &DirectoryFilesRule{
 			Config: DirectoryConfig{
-				Name:               "input",
-				AcceptedExtensions: []string{".txt"},
+				Name:               inputDirectoryName,
+				AcceptedExtensions: []string{acceptedTextExt},
 				RequireSequential:  false,
 			},
 		}
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -467,7 +467,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		tempDir := setupTestDirectory(t)
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -477,8 +477,8 @@ func TestInputOutputMatchRule(t *testing.T) {
 
 	t.Run("Validate fails with mismatched counts", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
-		outputDir := filepath.Join(tempDir, "output")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
+		outputDir := filepath.Join(tempDir, outputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.MkdirAll(outputDir, 0755))
 
@@ -490,7 +490,7 @@ func TestInputOutputMatchRule(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(outputDir, "1.txt"), []byte("output 1"), 0644))
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -505,11 +505,11 @@ func TestInputOutputMatchRule(t *testing.T) {
 
 	t.Run("Validate fails with empty directories", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "input"), 0755))
-		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "output"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, inputDirectoryName), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, outputDirectoryName), 0755))
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -523,10 +523,10 @@ func TestInputOutputMatchRule(t *testing.T) {
 
 	t.Run("Validate fails with missing input directory", func(t *testing.T) {
 		tempDir := t.TempDir()
-		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, "output"), 0755))
+		require.NoError(t, os.MkdirAll(filepath.Join(tempDir, outputDirectoryName), 0755))
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -535,17 +535,17 @@ func TestInputOutputMatchRule(t *testing.T) {
 
 		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
-		assert.Contains(t, validationErr.Message, "input")
+		assert.Contains(t, validationErr.Message, inputDirectoryName)
 	})
 
 	t.Run("Validate fails with missing output directory", func(t *testing.T) {
 		tempDir := t.TempDir()
-		inputDir := filepath.Join(tempDir, "input")
+		inputDir := filepath.Join(tempDir, inputDirectoryName)
 		require.NoError(t, os.MkdirAll(inputDir, 0755))
 		require.NoError(t, os.WriteFile(filepath.Join(inputDir, "1.txt"), []byte("input 1"), 0644))
 
 		ctx := ValidationContext{
-			ArchivePath: "test.zip",
+			ArchivePath: testZipFilename,
 			FolderPath:  tempDir,
 		}
 
@@ -554,6 +554,6 @@ func TestInputOutputMatchRule(t *testing.T) {
 
 		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
-		assert.Contains(t, validationErr.Message, "output")
+		assert.Contains(t, validationErr.Message, outputDirectoryName)
 	})
 }

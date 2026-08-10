@@ -41,8 +41,8 @@ func TestDeleteTask(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "teacher",
-			Email: "test@example.com",
+			Role:  testTeacher,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -173,8 +173,8 @@ func TestEditTask(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "teacher",
-			Email: "test@example.com",
+			Role:  testTeacher,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -315,8 +315,8 @@ func TestGetAllCreatedTasks(t *testing.T) {
 		}()
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "teacher",
-			Email: "test@example.com",
+			Role:  testTeacher,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{
@@ -460,8 +460,8 @@ func TestGetLimits(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "teacher",
-			Email: "test@example.com",
+			Role:  testTeacher,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -596,8 +596,8 @@ func TestPutLimits(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "teacher",
-			Email: "test@example.com",
+			Role:  testTeacher,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))

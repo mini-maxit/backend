@@ -383,7 +383,7 @@ func TestGetCollaborators(t *testing.T) {
 				UserID:       10,
 				Permission:   types.PermissionEdit,
 				BaseModel:    models.BaseModel{CreatedAt: now},
-				User:         models.User{ID: 10, Name: "Test User", Email: "test@example.com"},
+				User:         models.User{ID: 10, Name: testUserName, Email: "test@example.com"},
 			},
 			{
 				ResourceType: resourceType,
@@ -400,7 +400,7 @@ func TestGetCollaborators(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, collaborators, 2)
 		assert.Equal(t, int64(10), collaborators[0].UserID)
-		assert.Equal(t, "Test User", collaborators[0].UserName)
+		assert.Equal(t, testUserName, collaborators[0].UserName)
 		assert.Equal(t, "test@example.com", collaborators[0].UserEmail)
 		assert.Equal(t, types.PermissionEdit, collaborators[0].Permission)
 	})

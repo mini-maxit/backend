@@ -9,6 +9,14 @@ import (
 	"github.com/mini-maxit/backend/internal/config"
 )
 
+const (
+	corsAllowOriginHeader      = "Access-Control-Allow-Origin"
+	corsAllowCredentialsHeader = "Access-Control-Allow-Credentials"
+	corsLocalOrigin            = "http://localhost:3000"
+	corsAllowedOrigins         = "http://localhost:3000,http://localhost:5173"
+	corsCredentialsTrue        = "true"
+)
+
 func TestCORSMiddleware(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -28,28 +36,28 @@ func TestCORSMiddleware(t *testing.T) {
 			},
 			expectedStatus: http.StatusNoContent,
 			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "*",
-				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
-				"Access-Control-Allow-Credentials": "false",
-				"Access-Control-Max-Age":           "86400",
+				corsAllowOriginHeader:          "*",
+				"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+				"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+				corsAllowCredentialsHeader:     "false",
+				"Access-Control-Max-Age":       "86400",
 			},
 		},
 		{
 			name:   "GET request with specific allowed origin",
 			method: http.MethodGet,
-			origin: "http://localhost:3000",
+			origin: corsLocalOrigin,
 			corsConfig: &config.CORSConfig{
-				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
+				AllowedOrigins:   corsAllowedOrigins,
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "http://localhost:3000",
-				"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-				"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Requested-With",
-				"Access-Control-Allow-Credentials": "true",
-				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
+				corsAllowOriginHeader:           corsLocalOrigin,
+				"Access-Control-Allow-Methods":  "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+				"Access-Control-Allow-Headers":  "Content-Type, Authorization, X-Requested-With",
+				corsAllowCredentialsHeader:      corsCredentialsTrue,
+				"Access-Control-Expose-Headers": "Content-Length, Content-Type",
 			},
 		},
 		{
@@ -57,14 +65,14 @@ func TestCORSMiddleware(t *testing.T) {
 			method: http.MethodPost,
 			origin: "http://localhost:5173",
 			corsConfig: &config.CORSConfig{
-				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
+				AllowedOrigins:   corsAllowedOrigins,
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "http://localhost:5173",
-				"Access-Control-Allow-Credentials": "true",
-				"Access-Control-Expose-Headers":    "Content-Length, Content-Type",
+				corsAllowOriginHeader:           "http://localhost:5173",
+				corsAllowCredentialsHeader:      corsCredentialsTrue,
+				"Access-Control-Expose-Headers": "Content-Length, Content-Type",
 			},
 		},
 		{
@@ -72,7 +80,7 @@ func TestCORSMiddleware(t *testing.T) {
 			method: http.MethodGet,
 			origin: "http://evil.com",
 			corsConfig: &config.CORSConfig{
-				AllowedOrigins:   "http://localhost:3000,http://localhost:5173",
+				AllowedOrigins:   corsAllowedOrigins,
 				AllowCredentials: true,
 			},
 			expectedStatus:  http.StatusForbidden,
@@ -83,7 +91,7 @@ func TestCORSMiddleware(t *testing.T) {
 			method: http.MethodGet,
 			origin: "",
 			corsConfig: &config.CORSConfig{
-				AllowedOrigins:   "http://localhost:3000",
+				AllowedOrigins:   corsLocalOrigin,
 				AllowCredentials: true,
 			},
 			expectedStatus:  http.StatusOK,
@@ -92,15 +100,15 @@ func TestCORSMiddleware(t *testing.T) {
 		{
 			name:   "Origin with whitespace in allowed list",
 			method: http.MethodGet,
-			origin: "http://localhost:3000",
+			origin: corsLocalOrigin,
 			corsConfig: &config.CORSConfig{
 				AllowedOrigins:   "http://localhost:3000 , http://localhost:5173",
 				AllowCredentials: true,
 			},
 			expectedStatus: http.StatusOK,
 			expectedHeaders: map[string]string{
-				"Access-Control-Allow-Origin":      "http://localhost:3000",
-				"Access-Control-Allow-Credentials": "true",
+				corsAllowOriginHeader:      corsLocalOrigin,
+				corsAllowCredentialsHeader: corsCredentialsTrue,
 			},
 		},
 	}
