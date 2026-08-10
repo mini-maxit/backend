@@ -57,8 +57,8 @@ func TestCreateGroup(t *testing.T) {
 		// Mock user and add to context
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
@@ -114,7 +114,7 @@ func TestCreateGroup(t *testing.T) {
 
 	t.Run("Not authorized", func(t *testing.T) {
 		body := schemas.CreateGroup{
-			Name: "Test Group",
+			Name: testGroupName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -122,7 +122,7 @@ func TestCreateGroup(t *testing.T) {
 		}
 
 		expectedGroup := &schemas.Group{
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1, // Match the mock user ID
 		}
 
@@ -152,7 +152,7 @@ func TestCreateGroup(t *testing.T) {
 
 	t.Run("Internal server error", func(t *testing.T) {
 		body := schemas.CreateGroup{
-			Name: "Test Group",
+			Name: testGroupName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -180,7 +180,7 @@ func TestCreateGroup(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		body := schemas.CreateGroup{
-			Name: "Test Group",
+			Name: testGroupName,
 		}
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -189,7 +189,7 @@ func TestCreateGroup(t *testing.T) {
 
 		gs.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 			func(db database.Database, user schemas.User, group *schemas.Group) (int64, error) {
-				assert.Equal(t, "Test Group", group.Name)
+				assert.Equal(t, testGroupName, group.Name)
 				assert.Equal(t, int64(1), group.CreatedBy)
 				return 1, nil
 			}).Times(1)
@@ -230,8 +230,8 @@ func TestGetGroup(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -301,7 +301,7 @@ func TestGetGroup(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		group := schemas.GroupDetailed{
 			ID:        1,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1,
 		}
 		gs.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(&group, nil).Times(1)
@@ -338,8 +338,8 @@ func TestGetAllGroup(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 
 		// Simulate query params middleware - convert strings to ints
@@ -461,8 +461,8 @@ func TestEditGroup(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -526,7 +526,7 @@ func TestEditGroup(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		name := "Test Group"
+		name := testGroupName
 		body := schemas.EditGroup{Name: &name}
 		jsonBody, _ := json.Marshal(body)
 
@@ -591,8 +591,8 @@ func TestAddUsersToGroup(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -765,8 +765,8 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -940,8 +940,8 @@ func TestGetGroupUsers(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -1025,8 +1025,8 @@ func TestGetGroupUsers(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		users := []schemas.User{
-			{ID: 1, Email: "test@example.com"},
-			{ID: 2, Email: "test@example.com"},
+			{ID: 1, Email: testExampleMail},
+			{ID: 2, Email: testExampleMail},
 		}
 		gs.EXPECT().GetUsers(gomock.Any(), gomock.Any(), int64(1)).Return(users, nil).Times(1)
 		resp, err := http.Get(server.URL + "/1/users")

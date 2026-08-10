@@ -19,6 +19,14 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	testUserName     = "Test User"
+	testSurname      = "Test Surname"
+	testEmail        = "email@email.com"
+	testUsername     = "testuser"
+	testPasswordHash = "password"
+)
+
 func TestGetUserByEmail(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	db := &testutils.MockDatabase{}
@@ -36,11 +44,11 @@ func TestGetUserByEmail(t *testing.T) {
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
 			ID:           int64(1),
-			Name:         "Test User",
-			Surname:      "Test Surname",
-			Email:        "email@email.com",
-			Username:     "testuser",
-			PasswordHash: "password",
+			Name:         testUserName,
+			Surname:      testSurname,
+			Email:        testEmail,
+			Username:     testUsername,
+			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().GetByEmail(db, user.Email).Return(user, nil).Times(1)
 		userResp, err := us.GetByEmail(db, user.Email)
@@ -71,11 +79,11 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("User exists", func(t *testing.T) {
 		user := &models.User{
 			ID:           int64(1),
-			Name:         "Test User",
-			Surname:      "Test Surname",
-			Email:        "email@email.com",
-			Username:     "testuser",
-			PasswordHash: "password",
+			Name:         testUserName,
+			Surname:      testSurname,
+			Email:        testEmail,
+			Username:     testUsername,
+			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
 		userResp, err := us.Get(db, user.ID)
@@ -133,11 +141,11 @@ func TestEditUser(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		user := &models.User{
 			ID:           3,
-			Name:         "Test User",
-			Surname:      "Test Surname",
-			Email:        "email@email.com",
-			Username:     "testuser",
-			PasswordHash: "password",
+			Name:         testUserName,
+			Surname:      testSurname,
+			Email:        testEmail,
+			Username:     testUsername,
+			PasswordHash: testPasswordHash,
 		}
 		newName := "New Name"
 		updatedUser := &schemas.UserEdit{
@@ -156,7 +164,7 @@ func TestGetAllUsers(t *testing.T) {
 	ur := mock_repository.NewMockUserRepository(ctrl)
 	cs := mock_service.NewMockContestService(ctrl)
 	us := service.NewUserService(ur, cs)
-	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
 
 	t.Run("No users", func(t *testing.T) {
 		ur.EXPECT().GetAll(
@@ -173,11 +181,11 @@ func TestGetAllUsers(t *testing.T) {
 
 	t.Run("Users exist", func(t *testing.T) {
 		user := &models.User{
-			Name:         "Test User",
-			Surname:      "Test Surname",
-			Email:        "email@email.com",
-			Username:     "testuser",
-			PasswordHash: "password",
+			Name:         testUserName,
+			Surname:      testSurname,
+			Email:        testEmail,
+			Username:     testUsername,
+			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().GetAll(
 			db,
@@ -247,7 +255,7 @@ func TestChangePassword(t *testing.T) {
 	cs := mock_service.NewMockContestService(ctrl)
 	us := service.NewUserService(ur, cs)
 
-	password := "password"
+	password := testPasswordHash
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 	user := &models.User{

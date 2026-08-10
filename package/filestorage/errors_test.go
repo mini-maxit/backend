@@ -9,6 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testRuleName          = "test-rule"
+	testRuleMessage       = "test message"
+	contextKey            = "key"
+	testArchivePath       = "/path/to/archive.zip"
+	testDecompressMessage = "failed to decompress"
+	contextValue          = "value"
+)
+
 // Export internal types for testing
 // This file is only included in test builds
 
@@ -61,10 +70,10 @@ func (f *TestableFileStorageService) SetBucketName(name string) {
 func TestValidationError(t *testing.T) {
 	t.Run("Error returns formatted string without cause", func(t *testing.T) {
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    nil,
-			Context:  map[string]any{"key": "value"},
+			Context:  map[string]any{contextKey: contextValue},
 		}
 
 		expected := "validation error [test-rule]: test message"
@@ -74,10 +83,10 @@ func TestValidationError(t *testing.T) {
 	t.Run("Error returns formatted string with cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    cause,
-			Context:  map[string]any{"key": "value"},
+			Context:  map[string]any{contextKey: contextValue},
 		}
 
 		expected := "validation error [test-rule]: test message: underlying error"
@@ -87,8 +96,8 @@ func TestValidationError(t *testing.T) {
 	t.Run("Unwrap returns cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    cause,
 		}
 
@@ -98,8 +107,8 @@ func TestValidationError(t *testing.T) {
 
 	t.Run("Unwrap returns nil when no cause", func(t *testing.T) {
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    nil,
 		}
 
@@ -110,8 +119,8 @@ func TestValidationError(t *testing.T) {
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
 		cause := errors.New("specific error")
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    cause,
 		}
 
@@ -120,24 +129,24 @@ func TestValidationError(t *testing.T) {
 
 	t.Run("Error is compatible with errors.As", func(t *testing.T) {
 		err := &ValidationError{
-			RuleName: "test-rule",
-			Message:  "test message",
+			RuleName: testRuleName,
+			Message:  testRuleMessage,
 			Cause:    nil,
 		}
 
 		var validationErr *ValidationError
 		require.ErrorAs(t, err, &validationErr)
-		assert.Equal(t, "test-rule", validationErr.RuleName)
+		assert.Equal(t, testRuleName, validationErr.RuleName)
 	})
 }
 
 func TestDecompressionError(t *testing.T) {
 	t.Run("Error returns formatted string without cause", func(t *testing.T) {
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       nil,
-			Context:     map[string]any{"key": "value"},
+			Context:     map[string]any{contextKey: contextValue},
 		}
 
 		expected := "decompression error: failed to decompress"
@@ -147,10 +156,10 @@ func TestDecompressionError(t *testing.T) {
 	t.Run("Error returns formatted string with cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       cause,
-			Context:     map[string]any{"key": "value"},
+			Context:     map[string]any{contextKey: contextValue},
 		}
 
 		expected := "decompression error: failed to decompress: underlying error"
@@ -160,8 +169,8 @@ func TestDecompressionError(t *testing.T) {
 	t.Run("Unwrap returns cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       cause,
 		}
 
@@ -171,8 +180,8 @@ func TestDecompressionError(t *testing.T) {
 
 	t.Run("Unwrap returns nil when no cause", func(t *testing.T) {
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       nil,
 		}
 
@@ -183,8 +192,8 @@ func TestDecompressionError(t *testing.T) {
 	t.Run("Error is compatible with errors.Is", func(t *testing.T) {
 		cause := errors.New("specific error")
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       cause,
 		}
 
@@ -193,13 +202,13 @@ func TestDecompressionError(t *testing.T) {
 
 	t.Run("Error is compatible with errors.As", func(t *testing.T) {
 		err := &DecompressionError{
-			ArchivePath: "/path/to/archive.zip",
-			Message:     "failed to decompress",
+			ArchivePath: testArchivePath,
+			Message:     testDecompressMessage,
 			Cause:       nil,
 		}
 
 		var decompressionErr *DecompressionError
 		require.ErrorAs(t, err, &decompressionErr)
-		assert.Equal(t, "/path/to/archive.zip", decompressionErr.ArchivePath)
+		assert.Equal(t, testArchivePath, decompressionErr.ArchivePath)
 	})
 }

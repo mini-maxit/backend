@@ -70,6 +70,33 @@ const (
 	trueValue                     = "true"
 )
 
+// Environment variable names read by NewConfig.
+const (
+	envDBHost          = "DB_HOST"
+	envDBPort          = "DB_PORT"
+	envDBUser          = "DB_USER"
+	envDBPassword      = "DB_PASSWORD"
+	envDBName          = "DB_NAME"
+	envAPPPort         = "APP_PORT"
+	envRefreshToken    = "API_REFRESH_TOKEN_PATH"
+	envAccessTokenMin  = "JWT_ACCESS_TOKEN_MINUTES"
+	envCookieSecure    = "COOKIE_SECURE"
+	envFileStorageHost = "FILE_STORAGE_HOST"
+	envFileStoragePort = "FILE_STORAGE_PORT"
+	envFileStoragePub  = "FILE_STORAGE_PUBLIC_URL"
+	envQueueName       = "QUEUE_NAME"
+	envResponseQueue   = "RESPONSE_QUEUE_NAME"
+	envQueueHost       = "QUEUE_HOST"
+	envQueuePort       = "QUEUE_PORT"
+	envQueueUser       = "QUEUE_USER"
+	envQueuePassword   = "QUEUE_PASSWORD"
+	envJWTSecretKey    = "JWT_SECRET_KEY"
+	envDump            = "DUMP"
+	envCORSOrigins     = "CORS_ALLOWED_ORIGINS"
+	envCORSCredentials = "CORS_ALLOW_CREDENTIALS"
+	envSignedURLTTL    = "SIGNED_URL_TTL_SECONDS"
+)
+
 // NewConfig creates new Config instance
 //
 // It reads environment variables and returns Config instance. Available environment variables:
@@ -117,44 +144,44 @@ const (
 func NewConfig() *Config {
 	log := utils.NewNamedLogger("config")
 
-	dbHost := os.Getenv("DB_HOST")
+	dbHost := os.Getenv(envDBHost)
 	if dbHost == "" {
-		log.Warnf("DB_HOST is not set. Using default value %s", "localhost")
+		log.Warnf(envDBHost+" is not set. Using default value %s", "localhost")
 	}
-	dbPortStr := os.Getenv("DB_PORT")
+	dbPortStr := os.Getenv(envDBPort)
 	if dbPortStr == "" {
-		log.Panic("DB_PORT is not set")
+		log.Panic(envDBPort + " is not set")
 	}
 	dbPort := validatePort(dbPortStr, "database", log)
-	dbUser := os.Getenv("DB_USER")
+	dbUser := os.Getenv(envDBUser)
 	if dbUser == "" {
-		log.Panic("DB_USER is not set")
+		log.Panic(envDBUser + " is not set")
 	}
-	dbPassword := os.Getenv("DB_PASSWORD")
+	dbPassword := os.Getenv(envDBPassword)
 	if dbPassword == "" {
-		log.Warnf("DB_PASSWORD is not set. Using empty password")
+		log.Warnf(envDBPassword + " is not set. Using empty password")
 	}
-	dbName := os.Getenv("DB_NAME")
+	dbName := os.Getenv(envDBName)
 	if dbName == "" {
-		log.Panic("DB_NAME is not set")
+		log.Panic(envDBName + " is not set")
 	}
 
-	appPortStr := os.Getenv("APP_PORT")
+	appPortStr := os.Getenv(envAPPPort)
 	if appPortStr == "" {
-		log.Warnf("API_PORT is not set. Using default port %s", defaultAPIPort)
+		log.Warnf(envAPPPort+" is not set. Using default port %s", defaultAPIPort)
 		appPortStr = defaultAPIPort
 	}
 	appPort := validatePort(appPortStr, "application", log)
 
-	refreshTokenPath := os.Getenv("API_REFRESH_TOKEN_PATH")
+	refreshTokenPath := os.Getenv(envRefreshToken)
 	if refreshTokenPath == "" {
-		log.Warnf("API_REFRESH_TOKEN_PATH is not set. Using default path %s", defaultAPIRefreshTokenPath)
+		log.Warnf(envRefreshToken+" is not set. Using default path %s", defaultAPIRefreshTokenPath)
 		refreshTokenPath = defaultAPIRefreshTokenPath
 	}
 
-	accessTokenMinutesStr := os.Getenv("JWT_ACCESS_TOKEN_MINUTES")
+	accessTokenMinutesStr := os.Getenv(envAccessTokenMin)
 	if accessTokenMinutesStr == "" {
-		log.Warnf("JWT_ACCESS_TOKEN_MINUTES is not set. Using default value %s", defaultAccessTokenMinutesStr)
+		log.Warnf(envAccessTokenMin+" is not set. Using default value %s", defaultAccessTokenMinutesStr)
 		accessTokenMinutesStr = defaultAccessTokenMinutesStr
 	}
 	accessTokenMinutesParsed, err := strconv.ParseUint(accessTokenMinutesStr, 10, 16)
@@ -163,78 +190,78 @@ func NewConfig() *Config {
 	}
 	accessTokenMinutes := uint16(accessTokenMinutesParsed)
 
-	cookieSecure := os.Getenv("COOKIE_SECURE") == trueValue
+	cookieSecure := os.Getenv(envCookieSecure) == trueValue
 
-	fileStorageHost := os.Getenv("FILE_STORAGE_HOST")
+	fileStorageHost := os.Getenv(envFileStorageHost)
 	if fileStorageHost == "" {
-		log.Panic("FILE_STORAGE_HOST is not set")
+		log.Panic(envFileStorageHost + " is not set")
 	}
-	fileStoragePortStr := os.Getenv("FILE_STORAGE_PORT")
+	fileStoragePortStr := os.Getenv(envFileStoragePort)
 	if fileStoragePortStr == "" {
-		log.Panic("FILE_STORAGE_PORT is not set")
+		log.Panic(envFileStoragePort + " is not set")
 	}
 	_ = validatePort(fileStoragePortStr, "file storage", log)
 
 	fileStorageURL := "http://" + fileStorageHost + ":" + fileStoragePortStr
 
-	fileStoragePublicURL := strings.TrimSuffix(os.Getenv("FILE_STORAGE_PUBLIC_URL"), "/")
+	fileStoragePublicURL := strings.TrimSuffix(os.Getenv(envFileStoragePub), "/")
 	if fileStoragePublicURL == "" {
-		log.Warnf("FILE_STORAGE_PUBLIC_URL is not set. Signed URLs will use internal address %s and will not be reachable by browsers", fileStorageURL)
+		log.Warnf(envFileStoragePub+" is not set. Signed URLs will use internal address %s and will not be reachable by browsers", fileStorageURL)
 		fileStoragePublicURL = fileStorageURL
 	}
 
-	queueName := os.Getenv("QUEUE_NAME")
+	queueName := os.Getenv(envQueueName)
 	if queueName == "" {
-		log.Warnf("QUEUE_NAME is not set. Using default queue name %s", defaultQueueName)
+		log.Warnf(envQueueName+" is not set. Using default queue name %s", defaultQueueName)
 		queueName = defaultQueueName
 	}
-	responseQueueName := os.Getenv("RESPONSE_QUEUE_NAME")
+	responseQueueName := os.Getenv(envResponseQueue)
 	if responseQueueName == "" {
-		log.Warnf("RESPONSE_QUEUE_NAME is not set. Using default response queue name %s", defaultResponseQueueName)
+		log.Warnf(envResponseQueue+" is not set. Using default response queue name %s", defaultResponseQueueName)
 		responseQueueName = defaultResponseQueueName
 	}
-	queueHost := os.Getenv("QUEUE_HOST")
+	queueHost := os.Getenv(envQueueHost)
 	if queueHost == "" {
-		log.Panic("QUEUE_HOST is not set")
+		log.Panic(envQueueHost + " is not set")
 	}
-	queuePortStr := os.Getenv("QUEUE_PORT")
+	queuePortStr := os.Getenv(envQueuePort)
 	if queuePortStr == "" {
-		log.Panic("QUEUE_PORT is not set")
+		log.Panic(envQueuePort + " is not set")
 	}
 	queuePort := validatePort(queuePortStr, "broker", log)
 
-	queueUser := os.Getenv("QUEUE_USER")
+	queueUser := os.Getenv(envQueueUser)
 	if queueUser == "" {
-		log.Panic("QUEUE_USER is not set")
+		log.Panic(envQueueUser + " is not set")
 	}
-	queuePassword := os.Getenv("QUEUE_PASSWORD")
+	queuePassword := os.Getenv(envQueuePassword)
 	if queuePassword == "" {
-		log.Panic("QUEUE_PASSWORD is not set")
+		log.Panic(envQueuePassword + " is not set")
 	}
 
-	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	jwtSecretKey := os.Getenv(envJWTSecretKey)
 	if jwtSecretKey == "" {
-		log.Panic("JWT_SECRET_KEY is not set")
+		log.Panic(envJWTSecretKey + " is not set")
 	}
 
-	dumpStr := os.Getenv("DUMP")
+	dumpStr := os.Getenv(envDump)
 	dump := dumpStr == trueValue
 
-	corsAllowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	corsAllowedOrigins := os.Getenv(envCORSOrigins)
 	if corsAllowedOrigins == "" {
-		log.Warnf("CORS_ALLOWED_ORIGINS is not set. Using default value %s", defaultCORSAllowedOrigins)
+		log.Warnf(envCORSOrigins+" is not set. Using default value %s", defaultCORSAllowedOrigins)
 		corsAllowedOrigins = defaultCORSAllowedOrigins
 	}
-	corsAllowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == trueValue
+	corsAllowCredentials := os.Getenv(envCORSCredentials) == trueValue
 
 	if corsAllowCredentials && corsAllowedOrigins == "*" {
 		log.Panicf(`CORS_ALLOWED_ORIGINS=* and CORS_ALLOW_CREDENTIALS=true cannot be set at the same time.
 More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials`)
 	}
 
-	signedURLTTLSecondsStr := os.Getenv("SIGNED_URL_TTL_SECONDS")
+	signedURLTTLSecondsStr := os.Getenv(envSignedURLTTL)
 	if signedURLTTLSecondsStr == "" {
-		log.Warnf("SIGNED_URL_TTL_SECONDS is not set. Using default value %s", defaultSignedURLTTLSecondsStr)
+		log.Warnf(envSignedURLTTL+" is not set. Using default value %s", defaultSignedURLTTLSecondsStr)
 		signedURLTTLSecondsStr = defaultSignedURLTTLSecondsStr
 	}
 	signedURLTTLSecondsParsed, err := strconv.ParseUint(signedURLTTLSecondsStr, 10, 16)

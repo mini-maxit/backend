@@ -69,7 +69,7 @@ func (r *NonEmptyArchiveRule) Validate(ctx ValidationContext) error {
 			Message:  "failed to read decompressed archive directory",
 			Cause:    err,
 			Context: map[string]interface{}{
-				"folder_path": ctx.FolderPath,
+				contextKeyFolderPath: ctx.FolderPath,
 			},
 		}
 	}
@@ -79,7 +79,7 @@ func (r *NonEmptyArchiveRule) Validate(ctx ValidationContext) error {
 			Message:  "archive is empty or does not contain any files",
 			Cause:    nil,
 			Context: map[string]interface{}{
-				"folder_path": ctx.FolderPath,
+				contextKeyFolderPath: ctx.FolderPath,
 			},
 		}
 	}
@@ -103,7 +103,7 @@ func (r *RequiredEntriesRule) Validate(ctx ValidationContext) error {
 			Message:  "failed to read directory",
 			Cause:    err,
 			Context: map[string]interface{}{
-				"folder_path": ctx.FolderPath,
+				contextKeyFolderPath: ctx.FolderPath,
 			},
 		}
 	}
@@ -174,8 +174,8 @@ func (r *DirectoryFilesRule) Validate(ctx ValidationContext) error {
 			Message:  fmt.Sprintf("failed to read %s directory in the archive", r.Config.Name),
 			Cause:    err,
 			Context: map[string]interface{}{
-				"directory_path": dirPath,
-				"directory_name": r.Config.Name,
+				contextKeyDirectoryPath: dirPath,
+				contextKeyDirectoryName: r.Config.Name,
 			},
 		}
 	}
@@ -183,8 +183,8 @@ func (r *DirectoryFilesRule) Validate(ctx ValidationContext) error {
 	for i, file := range dirEntries {
 		if file.IsDir() {
 			context := map[string]interface{}{
-				"directory_name": r.Config.Name,
-				"subdirectory":   file.Name(),
+				contextKeyDirectoryName: r.Config.Name,
+				"subdirectory":          file.Name(),
 			}
 			return &ValidationError{
 				RuleName: r.Name(),
@@ -216,10 +216,10 @@ func (r *DirectoryFilesRule) validateFileExtension(fileName string) error {
 	ext := filepath.Ext(fileName)
 	if !slices.Contains(r.Config.AcceptedExtensions, ext) {
 		context := map[string]interface{}{
-			"directory_name":      r.Config.Name,
-			"file_name":           fileName,
-			"file_extension":      ext,
-			"accepted_extensions": r.Config.AcceptedExtensions,
+			contextKeyDirectoryName: r.Config.Name,
+			contextKeyFileName:      fileName,
+			"file_extension":        ext,
+			"accepted_extensions":   r.Config.AcceptedExtensions,
 		}
 		return &ValidationError{
 			RuleName: r.Name(),
@@ -237,11 +237,11 @@ func (r *DirectoryFilesRule) validateSequentialNaming(fileName string, expectedN
 	base := fileName[:len(fileName)-len(ext)]
 	if base != strconv.Itoa(expectedNumber) {
 		context := map[string]interface{}{
-			"directory_name":   r.Config.Name,
-			"file_name":        fileName,
-			"expected_number":  expectedNumber,
-			"actual_base_name": base,
-			"expected_pattern": fmt.Sprintf("%d%s", expectedNumber, r.Config.AcceptedExtensions[0]),
+			contextKeyDirectoryName: r.Config.Name,
+			contextKeyFileName:      fileName,
+			"expected_number":       expectedNumber,
+			"actual_base_name":      base,
+			"expected_pattern":      fmt.Sprintf("%d%s", expectedNumber, r.Config.AcceptedExtensions[0]),
 		}
 		return &ValidationError{
 			RuleName: r.Name(),
@@ -264,17 +264,17 @@ func (r *DirectoryFilesRule) validateFileNotEmpty(dirPath, fileName string) erro
 			Message:  fmt.Sprintf("failed to get file info for %s file in the archive", r.Config.Name),
 			Cause:    err,
 			Context: map[string]interface{}{
-				"file_path":      filePath,
-				"directory_name": r.Config.Name,
-				"file_name":      fileName,
+				contextKeyFilePath:      filePath,
+				contextKeyDirectoryName: r.Config.Name,
+				contextKeyFileName:      fileName,
 			},
 		}
 	}
 	if fileInfo.Size() == 0 {
 		context := map[string]interface{}{
-			"directory_name": r.Config.Name,
-			"file_name":      fileName,
-			"file_size":      fileInfo.Size(),
+			contextKeyDirectoryName: r.Config.Name,
+			contextKeyFileName:      fileName,
+			"file_size":             fileInfo.Size(),
 		}
 		return &ValidationError{
 			RuleName: r.Name(),

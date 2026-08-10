@@ -18,6 +18,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const testGroupName = "Test Group"
+
 func TestCreateGroup(t *testing.T) {
 	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
@@ -31,7 +33,7 @@ func TestCreateGroup(t *testing.T) {
 		gr.EXPECT().Create(gomock.Any(), gomock.Any()).Return(int64(1), nil).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), types.ResourceTypeGroup, int64(1), currentUser.ID).Return(nil).Times(1)
 		groupID, err := gs.Create(db, *currentUser, &schemas.Group{
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		})
 		require.NoError(t, err)
@@ -41,7 +43,7 @@ func TestCreateGroup(t *testing.T) {
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		groupID, err := gs.Create(db, *currentUser, &schemas.Group{
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		})
 		require.ErrorIs(t, err, errors.ErrForbidden)
@@ -61,7 +63,7 @@ func TestDeleteGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		group := &models.Group{
 			ID:        int64(1),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
@@ -74,7 +76,7 @@ func TestDeleteGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		gr.EXPECT().Get(gomock.Any(), int64(2)).Return(&models.Group{
 			ID:        int64(2),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionOwner).Return(errors.ErrForbidden).Times(1)
@@ -86,7 +88,7 @@ func TestDeleteGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 3, Role: types.UserRoleTeacher}
 		gr.EXPECT().Get(gomock.Any(), int64(2)).Return(&models.Group{
 			ID:        int64(2),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(2), currentUser, types.PermissionOwner).Return(errors.ErrForbidden).Times(1)
@@ -103,7 +105,7 @@ func TestGetAllGroup(t *testing.T) {
 	acs := mock_service.NewMockAccessControlService(ctrl)
 	gs := service.NewGroupService(gr, ur, service.NewUserService(ur, mock_service.NewMockContestService(ctrl)), acs)
 
-	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
+	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
 	t.Run("No groups", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]models.Group{}, nil).Times(1)
@@ -117,7 +119,7 @@ func TestGetAllGroup(t *testing.T) {
 		gr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return([]models.Group{
 			{
 				ID:        1,
-				Name:      "Test Group",
+				Name:      testGroupName,
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
@@ -144,7 +146,7 @@ func TestGetAllGroup(t *testing.T) {
 		).Return([]models.Group{
 			{
 				ID:        1,
-				Name:      "Test Group",
+				Name:      testGroupName,
 				CreatedBy: currentUser.ID,
 			},
 		}, nil).Times(1)
@@ -166,19 +168,19 @@ func TestGetGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		gr.EXPECT().Get(gomock.Any(), int64(1)).Return(&models.Group{
 			ID:        1,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
 		group, err := gs.Get(db, *currentUser, 1)
 		require.NoError(t, err)
-		assert.Equal(t, "Test Group", group.Name)
+		assert.Equal(t, testGroupName, group.Name)
 	})
 
 	t.Run("Not authorized", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 2, Role: types.UserRoleStudent}
 		gr.EXPECT().Get(gomock.Any(), int64(1)).Return(&models.Group{
 			ID:        1,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 3,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, int64(1), currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
@@ -216,7 +218,7 @@ func TestAddUsersToGroup(t *testing.T) {
 		user := &schemas.User{ID: 3}
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 4,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
@@ -238,7 +240,7 @@ func TestGetGroupUsers(t *testing.T) {
 		groupID := int64(1)
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
 		user := &schemas.User{ID: int64(2)}
@@ -253,7 +255,7 @@ func TestGetGroupUsers(t *testing.T) {
 		groupID := int64(1)
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 4,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
@@ -276,7 +278,7 @@ func TestEditGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
 		group := &models.Group{
 			ID:        int64(1),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
@@ -310,7 +312,7 @@ func TestEditGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 3, Role: types.UserRoleTeacher}
 		group := &models.Group{
 			ID:        int64(1),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1, // Assuming the admin user ID is 1
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
@@ -349,7 +351,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		groupID := int64(1)
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
 		user := &schemas.User{ID: 2}
@@ -365,7 +367,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		groupID := int64(1) // Assuming the group ID is 1 for the test
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 4,
 		}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeGroup, groupID, currentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
@@ -378,7 +380,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		currentUser := &schemas.User{ID: 3, Role: types.UserRoleTeacher}
 		group := &models.Group{
 			ID:        int64(1),
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: 1, // Assuming the admin user ID is 1
 		}
 		gr.EXPECT().Get(gomock.Any(), group.ID).Return(group, nil).Times(1)
@@ -393,7 +395,7 @@ func TestDeleteUsersFromGroup(t *testing.T) {
 		groupID := int64(1)
 		gr.EXPECT().Get(gomock.Any(), groupID).Return(&models.Group{
 			ID:        groupID,
-			Name:      "Test Group",
+			Name:      testGroupName,
 			CreatedBy: currentUser.ID,
 		}, nil).Times(1)
 		ur.EXPECT().Get(gomock.Any(), int64(9999)).Return(nil, errors.ErrUserNotFound).Times(1)

@@ -202,7 +202,7 @@ func TestHttpToErrorCode(t *testing.T) {
 	}{
 		{http.StatusNotFound, "ERR_NOT_FOUND"},
 		{http.StatusInternalServerError, "ERR_INTERNAL_SERVER_ERROR"},
-		{http.StatusBadRequest, "ERR_BAD_REQUEST"},
+		{http.StatusBadRequest, errBadRequest},
 		{http.StatusNonAuthoritativeInfo, "ERR_NON_AUTHORITATIVE_INFORMATION"},
 	}
 	for _, tc := range tests {
@@ -213,7 +213,10 @@ func TestHttpToErrorCode(t *testing.T) {
 	}
 }
 
-const applicationJSON = "application/json"
+const (
+	applicationJSON = "application/json"
+	errBadRequest   = "ERR_BAD_REQUEST"
+)
 
 func TestReturnError(t *testing.T) {
 	w := httptest.NewRecorder()
@@ -233,8 +236,8 @@ func TestReturnError(t *testing.T) {
 	if resp.Ok {
 		t.Fatalf("expected ok=false")
 	}
-	if resp.Data.Code != "ERR_BAD_REQUEST" {
-		t.Fatalf("expected code ERR_BAD_REQUEST, got %s", resp.Data.Code)
+	if resp.Data.Code != errBadRequest {
+		t.Fatalf("expected code %s, got %s", errBadRequest, resp.Data.Code)
 	}
 	if resp.Data.Message != "bad req" {
 		t.Fatalf("expected message 'bad req', got %s", resp.Data.Message)
@@ -348,8 +351,8 @@ func TestHandleValidationError(t *testing.T) {
 		if resp.Ok {
 			t.Fatalf("expected ok=false")
 		}
-		if resp.Data.Code != "ERR_BAD_REQUEST" {
-			t.Fatalf("expected code ERR_BAD_REQUEST, got %s", resp.Data.Code)
+		if resp.Data.Code != errBadRequest {
+			t.Fatalf("expected code %s, got %s", errBadRequest, resp.Data.Code)
 		}
 		if resp.Data.Message != InvalidRequestBodyMessage {
 			t.Fatalf("expected message %q, got %q", InvalidRequestBodyMessage, resp.Data.Message)

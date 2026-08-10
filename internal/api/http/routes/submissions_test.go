@@ -40,8 +40,8 @@ func TestGetAll(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
@@ -136,8 +136,8 @@ func TestGetByID(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))
@@ -217,8 +217,8 @@ func TestGetAllForTask(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "admin",
-			Email: "test@example.com",
+			Role:  testAdmin,
+			Email: testExampleMail,
 		}
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, httputils.UserKey, mockUser)
@@ -343,8 +343,8 @@ func TestSubmitSolution(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockUser := schemas.User{
 			ID:    1,
-			Role:  "student",
-			Email: "test@example.com",
+			Role:  testStudent,
+			Email: testExampleMail,
 		}
 		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
 		handler.ServeHTTP(w, r.WithContext(ctx))

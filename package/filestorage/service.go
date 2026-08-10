@@ -21,7 +21,23 @@ import (
 	"go.uber.org/zap"
 )
 
-const descriptionFilename = "description.pdf"
+const (
+	descriptionFilename = "description.pdf"
+
+	contextKeyDestination   = "destination"
+	contextKeyDirectoryPath = "directory_path"
+	contextKeyDirectoryName = "directory_name"
+	contextKeyFilePath      = "file_path"
+	contextKeyFileName      = "file_name"
+	contextKeyFolderPath    = "folder_path"
+	contextKeyZipEntry      = "zip_entry"
+
+	inputDirectoryName  = "input"
+	outputDirectoryName = "output"
+	acceptedTextExt     = ".txt"
+	acceptedInputExt    = ".in"
+	acceptedOutputExt   = ".out"
+)
 
 type UploadedFile struct {
 	Path       string `json:"path"`
@@ -88,7 +104,7 @@ func (d *decompressor) DecompressArchive(archivePath string, pattern string) (st
 				Message:     "failed to decompress gzip archive",
 				Cause:       err,
 				Context: map[string]any{
-					"destination": folderPath,
+					contextKeyDestination: folderPath,
 				},
 			}
 		}
@@ -100,7 +116,7 @@ func (d *decompressor) DecompressArchive(archivePath string, pattern string) (st
 				Message:     "failed to decompress zip archive",
 				Cause:       err,
 				Context: map[string]any{
-					"destination": folderPath,
+					contextKeyDestination: folderPath,
 				},
 			}
 		}
@@ -127,7 +143,7 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 			Message:     "failed to open archive file",
 			Cause:       err,
 			Context: map[string]any{
-				"destination": newPath,
+				contextKeyDestination: newPath,
 			},
 		}
 	}
@@ -140,7 +156,7 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 			Message:     "failed to create gzip reader",
 			Cause:       err,
 			Context: map[string]any{
-				"destination": newPath,
+				contextKeyDestination: newPath,
 			},
 		}
 	}
@@ -159,7 +175,7 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 				Message:     "failed to read tar entry",
 				Cause:       err,
 				Context: map[string]any{
-					"destination": newPath,
+					contextKeyDestination: newPath,
 				},
 			}
 		}
@@ -173,8 +189,8 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 					Message:     "failed to create directory",
 					Cause:       err,
 					Context: map[string]any{
-						"directory_path": dirPath,
-						"header_name":    header.Name,
+						contextKeyDirectoryPath: dirPath,
+						"header_name":           header.Name,
 					},
 				}
 			}
@@ -188,7 +204,7 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 					Cause:       err,
 					Context: map[string]any{
 						"parent_directory": path.Dir(filePath),
-						"file_path":        filePath,
+						contextKeyFilePath: filePath,
 					},
 				}
 			}
@@ -200,8 +216,8 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 					Message:     "failed to create file",
 					Cause:       err,
 					Context: map[string]any{
-						"file_path":   filePath,
-						"header_name": header.Name,
+						contextKeyFilePath: filePath,
+						"header_name":      header.Name,
 					},
 				}
 			}
@@ -213,7 +229,7 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 					Message:     "failed to write file content",
 					Cause:       err,
 					Context: map[string]any{
-						"file_path": filePath,
+						contextKeyFilePath: filePath,
 					},
 				}
 			}
@@ -224,8 +240,8 @@ func (d *decompressor) decompressGzip(archivePath string, newPath string) error 
 				Message:     "unsupported file type in archive",
 				Cause:       nil,
 				Context: map[string]any{
-					"file_type": header.Typeflag,
-					"file_name": header.Name,
+					"file_type":        header.Typeflag,
+					contextKeyFileName: header.Name,
 				},
 			}
 		}
@@ -242,7 +258,7 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 			Message:     "failed to open zip archive",
 			Cause:       err,
 			Context: map[string]any{
-				"destination": newPath,
+				contextKeyDestination: newPath,
 			},
 		}
 	}
@@ -259,8 +275,8 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 					Message:     "failed to create directory",
 					Cause:       err,
 					Context: map[string]any{
-						"directory_path": filePath,
-						"zip_entry":      f.Name,
+						contextKeyDirectoryPath: filePath,
+						contextKeyZipEntry:      f.Name,
 					},
 				}
 			}
@@ -272,7 +288,7 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 					Cause:       err,
 					Context: map[string]any{
 						"parent_directory": filepath.Dir(filePath),
-						"file_path":        filePath,
+						contextKeyFilePath: filePath,
 					},
 				}
 			}
@@ -284,7 +300,7 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 					Message:     fmt.Sprintf("failed to open file in zip: %s", f.Name),
 					Cause:       err,
 					Context: map[string]any{
-						"zip_entry": f.Name,
+						contextKeyZipEntry: f.Name,
 					},
 				}
 			}
@@ -297,8 +313,8 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 					Message:     "failed to create file",
 					Cause:       err,
 					Context: map[string]any{
-						"file_path": filePath,
-						"zip_entry": f.Name,
+						contextKeyFilePath: filePath,
+						contextKeyZipEntry: f.Name,
 					},
 				}
 			}
@@ -310,8 +326,8 @@ func (d *decompressor) decompressZip(archivePath string, newPath string) error {
 					Message:     "failed to write file content",
 					Cause:       err,
 					Context: map[string]any{
-						"file_path": filePath,
-						"zip_entry": f.Name,
+						contextKeyFilePath: filePath,
+						contextKeyZipEntry: f.Name,
 					},
 				}
 			}
@@ -336,20 +352,20 @@ func NewFileStorageService(fileStorageURL string, publicURL string, signedURLTTL
 	// Configure validation rules
 	validator.AddRule(&NonEmptyArchiveRule{})
 	validator.AddRule(&RequiredEntriesRule{
-		RequiredEntries: []string{"input", "output", descriptionFilename},
+		RequiredEntries: []string{inputDirectoryName, outputDirectoryName, descriptionFilename},
 	})
 	validator.AddRule(&InputOutputMatchRule{})
 	validator.AddRule(&DirectoryFilesRule{
 		Config: DirectoryConfig{
-			Name:               "input",
-			AcceptedExtensions: []string{".txt", ".in"},
+			Name:               inputDirectoryName,
+			AcceptedExtensions: []string{acceptedTextExt, acceptedInputExt},
 			RequireSequential:  true,
 		},
 	})
 	validator.AddRule(&DirectoryFilesRule{
 		Config: DirectoryConfig{
-			Name:               "output",
-			AcceptedExtensions: []string{".txt", ".out"},
+			Name:               outputDirectoryName,
+			AcceptedExtensions: []string{acceptedTextExt, acceptedOutputExt},
 			RequireSequential:  true,
 		},
 	})
@@ -442,7 +458,7 @@ func (f *fileStorageService) UploadTask(taskID int64, archivePath string) (*Uplo
 	}
 
 	// Upload input files
-	inputFiles, err := f.uploadDirectoryFiles(folderPath, "input", taskBasePath)
+	inputFiles, err := f.uploadDirectoryFiles(folderPath, inputDirectoryName, taskBasePath)
 	if err != nil {
 		return nil, err
 	}

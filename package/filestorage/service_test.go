@@ -17,6 +17,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const testZipFilename = "test.zip"
+
 func TestDecompressor_DecompressArchive(t *testing.T) {
 	d := NewDecompressor()
 
@@ -328,7 +330,7 @@ func TestFileStorageServiceValidateArchiveStructure(t *testing.T) {
 
 		service.SetValidator(mockValidator)
 
-		expectedArchivePath := "test.zip"
+		expectedArchivePath := testZipFilename
 		err := service.ValidateArchiveStructure(expectedArchivePath)
 		require.NoError(t, err)
 		assert.Equal(t, expectedArchivePath, capturedCtx.ArchivePath)
@@ -348,7 +350,7 @@ func TestFileStorageServiceValidateArchiveStructure(t *testing.T) {
 		validator.AddRule(&NonEmptyArchiveRule{})
 		// Also add a rule that requires specific entries; with empty base, it'll fail
 		validator.AddRule(&RequiredEntriesRule{
-			RequiredEntries: []string{"description.pdf", "input/", "output/"},
+			RequiredEntries: []string{descriptionFilename, "input/", "output/"},
 		})
 
 		service.SetValidator(validator)
@@ -507,12 +509,12 @@ func TestUploadDescriptionFile_ErrorAndSuccess(t *testing.T) {
 
 	t.Run("success -> uploads description.pdf", func(t *testing.T) {
 		base := t.TempDir()
-		require.NoError(t, os.WriteFile(filepath.Join(base, "description.pdf"), []byte("pdf"), 0644))
+		require.NoError(t, os.WriteFile(filepath.Join(base, descriptionFilename), []byte("pdf"), 0644))
 		uploaded, err := svc.uploadDescriptionFile(base, "task/99")
 		require.NoError(t, err)
 		require.NotNil(t, uploaded)
 		assert.Equal(t, "task/99/description.pdf", uploaded.Path)
-		assert.Equal(t, "description.pdf", uploaded.Filename)
+		assert.Equal(t, descriptionFilename, uploaded.Filename)
 		assert.Equal(t, "maxit", uploaded.Bucket)
 	})
 }
@@ -564,7 +566,7 @@ func TestUploadTask_EndToEnd_WithFakeDecompressor(t *testing.T) {
 
 	// Build a decompressed folder structure
 	base := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(base, "description.pdf"), []byte("pdf"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(base, descriptionFilename), []byte("pdf"), 0644))
 	require.NoError(t, os.MkdirAll(filepath.Join(base, "input"), 0755))
 	require.NoError(t, os.MkdirAll(filepath.Join(base, "output"), 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(base, "input", "1.txt"), []byte("in1"), 0644))
