@@ -28,13 +28,17 @@ func newAuthResponse(tokens *schemas.JWTTokens) AuthResponse {
 }
 
 // setRefreshTokenCookie sets the refresh token as an httpOnly cookie
-func setRefreshTokenCookie(w http.ResponseWriter, path, refreshToken string) {
+func setRefreshTokenCookie(w http.ResponseWriter, path, refreshToken string, secure *bool) {
+	secureFlag := false
+	if secure != nil {
+		secureFlag = *secure
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
 		Path:     path,
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   secureFlag,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   7 * 24 * 60 * 60, // 7 days
 	})
@@ -49,6 +53,7 @@ type AuthRoute interface {
 
 type AuthRouteImpl struct {
 	refreshTokenPath string
+	cookieSecure     *bool
 	userService      service.UserService
 	authService      service.AuthService
 	logger           *zap.SugaredLogger
@@ -88,7 +93,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken, ar.cookieSecure)
 
 	authResponse := newAuthResponse(tokens)
 
@@ -130,7 +135,7 @@ func (ar *AuthRouteImpl) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken, ar.cookieSecure)
 
 	authResponse := newAuthResponse(tokens)
 
@@ -173,7 +178,7 @@ func (ar *AuthRouteImpl) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken)
+	setRefreshTokenCookie(w, ar.refreshTokenPath, tokens.RefreshToken, ar.cookieSecure)
 
 	authResponse := newAuthResponse(tokens)
 
@@ -196,21 +201,26 @@ func (ar *AuthRouteImpl) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clear the refresh token cookie
+	secureFlag := false
+	if ar.cookieSecure != nil {
+		secureFlag = *ar.cookieSecure
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Path:     ar.refreshTokenPath,
 		Value:    "",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   secureFlag,
 	})
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Logged out successfully"))
 }
 
-func NewAuthRoute(userService service.UserService, authService service.AuthService, refreshTokenPath string) AuthRoute {
+func NewAuthRoute(userService service.UserService, authService service.AuthService, refreshTokenPath string, cookieSecure bool) AuthRoute {
 	route := &AuthRouteImpl{
 		refreshTokenPath: refreshTokenPath,
+		cookieSecure:     &cookieSecure,
 		userService:      userService,
 		authService:      authService,
 		logger:           utils.NewNamedLogger("auth"),

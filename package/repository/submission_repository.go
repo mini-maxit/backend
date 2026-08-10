@@ -159,6 +159,9 @@ func (us *submissionRepository) Get(db database.Database, submissionID int64) (*
 		Preload("File").
 		Preload("Contest").
 		Preload("Result.TestResults").
+		Preload("Result.TestResults.StdoutFile").
+		Preload("Result.TestResults.StderrFile").
+		Preload("Result.TestResults.DiffFile").
 		First(&submission).Error
 	if err != nil {
 		return nil, err

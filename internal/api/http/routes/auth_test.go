@@ -30,7 +30,7 @@ func TestLogin(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
 	server := httptest.NewServer(handler)
@@ -234,7 +234,7 @@ func TestRegister(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Register), db)
 	server := httptest.NewServer(handler)
@@ -394,7 +394,7 @@ func TestRefreshToken(t *testing.T) {
 
 	us := mock_service.NewMockUserService(ctrl)
 	as := mock_service.NewMockAuthService(ctrl)
-	route := routes.NewAuthRoute(us, as, "/auth/refresh")
+	route := routes.NewAuthRoute(us, as, "/auth/refresh", false)
 	db := &testutils.MockDatabase{}
 	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.RefreshToken), db)
 	server := httptest.NewServer(handler)
@@ -552,4 +552,51 @@ func TestRefreshToken(t *testing.T) {
 		assert.NotNil(t, refreshTokenCookie)
 		assert.Equal(t, "new_refresh_token", refreshTokenCookie.Value)
 	})
+}
+
+func TestRefreshTokenCookieSecureFlag(t *testing.T) {
+	testCases := []struct {
+		name          string
+		cookieSecure  bool
+		expectedValue bool
+	}{
+		{"Secure enabled", true, true},
+		{"Secure disabled", false, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			us := mock_service.NewMockUserService(ctrl)
+			as := mock_service.NewMockAuthService(ctrl)
+			route := routes.NewAuthRoute(us, as, "/auth/refresh", tc.cookieSecure)
+
+			tokens := &schemas.JWTTokens{AccessToken: "access", RefreshToken: "refresh"}
+			as.EXPECT().Login(gomock.Any(), gomock.Any()).Return(tokens, nil)
+
+			db := &testutils.MockDatabase{}
+			handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.Login), db)
+			server := httptest.NewServer(handler)
+			defer server.Close()
+
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(`{"email":"a@b.c","password":"password"}`))
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+			cookies := resp.Cookies()
+			var refreshTokenCookie *http.Cookie
+			for _, cookie := range cookies {
+				if cookie.Name == refreshTokenCookieName {
+					refreshTokenCookie = cookie
+					break
+				}
+			}
+			require.NotNil(t, refreshTokenCookie)
+			assert.Equal(t, tc.expectedValue, refreshTokenCookie.Secure, "cookie Secure flag")
+		})
+	}
 }

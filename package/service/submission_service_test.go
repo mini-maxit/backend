@@ -394,6 +394,54 @@ func TestGetAllSignedURLs(t *testing.T) {
 	}
 }
 
+func TestGetSignedTestResultURLs(t *testing.T) {
+	setup := setupSubmissionServiceTest(t)
+	defer setup.ctrl.Finish()
+
+	stdout := models.File{Path: "solution/1/1/1/stdout/1.out", Bucket: "maxit"}
+	stderr := models.File{Path: "solution/1/1/1/stderr/1.err", Bucket: "maxit"}
+	diff := models.File{Path: "solution/1/1/1/diff/1.diff", Bucket: "maxit"}
+
+	submission := &models.Submission{
+		ID:     1,
+		TaskID: 1,
+		UserID: 1,
+		Status: types.SubmissionStatusEvaluated,
+		File:   models.File{Path: "solution/1/1/1/solution.py"},
+		Result: &models.SubmissionResult{
+			ID: 1, SubmissionID: 1,
+			TestResults: []models.TestResult{
+				{
+					ID: 1, SubmissionResultID: 1, TestCaseID: 1,
+					StatusCode: types.TestResultStatusCodeOK,
+					StdoutFile: stdout,
+					StderrFile: stderr,
+					DiffFile:   diff,
+				},
+			},
+		},
+	}
+
+	setup.submissionRepository.EXPECT().Get(gomock.Any(), int64(1)).Return(submission, nil).Times(1)
+
+	result, err := setup.service.Get(nil, 1, &schemas.User{Role: "admin"})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.Result)
+	require.Len(t, result.Result.TestResults, 1)
+
+	tr := result.Result.TestResults[0]
+	for name, url := range map[string]string{
+		"stdout": tr.StdoutURL,
+		"stderr": tr.StderrURL,
+		"diff":   tr.DiffURL,
+	} {
+		assert.NotEmpty(t, url, "%s URL must be set", name)
+		assert.Contains(t, url, "expires=", "%s URL must be signed", name)
+		assert.Contains(t, url, "signature=", "%s URL must be signed", name)
+	}
+}
+
 func TestGet(t *testing.T) {
 	setup := setupSubmissionServiceTest(t)
 	defer setup.ctrl.Finish()

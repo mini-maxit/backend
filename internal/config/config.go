@@ -33,6 +33,8 @@ type APIConfig struct {
 	Port               uint16
 	RefreshTokenPath   string
 	AccessTokenMinutes uint16
+	// CookieSecure sets the Secure flag on the refresh-token cookie. Must be true in production (HTTPS).
+	CookieSecure bool
 }
 
 type CORSConfig struct {
@@ -65,6 +67,7 @@ const (
 	defaultCORSAllowedOrigins     = "http://localhost:3000,http://localhost:5173"
 	defaultAccessTokenMinutesStr  = "180"
 	defaultSignedURLTTLSecondsStr = "300" // 5 minutes
+	trueValue                     = "true"
 )
 
 // NewConfig creates new Config instance
@@ -81,9 +84,15 @@ const (
 //
 //   - DB_NAME - database name. Required
 //
-//   - API_PORT - application port. Default is 8080
+//   - APP_PORT - application port. Default is 8080
 //
-//   - FILE_STORAGE_HOST - file storage host. Required
+//   - FILE_STORAGE_HOST - file storage internal host. Required
+//
+//   - FILE_STORAGE_PORT - file storage internal port. Required
+//
+//   - FILE_STORAGE_PUBLIC_URL - public base URL for signed file downloads (e.g. https://host/files). Falls back to internal URL if unset (not reachable by browsers)
+//
+//   - COOKIE_SECURE - set to "true" to set the Secure flag on the refresh-token cookie. Required in production (HTTPS)
 //
 //   - QUEUE_NAME - queue name for sending tasks. Default is "worker_queue"
 //
@@ -154,6 +163,8 @@ func NewConfig() *Config {
 	}
 	accessTokenMinutes := uint16(accessTokenMinutesParsed)
 
+	cookieSecure := os.Getenv("COOKIE_SECURE") == trueValue
+
 	fileStorageHost := os.Getenv("FILE_STORAGE_HOST")
 	if fileStorageHost == "" {
 		log.Panic("FILE_STORAGE_HOST is not set")
@@ -207,14 +218,14 @@ func NewConfig() *Config {
 	}
 
 	dumpStr := os.Getenv("DUMP")
-	dump := dumpStr == "true"
+	dump := dumpStr == trueValue
 
 	corsAllowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
 	if corsAllowedOrigins == "" {
 		log.Warnf("CORS_ALLOWED_ORIGINS is not set. Using default value %s", defaultCORSAllowedOrigins)
 		corsAllowedOrigins = defaultCORSAllowedOrigins
 	}
-	corsAllowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == "true"
+	corsAllowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == trueValue
 
 	if corsAllowCredentials && corsAllowedOrigins == "*" {
 		log.Panicf(`CORS_ALLOWED_ORIGINS=* and CORS_ALLOW_CREDENTIALS=true cannot be set at the same time.
@@ -244,6 +255,7 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNot
 			Port:               appPort,
 			RefreshTokenPath:   refreshTokenPath,
 			AccessTokenMinutes: accessTokenMinutes,
+			CookieSecure:       cookieSecure,
 		},
 		Broker: BrokerConfig{
 			QueueName:         queueName,

@@ -141,7 +141,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	workerService := service.NewWorkerService(queueService, submissionRepository, db)
 
 	// Routes
-	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath)
+	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath, cfg.API.CookieSecure)
 	contestRoute := routes.NewContestRoute(contestService, submissionService)
 	contestManagementRoute := routes.NewContestsManagementRoute(contestService, submissionService)
 	groupRoute := routes.NewGroupRoute(groupService)
