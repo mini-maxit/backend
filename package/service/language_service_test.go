@@ -21,6 +21,8 @@ const (
 	testPythonExtension  = ".py"
 	testJSName           = "javascript"
 	testJSExtension      = ".js"
+	testCPPName          = "CPP"
+	testCPPExtension     = "cpp"
 )
 
 var trueValue = true
@@ -228,14 +230,15 @@ func TestLanguageServiceGetAll(t *testing.T) {
 		result, err := ls.GetAll(db)
 		require.NoError(t, err)
 		assert.Len(t, result, 2)
-		assert.Equal(t, int64(1), result[0].ID)
-		assert.Equal(t, testPythonName, result[0].Type)
-		assert.Equal(t, testPythonVersion39, result[0].Version)
-		assert.Equal(t, testPythonExtension, result[0].FileExtension)
-		assert.Equal(t, int64(2), result[1].ID)
-		assert.Equal(t, testJSName, result[1].Type)
-		assert.Equal(t, "18", result[1].Version)
-		assert.Equal(t, testJSExtension, result[1].FileExtension)
+		// Sorted by type asc: javascript before python.
+		assert.Equal(t, int64(2), result[0].ID)
+		assert.Equal(t, testJSName, result[0].Type)
+		assert.Equal(t, "18", result[0].Version)
+		assert.Equal(t, testJSExtension, result[0].FileExtension)
+		assert.Equal(t, int64(1), result[1].ID)
+		assert.Equal(t, testPythonName, result[1].Type)
+		assert.Equal(t, testPythonVersion39, result[1].Version)
+		assert.Equal(t, testPythonExtension, result[1].FileExtension)
 	})
 
 	t.Run("Success with no languages", func(t *testing.T) {
@@ -254,6 +257,34 @@ func TestLanguageServiceGetAll(t *testing.T) {
 		assert.Nil(t, result)
 		assert.Equal(t, assert.AnError, err)
 	})
+}
+
+func TestLanguageServiceGetAll_DeterministicOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lr := mock_repository.NewMockLanguageRepository(ctrl)
+	ls := service.NewLanguageService(lr)
+	db := &testutils.MockDatabase{}
+
+	// Repository returns unsorted rows; the service must order by type then version.
+	languages := []models.LanguageConfig{
+		{ID: 1, Type: testCPPName, Version: "20", FileExtension: testCPPExtension, IsDisabled: &trueValue},
+		{ID: 2, Type: testPythonName, Version: testPythonVersion310, FileExtension: testPythonExtension, IsDisabled: &falseValue},
+		{ID: 3, Type: testCPPName, Version: "11", FileExtension: testCPPExtension, IsDisabled: &falseValue},
+		{ID: 4, Type: testPythonName, Version: testPythonVersion310, FileExtension: testPythonExtension, IsDisabled: &falseValue},
+	}
+	lr.EXPECT().GetAll(db).Return(languages, nil).Times(1)
+
+	result, err := ls.GetAll(db)
+	require.NoError(t, err)
+	require.Len(t, result, 4)
+
+	// Sorted by type (asc), then version (asc).
+	assert.Equal(t, int64(3), result[0].ID, "CPP 11 first")
+	assert.Equal(t, int64(1), result[1].ID, "CPP 20 second")
+	assert.Equal(t, int64(2), result[2].ID, "python 3.10 third")
+	assert.Equal(t, int64(4), result[3].ID, "python 3.12 last")
 }
 
 func TestLanguageServiceGetAllEnabled(t *testing.T) {

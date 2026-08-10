@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sort"
+
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
@@ -89,6 +91,13 @@ func (l *languageService) GetAll(db database.Database) ([]schemas.LanguageConfig
 	for _, language := range languages {
 		result = append(result, *LanguageToSchema(&language))
 	}
+	// Deterministic ordering independent of enablement state: by type, then version.
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Type != result[j].Type {
+			return result[i].Type < result[j].Type
+		}
+		return result[i].Version < result[j].Version
+	})
 	return result, nil
 }
 
