@@ -624,6 +624,8 @@ definitions:
         type: string
       id:
         type: integer
+      isDisabled:
+        type: boolean
       language:
         type: string
       version:
@@ -3313,6 +3315,54 @@ paths:
       summary: Add users to a group
       tags:
       - group
+  /languages-management/languages:
+    get:
+      description: Get all language configurations including visibility state
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-array_LanguageConfig'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Get all languages
+      tags:
+      - languages-management
+  /languages-management/languages/{id}:
+    patch:
+      description: Toggle the enabled/disabled state of a language
+      parameters:
+      - description: Language ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Toggle language visibility
+      tags:
+      - languages-management
   /submissions:
     get:
       description: Get submissions with optional filters by userId, contestId, and/or
