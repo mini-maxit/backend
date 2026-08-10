@@ -333,3 +333,72 @@ func TestNewLanguageService(t *testing.T) {
 		assert.NotNil(t, ls)
 	})
 }
+
+func TestLanguageServiceToggleLanguageVisibility(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lr := mock_repository.NewMockLanguageRepository(ctrl)
+	ls := service.NewLanguageService(lr)
+	db := &testutils.MockDatabase{}
+
+	disabled := true
+	enabled := false
+
+	t.Run("Toggle disabled language to enabled", func(t *testing.T) {
+		languages := []models.LanguageConfig{
+			{ID: 1, Type: testPythonName, Version: testPythonVersion39, FileExtension: testPythonExtension, IsDisabled: &disabled},
+		}
+		lr.EXPECT().GetAll(db).Return(languages, nil).Times(1)
+		lr.EXPECT().MarkEnabled(db, int64(1)).Return(nil).Times(1)
+
+		err := ls.ToggleLanguageVisibility(db, 1)
+		require.NoError(t, err)
+	})
+
+	t.Run("Toggle enabled language to disabled", func(t *testing.T) {
+		languages := []models.LanguageConfig{
+			{ID: 2, Type: testJSName, Version: "18", FileExtension: testJSExtension, IsDisabled: &enabled},
+		}
+		lr.EXPECT().GetAll(db).Return(languages, nil).Times(1)
+		lr.EXPECT().MarkDisabled(db, int64(2)).Return(nil).Times(1)
+
+		err := ls.ToggleLanguageVisibility(db, 2)
+		require.NoError(t, err)
+	})
+
+	t.Run("Language not found", func(t *testing.T) {
+		lr.EXPECT().GetAll(db).Return([]models.LanguageConfig{}, nil).Times(1)
+
+		err := ls.ToggleLanguageVisibility(db, 99)
+		require.Error(t, err)
+	})
+
+	t.Run("GetAll error", func(t *testing.T) {
+		lr.EXPECT().GetAll(db).Return(nil, assert.AnError).Times(1)
+
+		err := ls.ToggleLanguageVisibility(db, 1)
+		require.Error(t, err)
+	})
+}
+
+func TestLanguageToSchema_IsDisabled(t *testing.T) {
+	disabled := true
+
+	t.Run("Disabled language mapped", func(t *testing.T) {
+		language := &models.LanguageConfig{
+			ID: 1, Type: testPythonName, Version: testPythonVersion39,
+			FileExtension: testPythonExtension, IsDisabled: &disabled,
+		}
+		result := service.LanguageToSchema(language)
+		assert.True(t, result.IsDisabled)
+	})
+
+	t.Run("Nil IsDisabled defaults to false", func(t *testing.T) {
+		language := &models.LanguageConfig{
+			ID: 2, Type: testJSName, Version: "18", FileExtension: testJSExtension,
+		}
+		result := service.LanguageToSchema(language)
+		assert.False(t, result.IsDisabled)
+	})
+}
