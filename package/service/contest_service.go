@@ -127,8 +127,8 @@ func (cs *contestService) Create(db database.Database, currentUser *schemas.User
 		StartAt:            contest.StartAt,
 	}
 
-	if contest.EndAt != nil {
-		model.EndAt = contest.EndAt
+	if contest.EndAt.Set {
+		model.EndAt = contest.EndAt.Value
 	}
 
 	contestID, err := cs.contestRepository.Create(db, model)

@@ -42,13 +42,13 @@ type ManagedContest struct {
 }
 
 type CreateContest struct {
-	Name               string     `json:"name" validate:"required,gte=3,lte=100"`
-	Description        string     `json:"description" validate:"required"`
-	StartAt            time.Time  `json:"startAt" validate:"required"`
-	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
-	IsVisible          bool       `json:"isVisible"`
+	Name               string       `json:"name" validate:"required,gte=3,lte=100"`
+	Description        string       `json:"description" validate:"required"`
+	StartAt            time.Time    `json:"startAt" validate:"required"`
+	EndAt              OptionalTime `json:"endAt"`
+	IsRegistrationOpen bool         `json:"isRegistrationOpen"`
+	IsSubmissionOpen   bool         `json:"isSubmissionOpen"`
+	IsVisible          bool         `json:"isVisible"`
 }
 
 type EditContest struct {
