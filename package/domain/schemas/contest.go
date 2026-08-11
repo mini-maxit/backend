@@ -52,13 +52,13 @@ type CreateContest struct {
 }
 
 type EditContest struct {
-	Name               *string    `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
-	Description        *string    `json:"description,omitempty"`
-	StartAt            *time.Time `json:"startAt,omitempty"`
-	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen *bool      `json:"isRegistrationOpen,omitempty"`
-	IsSubmissionOpen   *bool      `json:"isSubmissionOpen,omitempty"`
-	IsVisible          *bool      `json:"isVisible,omitempty"`
+	Name               *string      `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
+	Description        *string      `json:"description,omitempty"`
+	StartAt            OptionalTime `json:"startAt"`
+	EndAt              OptionalTime `json:"endAt"`
+	IsRegistrationOpen *bool        `json:"isRegistrationOpen,omitempty"`
+	IsSubmissionOpen   *bool        `json:"isSubmissionOpen,omitempty"`
+	IsVisible          *bool        `json:"isVisible,omitempty"`
 }
 
 type ContestWithStats struct {

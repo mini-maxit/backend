@@ -339,7 +339,7 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 	var endAt *time.Time
 
 	// Fetch current contest times if needed
-	needCurrent := (editInfo.StartAt == nil || editInfo.EndAt == nil)
+	needCurrent := (!editInfo.StartAt.Set || !editInfo.EndAt.Set)
 	var contest *models.Contest
 	if needCurrent {
 		contest, err = cs.contestRepository.Get(db, contestID)
@@ -349,13 +349,15 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 	}
 
 	// Determine startAt and endAt values for validation
-	if editInfo.StartAt != nil {
-		startAt = *editInfo.StartAt
+	if editInfo.StartAt.Set {
+		if editInfo.StartAt.Value != nil {
+			startAt = *editInfo.StartAt.Value
+		}
 	} else if contest != nil {
 		startAt = contest.StartAt
 	}
-	if editInfo.EndAt != nil {
-		endAt = editInfo.EndAt
+	if editInfo.EndAt.Set {
+		endAt = editInfo.EndAt.Value
 	} else if contest != nil {
 		endAt = contest.EndAt
 	}
@@ -370,11 +372,11 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 		}
 	}
 
-	if editInfo.StartAt != nil {
-		editMap["start_at"] = *editInfo.StartAt
+	if editInfo.StartAt.Set {
+		editMap["start_at"] = editInfo.StartAt.Value
 	}
-	if editInfo.EndAt != nil {
-		editMap["end_at"] = editInfo.EndAt
+	if editInfo.EndAt.Set {
+		editMap["end_at"] = editInfo.EndAt.Value
 	}
 	if editInfo.IsRegistrationOpen != nil {
 		editMap["is_registration_open"] = *editInfo.IsRegistrationOpen
@@ -465,12 +467,11 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	if editInfo.Description != nil {
 		model.Description = *editInfo.Description
 	}
-	if editInfo.StartAt != nil {
-		model.StartAt = *editInfo.StartAt
+	if editInfo.StartAt.Set && editInfo.StartAt.Value != nil {
+		model.StartAt = *editInfo.StartAt.Value
 	}
-	// TODO: handle when setting to nil is intended
-	if editInfo.EndAt != nil {
-		model.EndAt = editInfo.EndAt
+	if editInfo.EndAt.Set {
+		model.EndAt = editInfo.EndAt.Value
 	}
 	if editInfo.IsRegistrationOpen != nil {
 		model.IsRegistrationOpen = *editInfo.IsRegistrationOpen
