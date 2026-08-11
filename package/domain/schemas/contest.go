@@ -85,9 +85,9 @@ type UserContestsWithStats struct {
 }
 
 type AddTaskToContest struct {
-	TaskID  int64      `json:"taskId" validate:"required"`
-	StartAt *time.Time `json:"startAt,omitempty"`
-	EndAt   *time.Time `json:"endAt,omitempty"`
+	TaskID  int64        `json:"taskId" validate:"required"`
+	StartAt OptionalTime `json:"startAt"`
+	EndAt   OptionalTime `json:"endAt"`
 }
 
 type RegistrationRequest struct {

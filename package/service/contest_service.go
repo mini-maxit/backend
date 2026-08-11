@@ -708,12 +708,12 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 	}
 
 	startAt := time.Now()
-	if request.StartAt != nil {
-		startAt = *request.StartAt
+	if request.StartAt.Set && request.StartAt.Value != nil {
+		startAt = *request.StartAt.Value
 	}
 	endAt := contest.EndAt
-	if request.EndAt != nil {
-		endAt = request.EndAt
+	if request.EndAt.Set {
+		endAt = request.EndAt.Value
 	}
 	if endAt != nil && startAt.After(*endAt) {
 		return errors.ErrEndBeforeStart
