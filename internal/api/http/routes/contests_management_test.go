@@ -14,11 +14,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/internal/api/http/routes"
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -289,6 +291,33 @@ func TestEditContest(t *testing.T) {
 		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(contest, nil)
 
 		req, err := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			t.Fatalf("Failed to create request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("Failed to make request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("Null endAt decodes as explicit clear", func(t *testing.T) {
+		// Raw JSON with explicit null for endAt
+		rawBody := `{"name":"Updated Contest","endAt":null}`
+
+		cs.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(db database.Database, u *schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error) {
+				require.NotNil(t, editInfo.EndAt, "EndAt must be present (Set=true)")
+				assert.True(t, editInfo.EndAt.Set, "EndAt.Set must be true for explicit null")
+				assert.Nil(t, editInfo.EndAt.Value, "EndAt.Value must be nil for explicit null")
+				assert.False(t, editInfo.StartAt.Set, "StartAt absent")
+				return &schemas.CreatedContest{}, nil
+			})
+
+		req, err := http.NewRequest(http.MethodPut, server.URL+"/1", bytes.NewBufferString(rawBody))
 		if err != nil {
 			t.Fatalf("Failed to create request: %v", err)
 		}

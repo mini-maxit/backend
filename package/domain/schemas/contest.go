@@ -42,23 +42,23 @@ type ManagedContest struct {
 }
 
 type CreateContest struct {
-	Name               string     `json:"name" validate:"required,gte=3,lte=100"`
-	Description        string     `json:"description" validate:"required"`
-	StartAt            time.Time  `json:"startAt" validate:"required"`
-	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen bool       `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool       `json:"isSubmissionOpen"`
-	IsVisible          bool       `json:"isVisible"`
+	Name               string       `json:"name" validate:"required,gte=3,lte=100"`
+	Description        string       `json:"description" validate:"required"`
+	StartAt            time.Time    `json:"startAt" validate:"required"`
+	EndAt              OptionalTime `json:"endAt"`
+	IsRegistrationOpen bool         `json:"isRegistrationOpen"`
+	IsSubmissionOpen   bool         `json:"isSubmissionOpen"`
+	IsVisible          bool         `json:"isVisible"`
 }
 
 type EditContest struct {
-	Name               *string    `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
-	Description        *string    `json:"description,omitempty"`
-	StartAt            *time.Time `json:"startAt,omitempty"`
-	EndAt              *time.Time `json:"endAt,omitempty"`
-	IsRegistrationOpen *bool      `json:"isRegistrationOpen,omitempty"`
-	IsSubmissionOpen   *bool      `json:"isSubmissionOpen,omitempty"`
-	IsVisible          *bool      `json:"isVisible,omitempty"`
+	Name               *string      `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
+	Description        *string      `json:"description,omitempty"`
+	StartAt            OptionalTime `json:"startAt"`
+	EndAt              OptionalTime `json:"endAt"`
+	IsRegistrationOpen *bool        `json:"isRegistrationOpen,omitempty"`
+	IsSubmissionOpen   *bool        `json:"isSubmissionOpen,omitempty"`
+	IsVisible          *bool        `json:"isVisible,omitempty"`
 }
 
 type ContestWithStats struct {
@@ -85,9 +85,9 @@ type UserContestsWithStats struct {
 }
 
 type AddTaskToContest struct {
-	TaskID  int64      `json:"taskId" validate:"required"`
-	StartAt *time.Time `json:"startAt,omitempty"`
-	EndAt   *time.Time `json:"endAt,omitempty"`
+	TaskID  int64        `json:"taskId" validate:"required"`
+	StartAt OptionalTime `json:"startAt"`
+	EndAt   OptionalTime `json:"endAt"`
 }
 
 type RegistrationRequest struct {
