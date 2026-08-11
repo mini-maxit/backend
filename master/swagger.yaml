@@ -303,9 +303,9 @@ definitions:
   AddTaskToContest:
     properties:
       endAt:
-        type: string
+        $ref: '#/definitions/OptionalTime'
       startAt:
-        type: string
+        $ref: '#/definitions/OptionalTime'
       taskId:
         type: integer
     required:
@@ -514,7 +514,7 @@ definitions:
       description:
         type: string
       endAt:
-        type: string
+        $ref: '#/definitions/OptionalTime'
       isRegistrationOpen:
         type: boolean
       isSubmissionOpen:
@@ -579,7 +579,7 @@ definitions:
       description:
         type: string
       endAt:
-        type: string
+        $ref: '#/definitions/OptionalTime'
       isRegistrationOpen:
         type: boolean
       isSubmissionOpen:
@@ -591,7 +591,7 @@ definitions:
         minLength: 3
         type: string
       startAt:
-        type: string
+        $ref: '#/definitions/OptionalTime'
     type: object
   EditGroup:
     properties:
@@ -679,6 +679,13 @@ definitions:
         items:
           $ref: '#/definitions/ContestWithTasks'
         type: array
+    type: object
+  OptionalTime:
+    properties:
+      set:
+        type: boolean
+      value:
+        type: string
     type: object
   PaginatedResult-AvailableContest:
     properties:
