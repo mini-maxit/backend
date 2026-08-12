@@ -111,6 +111,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-PaginatedResult-Task:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-Task'
+      ok:
+        type: boolean
+    type: object
   APIResponse-PaginatedResult-User:
     properties:
       data:
@@ -118,17 +125,17 @@ definitions:
       ok:
         type: boolean
     type: object
+  APIResponse-PaginatedResult-array_ContestTask:
+    properties:
+      data:
+        $ref: '#/definitions/PaginatedResult-array_ContestTask'
+      ok:
+        type: boolean
+    type: object
   APIResponse-PaginatedResult-array_CreatedContest:
     properties:
       data:
         $ref: '#/definitions/PaginatedResult-array_CreatedContest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-array_Task:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-array_Task'
       ok:
         type: boolean
     type: object
@@ -155,19 +162,10 @@ definitions:
       ok:
         type: boolean
     type: object
-  APIResponse-Task:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/Task'
-        type: array
-      ok:
-        type: boolean
-    type: object
   APIResponse-Task]:
     properties:
       data:
-        $ref: '#/definitions/PaginatedResult-array_Task'
+        $ref: '#/definitions/PaginatedResult-Task'
       ok:
         type: boolean
     type: object
@@ -712,6 +710,15 @@ definitions:
       pagination:
         $ref: '#/definitions/PaginationMetadata'
     type: object
+  PaginatedResult-Task:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/Task'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
   PaginatedResult-User:
     properties:
       items:
@@ -721,20 +728,20 @@ definitions:
       pagination:
         $ref: '#/definitions/PaginationMetadata'
     type: object
+  PaginatedResult-array_ContestTask:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ContestTask'
+        type: array
+      pagination:
+        $ref: '#/definitions/PaginationMetadata'
+    type: object
   PaginatedResult-array_CreatedContest:
     properties:
       items:
         items:
           $ref: '#/definitions/CreatedContest'
-        type: array
-      pagination:
-        $ref: '#/definitions/PaginationMetadata'
-    type: object
-  PaginatedResult-array_Task:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/Task'
         type: array
       pagination:
         $ref: '#/definitions/PaginationMetadata'
@@ -946,6 +953,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creatorName:
+        type: string
       id:
         type: integer
       isVisible:
@@ -1018,6 +1027,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creatorName:
+        type: string
       id:
         type: integer
       isVisible:
@@ -1088,6 +1099,13 @@ definitions:
         - manage
     required:
     - permission
+    type: object
+  UpdateTaskInContest:
+    properties:
+      endAt:
+        $ref: '#/definitions/OptionalTime'
+      startAt:
+        $ref: '#/definitions/OptionalTime'
     type: object
   User:
     properties:
@@ -2431,20 +2449,36 @@ paths:
       tags:
       - contests-management
     get:
-      description: Get all tasks associated with a specific contest
+      description: Get all tasks associated with a specific contest with pagination
       parameters:
       - description: Contest ID
         in: path
         name: id
         required: true
         type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      - description: Search tasks by title
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-ContestTask'
+            $ref: '#/definitions/APIResponse-PaginatedResult-array_ContestTask'
         "400":
           description: Bad Request
           schema:
@@ -2512,6 +2546,59 @@ paths:
           schema:
             $ref: '#/definitions/APIError'
       summary: Add a task to a contest
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/tasks/{task_id}:
+    put:
+      consumes:
+      - application/json
+      description: Update the start and end time of a task in a contest (only accessible
+        by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      - description: Update Task Schedule
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateTaskInContest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/APIResponse-MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/APIError'
+      summary: Update a task's schedule in a contest
       tags:
       - contests-management
   /contests-management/contests/{id}/tasks/{taskId}/user-stats:
@@ -2612,20 +2699,36 @@ paths:
   /contests-management/contests/{id}/tasks/assignable-tasks:
     get:
       description: Get all tasks that are NOT yet assigned to the specified contest
-        (admin/teacher only)
+        with pagination (admin/teacher only)
       parameters:
       - description: Contest ID
         in: path
         name: id
         required: true
         type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      - description: Search tasks by title
+        in: query
+        name: search
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Task'
         "400":
           description: Bad Request
           schema:
@@ -3871,7 +3974,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_Task'
+            $ref: '#/definitions/APIResponse-PaginatedResult-Task'
         "403":
           description: Forbidden
           schema:
