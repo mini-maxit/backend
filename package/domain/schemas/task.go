@@ -8,12 +8,13 @@ type EditTask struct {
 }
 
 type Task struct {
-	ID        int64     `json:"id"`
-	Title     string    `json:"title"`
-	CreatedBy int64     `json:"createdBy"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	IsVisible bool      `json:"isVisible"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	CreatedBy   int64     `json:"createdBy"`
+	CreatorName string    `json:"creatorName"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	IsVisible   bool      `json:"isVisible"`
 }
 
 // Struct to embed basic task info

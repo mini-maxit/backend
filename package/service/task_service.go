@@ -477,12 +477,13 @@ func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schema
 
 func TaskToSchema(model *models.Task) *schemas.Task {
 	return &schemas.Task{
-		ID:        model.ID,
-		Title:     model.Title,
-		CreatedBy: model.CreatedBy,
-		CreatedAt: model.CreatedAt,
-		UpdatedAt: model.UpdatedAt,
-		IsVisible: model.IsVisible,
+		ID:          model.ID,
+		Title:       model.Title,
+		CreatedBy:   model.CreatedBy,
+		CreatorName: model.Author.Name,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
+		IsVisible:   model.IsVisible,
 	}
 }
 
@@ -566,11 +567,12 @@ func (ts *taskService) enrichTaskWithAttempts(
 
 	return &schemas.TaskWithAttempts{
 		Task: schemas.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-			CreatedAt: task.CreatedAt,
-			UpdatedAt: task.UpdatedAt,
+			ID:          task.ID,
+			Title:       task.Title,
+			CreatedBy:   task.CreatedBy,
+			CreatorName: task.Author.Name,
+			CreatedAt:   task.CreatedAt,
+			UpdatedAt:   task.UpdatedAt,
 		},
 		AttemptsSummary: schemas.AttemptsSummary{
 			BestScore:    bestScore,
