@@ -90,6 +90,11 @@ type AddTaskToContest struct {
 	EndAt   OptionalTime `json:"endAt"`
 }
 
+type UpdateTaskInContest struct {
+	StartAt OptionalTime `json:"startAt"`
+	EndAt   OptionalTime `json:"endAt"`
+}
+
 type RegistrationRequest struct {
 	ID        int64                           `json:"id"`
 	ContestID int64                           `json:"contestId"`

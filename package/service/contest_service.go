@@ -35,17 +35,19 @@ type ContestService interface {
 	// RegisterForContest creates a pending registration for a contest
 	RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all contest task relations (with timing/submission flags) for a contest (for authorized users)
-	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.ContestTask, error)
+	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.ContestTask], error)
 	// GetVisibleTasksForContest retrieves visible contest tasks filtered by status (for participants and users with access_policy)
 	GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (for authorized users)
-	GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Task, error)
+	GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.Task], error)
 	// GetUserContests retrieves all contests a user is participating in
 	GetUserContests(db database.Database, userID int64) (*schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
 	AddTaskToContest(db database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
+	// UpdateTaskInContest updates a task's schedule in a contest
+	UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error
 	// GetRegistrationRequests retrieves pending registration requests for a contest
@@ -484,22 +486,26 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 }
 
-func (cs *contestService) GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.ContestTask, error) {
+func (cs *contestService) GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.ContestTask], error) {
 	contest, err := cs.contestRepository.Get(db, contestID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.ErrNotFound
+			return schemas.PaginatedResult[[]schemas.ContestTask]{}, errors.ErrNotFound
 		}
-		return nil, err
+		return schemas.PaginatedResult[[]schemas.ContestTask]{}, err
 	}
 
 	if !cs.isContestVisibleToUser(db, contest, currentUser) {
-		return nil, errors.ErrForbidden
+		return schemas.PaginatedResult[[]schemas.ContestTask]{}, errors.ErrForbidden
 	}
 
-	relations, err := cs.contestRepository.GetContestTasksWithSettings(db, contestID)
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = "start_at:asc"
+	}
+
+	relations, totalCount, err := cs.contestRepository.GetContestTasksWithSettings(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search)
 	if err != nil {
-		return nil, err
+		return schemas.PaginatedResult[[]schemas.ContestTask]{}, err
 	}
 
 	result := make([]schemas.ContestTask, len(relations))
@@ -512,7 +518,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 			IsSubmissionOpen: rel.IsSubmissionOpen,
 		}
 	}
-	return result, nil
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
 func (cs *contestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
@@ -617,28 +623,73 @@ func (cs *contestService) GetTaskProgressForContest(db database.Database, curren
 	return result, nil
 }
 
-func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Task, error) {
+func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.Task], error) {
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
-		return nil, err
+		return schemas.PaginatedResult[[]schemas.Task]{}, err
 	}
 
-	tasks, err := cs.contestRepository.GetAssignableTasks(db, contestID)
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = "title:asc"
+	}
+
+	tasks, totalCount, err := cs.contestRepository.GetAssignableTasks(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search)
 	if err != nil {
-		return nil, err
+		return schemas.PaginatedResult[[]schemas.Task]{}, err
 	}
 
 	result := make([]schemas.Task, len(tasks))
 	for i, task := range tasks {
 		result[i] = schemas.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-			CreatedAt: task.CreatedAt,
-			UpdatedAt: task.UpdatedAt,
+			ID:          task.ID,
+			Title:       task.Title,
+			CreatedBy:   task.CreatedBy,
+			CreatorName: task.Author.Name,
+			CreatedAt:   task.CreatedAt,
+			UpdatedAt:   task.UpdatedAt,
+			IsVisible:   task.IsVisible,
 		}
 	}
-	return result, nil
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func (cs *contestService) UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error {
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+	contest, err := cs.contestRepository.Get(db, contestID)
+	if err != nil {
+		return err
+	}
+
+	isTask, err := cs.contestRepository.IsTaskInContest(db, contestID, taskID)
+	if err != nil {
+		return err
+	}
+	if !isTask {
+		return errors.ErrNotFound
+	}
+
+	startAt := time.Now()
+	if request.StartAt.Set && request.StartAt.Value != nil {
+		startAt = *request.StartAt.Value
+	}
+	endAt := contest.EndAt
+	if request.EndAt.Set {
+		endAt = request.EndAt.Value
+	}
+	if endAt != nil && startAt.After(*endAt) {
+		return errors.ErrEndBeforeStart
+	}
+
+	taskContest := models.ContestTask{
+		ContestID: contestID,
+		TaskID:    taskID,
+		StartAt:   startAt,
+		EndAt:     endAt,
+	}
+	return cs.contestRepository.UpdateTaskInContest(db, taskContest)
 }
 
 func (cs *contestService) GetUserContests(db database.Database, userID int64) (*schemas.UserContestsWithStats, error) {

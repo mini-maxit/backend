@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -54,18 +55,22 @@ type ContestRepository interface {
 	IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
 	GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error)
-	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task
-	GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
+	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task (paginated)
+	GetContestTasksWithSettings(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.ContestTask, int64, error)
 	// GetVisibleContestTasksWithSettings retrieves visible contest-task relations with timing flags and associated task
 	GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
-	// GetAssignableTasks retrieves all tasks NOT assigned to a contest
-	GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error)
+	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (paginated)
+	GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
 	AddTaskToContest(db database.Database, taskContest models.ContestTask) error
+	// UpdateTaskInContest updates a task's schedule in a contest
+	UpdateTaskInContest(db database.Database, taskContest models.ContestTask) error
+	// IsTaskInContest checks if a task is assigned to a contest
+	IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error)
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
 	// GetRegistrationRequests retrieves 'status' registration requests for a contest
@@ -634,18 +639,65 @@ func (cr *contestRepository) GetUpcomingContestsWithStats(db database.Database, 
 }
 
 // GetContestTasksWithSettings retrieves contest-task relations (with timing flags) and preloads the associated Task
-func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.ContestTask, int64, error) {
 	tx := db.GetInstance()
 	var relations []models.ContestTask
-	err := tx.Unscoped().Model(&models.ContestTask{}).
-		Where("contest_id = ?", contestID).
+	var totalCount int64
+
+	taskTable := database.ResolveTableName(tx, &models.Task{})
+	contestTaskTable := database.ResolveTableName(tx, &models.ContestTask{})
+
+	base := tx.Unscoped().Model(&models.ContestTask{}).
+		Joins(fmt.Sprintf("JOIN %s ON %s.id = %s.task_id", taskTable, taskTable, contestTaskTable)).
+		Where(fmt.Sprintf("%s.contest_id = ?", contestTaskTable), contestID)
+
+	if search != "" {
+		base = base.Where(fmt.Sprintf("%s.title ILIKE ?", taskTable), "%"+search+"%")
+	}
+
+	if err := base.Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query := base
+	if sort != "" {
+		query = query.Order(qualifyContestTaskSort(sort, contestTaskTable, taskTable))
+	}
+
+	err := query.
+		Limit(limit).
+		Offset(offset).
 		Preload("Task").
 		Preload("Task.Author").
 		Find(&relations).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return relations, nil
+	return relations, totalCount, nil
+}
+
+// qualifyContestTaskSort qualifies sort fields with their table prefix for a joined contest_tasks/tasks query
+func qualifyContestTaskSort(sortBy, contestTaskTable, taskTable string) string {
+	fieldMap := map[string]string{
+		"id":       contestTaskTable + ".task_id",
+		"task_id":  contestTaskTable + ".task_id",
+		"start_at": contestTaskTable + ".start_at",
+		"end_at":   contestTaskTable + ".end_at",
+		"title":    taskTable + ".title",
+	}
+	parts := strings.Split(sortBy, ":")
+	if len(parts) != 2 {
+		return sortBy
+	}
+	field, ok := fieldMap[parts[0]]
+	if !ok {
+		return sortBy
+	}
+	dir := parts[1]
+	if dir != "asc" && dir != "desc" {
+		dir = "asc"
+	}
+	return field + " " + dir
 }
 
 // GetVisibleContestTasksWithSettings retrieves visible contest-task relations (with timing flags) and preloads the associated Task
@@ -689,20 +741,35 @@ func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, c
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64) ([]models.Task, error) {
+func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
 	tx := db.GetInstance()
 	var tasks []models.Task
-	err := tx.Model(&models.Task{}).
+	var totalCount int64
+
+	base := tx.Model(&models.Task{}).
 		Where("id NOT IN (?)",
 			tx.Table(database.ResolveTableName(tx, &models.ContestTask{})).
 				Select("task_id").
-				Where("contest_id = ?", contestID),
-		).
-		Find(&tasks).Error
-	if err != nil {
-		return nil, err
+				Where("contest_id = ?", contestID))
+
+	if search != "" {
+		base = base.Where("title ILIKE ?", "%"+search+"%")
 	}
-	return tasks, nil
+
+	if err := base.Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query, err := utils.ApplyPaginationAndSort(base, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = query.Preload("Author").Find(&tasks).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return tasks, totalCount, nil
 }
 
 func (cr *contestRepository) GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error) {
@@ -838,6 +905,29 @@ func (cr *contestRepository) RemoveTaskFromContest(db database.Database, contest
 	tx := db.GetInstance()
 	err := tx.Where("contest_id = ? AND task_id = ?", contestID, taskID).Delete(&models.ContestTask{}).Error
 	return err
+}
+
+func (cr *contestRepository) UpdateTaskInContest(db database.Database, taskContest models.ContestTask) error {
+	tx := db.GetInstance()
+	err := tx.Model(&models.ContestTask{}).
+		Where("contest_id = ? AND task_id = ?", taskContest.ContestID, taskContest.TaskID).
+		Updates(map[string]any{
+			"start_at": taskContest.StartAt,
+			"end_at":   taskContest.EndAt,
+		}).Error
+	return err
+}
+
+func (cr *contestRepository) IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error) {
+	tx := db.GetInstance()
+	var count int64
+	err := tx.Model(&models.ContestTask{}).
+		Where("contest_id = ? AND task_id = ?", contestID, taskID).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (cr *contestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {

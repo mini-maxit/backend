@@ -25,6 +25,7 @@ type ContestsManagementRoute interface {
 	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
 	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
+	UpdateTaskInContest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 	GetManageableContests(w http.ResponseWriter, r *http.Request)
@@ -187,16 +188,19 @@ func (cr *contestsManagementRouteImpl) DeleteContest(w http.ResponseWriter, r *h
 //
 //	@Tags			contests-management
 //	@Summary		Get available tasks for a contest
-//	@Description	Get all tasks that are NOT yet assigned to the specified contest (admin/teacher only)
-//
+//	@Description	Get all tasks that are NOT yet assigned to the specified contest with pagination (admin/teacher only)
 //	@Produce		json
-//	@Param			id	path		int	true	"Contest ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		404	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Task]
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Param			search	query		string	false	"Search tasks by title"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Task]]
 //	@Router			/contests-management/contests/{id}/tasks/assignable-tasks [get]
 func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -217,8 +221,11 @@ func (cr *contestsManagementRouteImpl) GetAssignableTasks(w http.ResponseWriter,
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+	search, _ := queryParams["search"].(string)
 
-	tasks, err := cr.contestService.GetAssignableTasks(db, currentUser, contestID)
+	tasks, err := cr.contestService.GetAssignableTasks(db, currentUser, contestID, paginationParams, search)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -336,6 +343,61 @@ func (cr *contestsManagementRouteImpl) RemoveTaskFromContest(w http.ResponseWrit
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Tasks removed from contest successfully"))
+}
+
+// UpdateTaskInContest godoc
+//
+//	@Tags			contests-management
+//	@Summary		Update a task's schedule in a contest
+//	@Description	Update the start and end time of a task in a contest (only accessible by contest collaborators with edit permission)
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int					true	"Contest ID"
+//	@Param			task_id	path		int					true	"Task ID"
+//	@Param			body	body		schemas.UpdateTaskInContest	true	"Update Task Schedule"
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/tasks/{task_id} [put]
+func (cr *contestsManagementRouteImpl) UpdateTaskInContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestStr := httputils.GetPathValue(r, "id")
+	contestID, err := strconv.ParseInt(contestStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	taskStr := httputils.GetPathValue(r, "task_id")
+	taskID, err := strconv.ParseInt(taskStr, 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid task ID")
+		return
+	}
+
+	var request schemas.UpdateTaskInContest
+	if err := httputils.ShouldBindJSON(r.Body, &request); err != nil {
+		httputils.HandleValidationError(w, err)
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	err = cr.contestService.UpdateTaskInContest(db, currentUser, contestID, taskID, &request)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task schedule updated successfully"))
 }
 
 // GetRegistrationRequests godoc
@@ -478,16 +540,20 @@ func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.Response
 //
 //	@Tags			contests-management
 //	@Summary		Get tasks for a contest
-//	@Description	Get all tasks associated with a specific contest
+//	@Description	Get all tasks associated with a specific contest with pagination
 //
 //	@Produce		json
-//	@Param			id	path		int	true	"Contest ID"
+//	@Param			id		path		int		true	"Contest ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Param			search	query		string	false	"Search tasks by title"
 //	@Failure		400	{object}	httputils.APIError
 //	@Failure		403	{object}	httputils.APIError
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.ContestTask]
+//	@Success		200	{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ContestTask]]
 //	@Router			/contests-management/contests/{id}/tasks [get]
 func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -508,8 +574,11 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+	search, _ := queryParams["search"].(string)
 
-	tasks, err := cr.contestService.GetTasksForContest(db, currentUser, contestID)
+	tasks, err := cr.contestService.GetTasksForContest(db, currentUser, contestID, paginationParams, search)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -1340,6 +1409,7 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 	})
 
 	mux.HandleFunc("/contests/{id}/tasks/assignable-tasks", route.GetAssignableTasks)
+	mux.HandleFunc("/contests/{id}/tasks/{task_id}", route.UpdateTaskInContest)
 
 	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
