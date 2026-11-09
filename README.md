@@ -42,7 +42,7 @@ If you set `DUMP=true` in the .env file, and start application using provided de
 In order to generate swagger documentation you need to have installed `swag` tool. You can install it using:
 
 ```bash
-go install github.com/swaggo/swag/cmd/swag@latest
+go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc6
 ```
 
 Next you can generate swagger documentation using:

@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Swagger tools
         run: |
-          go install github.com/mini-maxit/swag/cmd/swag@latest
+          go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc6
 
       - name: Generate Swagger docs
         run: |
