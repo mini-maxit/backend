@@ -37,7 +37,7 @@ services:
       - CORS_ALLOW_CREDENTIALS=true
       - FILE_STORAGE_PUBLIC_URL=http://localhost/files
   db:
-    image: postgres:17
+    image: postgres:18
     ports:
       - "5432:5432"
     environment:
