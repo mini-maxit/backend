@@ -1,293 +1,328 @@
 basePath: /api/v1
 definitions:
-  APIError:
+  httputils.APIError:
     properties:
       data:
-        $ref: '#/definitions/errorStruct'
+        $ref: '#/definitions/httputils.errorStruct'
       ok:
         type: boolean
     type: object
-  APIResponse-AuthResponse:
-    properties:
-      data:
-        $ref: '#/definitions/AuthResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-Collaborator:
+  httputils.APIResponse-array_schemas_Collaborator:
     properties:
       data:
         items:
-          $ref: '#/definitions/Collaborator'
+          $ref: '#/definitions/schemas.Collaborator'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-ContestDetailed:
-    properties:
-      data:
-        $ref: '#/definitions/ContestDetailed'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-ContestResults:
-    properties:
-      data:
-        $ref: '#/definitions/ContestResults'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-ContestTask:
+  httputils.APIResponse-array_schemas_ContestTask:
     properties:
       data:
         items:
-          $ref: '#/definitions/ContestTask'
+          $ref: '#/definitions/schemas.ContestTask'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-ContestTaskStats:
+  httputils.APIResponse-array_schemas_ContestTaskStats:
     properties:
       data:
         items:
-          $ref: '#/definitions/ContestTaskStats'
+          $ref: '#/definitions/schemas.ContestTaskStats'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-CreatedContest:
-    properties:
-      data:
-        $ref: '#/definitions/CreatedContest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-Group:
-    properties:
-      data:
-        $ref: '#/definitions/Group'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-IDResponse:
-    properties:
-      data:
-        $ref: '#/definitions/IDResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-MessageResponse:
-    properties:
-      data:
-        $ref: '#/definitions/MessageResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-MyTasksResponse:
-    properties:
-      data:
-        $ref: '#/definitions/MyTasksResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-AvailableContest:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-AvailableContest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-ManagedContest:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-ManagedContest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-Submission:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-Submission'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-Task:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-Task'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-User:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-User'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-array_ContestTask:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-array_ContestTask'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-PaginatedResult-array_CreatedContest:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-array_CreatedContest'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-QueueStatus:
-    properties:
-      data:
-        $ref: '#/definitions/QueueStatus'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-RegistrationRequest:
+  httputils.APIResponse-array_schemas_ContestWithStats:
     properties:
       data:
         items:
-          $ref: '#/definitions/RegistrationRequest'
+          $ref: '#/definitions/schemas.ContestWithStats'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-SubmissionDetailed:
-    properties:
-      data:
-        $ref: '#/definitions/SubmissionDetailed'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-Task]:
-    properties:
-      data:
-        $ref: '#/definitions/PaginatedResult-Task'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-TaskCreateResponse:
-    properties:
-      data:
-        $ref: '#/definitions/TaskCreateResponse'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-TaskDetailed:
-    properties:
-      data:
-        $ref: '#/definitions/TaskDetailed'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-TaskUserStats:
+  httputils.APIResponse-array_schemas_Group:
     properties:
       data:
         items:
-          $ref: '#/definitions/TaskUserStats'
+          $ref: '#/definitions/schemas.Group'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-TaskWithContestStats:
+  httputils.APIResponse-array_schemas_LanguageConfig:
     properties:
       data:
         items:
-          $ref: '#/definitions/TaskWithContestStats'
+          $ref: '#/definitions/schemas.LanguageConfig'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-TestCase:
+  httputils.APIResponse-array_schemas_PastContestWithStats:
     properties:
       data:
         items:
-          $ref: '#/definitions/TestCase'
+          $ref: '#/definitions/schemas.PastContestWithStats'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-User:
-    properties:
-      data:
-        $ref: '#/definitions/User'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-UserContestStats:
+  httputils.APIResponse-array_schemas_RegistrationRequest:
     properties:
       data:
         items:
-          $ref: '#/definitions/UserContestStats'
+          $ref: '#/definitions/schemas.RegistrationRequest'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-UserContestsWithStats:
-    properties:
-      data:
-        $ref: '#/definitions/UserContestsWithStats'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-WorkersStatus:
-    properties:
-      data:
-        $ref: '#/definitions/WorkersStatus'
-      ok:
-        type: boolean
-    type: object
-  APIResponse-array_ContestWithStats:
+  httputils.APIResponse-array_schemas_TaskUserStats:
     properties:
       data:
         items:
-          $ref: '#/definitions/ContestWithStats'
+          $ref: '#/definitions/schemas.TaskUserStats'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-array_LanguageConfig:
+  httputils.APIResponse-array_schemas_TaskWithContestStats:
     properties:
       data:
         items:
-          $ref: '#/definitions/LanguageConfig'
+          $ref: '#/definitions/schemas.TaskWithContestStats'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-array_PastContestWithStats:
+  httputils.APIResponse-array_schemas_TestCase:
     properties:
       data:
         items:
-          $ref: '#/definitions/PastContestWithStats'
+          $ref: '#/definitions/schemas.TestCase'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-array_User:
+  httputils.APIResponse-array_schemas_User:
     properties:
       data:
         items:
-          $ref: '#/definitions/User'
+          $ref: '#/definitions/schemas.User'
         type: array
       ok:
         type: boolean
     type: object
-  APIResponse-string:
+  httputils.APIResponse-array_schemas_UserContestStats:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/schemas.UserContestStats'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-httputils_IDResponse:
+    properties:
+      data:
+        $ref: '#/definitions/httputils.IDResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-httputils_MessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/httputils.MessageResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-routes_AuthResponse:
+    properties:
+      data:
+        $ref: '#/definitions/routes.AuthResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_ContestDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.ContestDetailed'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_ContestResults:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.ContestResults'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_CreatedContest:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.CreatedContest'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_Group:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.Group'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_MyTasksResponse:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.MyTasksResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_AvailableContest:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_AvailableContest'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_ContestTask:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ContestTask'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_CreatedContest:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_CreatedContest'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_ManagedContest:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ManagedContest'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_Submission'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_Task:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_Task'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_User:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_User'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult[[]schemas_Task]:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_Task'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_QueueStatus:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.QueueStatus'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_SubmissionDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.SubmissionDetailed'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_TaskCreateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.TaskCreateResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_TaskDetailed:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.TaskDetailed'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_User:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.User'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_UserContestsWithStats:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.UserContestsWithStats'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_WorkersStatus:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.WorkersStatus'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-string:
     properties:
       data:
         type: string
       ok:
         type: boolean
     type: object
-  AddCollaborator:
+  httputils.IDResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  httputils.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  httputils.ValidationErrorResponse:
+    type: object
+  httputils.errorStruct:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  routes.AuthResponse:
+    properties:
+      accessToken:
+        type: string
+      expiresAt:
+        type: string
+    type: object
+  schemas.AddCollaborator:
     properties:
       permission:
         allOf:
-        - $ref: '#/definitions/Permission'
+        - $ref: '#/definitions/types.Permission'
         enum:
         - edit
         - manage
@@ -298,18 +333,18 @@ definitions:
     - permission
     - user_id
     type: object
-  AddTaskToContest:
+  schemas.AddTaskToContest:
     properties:
       endAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
       startAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
       taskId:
         type: integer
     required:
     - taskId
     type: object
-  AttemptsSummary:
+  schemas.AttemptsSummary:
     properties:
       attemptCount:
         description: Number of submission attempts by the user
@@ -318,14 +353,7 @@ definitions:
         description: Best score achieved by the user (percentage of passed tests)
         type: number
     type: object
-  AuthResponse:
-    properties:
-      accessToken:
-        type: string
-      expiresAt:
-        type: string
-    type: object
-  AvailableContest:
+  schemas.AvailableContest:
     properties:
       createdBy:
         type: integer
@@ -350,12 +378,12 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  BaseContest:
+  schemas.BaseContest:
     properties:
       createdBy:
         type: integer
@@ -370,7 +398,7 @@ definitions:
       startAt:
         type: string
     type: object
-  Collaborator:
+  schemas.Collaborator:
     properties:
       addedAt:
         type: string
@@ -379,7 +407,7 @@ definitions:
       lastName:
         type: string
       permission:
-        $ref: '#/definitions/Permission'
+        $ref: '#/definitions/types.Permission'
       userEmail:
         type: string
       userId:
@@ -387,7 +415,7 @@ definitions:
       userName:
         type: string
     type: object
-  ContestDetailed:
+  schemas.ContestDetailed:
     properties:
       createdBy:
         type: integer
@@ -409,31 +437,21 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  ContestResults:
+  schemas.ContestResults:
     properties:
       contest:
-        $ref: '#/definitions/BaseContest'
+        $ref: '#/definitions/schemas.BaseContest'
       taskResults:
         items:
-          $ref: '#/definitions/TaskResult'
+          $ref: '#/definitions/schemas.TaskResult'
         type: array
     type: object
-  ContestStatus:
-    enum:
-    - upcoming
-    - ongoing
-    - past
-    type: string
-    x-enum-varnames:
-    - ContestStatusUpcoming
-    - ContestStatusOngoing
-    - ContestStatusPast
-  ContestTask:
+  schemas.ContestTask:
     properties:
       creatorName:
         type: string
@@ -444,9 +462,9 @@ definitions:
       startAt:
         type: string
       task:
-        $ref: '#/definitions/TaskInfo'
+        $ref: '#/definitions/schemas.TaskInfo'
     type: object
-  ContestTaskStats:
+  schemas.ContestTaskStats:
     properties:
       averageScore:
         type: number
@@ -459,11 +477,11 @@ definitions:
       successRate:
         type: number
       task:
-        $ref: '#/definitions/TaskInfo'
+        $ref: '#/definitions/schemas.TaskInfo'
       totalParticipants:
         type: integer
     type: object
-  ContestWithStats:
+  schemas.ContestWithStats:
     properties:
       createdBy:
         type: integer
@@ -487,12 +505,12 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  ContestWithTasks:
+  schemas.ContestWithTasks:
     properties:
       contestId:
         type: integer
@@ -504,15 +522,15 @@ definitions:
         type: string
       tasks:
         items:
-          $ref: '#/definitions/TaskWithAttempts'
+          $ref: '#/definitions/schemas.TaskWithAttempts'
         type: array
     type: object
-  CreateContest:
+  schemas.CreateContest:
     properties:
       description:
         type: string
       endAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
       isRegistrationOpen:
         type: boolean
       isSubmissionOpen:
@@ -530,7 +548,7 @@ definitions:
     - name
     - startAt
     type: object
-  CreateGroup:
+  schemas.CreateGroup:
     properties:
       name:
         maxLength: 50
@@ -539,7 +557,7 @@ definitions:
     required:
     - name
     type: object
-  CreatedContest:
+  schemas.CreatedContest:
     properties:
       createdAt:
         type: string
@@ -567,17 +585,17 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  EditContest:
+  schemas.EditContest:
     properties:
       description:
         type: string
       endAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
       isRegistrationOpen:
         type: boolean
       isSubmissionOpen:
@@ -589,16 +607,16 @@ definitions:
         minLength: 3
         type: string
       startAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
     type: object
-  EditGroup:
+  schemas.EditGroup:
     properties:
       name:
         maxLength: 50
         minLength: 3
         type: string
     type: object
-  Group:
+  schemas.Group:
     properties:
       createdAt:
         type: string
@@ -611,12 +629,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  IDResponse:
-    properties:
-      id:
-        type: integer
-    type: object
-  LanguageConfig:
+  schemas.LanguageConfig:
     properties:
       fileExtension:
         type: string
@@ -629,7 +642,7 @@ definitions:
       version:
         type: string
     type: object
-  ManagedContest:
+  schemas.ManagedContest:
     properties:
       createdAt:
         type: string
@@ -655,98 +668,95 @@ definitions:
         type: integer
       permissionType:
         allOf:
-        - $ref: '#/definitions/Permission'
+        - $ref: '#/definitions/types.Permission'
         description: '"view", "edit", "manage", "owner"'
       startAt:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  MessageResponse:
-    properties:
-      message:
-        type: string
-    type: object
-  MyTasksResponse:
+  schemas.MyTasksResponse:
     properties:
       contests:
         items:
-          $ref: '#/definitions/ContestWithTasks'
+          $ref: '#/definitions/schemas.ContestWithTasks'
         type: array
     type: object
-  OptionalTime:
+  schemas.OptionalTime:
     properties:
       set:
         type: boolean
       value:
         type: string
     type: object
-  PaginatedResult-AvailableContest:
+  schemas.PaginatedResult-array_schemas_AvailableContest:
     properties:
       items:
         items:
-          $ref: '#/definitions/AvailableContest'
+          $ref: '#/definitions/schemas.AvailableContest'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginatedResult-ManagedContest:
+  schemas.PaginatedResult-array_schemas_ContestTask:
     properties:
       items:
         items:
-          $ref: '#/definitions/ManagedContest'
+          $ref: '#/definitions/schemas.ContestTask'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginatedResult-Submission:
-    properties:
-      items:
-        $ref: '#/definitions/Submission'
-      pagination:
-        $ref: '#/definitions/PaginationMetadata'
-    type: object
-  PaginatedResult-Task:
+  schemas.PaginatedResult-array_schemas_CreatedContest:
     properties:
       items:
         items:
-          $ref: '#/definitions/Task'
+          $ref: '#/definitions/schemas.CreatedContest'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginatedResult-User:
+  schemas.PaginatedResult-array_schemas_ManagedContest:
     properties:
       items:
         items:
-          $ref: '#/definitions/User'
+          $ref: '#/definitions/schemas.ManagedContest'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginatedResult-array_ContestTask:
+  schemas.PaginatedResult-array_schemas_Submission:
     properties:
       items:
         items:
-          $ref: '#/definitions/ContestTask'
+          $ref: '#/definitions/schemas.Submission'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginatedResult-array_CreatedContest:
+  schemas.PaginatedResult-array_schemas_Task:
     properties:
       items:
         items:
-          $ref: '#/definitions/CreatedContest'
+          $ref: '#/definitions/schemas.Task'
         type: array
       pagination:
-        $ref: '#/definitions/PaginationMetadata'
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  PaginationMetadata:
+  schemas.PaginatedResult-array_schemas_User:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/schemas.User'
+        type: array
+      pagination:
+        $ref: '#/definitions/schemas.PaginationMetadata'
+    type: object
+  schemas.PaginationMetadata:
     properties:
       currentPage:
         type: integer
@@ -757,7 +767,7 @@ definitions:
       totalPages:
         type: integer
     type: object
-  PastContestWithStats:
+  schemas.PastContestWithStats:
     properties:
       createdBy:
         type: integer
@@ -787,30 +797,12 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/ContestStatus'
+        - $ref: '#/definitions/types.ContestStatus'
         description: '"upcoming", "ongoing", "past"'
       taskCount:
         type: integer
     type: object
-  Permission:
-    enum:
-    - edit
-    - manage
-    - owner
-    type: string
-    x-enum-comments:
-      PermissionEdit: PermissionEdit represents edit access.
-      PermissionManage: PermissionManage represents full access (edit + manage collaborators).
-      PermissionOwner: PermissionOwner represents immutable ownership (highest level).
-    x-enum-descriptions:
-    - PermissionEdit represents edit access.
-    - PermissionManage represents full access (edit + manage collaborators).
-    - PermissionOwner represents immutable ownership (highest level).
-    x-enum-varnames:
-    - PermissionEdit
-    - PermissionManage
-    - PermissionOwner
-  PutTestCase:
+  schemas.PutTestCase:
     properties:
       memoryLimit:
         type: integer
@@ -819,14 +811,14 @@ definitions:
       timeLimit:
         type: integer
     type: object
-  PutTestCaseLimitsRequest:
+  schemas.PutTestCaseLimitsRequest:
     properties:
       limits:
         items:
-          $ref: '#/definitions/PutTestCase'
+          $ref: '#/definitions/schemas.PutTestCase'
         type: array
     type: object
-  QueueStatus:
+  schemas.QueueStatus:
     properties:
       connected:
         type: boolean
@@ -835,7 +827,7 @@ definitions:
       pendingSubmissions:
         type: integer
     type: object
-  RegistrationRequest:
+  schemas.RegistrationRequest:
     properties:
       contestId:
         type: integer
@@ -844,28 +836,18 @@ definitions:
       id:
         type: integer
       status:
-        $ref: '#/definitions/RegistrationRequestStatus'
+        $ref: '#/definitions/types.RegistrationRequestStatus'
       user:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/schemas.User'
       userId:
         type: integer
     type: object
-  RegistrationRequestStatus:
-    enum:
-    - approved
-    - rejected
-    - pending
-    type: string
-    x-enum-varnames:
-    - RegistrationRequestStatusApproved
-    - RegistrationRequestStatusRejected
-    - RegistrationRequestStatusPending
-  Submission:
+  schemas.Submission:
     properties:
       checkedAt:
         type: string
       contest:
-        $ref: '#/definitions/BaseContest'
+        $ref: '#/definitions/schemas.BaseContest'
       contestId:
         type: integer
       fileUrl:
@@ -873,28 +855,28 @@ definitions:
       id:
         type: integer
       language:
-        $ref: '#/definitions/LanguageConfig'
+        $ref: '#/definitions/schemas.LanguageConfig'
       languageId:
         type: integer
       order:
         type: integer
       result:
-        $ref: '#/definitions/SubmissionResult'
+        $ref: '#/definitions/schemas.SubmissionResult'
       status:
-        $ref: '#/definitions/SubmissionStatus'
+        $ref: '#/definitions/types.SubmissionStatus'
       submittedAt:
         type: string
       task:
-        $ref: '#/definitions/Task'
+        $ref: '#/definitions/schemas.Task'
       user:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/schemas.User'
     type: object
-  SubmissionDetailed:
+  schemas.SubmissionDetailed:
     properties:
       checkedAt:
         type: string
       contest:
-        $ref: '#/definitions/BaseContest'
+        $ref: '#/definitions/schemas.BaseContest'
       contestId:
         type: integer
       fileUrl:
@@ -902,23 +884,23 @@ definitions:
       id:
         type: integer
       language:
-        $ref: '#/definitions/LanguageConfig'
+        $ref: '#/definitions/schemas.LanguageConfig'
       languageId:
         type: integer
       order:
         type: integer
       result:
-        $ref: '#/definitions/SubmissionResult'
+        $ref: '#/definitions/schemas.SubmissionResult'
       status:
-        $ref: '#/definitions/SubmissionStatus'
+        $ref: '#/definitions/types.SubmissionStatus'
       submittedAt:
         type: string
       task:
-        $ref: '#/definitions/Task'
+        $ref: '#/definitions/schemas.Task'
       user:
-        $ref: '#/definitions/User'
+        $ref: '#/definitions/schemas.User'
     type: object
-  SubmissionResult:
+  schemas.SubmissionResult:
     properties:
       code:
         type: string
@@ -932,22 +914,10 @@ definitions:
         type: integer
       testResults:
         items:
-          $ref: '#/definitions/TestResult'
+          $ref: '#/definitions/schemas.TestResult'
         type: array
     type: object
-  SubmissionStatus:
-    enum:
-    - received
-    - sent for evaluation
-    - evaluated
-    - lost
-    type: string
-    x-enum-varnames:
-    - SubmissionStatusReceived
-    - SubmissionStatusSentForEvaluation
-    - SubmissionStatusEvaluated
-    - SubmissionStatusLost
-  Task:
+  schemas.Task:
     properties:
       createdAt:
         type: string
@@ -964,12 +934,12 @@ definitions:
       updatedAt:
         type: string
     type: object
-  TaskCreateResponse:
+  schemas.TaskCreateResponse:
     properties:
       id:
         type: integer
     type: object
-  TaskDetailed:
+  schemas.TaskDetailed:
     properties:
       createdAt:
         type: string
@@ -984,7 +954,7 @@ definitions:
       title:
         type: string
     type: object
-  TaskInfo:
+  schemas.TaskInfo:
     properties:
       createdAt:
         type: string
@@ -997,7 +967,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  TaskResult:
+  schemas.TaskResult:
     properties:
       bestScore:
         type: number
@@ -1006,9 +976,9 @@ definitions:
       submissionCount:
         type: integer
       task:
-        $ref: '#/definitions/TaskInfo'
+        $ref: '#/definitions/schemas.TaskInfo'
     type: object
-  TaskUserStats:
+  schemas.TaskUserStats:
     properties:
       bestScore:
         type: number
@@ -1017,12 +987,12 @@ definitions:
       submissionCount:
         type: integer
       user:
-        $ref: '#/definitions/UserInfo'
+        $ref: '#/definitions/schemas.UserInfo'
     type: object
-  TaskWithAttempts:
+  schemas.TaskWithAttempts:
     properties:
       attemptsSummary:
-        $ref: '#/definitions/AttemptsSummary'
+        $ref: '#/definitions/schemas.AttemptsSummary'
       createdAt:
         type: string
       createdBy:
@@ -1038,10 +1008,10 @@ definitions:
       updatedAt:
         type: string
     type: object
-  TaskWithContestStats:
+  schemas.TaskWithContestStats:
     properties:
       attemptsSummary:
-        $ref: '#/definitions/AttemptsSummary'
+        $ref: '#/definitions/schemas.AttemptsSummary'
       createdAt:
         type: string
       createdBy:
@@ -1053,7 +1023,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-  TestCase:
+  schemas.TestCase:
     properties:
       memoryLimit:
         type: integer
@@ -1062,7 +1032,7 @@ definitions:
       timeLimit:
         type: integer
     type: object
-  TestResult:
+  schemas.TestResult:
     properties:
       code:
         type: string
@@ -1089,25 +1059,25 @@ definitions:
       testCaseId:
         type: integer
     type: object
-  UpdateCollaborator:
+  schemas.UpdateCollaborator:
     properties:
       permission:
         allOf:
-        - $ref: '#/definitions/Permission'
+        - $ref: '#/definitions/types.Permission'
         enum:
         - edit
         - manage
     required:
     - permission
     type: object
-  UpdateTaskInContest:
+  schemas.UpdateTaskInContest:
     properties:
       endAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
       startAt:
-        $ref: '#/definitions/OptionalTime'
+        $ref: '#/definitions/schemas.OptionalTime'
     type: object
-  User:
+  schemas.User:
     properties:
       createdAt:
         type: string
@@ -1118,13 +1088,13 @@ definitions:
       name:
         type: string
       role:
-        $ref: '#/definitions/UserRole'
+        $ref: '#/definitions/types.UserRole'
       surname:
         type: string
       username:
         type: string
     type: object
-  UserChangePassword:
+  schemas.UserChangePassword:
     properties:
       newPassword:
         maxLength: 50
@@ -1140,11 +1110,11 @@ definitions:
     - newPassword
     - newPasswordConfirm
     type: object
-  UserContestStats:
+  schemas.UserContestStats:
     properties:
       taskBreakdown:
         items:
-          $ref: '#/definitions/UserTaskPerformance'
+          $ref: '#/definitions/schemas.UserTaskPerformance'
         type: array
       tasksAttempted:
         type: integer
@@ -1153,44 +1123,44 @@ definitions:
       tasksSolved:
         type: integer
       user:
-        $ref: '#/definitions/UserInfo'
+        $ref: '#/definitions/schemas.UserInfo'
     type: object
-  UserContestsWithStats:
+  schemas.UserContestsWithStats:
     properties:
       ongoing:
         items:
-          $ref: '#/definitions/ContestWithStats'
+          $ref: '#/definitions/schemas.ContestWithStats'
         type: array
       past:
         items:
-          $ref: '#/definitions/PastContestWithStats'
+          $ref: '#/definitions/schemas.PastContestWithStats'
         type: array
       upcoming:
         items:
-          $ref: '#/definitions/ContestWithStats'
+          $ref: '#/definitions/schemas.ContestWithStats'
         type: array
     type: object
-  UserEdit:
+  schemas.UserEdit:
     properties:
       email:
         type: string
       name:
         type: string
       role:
-        $ref: '#/definitions/UserRole'
+        $ref: '#/definitions/types.UserRole'
       surname:
         type: string
       username:
         type: string
     type: object
-  UserIDs:
+  schemas.UserIDs:
     properties:
       userIDs:
         items:
           type: integer
         type: array
     type: object
-  UserInfo:
+  schemas.UserInfo:
     properties:
       id:
         type: integer
@@ -1201,7 +1171,7 @@ definitions:
       username:
         type: string
     type: object
-  UserLoginRequest:
+  schemas.UserLoginRequest:
     properties:
       email:
         type: string
@@ -1211,7 +1181,7 @@ definitions:
     - email
     - password
     type: object
-  UserRegisterRequest:
+  schemas.UserRegisterRequest:
     properties:
       confirmPassword:
         type: string
@@ -1241,25 +1211,7 @@ definitions:
     - surname
     - username
     type: object
-  UserRole:
-    enum:
-    - student
-    - teacher
-    - admin
-    type: string
-    x-enum-comments:
-      UserRoleAdmin: UserRoleAdmin represents the admin role.
-      UserRoleStudent: UserRoleStudent represents the student role.
-      UserRoleTeacher: UserRoleTeacher represents the teacher role.
-    x-enum-descriptions:
-    - UserRoleStudent represents the student role.
-    - UserRoleTeacher represents the teacher role.
-    - UserRoleAdmin represents the admin role.
-    x-enum-varnames:
-    - UserRoleStudent
-    - UserRoleTeacher
-    - UserRoleAdmin
-  UserTaskPerformance:
+  schemas.UserTaskPerformance:
     properties:
       attemptCount:
         type: integer
@@ -1272,28 +1224,16 @@ definitions:
       taskTitle:
         type: string
     type: object
-  ValidationErrorResponse:
-    type: object
-  WorkerStatus:
+  schemas.WorkerStatus:
     properties:
       id:
         type: integer
       processingMessageId:
         type: string
       status:
-        $ref: '#/definitions/WorkerStatusType'
+        $ref: '#/definitions/types.WorkerStatusType'
     type: object
-  WorkerStatusType:
-    enum:
-    - idle
-    - busy
-    - invalid
-    type: string
-    x-enum-varnames:
-    - WorkerStatusIdle
-    - WorkerStatusBusy
-    - WorkerStatusInvalid
-  WorkersStatus:
+  schemas.WorkersStatus:
     properties:
       busyWorkers:
         type: integer
@@ -1303,16 +1243,71 @@ definitions:
         type: integer
       workerStatus:
         items:
-          $ref: '#/definitions/WorkerStatus'
+          $ref: '#/definitions/schemas.WorkerStatus'
         type: array
     type: object
-  errorStruct:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-    type: object
+  types.ContestStatus:
+    enum:
+    - upcoming
+    - ongoing
+    - past
+    type: string
+    x-enum-varnames:
+    - ContestStatusUpcoming
+    - ContestStatusOngoing
+    - ContestStatusPast
+  types.Permission:
+    enum:
+    - edit
+    - manage
+    - owner
+    type: string
+    x-enum-varnames:
+    - PermissionEdit
+    - PermissionManage
+    - PermissionOwner
+  types.RegistrationRequestStatus:
+    enum:
+    - approved
+    - rejected
+    - pending
+    type: string
+    x-enum-varnames:
+    - RegistrationRequestStatusApproved
+    - RegistrationRequestStatusRejected
+    - RegistrationRequestStatusPending
+  types.SubmissionStatus:
+    enum:
+    - received
+    - sent for evaluation
+    - evaluated
+    - lost
+    type: string
+    x-enum-varnames:
+    - SubmissionStatusReceived
+    - SubmissionStatusSentForEvaluation
+    - SubmissionStatusEvaluated
+    - SubmissionStatusLost
+  types.UserRole:
+    enum:
+    - student
+    - teacher
+    - admin
+    type: string
+    x-enum-varnames:
+    - UserRoleStudent
+    - UserRoleTeacher
+    - UserRoleAdmin
+  types.WorkerStatusType:
+    enum:
+    - idle
+    - busy
+    - invalid
+    type: string
+    x-enum-varnames:
+    - WorkerStatusIdle
+    - WorkerStatusBusy
+    - WorkerStatusInvalid
 info:
   contact: {}
   title: Mini-Maxit API
@@ -1352,23 +1347,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get assignable users for a resource
       tags:
       - access-control
@@ -1393,23 +1388,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Collaborator'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_Collaborator'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get collaborators for a resource
       tags:
       - access-control
@@ -1435,30 +1430,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/AddCollaborator'
+          $ref: '#/definitions/schemas.AddCollaborator'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Add a collaborator to a resource
       tags:
       - access-control
@@ -1488,23 +1483,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Remove a collaborator from a resource
       tags:
       - access-control
@@ -1534,30 +1529,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UpdateCollaborator'
+          $ref: '#/definitions/schemas.UpdateCollaborator'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Update a collaborator's permission for a resource
       tags:
       - access-control
@@ -1572,26 +1567,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UserLoginRequest'
+          $ref: '#/definitions/schemas.UserLoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-AuthResponse'
+            $ref: '#/definitions/httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Login a user
       tags:
       - auth
@@ -1604,11 +1599,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Logout a user
       tags:
       - auth
@@ -1621,23 +1616,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-AuthResponse'
+            $ref: '#/definitions/httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Refresh JWT tokens
       tags:
       - auth
@@ -1653,30 +1648,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UserRegisterRequest'
+          $ref: '#/definitions/schemas.UserRegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/APIResponse-AuthResponse'
+            $ref: '#/definitions/httputils.APIResponse-routes_AuthResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Register a user
       tags:
       - auth
@@ -1712,15 +1707,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-AvailableContest'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_AvailableContest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get global contests
       tags:
       - contests
@@ -1746,19 +1741,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_CreatedContest'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_CreatedContest'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all contests (admin only)
       tags:
       - contests-management
@@ -1773,30 +1768,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateContest'
+          $ref: '#/definitions/schemas.CreateContest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-IDResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_IDResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Create a contest
       tags:
       - contests-management
@@ -1815,27 +1810,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Delete a contest
       tags:
       - contests-management
@@ -1854,34 +1849,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/EditContest'
+          $ref: '#/definitions/schemas.EditContest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-CreatedContest'
+            $ref: '#/definitions/httputils.APIResponse-schemas_CreatedContest'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Edit a contest
       tags:
       - contests-management
@@ -1909,27 +1904,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Remove a group from a contest
       tags:
       - contests-management
@@ -1948,27 +1943,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Group'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get contest groups information
       tags:
       - contests-management
@@ -1997,27 +1992,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Add a group to a contest
       tags:
       - contests-management
@@ -2037,27 +2032,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Group'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get assignable groups for a contest
       tags:
       - contests-management
@@ -2087,27 +2082,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Remove participants from a contest
       tags:
       - contests-management
@@ -2138,27 +2133,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get contest participants
       tags:
       - contests-management
@@ -2187,31 +2182,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Add participants to a contest
       tags:
       - contests-management
@@ -2243,27 +2238,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get assignable participants for a contest
       tags:
       - contests-management
@@ -2288,27 +2283,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-RegistrationRequest'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_RegistrationRequest'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get registration requests for a contest
       tags:
       - contests-management
@@ -2346,23 +2341,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get submissions for a contest
       tags:
       - contests-management
@@ -2382,19 +2377,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-ContestTaskStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_ContestTaskStats'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get task statistics for a contest
       tags:
       - contests-management
@@ -2424,27 +2419,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Remove tasks from a contest
       tags:
       - contests-management
@@ -2478,27 +2473,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-array_ContestTask'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_ContestTask'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get tasks for a contest
       tags:
       - contests-management
@@ -2517,34 +2512,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/AddTaskToContest'
+          $ref: '#/definitions/schemas.AddTaskToContest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Add a task to a contest
       tags:
       - contests-management
@@ -2570,34 +2565,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UpdateTaskInContest'
+          $ref: '#/definitions/schemas.UpdateTaskInContest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Update a task's schedule in a contest
       tags:
       - contests-management
@@ -2622,19 +2617,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskUserStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_TaskUserStats'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get user statistics for a specific task in a contest
       tags:
       - contests-management
@@ -2680,19 +2675,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get submissions for a specific user, task, and contest
       tags:
       - contests-management
@@ -2728,27 +2723,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Task'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Task'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get available tasks for a contest
       tags:
       - contests-management
@@ -2772,19 +2767,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-UserContestStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_UserContestStats'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get overall user statistics for a contest
       tags:
       - contests-management
@@ -2811,19 +2806,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-ManagedContest'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_ManagedContest'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get contests manageable by the current user
       tags:
       - contests-management
@@ -2842,27 +2837,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-ContestDetailed'
+            $ref: '#/definitions/httputils.APIResponse-schemas_ContestDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get a contest
       tags:
       - contests
@@ -2882,31 +2877,31 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Register for a contest
       tags:
       - contests
@@ -2926,27 +2921,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-ContestResults'
+            $ref: '#/definitions/httputils.APIResponse-schemas_ContestResults'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get user's results for a contest
       tags:
       - contests
@@ -2974,27 +2969,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-ContestTask'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_ContestTask'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get contest tasks with optional status filter
       tags:
       - contests
@@ -3018,27 +3013,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskDetailed'
+            $ref: '#/definitions/httputils.APIResponse-schemas_TaskDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get a specific task from a contest
       tags:
       - contests
@@ -3058,27 +3053,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskWithContestStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_TaskWithContestStats'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get tasks for a contest with submission statistics
       tags:
       - contests
@@ -3092,23 +3087,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-UserContestsWithStats'
+            $ref: '#/definitions/httputils.APIResponse-schemas_UserContestsWithStats'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get contests for a user (combined - deprecated; use /contests/my/active
         or /contests/my/past)
       tags:
@@ -3122,19 +3117,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_ContestWithStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_ContestWithStats'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get active contests for the current user
       tags:
       - contests
@@ -3147,19 +3142,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_PastContestWithStats'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_PastContestWithStats'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get past contests for the current user
       tags:
       - contests
@@ -3172,23 +3167,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Group'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all groups
       tags:
       - group
@@ -3202,30 +3197,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateGroup'
+          $ref: '#/definitions/schemas.CreateGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-IDResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_IDResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Create a group
       tags:
       - group
@@ -3244,23 +3239,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Group'
+            $ref: '#/definitions/httputils.APIResponse-schemas_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get a group
       tags:
       - group
@@ -3279,30 +3274,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/EditGroup'
+          $ref: '#/definitions/schemas.EditGroup'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Group'
+            $ref: '#/definitions/httputils.APIResponse-schemas_Group'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Edit a group
       tags:
       - group
@@ -3322,30 +3317,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UserIDs'
+          $ref: '#/definitions/schemas.UserIDs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Delete users from a group
       tags:
       - group
@@ -3363,23 +3358,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_User'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get users in a group
       tags:
       - group
@@ -3398,30 +3393,30 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/UserIDs'
+          $ref: '#/definitions/schemas.UserIDs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Add users to a group
       tags:
       - group
@@ -3434,11 +3429,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_LanguageConfig'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_LanguageConfig'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all languages
       tags:
       - languages-management
@@ -3457,19 +3452,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Toggle language visibility
       tags:
       - languages-management
@@ -3509,19 +3504,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all submissions with optional filtering
       tags:
       - submission
@@ -3540,15 +3535,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-SubmissionDetailed'
+            $ref: '#/definitions/httputils.APIResponse-schemas_SubmissionDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get a submission by ID
       tags:
       - submission
@@ -3561,11 +3556,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-array_LanguageConfig'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_LanguageConfig'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all available languages
       tags:
       - submission
@@ -3591,19 +3586,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all submissions for a user
       tags:
       - submission
@@ -3640,21 +3635,20 @@ paths:
           description: OK
           schema:
             additionalProperties:
-              format: int64
               type: integer
             type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Submit a solution
       tags:
       - submission
@@ -3682,19 +3676,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all submissions for a task
       tags:
       - submission
@@ -3725,19 +3719,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Submission'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Submission'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all submissions for a user
       tags:
       - submission
@@ -3750,15 +3744,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-Task]'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult%5B%5B%5Dschemas_Task%5D'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all globally available tasks
       tags:
       - tasks
@@ -3788,19 +3782,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskCreateResponse'
+            $ref: '#/definitions/httputils.APIResponse-schemas_TaskCreateResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Upload a task
       tags:
       - tasks-management
@@ -3819,23 +3813,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Delete a task
       tags:
       - tasks-management
@@ -3865,23 +3859,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Update a task
       tags:
       - tasks-management
@@ -3900,19 +3894,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TestCase'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_TestCase'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Gets task limits
       tags:
       - tasks-management
@@ -3929,26 +3923,26 @@ paths:
         name: limits
         required: true
         schema:
-          $ref: '#/definitions/PutTestCaseLimitsRequest'
+          $ref: '#/definitions/schemas.PutTestCaseLimitsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Updates task limits
       tags:
       - tasks-management
@@ -3974,19 +3968,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-Task'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_Task'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all created tasks
       tags:
       - tasks-management
@@ -4005,23 +3999,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-TaskDetailed'
+            $ref: '#/definitions/httputils.APIResponse-schemas_TaskDetailed'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get a task
       tags:
       - tasks
@@ -4044,11 +4038,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MyTasksResponse'
+            $ref: '#/definitions/httputils.APIResponse-schemas_MyTasksResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get my assigned tasks
       tags:
       - tasks
@@ -4074,15 +4068,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-PaginatedResult-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get all users
       tags:
       - user
@@ -4101,23 +4095,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get user by ID
       tags:
       - user
@@ -4134,34 +4128,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UserEdit'
+          $ref: '#/definitions/schemas.UserEdit'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Edit user
       tags:
       - user
@@ -4179,30 +4173,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/UserChangePassword'
+          $ref: '#/definitions/schemas.UserChangePassword'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-MessageResponse'
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ValidationErrorResponse'
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Change user password
       tags:
       - user
@@ -4215,11 +4209,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_User'
         "405":
           description: Method Not Allowed
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get current user
       tags:
       - user
@@ -4233,15 +4227,15 @@ paths:
         "200":
           description: message
           schema:
-            $ref: '#/definitions/APIResponse-string'
+            $ref: '#/definitions/httputils.APIResponse-string'
         "401":
           description: Not authorized - requires admin role
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Reconnect to queue
       tags:
       - worker
@@ -4255,15 +4249,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-QueueStatus'
+            $ref: '#/definitions/httputils.APIResponse-schemas_QueueStatus'
         "401":
           description: Not authorized - requires admin role
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get queue status
       tags:
       - worker
@@ -4276,19 +4270,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/APIResponse-WorkersStatus'
+            $ref: '#/definitions/httputils.APIResponse-schemas_WorkersStatus'
         "401":
           description: Not authorized - requires teacher or admin role
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
         "504":
           description: Gateway timeout - worker status request timed out
           schema:
-            $ref: '#/definitions/APIError'
+            $ref: '#/definitions/httputils.APIError'
       summary: Get worker status
       tags:
       - worker
