@@ -11,7 +11,7 @@ services:
       - file-storage
     restart: unless-stopped
   rabbitmq:
-    image: rabbitmq:3.13-management
+    image: rabbitmq:4.4-management
     ports:
       - "5672:5672"
       - "15672:15672"
