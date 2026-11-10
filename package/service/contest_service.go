@@ -154,7 +154,7 @@ func (cs *contestService) GetDetailed(db database.Database, currentUser *schemas
 		}
 		return nil, err
 	}
-	if !cs.isContestVisibleToUser(db, &contestDetailed.Contest, currentUser) {
+	if !cs.canAccessContest(db, contestDetailed.ID, currentUser) {
 		return nil, errors.ErrForbidden
 	}
 
@@ -188,7 +188,7 @@ func (cs *contestService) GetOngoingContests(db database.Database, currentUser *
 
 	visibleContests := []models.ContestWithStats{}
 	for _, contest := range contestsWithStats {
-		if cs.isContestVisibleToUser(db, &contest.Contest, currentUser) {
+		if cs.canAccessContest(db, contest.ID, currentUser) {
 			visibleContests = append(visibleContests, contest)
 		}
 	}
@@ -213,7 +213,7 @@ func (cs *contestService) GetPastContests(db database.Database, currentUser *sch
 
 	visibleContests := []models.ContestWithStats{}
 	for _, contest := range contestsWithStats {
-		if cs.isContestVisibleToUser(db, &contest.Contest, currentUser) {
+		if cs.canAccessContest(db, contest.ID, currentUser) {
 			visibleContests = append(visibleContests, contest)
 		}
 	}
@@ -238,7 +238,7 @@ func (cs *contestService) GetUpcomingContests(db database.Database, currentUser 
 
 	visibleContests := []models.ContestWithStats{}
 	for _, contest := range contestsWithStats {
-		if cs.isContestVisibleToUser(db, &contest.Contest, currentUser) {
+		if cs.canAccessContest(db, contest.ID, currentUser) {
 			visibleContests = append(visibleContests, contest)
 		}
 	}
@@ -293,21 +293,17 @@ func (cs *contestService) GetAllContests(db database.Database, currentUser *sche
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
-func (cs *contestService) isContestVisibleToUser(db database.Database, contest *models.Contest, user *schemas.User) bool {
-	if contest.IsVisible {
+// canAccessContest reports whether the user is a contest collaborator or participant (directly or via a group).
+func (cs *contestService) canAccessContest(db database.Database, contestID int64, user *schemas.User) bool {
+	err := cs.hasContestPermission(db, contestID, user, types.PermissionEdit)
+	if err == nil {
 		return true
 	}
-
-	err := cs.hasContestPermission(db, contest.ID, user, types.PermissionEdit)
-	if err != nil {
-		if !errors.Is(err, errors.ErrForbidden) {
-			return false
-		}
-	} else {
-		return true
+	if !errors.Is(err, errors.ErrForbidden) {
+		return false
 	}
 
-	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contest.ID, user.ID)
+	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, user.ID)
 	if err != nil {
 		cs.logger.Errorf("Error checking if user is participant: %v", err)
 		return false
@@ -415,7 +411,7 @@ func (cs *contestService) RegisterForContest(db database.Database, currentUser *
 		return err
 	}
 
-	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+	if !cs.canAccessContest(db, contest.ID, currentUser) {
 		return errors.ErrNotFound
 	}
 
@@ -495,7 +491,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 		return schemas.PaginatedResult[[]schemas.ContestTask]{}, err
 	}
 
-	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+	if !cs.canAccessContest(db, contest.ID, currentUser) {
 		return schemas.PaginatedResult[[]schemas.ContestTask]{}, errors.ErrForbidden
 	}
 
@@ -585,7 +581,7 @@ func (cs *contestService) GetTaskProgressForContest(db database.Database, curren
 		return nil, err
 	}
 
-	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+	if !cs.canAccessContest(db, contest.ID, currentUser) {
 		return nil, errors.ErrForbidden
 	}
 
@@ -1131,7 +1127,7 @@ func (cs *contestService) GetContestTask(db database.Database, currentUser *sche
 		}
 		return nil, err
 	}
-	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+	if !cs.canAccessContest(db, contest.ID, currentUser) {
 		return nil, errors.ErrForbidden
 	}
 
@@ -1187,7 +1183,7 @@ func (cs *contestService) GetMyContestResults(db database.Database, currentUser 
 	}
 
 	// Check if user has access to the contest
-	if !cs.isContestVisibleToUser(db, contest, currentUser) {
+	if !cs.canAccessContest(db, contest.ID, currentUser) {
 		return nil, errors.ErrForbidden
 	}
 

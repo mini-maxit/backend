@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
 
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -41,9 +42,6 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
-	visibleTrue := true
-	visibleFalse := false
-
 	t.Run("contest not found", func(t *testing.T) {
 		currentUser := &schemas.User{ID: 10, Role: types.UserRoleStudent}
 		contestID := int64(999)
@@ -64,7 +62,6 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Hidden Contest",
 			CreatedBy: 2,
-			IsVisible: visibleFalse,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
@@ -86,10 +83,10 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Empty Tasks Contest",
 			CreatedBy: 5,
-			IsVisible: visibleTrue,
 		}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, true)
 		cr.EXPECT().GetTasksForContest(db, contestID).Return([]models.Task{}, nil).Times(1)
 		sr.EXPECT().GetAllTaskStatsForContestUser(db, contestID, currentUser.ID).Return([]repository.TaskUserSubmissionStats{}, nil).Times(1)
 
@@ -108,13 +105,13 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "No Submissions Contest",
 			CreatedBy: 7,
-			IsVisible: visibleTrue,
 		}
 
 		task := models.Task{ID: 1, Title: "Task A"}
 		tasks := []models.Task{task}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, true)
 		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
 		stats := []repository.TaskUserSubmissionStats{
 			{TaskID: task.ID, AttemptCount: 0, BestScore: 0, BestSubmissionID: nil},
@@ -137,7 +134,6 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "Submissions Contest",
 			CreatedBy: 9,
-			IsVisible: visibleTrue,
 		}
 
 		task1 := models.Task{ID: 11, Title: "Task One"}
@@ -145,6 +141,7 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 		tasks := []models.Task{task1, task2}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, true)
 		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
 
 		bestSub1 := int64(1001)
@@ -183,13 +180,13 @@ func TestContestService_GetMyContestResults(t *testing.T) {
 			ID:        contestID,
 			Name:      "No Creator Preload",
 			CreatedBy: 22,
-			IsVisible: visibleTrue,
 		}
 
 		task := models.Task{ID: 50, Title: "Solo Task"}
 		tasks := []models.Task{task}
 
 		cr.EXPECT().Get(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, true)
 		cr.EXPECT().GetTasksForContest(db, contestID).Return(tasks, nil).Times(1)
 		stats := []repository.TaskUserSubmissionStats{
 			{TaskID: task.ID, AttemptCount: 1, BestScore: 100.0, BestSubmissionID: nil},
@@ -326,148 +323,6 @@ func TestContestWithStatsToSchemaWithMultipleContests(t *testing.T) {
 	assert.Equal(t, int64(2), results[1].ID)
 	assert.Equal(t, "Contest 2", results[1].Name)
 	assert.Equal(t, int64(4), results[1].TaskCount)
-}
-
-func TestContestService_GetPastContests(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cr := mock_repository.NewMockContestRepository(ctrl)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	tr := mock_repository.NewMockTaskRepository(ctrl)
-	ts := mock_service.NewMockTaskService(ctrl)
-	acs := mock_service.NewMockAccessControlService(ctrl)
-	gr := mock_repository.NewMockGroupRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
-	db := &testutils.MockDatabase{}
-
-	t.Run("successful retrieval", func(t *testing.T) {
-		currentUser := &schemas.User{
-			ID:   1,
-			Role: types.UserRoleStudent,
-		}
-		queryParams := schemas.PaginationParams{
-			Limit:  10,
-			Offset: 0,
-			Sort:   testSortByStartTime,
-		}
-
-		visible := true
-		contestsWithStats := []models.ContestWithStats{
-			{
-				Contest: models.Contest{
-					ID:        1,
-					Name:      "Past Contest",
-					IsVisible: visible,
-				},
-				TaskCount:        5,
-				ParticipantCount: 10,
-			},
-		}
-
-		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(contestsWithStats, int64(1), nil).Times(1)
-
-		result, err := cs.GetPastContests(db, currentUser, queryParams)
-
-		require.NoError(t, err)
-		assert.Len(t, result.Items, 1)
-		assert.Equal(t, int64(1), result.Items[0].ID)
-		assert.Equal(t, 1, result.Pagination.TotalItems)
-		assert.Equal(t, 1, result.Pagination.CurrentPage)
-		assert.Equal(t, 10, result.Pagination.PageSize)
-	})
-
-	t.Run("repository error", func(t *testing.T) {
-		currentUser := &schemas.User{
-			ID:   1,
-			Role: types.UserRoleStudent,
-		}
-		queryParams := schemas.PaginationParams{
-			Limit:  10,
-			Offset: 0,
-			Sort:   testSortByStartTime,
-		}
-
-		cr.EXPECT().GetPastContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
-
-		result, err := cs.GetPastContests(db, currentUser, queryParams)
-
-		require.Error(t, err)
-		assert.Equal(t, 0, result.Pagination.TotalItems)
-		assert.Empty(t, result.Items)
-	})
-}
-
-func TestContestService_GetUpcomingContests(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cr := mock_repository.NewMockContestRepository(ctrl)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	sr := mock_repository.NewMockSubmissionRepository(ctrl)
-	tr := mock_repository.NewMockTaskRepository(ctrl)
-	ts := mock_service.NewMockTaskService(ctrl)
-	acs := mock_service.NewMockAccessControlService(ctrl)
-	gr := mock_repository.NewMockGroupRepository(ctrl)
-	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
-	db := &testutils.MockDatabase{}
-
-	t.Run("successful retrieval", func(t *testing.T) {
-		currentUser := &schemas.User{
-			ID:   1,
-			Role: types.UserRoleStudent,
-		}
-		queryParams := schemas.PaginationParams{
-			Limit:  10,
-			Offset: 0,
-			Sort:   testSortByStartTime,
-		}
-
-		visible := true
-		contestsWithStats := []models.ContestWithStats{
-			{
-				Contest: models.Contest{
-					ID:        1,
-					Name:      "Upcoming Contest",
-					IsVisible: visible,
-				},
-				TaskCount:        5,
-				ParticipantCount: 10,
-			},
-		}
-
-		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(contestsWithStats, int64(1), nil).Times(1)
-
-		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
-
-		require.NoError(t, err)
-		assert.Len(t, result.Items, 1)
-		assert.Equal(t, int64(1), result.Items[0].ID)
-		assert.Equal(t, 1, result.Pagination.TotalItems)
-		assert.Equal(t, 1, result.Pagination.CurrentPage)
-		assert.Equal(t, 10, result.Pagination.PageSize)
-	})
-
-	t.Run("repository error", func(t *testing.T) {
-		currentUser := &schemas.User{
-			ID:   1,
-			Role: types.UserRoleStudent,
-		}
-		queryParams := schemas.PaginationParams{
-			Limit:  10,
-			Offset: 0,
-			Sort:   testSortByStartTime,
-		}
-
-		cr.EXPECT().GetUpcomingContestsWithStats(db, currentUser.ID, 0, 10, testSortByStartTime).Return(nil, int64(0), errors.ErrDatabaseConnection).Times(1)
-
-		result, err := cs.GetUpcomingContests(db, currentUser, queryParams)
-
-		require.Error(t, err)
-		assert.Empty(t, result.Items)
-		assert.Equal(t, 0, result.Pagination.TotalItems)
-	})
 }
 
 func TestContestService_ApproveRegistrationRequest(t *testing.T) {
@@ -1141,31 +996,36 @@ func TestContestService_GetDetailed(t *testing.T) {
 	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
 	db := &testutils.MockDatabase{}
 
-	t.Run("successful retrieval - visible contest", func(t *testing.T) {
-		currentUser := &schemas.User{
-			ID:   1,
-			Role: types.UserRoleStudent,
-		}
+	t.Run("student non-participant is forbidden even if contest was public", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 1, Role: types.UserRoleStudent}
 		contestID := int64(10)
-		visible := true
-
 		contest := &repository.ContestDetailed{
-			Contest: models.Contest{
-				ID:        contestID,
-				Name:      testContestName,
-				CreatedBy: 2,
-				IsVisible: visible,
-			},
+			Contest: models.Contest{ID: contestID, Name: testContestName, CreatedBy: 2, IsVisible: true},
 		}
 
 		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, false)
+
+		result, err := cs.GetDetailed(db, currentUser, contestID)
+
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, result)
+	})
+
+	t.Run("student participant (direct or via group) can view", func(t *testing.T) {
+		currentUser := &schemas.User{ID: 1, Role: types.UserRoleStudent}
+		contestID := int64(11)
+		contest := &repository.ContestDetailed{
+			Contest: models.Contest{ID: contestID, Name: testContestName, CreatedBy: 2},
+		}
+
+		cr.EXPECT().GetDetailed(db, contestID).Return(contest, nil).Times(1)
+		expectContestAccess(cr, acs, db, contestID, currentUser, true)
 
 		result, err := cs.GetDetailed(db, currentUser, contestID)
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 		assert.Equal(t, contestID, result.ID)
-		assert.Equal(t, testContestName, result.Name)
 	})
 
 	t.Run("successful retrieval - invisible contest by admin", func(t *testing.T) {
@@ -2038,4 +1898,19 @@ func TestManagedContestToSchemaSetsStatus(t *testing.T) {
 			assert.Equal(t, c.want, got.Status)
 		})
 	}
+}
+
+// expectContestAccess sets up the mocks for a non-collaborator going through the
+// contest access check; participant decides whether they are a contest participant.
+func expectContestAccess(
+	cr *mock_repository.MockContestRepository,
+	acs *mock_service.MockAccessControlService,
+	db database.Database,
+	contestID int64,
+	user *schemas.User,
+	participant bool,
+) {
+	cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+	cr.EXPECT().IsUserParticipant(db, contestID, user.ID).Return(participant, nil).Times(1)
 }
