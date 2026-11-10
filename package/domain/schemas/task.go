@@ -1,6 +1,10 @@
 package schemas
 
-import "time"
+import (
+	"time"
+
+	"github.com/mini-maxit/backend/package/domain/types"
+)
 
 type EditTask struct {
 	Title *string `json:"title,omitempty"`
@@ -13,6 +17,11 @@ type Task struct {
 	CreatorName string    `json:"creatorName"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+type ManagedTask struct {
+	Task
+	PermissionType types.Permission `json:"permissionType"` // "view", "edit", "manage", "owner"
 }
 
 // Struct to embed basic task info

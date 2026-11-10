@@ -1227,6 +1227,22 @@ func (mr *MockTaskRepositoryMockRecorder) GetAllCreated(db, userID, offset, limi
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreated", reflect.TypeOf((*MockTaskRepository)(nil).GetAllCreated), db, userID, offset, limit, sort)
 }
 
+// GetAllForCollaborator mocks base method.
+func (m *MockTaskRepository) GetAllForCollaborator(db database.Database, userID int64, all bool, offset, limit int, sort string) ([]models.ManagedTask, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForCollaborator", db, userID, all, offset, limit, sort)
+	ret0, _ := ret[0].([]models.ManagedTask)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAllForCollaborator indicates an expected call of GetAllForCollaborator.
+func (mr *MockTaskRepositoryMockRecorder) GetAllForCollaborator(db, userID, all, offset, limit, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCollaborator", reflect.TypeOf((*MockTaskRepository)(nil).GetAllForCollaborator), db, userID, all, offset, limit, sort)
+}
+
 // GetByTitle mocks base method.
 func (m *MockTaskRepository) GetByTitle(db database.Database, title string) (*models.Task, error) {
 	m.ctrl.T.Helper()
@@ -1631,9 +1647,9 @@ func (mr *MockContestRepositoryMockRecorder) GetAll(db, offset, limit, sort any)
 }
 
 // GetAllForCollaborator mocks base method.
-func (m *MockContestRepository) GetAllForCollaborator(db database.Database, userID int64, offset, limit int, sort string) ([]models.ManagedContest, int64, error) {
+func (m *MockContestRepository) GetAllForCollaborator(db database.Database, userID int64, all bool, offset, limit int, sort string) ([]models.ManagedContest, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForCollaborator", db, userID, offset, limit, sort)
+	ret := m.ctrl.Call(m, "GetAllForCollaborator", db, userID, all, offset, limit, sort)
 	ret0, _ := ret[0].([]models.ManagedContest)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -1641,9 +1657,9 @@ func (m *MockContestRepository) GetAllForCollaborator(db database.Database, user
 }
 
 // GetAllForCollaborator indicates an expected call of GetAllForCollaborator.
-func (mr *MockContestRepositoryMockRecorder) GetAllForCollaborator(db, userID, offset, limit, sort any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) GetAllForCollaborator(db, userID, all, offset, limit, sort any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCollaborator", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCollaborator), db, userID, offset, limit, sort)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForCollaborator", reflect.TypeOf((*MockContestRepository)(nil).GetAllForCollaborator), db, userID, all, offset, limit, sort)
 }
 
 // GetAllForCreator mocks base method.

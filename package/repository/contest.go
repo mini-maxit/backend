@@ -32,8 +32,9 @@ type ContestRepository interface {
 	GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
 	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error)
-	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting
-	GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
+	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting.
+	// When all is true, every contest is returned and contests without an entry for the user get "owner" permission (admin view).
+	GetAllForCollaborator(db database.Database, userID int64, all bool, offset int, limit int, sort string) ([]models.ManagedContest, int64, error)
 	// Edit updates a contest
 	Edit(db database.Database, contestID int64, updates map[string]any) (*models.Contest, error)
 	// EditWithStats updates a contest and returns it with participant and task counts
@@ -174,7 +175,8 @@ func (cr *contestRepository) GetAllForCreator(db database.Database, creatorID in
 
 // GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator)
 // It returns contests with pagination and total count, including participant and task counts.
-func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
+// When all is true, every contest is returned; the user's own entry is used where present, otherwise "owner".
+func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID int64, all bool, offset int, limit int, sort string) ([]models.ManagedContest, int64, error) {
 	tx := db.GetInstance()
 	var contests []models.ManagedContest
 	var totalCount int64
@@ -183,10 +185,15 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 	contestParticipantTable := database.ResolveTableName(tx, &models.ContestParticipant{})
 	contestTaskTable := database.ResolveTableName(tx, &models.ContestTask{})
 
+	acJoin, permissionExpr := "JOIN", "ac.permission"
+	if all {
+		acJoin, permissionExpr = "LEFT JOIN", fmt.Sprintf("COALESCE(ac.permission, '%s')", types.PermissionOwner)
+	}
+	acJoinClause := fmt.Sprintf("%s %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", acJoin, accessControlTable)
+
 	// Base query joining access control entries for contests
 	baseQuery := tx.Model(&models.Contest{}).
-		Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
-			types.ResourceTypeContest, userID)
+		Joins(acJoinClause, types.ResourceTypeContest, userID)
 
 	err := baseQuery.Count(&totalCount).Error
 	if err != nil {
@@ -197,12 +204,11 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 	paginatedQuery, err := utils.ApplyPaginationAndSort(
 		tx.Model(&models.Contest{}).
 			Select(`contests.*,
-				ac.permission as permission_type,
+				`+permissionExpr+` as permission_type,
 				COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 				COALESCE(contest_task_count.count, 0) as task_count
 			`).
-			Joins(fmt.Sprintf("JOIN %s ac ON ac.resource_type = ? AND ac.resource_id = contests.id AND ac.user_id = ?", accessControlTable),
-				types.ResourceTypeContest, userID).
+			Joins(acJoinClause, types.ResourceTypeContest, userID).
 			Joins(fmt.Sprintf(`LEFT JOIN (
 				SELECT contest_id, COUNT(*) as count
 				FROM %s

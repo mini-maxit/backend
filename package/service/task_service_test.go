@@ -1253,3 +1253,40 @@ func TestCreateTaskErrors(t *testing.T) {
 		assert.Equal(t, int64(-1), taskID)
 	})
 }
+
+func TestGetManagedTasks(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	ts := service.NewTaskService(nil, nil, tr, nil, nil, nil, nil, nil, nil)
+	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
+
+	t.Run("teacher gets own managed tasks", func(t *testing.T) {
+		tr.EXPECT().GetAllForCollaborator(db, teacherUser.ID, false, params.Offset, params.Limit, params.Sort).
+			Return([]models.ManagedTask{{Task: models.Task{ID: 7, Title: testTaskTitle}, PermissionType: types.PermissionEdit}}, int64(1), nil)
+		result, err := ts.GetManagedTasks(db, teacherUser, false, params)
+		require.NoError(t, err)
+		require.Len(t, result.Items, 1)
+		assert.Equal(t, int64(7), result.Items[0].ID)
+		assert.Equal(t, types.PermissionEdit, result.Items[0].PermissionType)
+		assert.Equal(t, 1, result.Pagination.TotalItems)
+	})
+
+	t.Run("admin gets all tasks with scope all", func(t *testing.T) {
+		tr.EXPECT().GetAllForCollaborator(db, adminUser.ID, true, params.Offset, params.Limit, params.Sort).
+			Return([]models.ManagedTask{}, int64(0), nil)
+		_, err := ts.GetManagedTasks(db, adminUser, true, params)
+		require.NoError(t, err)
+	})
+
+	t.Run("teacher cannot use scope all", func(t *testing.T) {
+		_, err := ts.GetManagedTasks(db, teacherUser, true, params)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("student is rejected", func(t *testing.T) {
+		_, err := ts.GetManagedTasks(db, studentUser, false, params)
+		require.Error(t, err)
+	})
+}

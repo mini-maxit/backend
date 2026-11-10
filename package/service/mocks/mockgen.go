@@ -268,21 +268,6 @@ func (mr *MockContestServiceMockRecorder) Edit(db, currentUser, contestID, editI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockContestService)(nil).Edit), db, currentUser, contestID, editInfo)
 }
 
-// GetAllContests mocks base method.
-func (m *MockContestService) GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllContests", db, currentUser, paginationParams)
-	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.CreatedContest])
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllContests indicates an expected call of GetAllContests.
-func (mr *MockContestServiceMockRecorder) GetAllContests(db, currentUser, paginationParams any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContests", reflect.TypeOf((*MockContestService)(nil).GetAllContests), db, currentUser, paginationParams)
-}
-
 // GetAssignableGroups mocks base method.
 func (m *MockContestService) GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
 	m.ctrl.T.Helper()
@@ -404,18 +389,18 @@ func (mr *MockContestServiceMockRecorder) GetDetailed(db, currentUser, contestID
 }
 
 // GetManagedContests mocks base method.
-func (m *MockContestService) GetManagedContests(db database.Database, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+func (m *MockContestService) GetManagedContests(db database.Database, currentUser *schemas.User, all bool, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetManagedContests", db, userID, paginationParams)
+	ret := m.ctrl.Call(m, "GetManagedContests", db, currentUser, all, paginationParams)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.ManagedContest])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetManagedContests indicates an expected call of GetManagedContests.
-func (mr *MockContestServiceMockRecorder) GetManagedContests(db, userID, paginationParams any) *gomock.Call {
+func (mr *MockContestServiceMockRecorder) GetManagedContests(db, currentUser, all, paginationParams any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedContests", reflect.TypeOf((*MockContestService)(nil).GetManagedContests), db, userID, paginationParams)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedContests", reflect.TypeOf((*MockContestService)(nil).GetManagedContests), db, currentUser, all, paginationParams)
 }
 
 // GetMyContestResults mocks base method.
@@ -859,6 +844,21 @@ func (m *MockTaskService) GetLimits(db database.Database, currentUser *schemas.U
 func (mr *MockTaskServiceMockRecorder) GetLimits(db, currentUser, taskID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLimits", reflect.TypeOf((*MockTaskService)(nil).GetLimits), db, currentUser, taskID)
+}
+
+// GetManagedTasks mocks base method.
+func (m *MockTaskService) GetManagedTasks(db database.Database, currentUser *schemas.User, all bool, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedTask], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManagedTasks", db, currentUser, all, paginationParams)
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.ManagedTask])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManagedTasks indicates an expected call of GetManagedTasks.
+func (mr *MockTaskServiceMockRecorder) GetManagedTasks(db, currentUser, all, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManagedTasks", reflect.TypeOf((*MockTaskService)(nil).GetManagedTasks), db, currentUser, all, paginationParams)
 }
 
 // GetMyLiveTasks mocks base method.
