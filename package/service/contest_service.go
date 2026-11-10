@@ -30,8 +30,8 @@ type ContestService interface {
 	RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all contest task relations (with timing/submission flags) for a contest (for authorized users)
 	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.ContestTask], error)
-	// GetVisibleTasksForContest retrieves visible contest tasks filtered by status (for participants and users with access_policy)
-	GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error)
+	// GetStartedTasksForContest retrieves already-started contest tasks filtered by status (for participants and users with access_policy)
+	GetStartedTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error)
 	// GetTaskProgressForContest retrieves all tasks associated with a contest with submission stats for the requesting user
 	GetTaskProgressForContest(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.TaskWithContestStats, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (for authorized users)
@@ -119,7 +119,6 @@ func (cs *contestService) Create(db database.Database, currentUser *schemas.User
 		CreatedBy:          currentUser.ID,
 		IsRegistrationOpen: contest.IsRegistrationOpen,
 		IsSubmissionOpen:   contest.IsSubmissionOpen,
-		IsVisible:          contest.IsVisible,
 		StartAt:            contest.StartAt,
 	}
 
@@ -201,7 +200,6 @@ func (cs *contestService) GetAllContests(db database.Database, currentUser *sche
 				// Stats fields are not available from GetAll; leave zero-values
 				IsSubmissionOpen: c.IsSubmissionOpen,
 			},
-			IsVisible:          c.IsVisible,
 			IsRegistrationOpen: c.IsRegistrationOpen,
 			CreatedAt:          c.CreatedAt,
 		}
@@ -301,9 +299,6 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 	if editInfo.IsSubmissionOpen != nil {
 		editMap["is_submission_open"] = *editInfo.IsSubmissionOpen
 	}
-	if editInfo.IsVisible != nil {
-		editMap["is_visible"] = *editInfo.IsVisible
-	}
 	newModel, err := cs.contestRepository.EditWithStats(db, contestID, editMap)
 	if err != nil {
 		return nil, err
@@ -396,9 +391,6 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	if editInfo.IsSubmissionOpen != nil {
 		model.IsSubmissionOpen = *editInfo.IsSubmissionOpen
 	}
-	if editInfo.IsVisible != nil {
-		model.IsVisible = *editInfo.IsVisible
-	}
 }
 
 func (cs *contestService) GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.ContestTask], error) {
@@ -436,7 +428,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
-func (cs *contestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
+func (cs *contestService) GetStartedTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
 	hasAccessPolicy := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit) == nil
 
 	// Check if user is participant or has access permission
@@ -449,8 +441,8 @@ func (cs *contestService) GetVisibleTasksForContest(db database.Database, curren
 		return nil, errors.ErrForbidden
 	}
 
-	// Get only visible tasks for participants
-	relations, err := cs.contestRepository.GetVisibleContestTasksWithSettings(db, contestID)
+	// Get only already-started tasks for participants
+	relations, err := cs.contestRepository.GetStartedContestTasksWithSettings(db, contestID)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +554,6 @@ func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *
 			CreatorName: task.Author.Name,
 			CreatedAt:   task.CreatedAt,
 			UpdatedAt:   task.UpdatedAt,
-			IsVisible:   task.IsVisible,
 		}
 	}
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
@@ -730,7 +721,6 @@ func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.C
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
 		IsRegistrationOpen: model.IsRegistrationOpen,
-		IsVisible:          model.IsVisible,
 	}
 }
 
@@ -1048,7 +1038,6 @@ func ContestToCreatedSchema(model *repository.ContestDetailed) *schemas.CreatedC
 			Status:           getContestStatus(model.StartAt, model.EndAt),
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
-		IsVisible:          model.IsVisible,
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		CreatedAt:          model.CreatedAt,
 	}
@@ -1178,7 +1167,6 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 				Status:           getContestStatus(model.StartAt, model.EndAt),
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
-			IsVisible:          model.IsVisible,
 			IsRegistrationOpen: model.IsRegistrationOpen,
 			CreatedAt:          model.CreatedAt,
 		},

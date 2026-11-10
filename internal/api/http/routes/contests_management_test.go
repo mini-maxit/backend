@@ -271,7 +271,6 @@ func TestEditContest(t *testing.T) {
 			t.Fatalf("Failed to marshal request body: %v", err)
 		}
 
-		isVisible := true
 		isRegistrationOpen := true
 		isSubmissionOpen := true
 		contest := &schemas.CreatedContest{
@@ -284,7 +283,6 @@ func TestEditContest(t *testing.T) {
 				},
 				IsSubmissionOpen: isSubmissionOpen,
 			},
-			IsVisible:          isVisible,
 			IsRegistrationOpen: isRegistrationOpen,
 		}
 

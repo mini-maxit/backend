@@ -36,7 +36,6 @@ type tasksManagementRoute struct {
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			title	formData	string	true	"Name of the task"
-//	@Param			isVisible	formData	boolean	false	"Task visibility (default: false)"
 //	@Param			archive	formData	file	true	"Task archive"
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		400		{object}	httputils.APIError
@@ -63,18 +62,7 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 		httputils.ReturnError(w, http.StatusBadRequest, "Task name is required.")
 		return
 	}
-	isVisibleStr := r.FormValue("isVisible")
-	var isVisible bool
 	var err error
-	if isVisibleStr != "" {
-		isVisible, err = strconv.ParseBool(isVisibleStr)
-		if err != nil {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid value for isVisible. Must be true or false.")
-			return
-		}
-	} else {
-		isVisible = false
-	}
 
 	// Extract the uploaded file
 	file, handler, err := r.FormFile("archive")
@@ -104,7 +92,6 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 	// Create empty task to get the task ID
 	task := schemas.Task{
 		Title:     title,
-		IsVisible: isVisible,
 		CreatedBy: currentUser.ID,
 	}
 
@@ -133,7 +120,6 @@ func (tr *tasksManagementRoute) UploadTask(w http.ResponseWriter, r *http.Reques
 //	@Produce		json
 //	@Param			id			path		int		true	"Task ID"
 //	@Param			title		formData	string	false	"New title for the task"
-//	@Param			isVisible	formData	bool	false	"Visibility of the task"
 //	@Param			archive		formData	file	false	"New archive for the task"
 //	@Failure		400			{object}	httputils.APIError
 //	@Failure		403			{object}	httputils.APIError
@@ -163,15 +149,6 @@ func (tr *tasksManagementRoute) EditTask(w http.ResponseWriter, r *http.Request)
 	newTitle := r.FormValue("title")
 	if newTitle != "" {
 		request.Title = &newTitle
-	}
-	newIsVisible := r.FormValue("isVisible")
-	if newIsVisible != "" {
-		isVisible, parseErr := strconv.ParseBool(newIsVisible)
-		if parseErr != nil {
-			httputils.ReturnError(w, http.StatusBadRequest, "Invalid value for isVisible. Must be true or false.")
-			return
-		}
-		request.IsVisible = &isVisible
 	}
 
 	db := httputils.GetDatabase(r)

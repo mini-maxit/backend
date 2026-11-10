@@ -15,7 +15,6 @@ type Contest struct {
 	EndAt              *time.Time `gorm:"null"`
 	IsRegistrationOpen bool       `gorm:"default:true;not null"`  // if false, only admins can add participants
 	IsSubmissionOpen   bool       `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
-	IsVisible          bool       `gorm:"default:false;not null"` // if true, contest is visible to all users
 
 	BaseModel
 

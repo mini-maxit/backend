@@ -152,7 +152,6 @@ func TestCreateTask(t *testing.T) {
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, task *models.Task) (int64, error) {
-			assert.False(t, task.IsVisible) // Default is false
 			return int64(1), nil
 		}).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -160,25 +159,6 @@ func TestCreateTask(t *testing.T) {
 		taskID, err := ts.Create(db, adminUser, task)
 		require.NoError(t, err)
 		assert.NotEqual(t, 0, taskID)
-	})
-
-	t.Run("Custom visibility", func(t *testing.T) {
-		task := &schemas.Task{
-			Title:     "Visible Task",
-			CreatedBy: adminUser.ID,
-			IsVisible: true,
-		}
-		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
-		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, model *models.Task) (int64, error) {
-			assert.True(t, model.IsVisible)
-			return int64(2), nil
-		}).Times(1)
-		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-		taskID, err := ts.Create(db, adminUser, task)
-		require.NoError(t, err)
-		assert.Equal(t, int64(2), taskID)
 	})
 
 	t.Run("Non unique title", func(t *testing.T) {
@@ -379,7 +359,7 @@ func TestEditTask(t *testing.T) {
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
-		}, nil).Times(2)
+		}, nil).Times(1)
 		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		newTitle := "Updated Task"
@@ -394,22 +374,6 @@ func TestEditTask(t *testing.T) {
 		tr.EXPECT().Get(db, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
 		err := ts.Edit(db, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
-	})
-
-	t.Run("Update isVisible", func(t *testing.T) {
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Edit(db, taskID, gomock.Any()).DoAndReturn(func(db database.Database, id int64, updates map[string]any) error {
-			// Verify that IsVisible was updated
-			isVisible, ok := updates["is_visible"].(bool)
-			require.True(t, ok)
-			assert.False(t, isVisible)
-			return nil
-		}).Times(1)
-
-		isVisible := false
-		updatedTask := &schemas.EditTask{IsVisible: &isVisible}
-		err := ts.Edit(db, adminUser, taskID, updatedTask)
-		require.NoError(t, err)
 	})
 }
 

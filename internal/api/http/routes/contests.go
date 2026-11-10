@@ -79,7 +79,7 @@ func (cr *ContestRouteImpl) GetContest(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			contests
 //	@Summary		Get contest tasks with optional status filter
-//	@Description	Get visible tasks for a contest with optional status filter (past, ongoing, upcoming). Only accessible by participants or users with access policy.
+//	@Description	Get already-started tasks for a contest with optional status filter (past, ongoing, upcoming). Only accessible by participants or users with access policy.
 //	@Produce		json
 //	@Param			id		path		int		true	"Contest ID"
 //	@Param			status	query		string	false	"Task status filter"	Enums(past, ongoing, upcoming)
@@ -129,7 +129,7 @@ func (cr *ContestRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Reque
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
-	tasks, err := cr.contestService.GetVisibleTasksForContest(db, currentUser, contestID, status)
+	tasks, err := cr.contestService.GetStartedTasksForContest(db, currentUser, contestID, status)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return

@@ -462,6 +462,21 @@ func (mr *MockContestServiceMockRecorder) GetRegistrationRequests(db, currentUse
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestService)(nil).GetRegistrationRequests), db, currentUser, contestID, statusFilter)
 }
 
+// GetStartedTasksForContest mocks base method.
+func (m *MockContestService) GetStartedTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStartedTasksForContest", db, currentUser, contestID, status)
+	ret0, _ := ret[0].([]schemas.ContestTask)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStartedTasksForContest indicates an expected call of GetStartedTasksForContest.
+func (mr *MockContestServiceMockRecorder) GetStartedTasksForContest(db, currentUser, contestID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStartedTasksForContest", reflect.TypeOf((*MockContestService)(nil).GetStartedTasksForContest), db, currentUser, contestID, status)
+}
+
 // GetTaskContests mocks base method.
 func (m *MockContestService) GetTaskContests(db database.Database, taskID int64) ([]int64, error) {
 	m.ctrl.T.Helper()
@@ -520,21 +535,6 @@ func (m *MockContestService) GetUserContests(db database.Database, userID int64)
 func (mr *MockContestServiceMockRecorder) GetUserContests(db, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserContests", reflect.TypeOf((*MockContestService)(nil).GetUserContests), db, userID)
-}
-
-// GetVisibleTasksForContest mocks base method.
-func (m *MockContestService) GetVisibleTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, status types.ContestStatus) ([]schemas.ContestTask, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVisibleTasksForContest", db, currentUser, contestID, status)
-	ret0, _ := ret[0].([]schemas.ContestTask)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVisibleTasksForContest indicates an expected call of GetVisibleTasksForContest.
-func (mr *MockContestServiceMockRecorder) GetVisibleTasksForContest(db, currentUser, contestID, status any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleTasksForContest", reflect.TypeOf((*MockContestService)(nil).GetVisibleTasksForContest), db, currentUser, contestID, status)
 }
 
 // IsTaskInContest mocks base method.

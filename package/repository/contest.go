@@ -15,7 +15,7 @@ type ContestDetailed struct {
 	models.Contest
 	CreatedByName    string `gorm:"column:created_by_name"`
 	ParticipantCount int64  `gorm:"column:participant_count"`
-	TaskCount        int64  `gorm:"column:task_count"` // number of visible tasks
+	TaskCount        int64  `gorm:"column:task_count"` // number of tasks
 }
 
 type ContestRepository interface {
@@ -51,8 +51,8 @@ type ContestRepository interface {
 	GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task (paginated)
 	GetContestTasksWithSettings(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.ContestTask, int64, error)
-	// GetVisibleContestTasksWithSettings retrieves visible contest-task relations with timing flags and associated task
-	GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
+	// GetStartedContestTasksWithSettings retrieves already-started contest-task relations with timing flags and associated task
+	GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (paginated)
@@ -453,8 +453,8 @@ func qualifyContestTaskSort(sortBy, contestTaskTable, taskTable string) string {
 	return field + " " + dir
 }
 
-// GetVisibleContestTasksWithSettings retrieves visible contest-task relations (with timing flags) and preloads the associated Task
-func (cr *contestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+// GetStartedContestTasksWithSettings retrieves already-started contest-task relations (with timing flags) and preloads the associated Task
+func (cr *contestRepository) GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
 	tx := db.GetInstance()
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).

@@ -28,7 +28,6 @@ type CreatedContest struct {
 	ContestDetailed
 	CreatedAt          time.Time `json:"createdAt"`
 	IsRegistrationOpen bool      `json:"isRegistrationOpen"`
-	IsVisible          bool      `json:"isVisible"`
 }
 
 type ManagedContest struct {
@@ -43,7 +42,6 @@ type CreateContest struct {
 	EndAt              OptionalTime `json:"endAt"`
 	IsRegistrationOpen bool         `json:"isRegistrationOpen"`
 	IsSubmissionOpen   bool         `json:"isSubmissionOpen"`
-	IsVisible          bool         `json:"isVisible"`
 }
 
 type EditContest struct {
@@ -53,7 +51,6 @@ type EditContest struct {
 	EndAt              OptionalTime `json:"endAt"`
 	IsRegistrationOpen *bool        `json:"isRegistrationOpen,omitempty"`
 	IsSubmissionOpen   *bool        `json:"isSubmissionOpen,omitempty"`
-	IsVisible          *bool        `json:"isVisible,omitempty"`
 }
 
 type ContestWithStats struct {

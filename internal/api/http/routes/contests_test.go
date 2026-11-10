@@ -438,7 +438,7 @@ func TestGetContestTasks(t *testing.T) {
 	})
 
 	t.Run("Not authorized - not a participant", func(t *testing.T) {
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
+		cs.EXPECT().GetStartedTasksForContest(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.ErrForbidden)
 
 		resp, err := http.Get(server.URL + "/1/tasks")
 		if err != nil {
@@ -474,7 +474,7 @@ func TestGetContestTasks(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(tasks, nil)
+		cs.EXPECT().GetStartedTasksForContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(tasks, nil)
 
 		resp, err := http.Get(server.URL + "/1/tasks")
 		if err != nil {
@@ -515,7 +515,7 @@ func TestGetContestTasks(t *testing.T) {
 			},
 		}
 
-		cs.EXPECT().GetVisibleTasksForContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(tasks, nil)
+		cs.EXPECT().GetStartedTasksForContest(gomock.Any(), gomock.Any(), int64(1), gomock.Any()).Return(tasks, nil)
 
 		resp, err := http.Get(server.URL + "/1/tasks?status=ongoing")
 		if err != nil {

@@ -85,7 +85,6 @@ func (ts *taskService) Create(db database.Database, currentUser *schemas.User, t
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 		Author:    *author,
-		IsVisible: task.IsVisible,
 	}
 	taskID, err := ts.taskRepository.Create(db, &model)
 	if err != nil {
@@ -207,9 +206,6 @@ func (ts *taskService) Edit(db database.Database, currentUser *schemas.User, tas
 
 	if updateInfo.Title != nil {
 		updates["title"] = *updateInfo.Title
-	}
-	if updateInfo.IsVisible != nil {
-		updates["is_visible"] = *updateInfo.IsVisible
 	}
 
 	ts.logger.Infof("Updating task ID %d with updates: %+v", taskID, updates)
@@ -451,9 +447,6 @@ func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schema
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title
 	}
-	if updateInfo.IsVisible != nil {
-		currentModel.IsVisible = *updateInfo.IsVisible
-	}
 }
 
 func TaskToSchema(model *models.Task) *schemas.Task {
@@ -464,7 +457,6 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 		CreatorName: model.Author.Name,
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
-		IsVisible:   model.IsVisible,
 	}
 }
 
