@@ -241,66 +241,6 @@ func TestGetTaskByTitle(t *testing.T) {
 	})
 }
 
-func TestGetAllTasks(t *testing.T) {
-	db := &testutils.MockDatabase{}
-	ctrl := gomock.NewController(t)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	gr := mock_repository.NewMockGroupRepository(ctrl)
-	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockTestCaseRepository(ctrl)
-	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-
-	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
-
-	t.Run("No tasks", func(t *testing.T) {
-		tr.EXPECT().GetAll(db,
-			paginationParams.Limit,
-			paginationParams.Offset,
-			paginationParams.Sort,
-		).Return([]models.Task{}, int64(0), nil).Times(1)
-		tasks, err := ts.GetAll(db, adminUser, paginationParams)
-		require.NoError(t, err)
-		assert.Empty(t, tasks)
-	})
-
-	t.Run("Success", func(t *testing.T) {
-		tasks := []models.Task{
-			{
-				ID:        1,
-				Title:     testTaskTitle,
-				CreatedBy: teacherUser.ID,
-				IsVisible: true,
-			},
-		}
-		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
-
-		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
-		require.NoError(t, err)
-		assert.NotEmpty(t, resultTasks)
-		assert.True(t, resultTasks[0].IsVisible)
-	})
-
-	t.Run("Only globally visible tasks", func(t *testing.T) {
-		// Repository should only return globally visible tasks
-		tasks := []models.Task{
-			{
-				ID:        1,
-				Title:     "Visible Task",
-				CreatedBy: teacherUser.ID,
-				IsVisible: true,
-			},
-		}
-		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
-
-		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
-		require.NoError(t, err)
-		assert.Len(t, resultTasks, 1)
-		assert.Equal(t, "Visible Task", resultTasks[0].Title)
-		assert.True(t, resultTasks[0].IsVisible)
-	})
-}
-
 func TestGetTask(t *testing.T) {
 	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)

@@ -14,7 +14,6 @@ import (
 
 type TaskRoute interface {
 	GetMyTasks(w http.ResponseWriter, r *http.Request)
-	GetAllTasks(w http.ResponseWriter, r *http.Request)
 	GetTask(w http.ResponseWriter, r *http.Request)
 }
 
@@ -55,35 +54,6 @@ func (tr *taskRoute) GetMyTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, response)
-}
-
-// GetAllTasks godoc
-//
-//	@Tags			tasks
-//	@Summary		Get all globally available tasks
-//	@Description	Returns all tasks
-//	@Produce		json
-//	@Failure		500	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.Task]]
-//	@Router			/tasks [get]
-func (tr *taskRoute) GetAllTasks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	task, err := tr.taskService.GetAll(db, currentUser, paginationParams)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, tr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, task)
 }
 
 // GetTask godoc
@@ -143,14 +113,6 @@ func NewTaskRoute(taskService service.TaskService) TaskRoute {
 }
 
 func RegisterTaskRoutes(mux *mux.Router, route TaskRoute) {
-	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			route.GetAllTasks(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
 	mux.HandleFunc("/tasks/my", route.GetMyTasks)
 	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

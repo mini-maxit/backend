@@ -25,8 +25,6 @@ type TaskService interface {
 	Delete(db database.Database, currentUser *schemas.User, taskID int64) error
 	// Edit edits an existing task.
 	Edit(db database.Database, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error
-	// GetAll retrieves all tasks based on query parameters.
-	GetAll(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
 	GetAllCreated(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
 	// Get retrieves a detailed view of a specific task.
@@ -113,32 +111,6 @@ func (ts *taskService) GetByTitle(db database.Database, title string) (*schemas.
 	}
 
 	return TaskToSchema(task), nil
-}
-
-func (ts *taskService) GetAll(db database.Database, _ *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
-	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
-	// if err != nil {
-	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
-	// 	return nil, err
-	// }
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultTaskSort
-	}
-
-	// Get all tasks
-	tasks, _, err := ts.taskRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
-	if err != nil {
-		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
-		return nil, err
-	}
-
-	// Convert the models to schemas
-	result := make([]schemas.Task, len(tasks))
-	for i, task := range tasks {
-		result[i] = *TaskToSchema(&task)
-	}
-
-	return result, nil
 }
 
 func (ts *taskService) Get(db database.Database, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {

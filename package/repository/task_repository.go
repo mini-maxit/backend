@@ -18,8 +18,6 @@ type TaskRepository interface {
 	Edit(db database.Database, taskID int64, updates map[string]any) error
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
 	GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
-	// GetAll returns all tasks. The tasks are paginated.
-	GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error)
 	// Get returns a task by its ID.
 	Get(db database.Database, taskID int64) (*models.Task, error)
 	// GetByTitle returns a task by its title.
@@ -90,28 +88,6 @@ func (tr *taskRepository) GetAllCreated(
 	err = paginatedQuery.
 		Where("created_by = ?", userID).
 		Find(&tasks).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	return tasks, totalCount, nil
-}
-
-func (tr *taskRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error) {
-	tx := db.GetInstance()
-	tasks := []models.Task{}
-	var totalCount int64
-
-	// Get total count first (only globally visible tasks)
-	err := tx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Count(&totalCount).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	paginatedTx, err := utils.ApplyPaginationAndSort(tx, limit, offset, sort)
-	if err != nil {
-		return nil, 0, err
-	}
-	err = paginatedTx.Model(&models.Task{}).Where("deleted_at IS NULL AND is_visible = ?", true).Find(&tasks).Error
 	if err != nil {
 		return nil, 0, err
 	}

@@ -24,11 +24,6 @@ type ContestDetailed struct {
 	IsSubmissionOpen bool                `json:"isSubmissionOpen"`
 }
 
-type AvailableContest struct {
-	ContestDetailed
-	RegistrationStatus string `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "registrationClosed"
-}
-
 type CreatedContest struct {
 	ContestDetailed
 	CreatedAt          time.Time `json:"createdAt"`

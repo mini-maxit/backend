@@ -20,12 +20,6 @@ type ContestService interface {
 	Create(db database.Database, currentUser *schemas.User, contest *schemas.CreateContest) (int64, error)
 	// GetDetailed retrieves a contest by ID
 	GetDetailed(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestDetailed, error)
-	// GetOngoingContests retrieves contests that are currently running
-	GetOngoingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
-	// GetPastContests retrieves contests that have ended
-	GetPastContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
-	// GetUpcomingContests retrieves contests that haven't started yet
-	GetUpcomingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
 	// GetAllContests returns all contests in the system (admin only)
 	GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
 	// Edit updates a contest
@@ -174,81 +168,6 @@ func (cs *contestService) GetDetailed(db database.Database, currentUser *schemas
 		IsSubmissionOpen: contestDetailed.IsSubmissionOpen,
 	}
 	return &schema, nil
-}
-
-func (cs *contestService) GetOngoingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultContestSort
-	}
-
-	contestsWithStats, totalCount, err := cs.contestRepository.GetOngoingContestsWithStats(db, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
-	if err != nil {
-		return schemas.PaginatedResult[[]schemas.AvailableContest]{}, err
-	}
-
-	visibleContests := []models.ContestWithStats{}
-	for _, contest := range contestsWithStats {
-		if cs.canAccessContest(db, contest.ID, currentUser) {
-			visibleContests = append(visibleContests, contest)
-		}
-	}
-
-	result := make([]schemas.AvailableContest, len(visibleContests))
-	for i, contest := range visibleContests {
-		result[i] = *ContestWithStatsToAvailableContest(&contest)
-	}
-
-	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
-}
-
-func (cs *contestService) GetPastContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultContestSort
-	}
-
-	contestsWithStats, totalCount, err := cs.contestRepository.GetPastContestsWithStats(db, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
-	if err != nil {
-		return schemas.PaginatedResult[[]schemas.AvailableContest]{}, err
-	}
-
-	visibleContests := []models.ContestWithStats{}
-	for _, contest := range contestsWithStats {
-		if cs.canAccessContest(db, contest.ID, currentUser) {
-			visibleContests = append(visibleContests, contest)
-		}
-	}
-
-	result := make([]schemas.AvailableContest, len(visibleContests))
-	for i, contest := range visibleContests {
-		result[i] = *ContestWithStatsToAvailableContest(&contest)
-	}
-
-	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
-}
-
-func (cs *contestService) GetUpcomingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error) {
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultContestSort
-	}
-
-	contestsWithStats, totalCount, err := cs.contestRepository.GetUpcomingContestsWithStats(db, currentUser.ID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
-	if err != nil {
-		return schemas.PaginatedResult[[]schemas.AvailableContest]{}, err
-	}
-
-	visibleContests := []models.ContestWithStats{}
-	for _, contest := range contestsWithStats {
-		if cs.canAccessContest(db, contest.ID, currentUser) {
-			visibleContests = append(visibleContests, contest)
-		}
-	}
-
-	result := make([]schemas.AvailableContest, len(visibleContests))
-	for i, contest := range visibleContests {
-		result[i] = *ContestWithStatsToAvailableContest(&contest)
-	}
-
-	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
 // GetAllContests returns all contests in the system (admin only) with pagination
@@ -812,43 +731,6 @@ func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.C
 		},
 		IsRegistrationOpen: model.IsRegistrationOpen,
 		IsVisible:          model.IsVisible,
-	}
-}
-
-func ContestWithStatsToAvailableContest(model *models.ContestWithStats) *schemas.AvailableContest {
-	registrationStatus := "registrationClosed"
-
-	// Check if contest has ended
-	contestEnded := model.EndAt != nil && model.EndAt.Before(time.Now())
-
-	// If user is already a participant
-	if model.IsParticipant {
-		registrationStatus = "registered"
-	} else if model.HasPendingReg {
-		// If user has pending registration
-		registrationStatus = "awaitingApproval"
-	} else if !contestEnded && model.IsRegistrationOpen {
-		// If registration is open, contest hasn't ended, and user can register
-		registrationStatus = "canRegister"
-	}
-	// Default is "registrationClosed" for all other cases (registration closed or contest ended)
-
-	status := getContestStatus(model.StartAt, model.EndAt)
-	return &schemas.AvailableContest{
-		ContestDetailed: schemas.ContestDetailed{
-			BaseContest: schemas.BaseContest{
-				ID:          model.ID,
-				Name:        model.Name,
-				Description: model.Description,
-				CreatedBy:   model.CreatedBy,
-				StartAt:     model.StartAt,
-				EndAt:       model.EndAt,
-			},
-			ParticipantCount: model.ParticipantCount,
-			TaskCount:        model.TaskCount,
-			Status:           status,
-		},
-		RegistrationStatus: registrationStatus,
 	}
 }
 

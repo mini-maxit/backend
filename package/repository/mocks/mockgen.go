@@ -1211,22 +1211,6 @@ func (mr *MockTaskRepositoryMockRecorder) Get(db, taskID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTaskRepository)(nil).Get), db, taskID)
 }
 
-// GetAll mocks base method.
-func (m *MockTaskRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", db, limit, offset, sort)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockTaskRepositoryMockRecorder) GetAll(db, limit, offset, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskRepository)(nil).GetAll), db, limit, offset, sort)
-}
-
 // GetAllCreated mocks base method.
 func (m *MockTaskRepository) GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
@@ -1846,38 +1830,6 @@ func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
 }
 
-// GetOngoingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetOngoingContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOngoingContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetOngoingContestsWithStats indicates an expected call of GetOngoingContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetOngoingContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOngoingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetOngoingContestsWithStats), db, userID, offset, limit, sort)
-}
-
-// GetPastContestsWithStats mocks base method.
-func (m *MockContestRepository) GetPastContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPastContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetPastContestsWithStats indicates an expected call of GetPastContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetPastContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetPastContestsWithStats), db, userID, offset, limit, sort)
-}
-
 // GetPendingRegistrationRequest mocks base method.
 func (m *MockContestRepository) GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
 	m.ctrl.T.Helper()
@@ -1951,22 +1903,6 @@ func (m *MockContestRepository) GetTasksForContestWithStats(db database.Database
 func (mr *MockContestRepositoryMockRecorder) GetTasksForContestWithStats(db, contestID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContestWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetTasksForContestWithStats), db, contestID, userID)
-}
-
-// GetUpcomingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetUpcomingContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUpcomingContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetUpcomingContestsWithStats indicates an expected call of GetUpcomingContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetUpcomingContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetUpcomingContestsWithStats), db, userID, offset, limit, sort)
 }
 
 // GetVisibleContestTasksWithSettings mocks base method.
