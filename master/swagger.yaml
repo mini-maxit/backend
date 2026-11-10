@@ -70,15 +70,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  httputils.APIResponse-array_schemas_RegistrationRequest:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/schemas.RegistrationRequest'
-        type: array
-      ok:
-        type: boolean
-    type: object
   httputils.APIResponse-array_schemas_TaskUserStats:
     properties:
       data:
@@ -180,13 +171,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  httputils.APIResponse-schemas_PaginatedResult-array_schemas_AvailableContest:
-    properties:
-      data:
-        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_AvailableContest'
-      ok:
-        type: boolean
-    type: object
   httputils.APIResponse-schemas_PaginatedResult-array_schemas_ContestTask:
     properties:
       data:
@@ -226,13 +210,6 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/schemas.PaginatedResult-array_schemas_User'
-      ok:
-        type: boolean
-    type: object
-  httputils.APIResponse-schemas_PaginatedResult[[]schemas_Task]:
-    properties:
-      data:
-        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_Task'
       ok:
         type: boolean
     type: object
@@ -352,36 +329,6 @@ definitions:
       bestScore:
         description: Best score achieved by the user (percentage of passed tests)
         type: number
-    type: object
-  schemas.AvailableContest:
-    properties:
-      createdBy:
-        type: integer
-      creatorName:
-        type: string
-      description:
-        type: string
-      endAt:
-        type: string
-      id:
-        type: integer
-      isSubmissionOpen:
-        type: boolean
-      name:
-        type: string
-      participantCount:
-        type: integer
-      registrationStatus:
-        description: '"registered", "canRegister", "awaitingApproval", "registrationClosed"'
-        type: string
-      startAt:
-        type: string
-      status:
-        allOf:
-        - $ref: '#/definitions/types.ContestStatus'
-        description: '"upcoming", "ongoing", "past"'
-      taskCount:
-        type: integer
     type: object
   schemas.BaseContest:
     properties:
@@ -531,11 +478,7 @@ definitions:
         type: string
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
-      isRegistrationOpen:
-        type: boolean
       isSubmissionOpen:
-        type: boolean
-      isVisible:
         type: boolean
       name:
         maxLength: 100
@@ -571,11 +514,7 @@ definitions:
         type: string
       id:
         type: integer
-      isRegistrationOpen:
-        type: boolean
       isSubmissionOpen:
-        type: boolean
-      isVisible:
         type: boolean
       name:
         type: string
@@ -596,11 +535,7 @@ definitions:
         type: string
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
-      isRegistrationOpen:
-        type: boolean
       isSubmissionOpen:
-        type: boolean
-      isVisible:
         type: boolean
       name:
         maxLength: 100
@@ -656,11 +591,7 @@ definitions:
         type: string
       id:
         type: integer
-      isRegistrationOpen:
-        type: boolean
       isSubmissionOpen:
-        type: boolean
-      isVisible:
         type: boolean
       name:
         type: string
@@ -689,8 +620,6 @@ definitions:
         type: string
       id:
         type: integer
-      isVisible:
-        type: boolean
       permissionType:
         allOf:
         - $ref: '#/definitions/types.Permission'
@@ -713,15 +642,6 @@ definitions:
         type: boolean
       value:
         type: string
-    type: object
-  schemas.PaginatedResult-array_schemas_AvailableContest:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/schemas.AvailableContest'
-        type: array
-      pagination:
-        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
   schemas.PaginatedResult-array_schemas_ContestTask:
     properties:
@@ -848,21 +768,6 @@ definitions:
       pendingSubmissions:
         type: integer
     type: object
-  schemas.RegistrationRequest:
-    properties:
-      contestId:
-        type: integer
-      createdAt:
-        type: string
-      id:
-        type: integer
-      status:
-        $ref: '#/definitions/types.RegistrationRequestStatus'
-      user:
-        $ref: '#/definitions/schemas.User'
-      userId:
-        type: integer
-    type: object
   schemas.Submission:
     properties:
       checkedAt:
@@ -948,8 +853,6 @@ definitions:
         type: string
       id:
         type: integer
-      isVisible:
-        type: boolean
       title:
         type: string
       updatedAt:
@@ -1022,8 +925,6 @@ definitions:
         type: string
       id:
         type: integer
-      isVisible:
-        type: boolean
       title:
         type: string
       updatedAt:
@@ -1287,16 +1188,6 @@ definitions:
     - PermissionEdit
     - PermissionManage
     - PermissionOwner
-  types.RegistrationRequestStatus:
-    enum:
-    - approved
-    - rejected
-    - pending
-    type: string
-    x-enum-varnames:
-    - RegistrationRequestStatusApproved
-    - RegistrationRequestStatusRejected
-    - RegistrationRequestStatusPending
   types.SubmissionStatus:
     enum:
     - received
@@ -1696,50 +1587,6 @@ paths:
       summary: Register a user
       tags:
       - auth
-  /contests:
-    get:
-      description: Get global contests accessible to the (ongoing, upcoming, past)
-        with pagination metadata
-      parameters:
-      - description: Limit
-        in: query
-        name: limit
-        type: integer
-      - description: Offset
-        in: query
-        name: offset
-        type: integer
-      - description: Sort
-        in: query
-        name: sort
-        type: string
-      - description: Contest status
-        enum:
-        - ongoing
-        - upcoming
-        - past
-        in: query
-        name: status
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_AvailableContest'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Get global contests
-      tags:
-      - contests
   /contests-management/contests:
     post:
       consumes:
@@ -2243,51 +2090,6 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Get assignable participants for a contest
-      tags:
-      - contests-management
-  /contests-management/contests/{id}/registration-requests:
-    get:
-      description: Get all pending registration requests for a specific contest (only
-        accessible by contest creator or admin)
-      parameters:
-      - description: Contest ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - default: pending
-        description: Filter by status (pending, approved, rejected)
-        in: query
-        name: status
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-array_schemas_RegistrationRequest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Get registration requests for a contest
       tags:
       - contests-management
   /contests-management/contests/{id}/submissions:
@@ -2859,50 +2661,6 @@ paths:
       summary: Get a contest
       tags:
       - contests
-  /contests/{id}/register:
-    post:
-      description: Create a pending registration for a contest (requires contest creator
-        approval)
-      parameters:
-      - description: Contest ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Register for a contest
-      tags:
-      - contests
   /contests/{id}/results/my:
     get:
       description: Get results of the current user for a given contest, including
@@ -2945,8 +2703,9 @@ paths:
       - contests
   /contests/{id}/tasks:
     get:
-      description: Get visible tasks for a contest with optional status filter (past,
-        ongoing, upcoming). Only accessible by participants or users with access policy.
+      description: Get already-started tasks for a contest with optional status filter
+        (past, ongoing, upcoming). Only accessible by participants or users with access
+        policy.
       parameters:
       - description: Contest ID
         in: path
@@ -3733,27 +3492,6 @@ paths:
       summary: Get all submissions for a user
       tags:
       - submission
-  /tasks:
-    get:
-      description: Returns all tasks
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult%5B%5B%5Dschemas_Task%5D'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Get all globally available tasks
-      tags:
-      - tasks
   /tasks-management/tasks/:
     post:
       consumes:
@@ -3765,10 +3503,6 @@ paths:
         name: title
         required: true
         type: string
-      - description: 'Task visibility (default: false)'
-        in: formData
-        name: isVisible
-        type: boolean
       - description: Task archive
         in: formData
         name: archive
@@ -3843,10 +3577,6 @@ paths:
         in: formData
         name: title
         type: string
-      - description: Visibility of the task
-        in: formData
-        name: isVisible
-        type: boolean
       - description: New archive for the task
         in: formData
         name: archive
