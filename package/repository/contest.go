@@ -940,13 +940,17 @@ func (cr *contestRepository) GetAssignableParticipants(db database.Database, con
 	var users []models.User
 	var totalCount int64
 
-	// Get total count of assignable users (not already participants)
+	cpTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+	cpgTable := database.ResolveTableName(tx, &models.ContestParticipantGroup{})
+	assignableFilter := fmt.Sprintf(
+		"id NOT IN (SELECT user_id FROM %s WHERE contest_id = ?) AND id NOT IN (SELECT ug.user_id FROM %s AS ug JOIN %s AS cpg ON cpg.group_id = ug.group_id WHERE cpg.contest_id = ?)",
+		cpTable, ugTable, cpgTable,
+	)
+
+	// Get total count of assignable users (not already participants, directly or via an assigned group)
 	if err := tx.Model(&models.User{}).
-		Where("id NOT IN (?)",
-			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
-				Select("user_id").
-				Where("contest_id = ?", contestID),
-		).
+		Where(assignableFilter, contestID, contestID).
 		Count(&totalCount).Error; err != nil {
 		return nil, 0, err
 	}
@@ -958,11 +962,7 @@ func (cr *contestRepository) GetAssignableParticipants(db database.Database, con
 	}
 
 	err = paginatedTx.Model(&models.User{}).
-		Where("id NOT IN (?)",
-			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
-				Select("user_id").
-				Where("contest_id = ?", contestID),
-		).
+		Where(assignableFilter, contestID, contestID).
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
