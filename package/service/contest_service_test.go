@@ -1116,3 +1116,52 @@ func expectContestAccess(
 	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 	cr.EXPECT().IsUserParticipant(db, contestID, user.ID).Return(participant, nil).Times(1)
 }
+
+func TestContestService_TaskPrivacyInContestManagement(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	contestID := int64(10)
+	taskID := int64(7)
+	teacher := &schemas.User{ID: 4, Role: types.UserRoleTeacher}
+	admin := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "title:asc"}
+
+	newService := func(t *testing.T) (service.ContestService, *mock_repository.MockContestRepository, *mock_repository.MockTaskRepository, *mock_service.MockAccessControlService) {
+		ctrl := gomock.NewController(t)
+		cr := mock_repository.NewMockContestRepository(ctrl)
+		tr := mock_repository.NewMockTaskRepository(ctrl)
+		acs := mock_service.NewMockAccessControlService(ctrl)
+		cs := service.NewContestService(cr, mock_repository.NewMockUserRepository(ctrl), mock_repository.NewMockSubmissionRepository(ctrl), tr, mock_repository.NewMockGroupRepository(ctrl), acs, mock_service.NewMockTaskService(ctrl))
+		return cs, cr, tr, acs
+	}
+
+	t.Run("contest editor cannot add a task they do not collaborate on", func(t *testing.T) {
+		cs, cr, tr, acs := newService(t)
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(2)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, teacher, types.PermissionEdit).Return(nil)
+		tr.EXPECT().Get(db, taskID).Return(&models.Task{ID: taskID}, nil)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, teacher, types.PermissionEdit).Return(errors.ErrForbidden)
+
+		err := cs.AddTaskToContest(db, teacher, contestID, &schemas.AddTaskToContest{TaskID: taskID})
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("teacher only gets assignable tasks they collaborate on", func(t *testing.T) {
+		cs, cr, _, acs := newService(t)
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, teacher, types.PermissionEdit).Return(nil)
+		cr.EXPECT().GetAssignableTasks(db, contestID, &teacher.ID, params.Limit, params.Offset, params.Sort, "").Return([]models.Task{}, int64(0), nil)
+
+		_, err := cs.GetAssignableTasks(db, teacher, contestID, params, "")
+		require.NoError(t, err)
+	})
+
+	t.Run("admin gets all assignable tasks", func(t *testing.T) {
+		cs, cr, _, acs := newService(t)
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, admin, types.PermissionEdit).Return(nil)
+		cr.EXPECT().GetAssignableTasks(db, contestID, (*int64)(nil), params.Limit, params.Offset, params.Sort, "").Return([]models.Task{}, int64(0), nil)
+
+		_, err := cs.GetAssignableTasks(db, admin, contestID, params, "")
+		require.NoError(t, err)
+	})
+}

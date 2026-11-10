@@ -1694,9 +1694,9 @@ func (mr *MockContestRepositoryMockRecorder) GetAssignableParticipants(db, conte
 }
 
 // GetAssignableTasks mocks base method.
-func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
+func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAssignableTasks", db, contestID, limit, offset, sort, search)
+	ret := m.ctrl.Call(m, "GetAssignableTasks", db, contestID, collaboratorID, limit, offset, sort, search)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -1704,9 +1704,9 @@ func (m *MockContestRepository) GetAssignableTasks(db database.Database, contest
 }
 
 // GetAssignableTasks indicates an expected call of GetAssignableTasks.
-func (mr *MockContestRepositoryMockRecorder) GetAssignableTasks(db, contestID, limit, offset, sort, search any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) GetAssignableTasks(db, contestID, collaboratorID, limit, offset, sort, search any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableTasks), db, contestID, limit, offset, sort, search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableTasks), db, contestID, collaboratorID, limit, offset, sort, search)
 }
 
 // GetContestGroups mocks base method.

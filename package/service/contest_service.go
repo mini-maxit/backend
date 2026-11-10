@@ -467,7 +467,12 @@ func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *
 		paginationParams.Sort = "title:asc"
 	}
 
-	tasks, totalCount, err := cs.contestRepository.GetAssignableTasks(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search)
+	// Only tasks the user collaborates on can be put into a contest; admins see all.
+	var collaboratorID *int64
+	if currentUser.Role != types.UserRoleAdmin {
+		collaboratorID = &currentUser.ID
+	}
+	tasks, totalCount, err := cs.contestRepository.GetAssignableTasks(db, contestID, collaboratorID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search)
 	if err != nil {
 		return schemas.PaginatedResult[[]schemas.Task]{}, err
 	}
@@ -588,6 +593,11 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.ErrNotFound
 		}
+		return err
+	}
+	// Adding a task to a contest exposes it to participants, so the user must collaborate on the task.
+	err = cs.accessControlService.CanUserAccess(db, types.ResourceTypeTask, request.TaskID, currentUser, types.PermissionEdit)
+	if err != nil {
 		return err
 	}
 

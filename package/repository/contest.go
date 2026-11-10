@@ -51,7 +51,7 @@ type ContestRepository interface {
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (paginated)
-	GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error)
+	GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
@@ -458,7 +458,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, c
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
+func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
 	tx := db.GetInstance()
 	var tasks []models.Task
 	var totalCount int64
@@ -468,6 +468,13 @@ func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID 
 			tx.Table(database.ResolveTableName(tx, &models.ContestTask{})).
 				Select("task_id").
 				Where("contest_id = ?", contestID))
+
+	if collaboratorID != nil {
+		base = base.Where("id IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.AccessControl{})).
+				Select("resource_id").
+				Where("resource_type = ? AND user_id = ?", types.ResourceTypeTask, *collaboratorID))
+	}
 
 	if search != "" {
 		base = base.Where("title ILIKE ?", "%"+search+"%")
