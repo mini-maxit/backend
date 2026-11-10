@@ -26,8 +26,6 @@ type ContestService interface {
 	GetPastContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
 	// GetUpcomingContests retrieves contests that haven't started yet
 	GetUpcomingContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.AvailableContest], error)
-	// GetAllContests returns all contests in the system (admin only)
-	GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
 	// Edit updates a contest
 	Edit(db database.Database, currentUser *schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error)
 	// Delete removes a contest
@@ -67,8 +65,9 @@ type ContestService interface {
 	ValidateContestSubmission(db database.Database, contestID, taskID, userID int64) error
 
 	GetContestsCreatedByUser(db database.Database, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error)
-	// GetManagedContests retrieves contests where the user is listed in access_control (any permission)
-	GetManagedContests(db database.Database, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error)
+	// GetManagedContests retrieves contests where the user is listed in access_control (any permission).
+	// When all is true (admin only), every contest in the system is returned.
+	GetManagedContests(db database.Database, currentUser *schemas.User, all bool, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error)
 	GetContestTask(db database.Database, currentUser *schemas.User, contestID, taskID int64) (*schemas.TaskDetailed, error)
 	// GetMyContestResults returns the results of the current user for a given contest
 	GetMyContestResults(db database.Database, currentUser *schemas.User, contestID int64) (*schemas.ContestResults, error)
@@ -248,48 +247,6 @@ func (cs *contestService) GetUpcomingContests(db database.Database, currentUser 
 		result[i] = *ContestWithStatsToAvailableContest(&contest)
 	}
 
-	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
-}
-
-// GetAllContests returns all contests in the system (admin only) with pagination
-func (cs *contestService) GetAllContests(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.CreatedContest], error) {
-	// Admin-only access
-	if err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin}); err != nil {
-		return schemas.PaginatedResult[[]schemas.CreatedContest]{}, err
-	}
-
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultContestSort
-	}
-
-	contests, err := cs.contestRepository.GetAll(db, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
-	if err != nil {
-		return schemas.PaginatedResult[[]schemas.CreatedContest]{}, err
-	}
-
-	result := make([]schemas.CreatedContest, len(contests))
-	for i, c := range contests {
-		result[i] = schemas.CreatedContest{
-			ContestDetailed: schemas.ContestDetailed{
-				BaseContest: schemas.BaseContest{
-					ID:          c.ID,
-					Name:        c.Name,
-					Description: c.Description,
-					CreatedBy:   c.CreatedBy,
-					StartAt:     c.StartAt,
-					EndAt:       c.EndAt,
-				},
-				// Stats fields are not available from GetAll; leave zero-values
-				IsSubmissionOpen: c.IsSubmissionOpen,
-			},
-			IsVisible:          c.IsVisible,
-			IsRegistrationOpen: c.IsRegistrationOpen,
-			CreatedAt:          c.CreatedAt,
-		}
-	}
-
-	// Repository GetAll applies pagination but does not return total count; use current page length
-	totalCount := int64(len(result))
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
@@ -1105,13 +1062,17 @@ func (cs *contestService) GetContestsCreatedByUser(db database.Database, userID 
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
-// GetManagedContests retrieves contests where the user has any collaborator access (view/edit/manage)
-func (cs *contestService) GetManagedContests(db database.Database, userID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+// GetManagedContests retrieves contests where the user has any collaborator access (view/edit/manage).
+// all=true returns every contest and is restricted to admins.
+func (cs *contestService) GetManagedContests(db database.Database, currentUser *schemas.User, all bool, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedContest], error) {
+	if all && currentUser.Role != types.UserRoleAdmin {
+		return schemas.PaginatedResult[[]schemas.ManagedContest]{}, errors.ErrForbidden
+	}
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = defaultContestSort
 	}
 
-	contests, totalCount, err := cs.contestRepository.GetAllForCollaborator(db, userID, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	contests, totalCount, err := cs.contestRepository.GetAllForCollaborator(db, currentUser.ID, all, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
 	if err != nil {
 		return schemas.PaginatedResult[[]schemas.ManagedContest]{}, err
 	}

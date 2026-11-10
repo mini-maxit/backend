@@ -6,6 +6,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -18,6 +19,9 @@ type TaskRepository interface {
 	Edit(db database.Database, taskID int64, updates map[string]any) error
 	// GetAllCreated returns all tasks created by a user. The tasks are paginated.
 	GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error)
+	// GetAllForCollaborator returns tasks the user has an access control entry for, with the user's permission. The tasks are paginated.
+	// When all is true, every task is returned and tasks without an entry for the user get "owner" permission (admin view).
+	GetAllForCollaborator(db database.Database, userID int64, all bool, offset, limit int, sort string) ([]models.ManagedTask, int64, error)
 	// GetAll returns all tasks. The tasks are paginated.
 	GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error)
 	// Get returns a task by its ID.
@@ -89,6 +93,45 @@ func (tr *taskRepository) GetAllCreated(
 
 	err = paginatedQuery.
 		Where("created_by = ?", userID).
+		Find(&tasks).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return tasks, totalCount, nil
+}
+
+func (tr *taskRepository) GetAllForCollaborator(
+	db database.Database,
+	userID int64,
+	all bool,
+	offset, limit int,
+	sort string,
+) ([]models.ManagedTask, int64, error) {
+	tx := db.GetInstance()
+	var tasks []models.ManagedTask
+	var totalCount int64
+
+	acJoin, permissionExpr := "JOIN", "ac.permission"
+	if all {
+		acJoin, permissionExpr = "LEFT JOIN", fmt.Sprintf("COALESCE(ac.permission, '%s')", types.PermissionOwner)
+	}
+	acJoinClause := fmt.Sprintf("%s %s ac ON ac.resource_type = ? AND ac.resource_id = tasks.id AND ac.user_id = ?",
+		acJoin, database.ResolveTableName(tx, &models.AccessControl{}))
+
+	err := tx.Model(&models.Task{}).Joins(acJoinClause, types.ResourceTypeTask, userID).Count(&totalCount).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	paginatedQuery, err := utils.ApplyPaginationAndSort(tx.Model(&models.Task{}), limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = paginatedQuery.
+		Select("tasks.*, "+permissionExpr+" AS permission_type").
+		Joins(acJoinClause, types.ResourceTypeTask, userID).
+		Preload("Author").
 		Find(&tasks).Error
 	if err != nil {
 		return nil, 0, err

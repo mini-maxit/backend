@@ -2039,3 +2039,36 @@ func TestManagedContestToSchemaSetsStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestContestService_GetManagedContests(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	cs := service.NewContestService(cr, nil, nil, nil, nil, nil, nil)
+	db := &testutils.MockDatabase{}
+	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "id:asc"}
+	admin := &schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	teacher := &schemas.User{ID: 3, Role: types.UserRoleTeacher}
+
+	t.Run("teacher gets own managed contests", func(t *testing.T) {
+		cr.EXPECT().GetAllForCollaborator(db, teacher.ID, false, params.Offset, params.Limit, params.Sort).
+			Return([]models.ManagedContest{{Contest: models.Contest{ID: 5}, PermissionType: types.PermissionManage}}, int64(1), nil)
+		result, err := cs.GetManagedContests(db, teacher, false, params)
+		require.NoError(t, err)
+		require.Len(t, result.Items, 1)
+		assert.Equal(t, types.PermissionManage, result.Items[0].PermissionType)
+	})
+
+	t.Run("admin gets all contests with scope all", func(t *testing.T) {
+		cr.EXPECT().GetAllForCollaborator(db, admin.ID, true, params.Offset, params.Limit, params.Sort).
+			Return([]models.ManagedContest{}, int64(0), nil)
+		_, err := cs.GetManagedContests(db, admin, true, params)
+		require.NoError(t, err)
+	})
+
+	t.Run("teacher cannot use scope all", func(t *testing.T) {
+		_, err := cs.GetManagedContests(db, teacher, true, params)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+}

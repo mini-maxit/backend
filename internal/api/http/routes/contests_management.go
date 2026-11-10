@@ -29,7 +29,6 @@ type ContestsManagementRoute interface {
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 	GetManageableContests(w http.ResponseWriter, r *http.Request)
-	GetAllContests(w http.ResponseWriter, r *http.Request)
 	GetContestTaskStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserStats(w http.ResponseWriter, r *http.Request)
 	GetContestTaskUserSubmissions(w http.ResponseWriter, r *http.Request)
@@ -598,6 +597,8 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
 //	@Param			taskId	query		int		false	"Task ID"
+//	@Param			userSearch	query	string	false	"Search submissions by user (username, name or surname)"
+//	@Param			taskSearch	query	string	false	"Search submissions by task title or ID"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError
 //	@Failure		404		{object}	httputils.APIError
@@ -1311,8 +1312,10 @@ func (cr *contestsManagementRouteImpl) RemoveParticipantsFromContest(w http.Resp
 //
 //	@Tags			contests-management
 //	@Summary		Get contests manageable by the current user
-//	@Description	Get all contests where the current user is the creator or has collaborator access (view, edit, or manage) with pagination metadata
+//	@Description	Get all contests where the current user is the creator or has collaborator access (view, edit, or manage) with pagination metadata.
+//	@Description	Admins can pass scope=all to get every contest in the system; contests without an explicit entry are returned with "owner" permission.
 //	@Produce		json
+//	@Param			scope	query		string	false	"Set to 'all' to list every contest (admin only)"	Enums(all)
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
@@ -1332,40 +1335,13 @@ func (cr *contestsManagementRouteImpl) GetManageableContests(w http.ResponseWrit
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
 
-	response, err := cr.contestService.GetManagedContests(db, currentUser.ID, paginationParams)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-	httputils.ReturnSuccess(w, http.StatusOK, response)
-}
-
-// GetAllContests godoc
-//
-//	@Tags			contests-management, admin
-//	@Summary		Get all contests (admin only)
-//	@Description	Returns all contests in the system. Accessible only to admins.
-//	@Produce		json
-//	@Param			limit	query		int		false	"Limit"
-//	@Param			offset	query		int		false	"Offset"
-//	@Param			sort	query		string	false	"Sort"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.CreatedContest]]
-//	@Router			/contests-management/contests [get]
-func (cr *contestsManagementRouteImpl) GetAllContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	all, ok := httputils.ParseScopeAll(queryParams)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid scope query parameter, expected 'all'")
 		return
 	}
 
-	currentUser := httputils.GetCurrentUser(r)
-	db := httputils.GetDatabase(r)
-	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
-	paginationParams := httputils.ExtractPaginationParams(queryParams)
-
-	response, err := cr.contestService.GetAllContests(db, currentUser, paginationParams)
+	response, err := cr.contestService.GetManagedContests(db, currentUser, all, paginationParams)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return
@@ -1378,8 +1354,6 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 		switch r.Method {
 		case http.MethodPost:
 			route.CreateContest(w, r)
-		case http.MethodGet:
-			route.GetAllContests(w, r)
 		default:
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
