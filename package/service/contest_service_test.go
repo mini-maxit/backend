@@ -2015,3 +2015,27 @@ func TestContestService_RemoveTaskFromContest(t *testing.T) {
 		require.ErrorIs(t, err, errors.ErrDatabaseConnection)
 	})
 }
+
+func TestManagedContestToSchemaSetsStatus(t *testing.T) {
+	now := time.Now()
+	past := now.Add(-time.Hour)
+	future := now.Add(time.Hour)
+
+	cases := map[string]struct {
+		start time.Time
+		end   *time.Time
+		want  types.ContestStatus
+	}{
+		"upcoming": {future, nil, types.ContestStatusUpcoming},
+		"ongoing":  {past, &future, types.ContestStatusOngoing},
+		"past":     {past.Add(-time.Hour), &past, types.ContestStatusPast},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := service.ManagedContestToSchema(&models.ManagedContest{
+				Contest: models.Contest{StartAt: c.start, EndAt: c.end},
+			})
+			assert.Equal(t, c.want, got.Status)
+		})
+	}
+}
