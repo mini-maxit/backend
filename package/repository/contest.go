@@ -8,14 +8,13 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type ContestDetailed struct {
 	models.Contest
 	CreatedByName    string `gorm:"column:created_by_name"`
 	ParticipantCount int64  `gorm:"column:participant_count"`
-	TaskCount        int64  `gorm:"column:task_count"` // number of visible tasks
+	TaskCount        int64  `gorm:"column:task_count"` // number of tasks
 }
 
 type ContestRepository interface {
@@ -31,12 +30,6 @@ type ContestRepository interface {
 	GetWithCreator(db database.Database, contestID int64) (*models.ParticipantContestStats, *models.User, error)
 	// GetAll retrieves all contests with pagination and sorting
 	GetAll(db database.Database, offset int, limit int, sort string) ([]models.Contest, error)
-	// GetOngoingContestsWithStats retrieves contests that are currently running with stats
-	GetOngoingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
-	// GetPastContestsWithStats retrieves contests that have ended with stats
-	GetPastContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
-	// GetUpcomingContestsWithStats retrieves contests that haven't started yet with stats
-	GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error)
 	// GetAllForCreator retrieves all contests created by a specific user with pagination and sorting
 	GetAllForCreator(db database.Database, creatorID int64, offset int, limit int, sort string) ([]ContestDetailed, int64, error)
 	// GetAllForCollaborator retrieves all contests where the user has any access control entry (collaborator) with pagination and sorting.
@@ -48,22 +41,18 @@ type ContestRepository interface {
 	EditWithStats(db database.Database, contestID int64, updates map[string]any) (*models.ContestWithStats, error)
 	// Delete removes a contest
 	Delete(db database.Database, contestID int64) error
-	// CreatePendingRegistration creates a pending registration request
-	CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error)
-	// IsPendingRegistrationExists checks if pending registration already exists
-	IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
 	IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
 	GetTasksForContest(db database.Database, contestID int64) ([]models.Task, error)
 	// GetContestTasksWithSettings retrieves contest-task relations with timing flags and associated task (paginated)
 	GetContestTasksWithSettings(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.ContestTask, int64, error)
-	// GetVisibleContestTasksWithSettings retrieves visible contest-task relations with timing flags and associated task
-	GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
+	// GetStartedContestTasksWithSettings retrieves already-started contest-task relations with timing flags and associated task
+	GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error)
 	// GetTasksForContestWithStats retrieves all tasks assigned to a contest with submission statistics for a user
 	GetTasksForContestWithStats(db database.Database, contestID, userID int64) ([]models.Task, error)
 	// GetAssignableTasks retrieves all tasks NOT assigned to a contest (paginated)
-	GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error)
+	GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error)
 	// GetContestsForUserWithStats retrieves contests with stats a user is participating in
 	GetContestsForUserWithStats(db database.Database, userID int64) ([]models.ParticipantContestStats, error)
 	// AddTasksToContest assigns tasks to a contest
@@ -74,16 +63,8 @@ type ContestRepository interface {
 	IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error)
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
-	// GetRegistrationRequests retrieves 'status' registration requests for a contest
-	GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
-	// DeleteRegistrationRequest deletes a pending registration request
-	DeleteRegistrationRequest(db database.Database, requestID int64) error
 	// CreateContestParticipant adds a user as a participant to a contest
 	CreateContestParticipant(db database.Database, contestID, userID int64) error
-	// RejectRegistrationRequest rejects a pending registration request
-	UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error
-	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
-	GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 	// GetContestTask retrieves the ContestTask relationship for validation
 	GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error)
 	GetTaskContests(db database.Database, taskID int64) ([]int64, error)
@@ -266,8 +247,7 @@ func (cr *contestRepository) GetAllForCreatorWithStats(db database.Database, cre
 		Select(`contests.*,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
-			false as is_participant,
-			false as has_pending_reg`).
+			false as is_participant`).
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
 			FROM %s
@@ -325,8 +305,7 @@ func (cr *contestRepository) EditWithStats(db database.Database, contestID int64
 		Select(`contests.*,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
-			false as is_participant,
-			false as has_pending_reg`).
+			false as is_participant`).
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
 			FROM %s
@@ -362,27 +341,6 @@ func (cr *contestRepository) Delete(db database.Database, contestID int64) error
 	return nil
 }
 
-func (cr *contestRepository) CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error) {
-	tx := db.GetInstance()
-	err := tx.Create(registration).Error
-	if err != nil {
-		return 0, err
-	}
-	return registration.ID, nil
-}
-
-func (cr *contestRepository) IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error) {
-	tx := db.GetInstance()
-	var count int64
-	err := tx.Model(&models.ContestRegistrationRequests{}).
-		Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).
-		Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
 func (cr *contestRepository) IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error) {
 	tx := db.GetInstance()
 	var userCount int64
@@ -401,247 +359,6 @@ func (cr *contestRepository) IsUserParticipant(db database.Database, contestID i
 		return false, err
 	}
 	return userCount > 0 || groupCount > 0, nil
-}
-
-func (cr *contestRepository) GetAllWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, error) {
-	tx := db.GetInstance()
-	var contests []models.ContestWithStats
-
-	// Build an efficient query that calculates participant counts and user registration status
-	// in a single SQL query to avoid N+1 problems when fetching contests with their statistics.
-	//
-	// The query:
-	// 1. Counts direct participants via contest_participants table
-	// 2. Counts group participants via contest_participant_groups + user_groups tables
-	// 3. Determines if the current user is a participant (directly or via group)
-	// 4. Checks if the current user has a pending registration
-	query := tx.Model(&models.Contest{}).
-		Select(`contests.*,
-			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
-			COALESCE(contest_task_count.count, 0) as task_count,
-			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
-			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID)
-
-	// Apply pagination and sorting
-	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
-	if err != nil {
-		return nil, err
-	}
-
-	err = query.Find(&contests).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return contests, nil
-}
-
-func (cr *contestRepository) GetOngoingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	tx := db.GetInstance()
-	var contests []models.ContestWithStats
-	var totalCount int64
-
-	// Get total count first
-	countQuery := tx.Model(&models.Contest{}).
-		Where(`(
-			(start_at IS NULL OR start_at <= NOW()) AND (end_at IS NULL OR end_at > NOW())
-		)`)
-	err := countQuery.Count(&totalCount).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Build query for ongoing contests (started but not ended, or no end date but started)
-	query := tx.Model(&models.Contest{}).
-		Select(`contests.*,
-			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
-			COALESCE(contest_task_count.count, 0) as task_count,
-			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
-			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
-		Where(`(
-			(start_at IS NULL OR start_at <= NOW()) AND (end_at IS NULL OR end_at > NOW())
-		)`)
-
-	// Apply pagination and sorting
-	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	err = query.Find(&contests).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return contests, totalCount, nil
-}
-
-func (cr *contestRepository) GetPastContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	tx := db.GetInstance()
-	var contests []models.ContestWithStats
-	var totalCount int64
-
-	// Get total count first
-	countQuery := tx.Model(&models.Contest{}).
-		Where("end_at IS NOT NULL AND end_at <= NOW()")
-	err := countQuery.Count(&totalCount).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Build query for past contests (ended)
-	query := tx.Model(&models.Contest{}).
-		Select(`contests.*,
-			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
-			COALESCE(contest_task_count.count, 0) as task_count,
-			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
-			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
-		Where("end_at IS NOT NULL AND end_at <= NOW()")
-
-	// Apply pagination and sorting
-	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	err = query.Find(&contests).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return contests, totalCount, nil
-}
-
-func (cr *contestRepository) GetUpcomingContestsWithStats(db database.Database, userID int64, offset int, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	tx := db.GetInstance()
-	var contests []models.ContestWithStats
-	var totalCount int64
-
-	// Get total count first
-	countQuery := tx.Model(&models.Contest{}).
-		Where("start_at IS NOT NULL AND start_at > NOW()")
-	err := countQuery.Count(&totalCount).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Build query for upcoming contests (not started yet)
-	query := tx.Model(&models.Contest{}).
-		Select(`contests.*,
-			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
-			COALESCE(contest_task_count.count, 0) as task_count,
-			CASE WHEN user_participants.user_id IS NOT NULL OR user_group_participants.user_id IS NOT NULL THEN true ELSE false END as is_participant,
-			CASE WHEN pending_regs.user_id IS NOT NULL THEN true ELSE false END as has_pending_reg`).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as direct_participants ON contests.id = direct_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			GROUP BY cpg.contest_id
-		) as group_participants ON contests.id = group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT contest_id, COUNT(*) as count
-			FROM %s
-			GROUP BY contest_id
-		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{}))).
-		Joins(fmt.Sprintf(`LEFT JOIN %s user_participants ON contests.id = user_participants.contest_id AND user_participants.user_id = ?`, database.ResolveTableName(tx, &models.ContestParticipant{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN (
-			SELECT DISTINCT cpg.contest_id, ug.user_id
-			FROM %s cpg
-			JOIN %s ug ON cpg.group_id = ug.group_id
-			WHERE ug.user_id = ?
-		) as user_group_participants ON contests.id = user_group_participants.contest_id`, database.ResolveTableName(tx, &models.ContestParticipantGroup{}), database.ResolveTableName(tx, &models.UserGroup{})), userID).
-		Joins(fmt.Sprintf(`LEFT JOIN %s pending_regs ON contests.id = pending_regs.contest_id AND pending_regs.user_id = ?`, database.ResolveTableName(tx, &models.ContestRegistrationRequests{})), userID).
-		Where("start_at IS NOT NULL AND start_at > NOW()")
-
-	// Apply pagination and sorting
-	query, err = utils.ApplyPaginationAndSort(query, limit, offset, sort)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	err = query.Find(&contests).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return contests, totalCount, nil
 }
 
 // GetContestTasksWithSettings retrieves contest-task relations (with timing flags) and preloads the associated Task
@@ -706,8 +423,8 @@ func qualifyContestTaskSort(sortBy, contestTaskTable, taskTable string) string {
 	return field + " " + dir
 }
 
-// GetVisibleContestTasksWithSettings retrieves visible contest-task relations (with timing flags) and preloads the associated Task
-func (cr *contestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
+// GetStartedContestTasksWithSettings retrieves already-started contest-task relations (with timing flags) and preloads the associated Task
+func (cr *contestRepository) GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
 	tx := db.GetInstance()
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).
@@ -747,7 +464,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, c
 	return tasks, nil
 }
 
-func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
+func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
 	tx := db.GetInstance()
 	var tasks []models.Task
 	var totalCount int64
@@ -757,6 +474,13 @@ func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID 
 			tx.Table(database.ResolveTableName(tx, &models.ContestTask{})).
 				Select("task_id").
 				Where("contest_id = ?", contestID))
+
+	if collaboratorID != nil {
+		base = base.Where("id IN (?)",
+			tx.Table(database.ResolveTableName(tx, &models.AccessControl{})).
+				Select("resource_id").
+				Where("resource_type = ? AND user_id = ?", types.ResourceTypeTask, *collaboratorID))
+	}
 
 	if search != "" {
 		base = base.Where("title ILIKE ?", "%"+search+"%")
@@ -936,26 +660,6 @@ func (cr *contestRepository) IsTaskInContest(db database.Database, contestID, ta
 	return count > 0, nil
 }
 
-func (cr *contestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
-	tx := db.GetInstance()
-	var requests []models.ContestRegistrationRequests
-	err := tx.Preload("User").Where("contest_id = ? AND status = ?", contestID, status).Find(&requests).Error
-	if err != nil {
-		return nil, err
-	}
-	return requests, nil
-}
-
-func (cr *contestRepository) UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error {
-	tx := db.GetInstance()
-	return tx.Model(models.ContestRegistrationRequests{}).Where("id = ?", requestID).Updates(models.ContestRegistrationRequests{Status: status}).Error
-}
-
-func (cr *contestRepository) DeleteRegistrationRequest(db database.Database, requestID int64) error {
-	tx := db.GetInstance()
-	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error
-}
-
 func (cr *contestRepository) CreateContestParticipant(db database.Database, contestID, userID int64) error {
 	tx := db.GetInstance()
 	participant := &models.ContestParticipant{
@@ -967,20 +671,6 @@ func (cr *contestRepository) CreateContestParticipant(db database.Database, cont
 		return err
 	}
 	return nil
-}
-
-func (cr *contestRepository) GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
-	tx := db.GetInstance()
-	var request []*models.ContestRegistrationRequests
-	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).Limit(1).Find(&request).Error
-	if err != nil {
-		return nil, err
-	}
-	if len(request) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-
-	return request[0], nil
 }
 
 func (cr *contestRepository) GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error) {

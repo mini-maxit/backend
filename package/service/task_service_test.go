@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -151,7 +152,6 @@ func TestCreateTask(t *testing.T) {
 		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
 		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
 		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, task *models.Task) (int64, error) {
-			assert.False(t, task.IsVisible) // Default is false
 			return int64(1), nil
 		}).Times(1)
 		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -159,25 +159,6 @@ func TestCreateTask(t *testing.T) {
 		taskID, err := ts.Create(db, adminUser, task)
 		require.NoError(t, err)
 		assert.NotEqual(t, 0, taskID)
-	})
-
-	t.Run("Custom visibility", func(t *testing.T) {
-		task := &schemas.Task{
-			Title:     "Visible Task",
-			CreatedBy: adminUser.ID,
-			IsVisible: true,
-		}
-		ur.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&models.User{ID: 1, Role: types.UserRoleAdmin}, nil).Times(1)
-		tr.EXPECT().GetByTitle(db, task.Title).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		tr.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ database.Database, model *models.Task) (int64, error) {
-			assert.True(t, model.IsVisible)
-			return int64(2), nil
-		}).Times(1)
-		acs.EXPECT().GrantOwnerAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-		taskID, err := ts.Create(db, adminUser, task)
-		require.NoError(t, err)
-		assert.Equal(t, int64(2), taskID)
 	})
 
 	t.Run("Non unique title", func(t *testing.T) {
@@ -241,66 +222,6 @@ func TestGetTaskByTitle(t *testing.T) {
 	})
 }
 
-func TestGetAllTasks(t *testing.T) {
-	db := &testutils.MockDatabase{}
-	ctrl := gomock.NewController(t)
-	ur := mock_repository.NewMockUserRepository(ctrl)
-	gr := mock_repository.NewMockGroupRepository(ctrl)
-	tr := mock_repository.NewMockTaskRepository(ctrl)
-	io := mock_repository.NewMockTestCaseRepository(ctrl)
-	fr := mock_repository.NewMockFile(ctrl)
-	ts := service.NewTaskService(nil, fr, tr, io, ur, gr, nil, nil, nil)
-
-	paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: sortIDAsc}
-
-	t.Run("No tasks", func(t *testing.T) {
-		tr.EXPECT().GetAll(db,
-			paginationParams.Limit,
-			paginationParams.Offset,
-			paginationParams.Sort,
-		).Return([]models.Task{}, int64(0), nil).Times(1)
-		tasks, err := ts.GetAll(db, adminUser, paginationParams)
-		require.NoError(t, err)
-		assert.Empty(t, tasks)
-	})
-
-	t.Run("Success", func(t *testing.T) {
-		tasks := []models.Task{
-			{
-				ID:        1,
-				Title:     testTaskTitle,
-				CreatedBy: teacherUser.ID,
-				IsVisible: true,
-			},
-		}
-		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
-
-		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
-		require.NoError(t, err)
-		assert.NotEmpty(t, resultTasks)
-		assert.True(t, resultTasks[0].IsVisible)
-	})
-
-	t.Run("Only globally visible tasks", func(t *testing.T) {
-		// Repository should only return globally visible tasks
-		tasks := []models.Task{
-			{
-				ID:        1,
-				Title:     "Visible Task",
-				CreatedBy: teacherUser.ID,
-				IsVisible: true,
-			},
-		}
-		tr.EXPECT().GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(tasks, int64(len(tasks)), nil).Times(1)
-
-		resultTasks, err := ts.GetAll(db, studentUser, paginationParams)
-		require.NoError(t, err)
-		assert.Len(t, resultTasks, 1)
-		assert.Equal(t, "Visible Task", resultTasks[0].Title)
-		assert.True(t, resultTasks[0].IsVisible)
-	})
-}
-
 func TestGetTask(t *testing.T) {
 	db := &testutils.MockDatabase{}
 	ctrl := gomock.NewController(t)
@@ -309,74 +230,65 @@ func TestGetTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
 	fsMock := filestorage.NewMockFileStorageService(ctrl)
 	fsMock.EXPECT().GetSignedFileURL(gomock.Any(), gomock.Any()).
 		Return("http://localhost:8888/buckets/maxit/path?expires=9999999999&signature=fakesig", nil).
 		AnyTimes()
-	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, nil, nil)
+	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, cr, acs)
 
-	task := &schemas.Task{
-		Title:     testTaskTitle,
-		CreatedBy: adminUser.ID,
-	}
+	taskID := int64(7)
+	contestID := int64(5)
+	taskModel := &models.Task{ID: taskID, Title: testTaskTitle, CreatedBy: adminUser.ID}
 
-	t.Run("Success", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
-		taskResp, err := ts.Get(db, adminUser, task.ID)
+	t.Run("collaborator can get", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, teacherUser, types.PermissionEdit).Return(nil).Times(1)
+
+		taskResp, err := ts.Get(db, teacherUser, taskID)
 		require.NoError(t, err)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+		assert.Equal(t, testTaskTitle, taskResp.Title)
 	})
 
-	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		tr.EXPECT().Get(gomock.Any(), task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
+	t.Run("student without permission and not in any contest is forbidden", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(false, nil).Times(1)
 
-		// tr.EXPECT().IsAssignedToUser(db, task.ID, studentUser.ID).Return(true, nil).Times(1)
-		taskResp, err := ts.Get(db, studentUser, task.ID)
-		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+		taskResp, err := ts.Get(db, studentUser, taskID)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, taskResp)
 	})
 
-	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
+	t.Run("contest participant can get a started task", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(true, nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{ContestID: contestID, TaskID: taskID, StartAt: time.Now().Add(-time.Hour)}, nil).Times(1)
 
-		taskResp, err := ts.Get(db, studentUser, task.ID)
+		taskResp, err := ts.Get(db, studentUser, taskID)
 		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
+		assert.Equal(t, taskID, taskResp.ID)
 	})
 
-	t.Run("Success with created task", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
-		taskResp, err := ts.Get(db, teacherUser, task.ID)
-		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+	t.Run("contest participant cannot get a task that has not started", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(true, nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{ContestID: contestID, TaskID: taskID, StartAt: time.Now().Add(time.Hour)}, nil).Times(1)
+
+		taskResp, err := ts.Get(db, studentUser, taskID)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, taskResp)
 	})
 
 	t.Run("Fail with non existent task", func(t *testing.T) {
-		taskID := int64(0)
-		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		taskResp, err := ts.Get(db, adminUser, taskID)
+		tr.EXPECT().Get(db, int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		taskResp, err := ts.Get(db, adminUser, 0)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 		assert.Nil(t, taskResp)
 	})
@@ -447,7 +359,7 @@ func TestEditTask(t *testing.T) {
 			ID:        taskID,
 			Title:     task.Title,
 			CreatedBy: task.CreatedBy,
-		}, nil).Times(2)
+		}, nil).Times(1)
 		tr.EXPECT().Edit(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		newTitle := "Updated Task"
@@ -462,22 +374,6 @@ func TestEditTask(t *testing.T) {
 		tr.EXPECT().Get(db, int64(0)).Return(nil, errors.ErrTaskNotFound).Times(1)
 		err := ts.Edit(db, adminUser, 0, updatedTask)
 		require.ErrorIs(t, err, errors.ErrTaskNotFound)
-	})
-
-	t.Run("Update isVisible", func(t *testing.T) {
-		acs.EXPECT().CanUserAccess(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-		tr.EXPECT().Edit(db, taskID, gomock.Any()).DoAndReturn(func(db database.Database, id int64, updates map[string]any) error {
-			// Verify that IsVisible was updated
-			isVisible, ok := updates["is_visible"].(bool)
-			require.True(t, ok)
-			assert.False(t, isVisible)
-			return nil
-		}).Times(1)
-
-		isVisible := false
-		updatedTask := &schemas.EditTask{IsVisible: &isVisible}
-		err := ts.Edit(db, adminUser, taskID, updatedTask)
-		require.NoError(t, err)
 	})
 }
 

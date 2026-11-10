@@ -407,7 +407,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				CreatedBy: 1,
 				CreatedAt: now,
 				UpdatedAt: now,
-				IsVisible: true,
 			},
 			{
 				ID:        2,
@@ -415,7 +414,6 @@ func TestGetAllCreatedTasks(t *testing.T) {
 				CreatedBy: 1,
 				CreatedAt: now,
 				UpdatedAt: now,
-				IsVisible: false,
 			},
 		}
 		result := schemas.NewPaginatedResult(tasks, 0, 10, 2)

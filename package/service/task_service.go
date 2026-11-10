@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
 
@@ -25,8 +26,6 @@ type TaskService interface {
 	Delete(db database.Database, currentUser *schemas.User, taskID int64) error
 	// Edit edits an existing task.
 	Edit(db database.Database, currentUser *schemas.User, taskID int64, updateInfo *schemas.EditTask) error
-	// GetAll retrieves all tasks based on query parameters.
-	GetAll(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
 	GetAllCreated(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
 	// GetManagedTasks retrieves tasks the current user has any access to, with their permission.
@@ -89,7 +88,6 @@ func (ts *taskService) Create(db database.Database, currentUser *schemas.User, t
 		Title:     task.Title,
 		CreatedBy: task.CreatedBy,
 		Author:    *author,
-		IsVisible: task.IsVisible,
 	}
 	taskID, err := ts.taskRepository.Create(db, &model)
 	if err != nil {
@@ -118,32 +116,6 @@ func (ts *taskService) GetByTitle(db database.Database, title string) (*schemas.
 	return TaskToSchema(task), nil
 }
 
-func (ts *taskService) GetAll(db database.Database, _ *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error) {
-	// err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleAdmin})
-	// if err != nil {
-	// 	ts.logger.Errorf("Error validating user role: %v", err.Error())
-	// 	return nil, err
-	// }
-	if paginationParams.Sort == "" {
-		paginationParams.Sort = defaultTaskSort
-	}
-
-	// Get all tasks
-	tasks, _, err := ts.taskRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
-	if err != nil {
-		ts.logger.Errorf("Error getting all tasks: %v", err.Error())
-		return nil, err
-	}
-
-	// Convert the models to schemas
-	result := make([]schemas.Task, len(tasks))
-	for i, task := range tasks {
-		result[i] = *TaskToSchema(&task)
-	}
-
-	return result, nil
-}
-
 func (ts *taskService) Get(db database.Database, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error) {
 	// Get the task
 	task, err := ts.taskRepository.Get(db, taskID)
@@ -153,6 +125,14 @@ func (ts *taskService) Get(db database.Database, currentUser *schemas.User, task
 			return nil, errors.ErrNotFound
 		}
 		return nil, err
+	}
+
+	canView, err := ts.canViewTask(db, task.ID, currentUser)
+	if err != nil {
+		return nil, err
+	}
+	if !canView {
+		return nil, errors.ErrForbidden
 	}
 
 	descriptionURL, err := ts.filestorage.GetSignedFileURL(task.DescriptionFile.Path, 0)
@@ -263,9 +243,6 @@ func (ts *taskService) Edit(db database.Database, currentUser *schemas.User, tas
 
 	if updateInfo.Title != nil {
 		updates["title"] = *updateInfo.Title
-	}
-	if updateInfo.IsVisible != nil {
-		updates["is_visible"] = *updateInfo.IsVisible
 	}
 
 	ts.logger.Infof("Updating task ID %d with updates: %+v", taskID, updates)
@@ -507,9 +484,6 @@ func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schema
 	if updateInfo.Title != nil {
 		currentModel.Title = *updateInfo.Title
 	}
-	if updateInfo.IsVisible != nil {
-		currentModel.IsVisible = *updateInfo.IsVisible
-	}
 }
 
 func TaskToSchema(model *models.Task) *schemas.Task {
@@ -520,7 +494,6 @@ func TaskToSchema(model *models.Task) *schemas.Task {
 		CreatorName: model.Author.Name,
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
-		IsVisible:   model.IsVisible,
 	}
 }
 
@@ -619,6 +592,41 @@ func (ts *taskService) enrichTaskWithAttempts(
 }
 
 // hasTaskPermission checks that task exists and if the user has the required permission for the task.
+// canViewTask: task collaborators always; anyone else only as a participant of a contest
+// in which this task has already started.
+func (ts *taskService) canViewTask(db database.Database, taskID int64, user *schemas.User) (bool, error) {
+	err := ts.accessControlService.CanUserAccess(db, types.ResourceTypeTask, taskID, user, types.PermissionEdit)
+	if err == nil {
+		return true, nil
+	}
+	if !errors.Is(err, errors.ErrForbidden) {
+		return false, err
+	}
+
+	// shortcut: one query per contest the task is in, fine while tasks live in a handful of contests.
+	contestIDs, err := ts.contestRepository.GetTaskContests(db, taskID)
+	if err != nil {
+		return false, err
+	}
+	for _, contestID := range contestIDs {
+		isParticipant, err := ts.contestRepository.IsUserParticipant(db, contestID, user.ID)
+		if err != nil {
+			return false, err
+		}
+		if !isParticipant {
+			continue
+		}
+		contestTask, err := ts.contestRepository.GetContestTask(db, contestID, taskID)
+		if err != nil {
+			return false, err
+		}
+		if !contestTask.StartAt.After(time.Now()) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (ts *taskService) hasTaskPermission(db database.Database, taskID int64, user *schemas.User, requiredPermission types.Permission) error {
 	_, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {

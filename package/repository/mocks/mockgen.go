@@ -1211,22 +1211,6 @@ func (mr *MockTaskRepositoryMockRecorder) Get(db, taskID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTaskRepository)(nil).Get), db, taskID)
 }
 
-// GetAll mocks base method.
-func (m *MockTaskRepository) GetAll(db database.Database, limit, offset int, sort string) ([]models.Task, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", db, limit, offset, sort)
-	ret0, _ := ret[0].([]models.Task)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockTaskRepositoryMockRecorder) GetAll(db, limit, offset, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockTaskRepository)(nil).GetAll), db, limit, offset, sort)
-}
-
 // GetAllCreated mocks base method.
 func (m *MockTaskRepository) GetAllCreated(db database.Database, userID int64, offset, limit int, sort string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
@@ -1588,21 +1572,6 @@ func (mr *MockContestRepositoryMockRecorder) CreateContestParticipant(db, contes
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContestParticipant", reflect.TypeOf((*MockContestRepository)(nil).CreateContestParticipant), db, contestID, userID)
 }
 
-// CreatePendingRegistration mocks base method.
-func (m *MockContestRepository) CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePendingRegistration", db, registration)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreatePendingRegistration indicates an expected call of CreatePendingRegistration.
-func (mr *MockContestRepositoryMockRecorder) CreatePendingRegistration(db, registration any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingRegistration", reflect.TypeOf((*MockContestRepository)(nil).CreatePendingRegistration), db, registration)
-}
-
 // Delete mocks base method.
 func (m *MockContestRepository) Delete(db database.Database, contestID int64) error {
 	m.ctrl.T.Helper()
@@ -1615,20 +1584,6 @@ func (m *MockContestRepository) Delete(db database.Database, contestID int64) er
 func (mr *MockContestRepositoryMockRecorder) Delete(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockContestRepository)(nil).Delete), db, contestID)
-}
-
-// DeleteRegistrationRequest mocks base method.
-func (m *MockContestRepository) DeleteRegistrationRequest(db database.Database, requestID int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRegistrationRequest", db, requestID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteRegistrationRequest indicates an expected call of DeleteRegistrationRequest.
-func (mr *MockContestRepositoryMockRecorder) DeleteRegistrationRequest(db, requestID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRegistrationRequest", reflect.TypeOf((*MockContestRepository)(nil).DeleteRegistrationRequest), db, requestID)
 }
 
 // Edit mocks base method.
@@ -1755,9 +1710,9 @@ func (mr *MockContestRepositoryMockRecorder) GetAssignableParticipants(db, conte
 }
 
 // GetAssignableTasks mocks base method.
-func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
+func (m *MockContestRepository) GetAssignableTasks(db database.Database, contestID int64, collaboratorID *int64, limit, offset int, sort, search string) ([]models.Task, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAssignableTasks", db, contestID, limit, offset, sort, search)
+	ret := m.ctrl.Call(m, "GetAssignableTasks", db, contestID, collaboratorID, limit, offset, sort, search)
 	ret0, _ := ret[0].([]models.Task)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -1765,9 +1720,9 @@ func (m *MockContestRepository) GetAssignableTasks(db database.Database, contest
 }
 
 // GetAssignableTasks indicates an expected call of GetAssignableTasks.
-func (mr *MockContestRepositoryMockRecorder) GetAssignableTasks(db, contestID, limit, offset, sort, search any) *gomock.Call {
+func (mr *MockContestRepositoryMockRecorder) GetAssignableTasks(db, contestID, collaboratorID, limit, offset, sort, search any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableTasks), db, contestID, limit, offset, sort, search)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssignableTasks", reflect.TypeOf((*MockContestRepository)(nil).GetAssignableTasks), db, contestID, collaboratorID, limit, offset, sort, search)
 }
 
 // GetContestGroups mocks base method.
@@ -1862,66 +1817,19 @@ func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
 }
 
-// GetOngoingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetOngoingContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
+// GetStartedContestTasksWithSettings mocks base method.
+func (m *MockContestRepository) GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOngoingContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetOngoingContestsWithStats indicates an expected call of GetOngoingContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetOngoingContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOngoingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetOngoingContestsWithStats), db, userID, offset, limit, sort)
-}
-
-// GetPastContestsWithStats mocks base method.
-func (m *MockContestRepository) GetPastContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPastContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetPastContestsWithStats indicates an expected call of GetPastContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetPastContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetPastContestsWithStats), db, userID, offset, limit, sort)
-}
-
-// GetPendingRegistrationRequest mocks base method.
-func (m *MockContestRepository) GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingRegistrationRequest", db, contestID, userID)
-	ret0, _ := ret[0].(*models.ContestRegistrationRequests)
+	ret := m.ctrl.Call(m, "GetStartedContestTasksWithSettings", db, contestID)
+	ret0, _ := ret[0].([]models.ContestTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPendingRegistrationRequest indicates an expected call of GetPendingRegistrationRequest.
-func (mr *MockContestRepositoryMockRecorder) GetPendingRegistrationRequest(db, contestID, userID any) *gomock.Call {
+// GetStartedContestTasksWithSettings indicates an expected call of GetStartedContestTasksWithSettings.
+func (mr *MockContestRepositoryMockRecorder) GetStartedContestTasksWithSettings(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingRegistrationRequest", reflect.TypeOf((*MockContestRepository)(nil).GetPendingRegistrationRequest), db, contestID, userID)
-}
-
-// GetRegistrationRequests mocks base method.
-func (m *MockContestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrationRequests", db, contestID, status)
-	ret0, _ := ret[0].([]models.ContestRegistrationRequests)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRegistrationRequests indicates an expected call of GetRegistrationRequests.
-func (mr *MockContestRepositoryMockRecorder) GetRegistrationRequests(db, contestID, status any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrationRequests", reflect.TypeOf((*MockContestRepository)(nil).GetRegistrationRequests), db, contestID, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStartedContestTasksWithSettings", reflect.TypeOf((*MockContestRepository)(nil).GetStartedContestTasksWithSettings), db, contestID)
 }
 
 // GetTaskContests mocks base method.
@@ -1969,37 +1877,6 @@ func (mr *MockContestRepositoryMockRecorder) GetTasksForContestWithStats(db, con
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTasksForContestWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetTasksForContestWithStats), db, contestID, userID)
 }
 
-// GetUpcomingContestsWithStats mocks base method.
-func (m *MockContestRepository) GetUpcomingContestsWithStats(db database.Database, userID int64, offset, limit int, sort string) ([]models.ContestWithStats, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUpcomingContestsWithStats", db, userID, offset, limit, sort)
-	ret0, _ := ret[0].([]models.ContestWithStats)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetUpcomingContestsWithStats indicates an expected call of GetUpcomingContestsWithStats.
-func (mr *MockContestRepositoryMockRecorder) GetUpcomingContestsWithStats(db, userID, offset, limit, sort any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpcomingContestsWithStats", reflect.TypeOf((*MockContestRepository)(nil).GetUpcomingContestsWithStats), db, userID, offset, limit, sort)
-}
-
-// GetVisibleContestTasksWithSettings mocks base method.
-func (m *MockContestRepository) GetVisibleContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVisibleContestTasksWithSettings", db, contestID)
-	ret0, _ := ret[0].([]models.ContestTask)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVisibleContestTasksWithSettings indicates an expected call of GetVisibleContestTasksWithSettings.
-func (mr *MockContestRepositoryMockRecorder) GetVisibleContestTasksWithSettings(db, contestID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleContestTasksWithSettings", reflect.TypeOf((*MockContestRepository)(nil).GetVisibleContestTasksWithSettings), db, contestID)
-}
-
 // GetWithCount mocks base method.
 func (m *MockContestRepository) GetWithCount(db database.Database, contestID int64) (*models.ParticipantContestStats, error) {
 	m.ctrl.T.Helper()
@@ -2029,21 +1906,6 @@ func (m *MockContestRepository) GetWithCreator(db database.Database, contestID i
 func (mr *MockContestRepositoryMockRecorder) GetWithCreator(db, contestID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithCreator", reflect.TypeOf((*MockContestRepository)(nil).GetWithCreator), db, contestID)
-}
-
-// IsPendingRegistrationExists mocks base method.
-func (m *MockContestRepository) IsPendingRegistrationExists(db database.Database, contestID, userID int64) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPendingRegistrationExists", db, contestID, userID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsPendingRegistrationExists indicates an expected call of IsPendingRegistrationExists.
-func (mr *MockContestRepositoryMockRecorder) IsPendingRegistrationExists(db, contestID, userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPendingRegistrationExists", reflect.TypeOf((*MockContestRepository)(nil).IsPendingRegistrationExists), db, contestID, userID)
 }
 
 // IsTaskInContest mocks base method.
@@ -2116,20 +1978,6 @@ func (m *MockContestRepository) RemoveTaskFromContest(db database.Database, cont
 func (mr *MockContestRepositoryMockRecorder) RemoveTaskFromContest(db, contestID, taskID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveTaskFromContest), db, contestID, taskID)
-}
-
-// UpdateRegistrationRequestStatus mocks base method.
-func (m *MockContestRepository) UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRegistrationRequestStatus", db, requestID, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRegistrationRequestStatus indicates an expected call of UpdateRegistrationRequestStatus.
-func (mr *MockContestRepositoryMockRecorder) UpdateRegistrationRequestStatus(db, requestID, status any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistrationRequestStatus", reflect.TypeOf((*MockContestRepository)(nil).UpdateRegistrationRequestStatus), db, requestID, status)
 }
 
 // UpdateTaskInContest mocks base method.
