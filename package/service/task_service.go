@@ -29,6 +29,9 @@ type TaskService interface {
 	GetAll(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) ([]schemas.Task, error)
 	// GetAllCreated retrieves all tasks created by the current user.
 	GetAllCreated(db database.Database, currentUser *schemas.User, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.Task], error)
+	// GetManagedTasks retrieves tasks the current user has any access to, with their permission.
+	// When all is true (admin only), every task in the system is returned.
+	GetManagedTasks(db database.Database, currentUser *schemas.User, all bool, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ManagedTask], error)
 	// Get retrieves a detailed view of a specific task.
 	Get(db database.Database, currentUser *schemas.User, taskID int64) (*schemas.TaskDetailed, error)
 	// GetByTitle retrieves a task by its title.
@@ -193,6 +196,40 @@ func (ts *taskService) GetAllCreated(
 	result := make([]schemas.Task, len(tasks))
 	for i, task := range tasks {
 		result[i] = *TaskToSchema(&task)
+	}
+
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func (ts *taskService) GetManagedTasks(
+	db database.Database,
+	currentUser *schemas.User,
+	all bool,
+	paginationParams schemas.PaginationParams,
+) (schemas.PaginatedResult[[]schemas.ManagedTask], error) {
+	err := utils.ValidateRoleAccess(currentUser.Role, []types.UserRole{types.UserRoleTeacher, types.UserRoleAdmin})
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.ManagedTask]{}, err
+	}
+	if all && currentUser.Role != types.UserRoleAdmin {
+		return schemas.PaginatedResult[[]schemas.ManagedTask]{}, errors.ErrForbidden
+	}
+
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultTaskSort
+	}
+	tasks, totalCount, err := ts.taskRepository.GetAllForCollaborator(db, currentUser.ID, all, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	if err != nil {
+		ts.logger.Errorf("Error getting managed tasks: %v", err.Error())
+		return schemas.PaginatedResult[[]schemas.ManagedTask]{}, err
+	}
+
+	result := make([]schemas.ManagedTask, len(tasks))
+	for i := range tasks {
+		result[i] = schemas.ManagedTask{
+			Task:           *TaskToSchema(&tasks[i].Task),
+			PermissionType: tasks[i].PermissionType,
+		}
 	}
 
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil

@@ -185,6 +185,20 @@ func ExtractPaginationParams(queryParams map[string]any) schemas.PaginationParam
 	}
 }
 
+// ParseScopeAll reads the optional "scope" query parameter used by management listings.
+// It returns (all, ok): (true, true) for "scope=all", (false, true) when absent, and ok=false for any other value.
+func ParseScopeAll(queryParams map[string]any) (bool, bool) {
+	scope, present := queryParams["scope"]
+	if !present {
+		return false, true
+	}
+	s, isString := scope.(string)
+	if !isString || s != "all" {
+		return false, false
+	}
+	return true, true
+}
+
 func GetCurrentUser(r *http.Request) *schemas.User {
 	userAny := r.Context().Value(UserKey)
 	if user, ok := userAny.(schemas.User); ok {

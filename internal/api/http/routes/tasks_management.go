@@ -18,6 +18,7 @@ type TasksManagementRoute interface {
 	DeleteTask(w http.ResponseWriter, r *http.Request)
 	EditTask(w http.ResponseWriter, r *http.Request)
 	GetAllCreatedTasks(w http.ResponseWriter, r *http.Request)
+	GetManagedTasks(w http.ResponseWriter, r *http.Request)
 	GetLimits(w http.ResponseWriter, r *http.Request)
 	PutLimits(w http.ResponseWriter, r *http.Request)
 	UploadTask(w http.ResponseWriter, r *http.Request)
@@ -384,6 +385,49 @@ func (tr *tasksManagementRoute) GetAllCreatedTasks(w http.ResponseWriter, r *htt
 	httputils.ReturnSuccess(w, http.StatusOK, response)
 }
 
+// GetManagedTasks godoc
+//
+//	@Tags			tasks-management
+//	@Summary		Get tasks manageable by the current user
+//	@Description	Gets all tasks the current user owns or collaborates on (view, edit, manage) with their permission and pagination metadata.
+//	@Description	Admins can pass scope=all to get every task in the system; tasks without an explicit entry are returned with "owner" permission.
+//	@Produce		json
+//	@Param			scope	query		string	false	"Set to 'all' to list every task (admin only)"	Enums(all)
+//	@Param			offset	query		int		false	"Offset for pagination"
+//	@Param			limit	query		int		false	"Limit for pagination"
+//	@Param			sort	query		string	false	"Field to sort by"
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ManagedTask]]
+//	@Router			/tasks-management/tasks/managed [get]
+func (tr *tasksManagementRoute) GetManagedTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+	currentUser := httputils.GetCurrentUser(r)
+
+	all, ok := httputils.ParseScopeAll(queryParams)
+	if !ok {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid scope query parameter, expected 'all'")
+		return
+	}
+
+	response, err := tr.taskService.GetManagedTasks(db, currentUser, all, paginationParams)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, tr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, response)
+}
+
 func NewTasksManagementRoute(taskService service.TaskService) TasksManagementRoute {
 	route := &tasksManagementRoute{
 		taskService: taskService,
@@ -406,6 +450,7 @@ func RegisterTasksManagementRoutes(mux *mux.Router, route TasksManagementRoute) 
 		}
 	})
 	mux.HandleFunc("/tasks/created", route.GetAllCreatedTasks)
+	mux.HandleFunc("/tasks/managed", route.GetManagedTasks)
 	mux.HandleFunc("/tasks/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodDelete:
