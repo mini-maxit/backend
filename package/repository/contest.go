@@ -905,6 +905,7 @@ func (cr *contestRepository) GetContestParticipants(db database.Database, contes
 
 	err = paginatedTx.Model(&models.User{}).
 		Where("EXISTS ("+directExists+") OR EXISTS ("+groupExists+")", contestID, contestID).
+		Order("users.id ASC"). // unique tie-breaker so offset pages are stable on duplicate sort keys
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
@@ -998,6 +999,7 @@ func (cr *contestRepository) GetAssignableParticipants(db database.Database, con
 
 	err = paginatedTx.Model(&models.User{}).
 		Where(assignableFilter, contestID, contestID).
+		Order("users.id ASC").
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
