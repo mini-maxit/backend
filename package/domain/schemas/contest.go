@@ -103,3 +103,14 @@ type ContestResults struct {
 	Contest     BaseContest  `json:"contest"`
 	TaskResults []TaskResult `json:"taskResults"`
 }
+
+type GroupRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type ContestParticipantAccess struct {
+	User
+	Direct bool       `json:"direct"`
+	Groups []GroupRef `json:"groups"`
+}

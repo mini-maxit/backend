@@ -1817,6 +1817,21 @@ func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
 }
 
+// GetParticipantAccessSources mocks base method.
+func (m *MockContestRepository) GetParticipantAccessSources(db database.Database, contestID int64, userIDs []int64) (map[int64]models.ParticipantAccessInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParticipantAccessSources", db, contestID, userIDs)
+	ret0, _ := ret[0].(map[int64]models.ParticipantAccessInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetParticipantAccessSources indicates an expected call of GetParticipantAccessSources.
+func (mr *MockContestRepositoryMockRecorder) GetParticipantAccessSources(db, contestID, userIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParticipantAccessSources", reflect.TypeOf((*MockContestRepository)(nil).GetParticipantAccessSources), db, contestID, userIDs)
+}
+
 // GetStartedContestTasksWithSettings mocks base method.
 func (m *MockContestRepository) GetStartedContestTasksWithSettings(db database.Database, contestID int64) ([]models.ContestTask, error) {
 	m.ctrl.T.Helper()

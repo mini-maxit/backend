@@ -968,7 +968,7 @@ func (cr *contestsManagementRouteImpl) GetAssignableGroups(w http.ResponseWriter
 //	@Failure		404		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.ContestParticipantAccess]]
 //	@Router			/contests-management/contests/{id}/participants [get]
 func (cr *contestsManagementRouteImpl) GetContestParticipants(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

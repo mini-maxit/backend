@@ -65,8 +65,8 @@ type ContestService interface {
 	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
 	// GetAssignableGroups retrieves groups that can be assigned to a contest (only accessible by contest collaborators)
 	GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
-	// GetContestParticipants retrieves users assigned as participants to a contest (only accessible by contest collaborators)
-	GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
+	// GetContestParticipants retrieves effective participants of a contest with access source information (only accessible by contest collaborators)
+	GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ContestParticipantAccess], error)
 	// GetAssignableParticipants retrieves users that can be assigned as participants to a contest (only accessible by contest collaborators)
 	GetAssignableParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
 	// AddParticipantsToContest adds multiple users as participants to a contest (only accessible by contest collaborators with edit permission)
@@ -1070,34 +1070,57 @@ func (cs *contestService) GetAssignableGroups(db database.Database, currentUser 
 	return result, nil
 }
 
-func (cs *contestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+func (cs *contestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ContestParticipantAccess], error) {
 	// Check if user has edit permission for the contest
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
-		return schemas.PaginatedResult[[]schemas.User]{}, err
+		return schemas.PaginatedResult[[]schemas.ContestParticipantAccess]{}, err
 	}
 
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = "name:asc"
 	}
 
-	// Get participants
+	// Get effective participants
 	participants, totalCount, err := cs.contestRepository.GetContestParticipants(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	if err != nil {
-		return schemas.PaginatedResult[[]schemas.User]{}, err
+		return schemas.PaginatedResult[[]schemas.ContestParticipantAccess]{}, err
+	}
+
+	userIDs := make([]int64, len(participants))
+	for i, user := range participants {
+		userIDs[i] = user.ID
+	}
+
+	accessSources, err := cs.contestRepository.GetParticipantAccessSources(db, contestID, userIDs)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.ContestParticipantAccess]{}, err
 	}
 
 	// Convert to schemas
-	result := make([]schemas.User, len(participants))
+	result := make([]schemas.ContestParticipantAccess, len(participants))
 	for i, user := range participants {
-		result[i] = schemas.User{
-			ID:        user.ID,
-			Name:      user.Name,
-			Surname:   user.Surname,
-			Email:     user.Email,
-			Username:  user.Username,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
+		source := accessSources[user.ID]
+		groups := make([]schemas.GroupRef, len(source.Groups))
+		for j, group := range source.Groups {
+			groups[j] = schemas.GroupRef{
+				ID:   group.ID,
+				Name: group.Name,
+			}
+		}
+
+		result[i] = schemas.ContestParticipantAccess{
+			User: schemas.User{
+				ID:        user.ID,
+				Name:      user.Name,
+				Surname:   user.Surname,
+				Email:     user.Email,
+				Username:  user.Username,
+				Role:      user.Role,
+				CreatedAt: user.CreatedAt,
+			},
+			Direct: source.Direct,
+			Groups: groups,
 		}
 	}
 

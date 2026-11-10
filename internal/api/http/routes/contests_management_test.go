@@ -29,6 +29,112 @@ const (
 	testContestDescription = "Test Description"
 )
 
+func TestGetContestParticipants(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cs := mock_service.NewMockContestService(ctrl)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestsManagementRoute(cs, ss)
+	db := &testutils.MockDatabase{}
+
+	mux := mux.NewRouter()
+	mux.HandleFunc("/{id}/participants", func(w http.ResponseWriter, r *http.Request) {
+		route.GetContestParticipants(w, r)
+	})
+
+	handler := httputils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mockUser := schemas.User{
+			ID:    1,
+			Role:  testAdmin,
+			Email: testExampleMail,
+		}
+
+		query := r.URL.Query()
+		queryParams, _ := httputils.GetQueryParams(&query)
+
+		ctx := context.WithValue(r.Context(), httputils.UserKey, mockUser)
+		ctx = context.WithValue(ctx, httputils.QueryParamsKey, queryParams)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("Accept only GET", func(t *testing.T) {
+		methods := []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch}
+
+		for _, method := range methods {
+			req, err := http.NewRequest(method, server.URL+"/1/participants", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+
+			assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
+		}
+	})
+
+	t.Run("Returns participants with access sources", func(t *testing.T) {
+		contestID := int64(1)
+		expected := schemas.PaginatedResult[[]schemas.ContestParticipantAccess]{
+			Items: []schemas.ContestParticipantAccess{
+				{
+					User: schemas.User{
+						ID:       1,
+						Name:     "Alice",
+						Surname:  "A",
+						Username: "alice",
+						Email:    "alice@example.com",
+						Role:     testAdmin,
+					},
+					Direct: true,
+					Groups: []schemas.GroupRef{
+						{ID: 7, Name: "Class 4-B"},
+					},
+				},
+				{
+					User: schemas.User{
+						ID:       2,
+						Name:     "Bob",
+						Surname:  "B",
+						Username: "bob",
+						Email:    "bob@example.com",
+						Role:     testStudent,
+					},
+					Direct: false,
+					Groups: []schemas.GroupRef{
+						{ID: 9, Name: "Robotics Club"},
+					},
+				},
+			},
+			Pagination: schemas.PaginationMetadata{
+				CurrentPage: 1,
+				PageSize:    20,
+				TotalItems:  2,
+				TotalPages:  1,
+			},
+		}
+
+		cs.EXPECT().GetContestParticipants(gomock.Any(), gomock.Any(), contestID, gomock.Any()).Return(expected, nil).Times(1)
+
+		resp, err := http.Get(server.URL + "/1/participants")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		response := &httputils.APIResponse[schemas.PaginatedResult[[]schemas.ContestParticipantAccess]]{}
+		err = json.Unmarshal(bodyBytes, response)
+		require.NoError(t, err)
+		assert.True(t, response.Ok)
+		assert.Equal(t, expected.Items, response.Data.Items)
+		assert.Equal(t, expected.Pagination.TotalItems, response.Data.Pagination.TotalItems)
+	})
+}
+
 func TestCreateContest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	cs := mock_service.NewMockContestService(ctrl)

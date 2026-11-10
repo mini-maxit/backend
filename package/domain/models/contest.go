@@ -75,3 +75,8 @@ type ManagedContest struct {
 	ParticipantCount int64            `gorm:"column:participant_count"`
 	PermissionType   types.Permission `gorm:"column:permission_type"`
 }
+
+type ParticipantAccessInfo struct {
+	Direct bool
+	Groups []Group
+}

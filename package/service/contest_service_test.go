@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -1197,4 +1198,94 @@ func TestContestService_GetManagedContests(t *testing.T) {
 		_, err := cs.GetManagedContests(db, teacher, true, params)
 		require.ErrorIs(t, err, errors.ErrForbidden)
 	})
+}
+
+func TestGetContestParticipants_MapsAccessSources(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+	contestID := int64(1)
+	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "name:asc"}
+
+	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Username: "alice", Email: "alice@example.com", Role: types.UserRoleStudent}
+	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Username: "bob", Email: "bob@example.com", Role: types.UserRoleStudent}
+
+	cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+	cr.EXPECT().GetContestParticipants(db, contestID, params.Limit, params.Offset, params.Sort).
+		Return([]models.User{alice, bob}, int64(2), nil).Times(1)
+	cr.EXPECT().GetParticipantAccessSources(db, contestID, []int64{alice.ID, bob.ID}).Return(map[int64]models.ParticipantAccessInfo{
+		alice.ID: {Direct: true, Groups: []models.Group{{ID: 7, Name: "Class 4-B"}}},
+		bob.ID:   {Direct: false, Groups: []models.Group{{ID: 9, Name: "Robotics Club"}}},
+	}, nil).Times(1)
+
+	result, err := cs.GetContestParticipants(db, currentUser, contestID, params)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), int64(result.Pagination.TotalItems))
+	require.Len(t, result.Items, 2)
+
+	assert.Equal(t, alice.ID, result.Items[0].ID)
+	assert.True(t, result.Items[0].Direct)
+	require.Len(t, result.Items[0].Groups, 1)
+	assert.Equal(t, int64(7), result.Items[0].Groups[0].ID)
+	assert.Equal(t, "Class 4-B", result.Items[0].Groups[0].Name)
+
+	assert.Equal(t, bob.ID, result.Items[1].ID)
+	assert.False(t, result.Items[1].Direct)
+	require.Len(t, result.Items[1].Groups, 1)
+	assert.Equal(t, int64(9), result.Items[1].Groups[0].ID)
+	assert.Equal(t, "Robotics Club", result.Items[1].Groups[0].Name)
+}
+
+func TestGetContestParticipants_NoSources(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+	contestID := int64(1)
+	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "name:asc"}
+
+	charlie := models.User{ID: 3, Name: "Charlie", Surname: "C", Username: "charlie", Email: "charlie@example.com", Role: types.UserRoleStudent}
+
+	cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+	cr.EXPECT().GetContestParticipants(db, contestID, params.Limit, params.Offset, params.Sort).
+		Return([]models.User{charlie}, int64(1), nil).Times(1)
+	cr.EXPECT().GetParticipantAccessSources(db, contestID, []int64{charlie.ID}).Return(map[int64]models.ParticipantAccessInfo{
+		charlie.ID: {},
+	}, nil).Times(1)
+
+	result, err := cs.GetContestParticipants(db, currentUser, contestID, params)
+	require.NoError(t, err)
+	require.Len(t, result.Items, 1)
+
+	assert.Equal(t, charlie.ID, result.Items[0].ID)
+	assert.False(t, result.Items[0].Direct)
+	assert.NotNil(t, result.Items[0].Groups)
+	assert.Empty(t, result.Items[0].Groups)
+
+	jsonBytes, err := json.Marshal(result.Items[0])
+	require.NoError(t, err)
+	assert.Contains(t, string(jsonBytes), `"groups":[]`)
 }
