@@ -76,6 +76,8 @@ type ContestRepository interface {
 	GetContestGroups(db database.Database, contestID int64) ([]models.Group, error)
 	// GetAssignableGroups retrieves all groups NOT assigned to a contest
 	GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error)
+	// GetGroupMembersForGroups retrieves members for a set of groups in a single query
+	GetGroupMembersForGroups(db database.Database, groupIDs []int64) (map[int64][]models.User, error)
 	// GetContestParticipants retrieves all effective participants of a contest (direct assignments and users in assigned groups)
 	GetContestParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error)
 	// GetParticipantAccessSources returns, for each requested user, how they access the contest (direct assignment and/or assigned groups)
@@ -821,6 +823,39 @@ func (cr *contestRepository) GetContestGroups(db database.Database, contestID in
 		return nil, err
 	}
 	return groups, nil
+}
+
+func (cr *contestRepository) GetGroupMembersForGroups(db database.Database, groupIDs []int64) (map[int64][]models.User, error) {
+	tx := db.GetInstance()
+	result := make(map[int64][]models.User)
+
+	if len(groupIDs) == 0 {
+		return result, nil
+	}
+
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+
+	type groupMemberRow struct {
+		GroupID int64 `gorm:"column:group_id"`
+		models.User
+	}
+
+	var rows []groupMemberRow
+	err := tx.Model(&models.User{}).
+		Select("users.*, "+ugTable+".group_id").
+		Joins(fmt.Sprintf("JOIN %s ON %s.user_id = users.id", ugTable, ugTable)).
+		Where(fmt.Sprintf("%s.group_id IN ?", ugTable), groupIDs).
+		Order("users.id ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.GroupID] = append(result[row.GroupID], row.User)
+	}
+
+	return result, nil
 }
 
 func (cr *contestRepository) GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error) {

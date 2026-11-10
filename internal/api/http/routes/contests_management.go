@@ -879,7 +879,7 @@ func (cr *contestsManagementRouteImpl) RemoveGroupFromContest(w http.ResponseWri
 //	@Failure		404	{object}	httputils.APIError
 //	@Failure		405	{object}	httputils.APIError
 //	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[[]schemas.Group]
+//	@Success		200	{object}	httputils.APIResponse[[]schemas.GroupWithMembers]
 //	@Router			/contests-management/contests/{id}/groups [get]
 func (cr *contestsManagementRouteImpl) GetContestGroups(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

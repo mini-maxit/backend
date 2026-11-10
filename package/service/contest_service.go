@@ -61,8 +61,8 @@ type ContestService interface {
 	AddGroupToContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
 	// RemoveGroupFromContest removes a group from contest participants (only accessible by contest collaborators)
 	RemoveGroupFromContest(db database.Database, currentUser *schemas.User, contestID, groupID int64) error
-	// GetContestGroups retrieves groups assigned to a contest (only accessible by contest collaborators)
-	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
+	// GetContestGroups retrieves groups assigned to a contest with their members (only accessible by contest collaborators)
+	GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.GroupWithMembers, error)
 	// GetAssignableGroups retrieves groups that can be assigned to a contest (only accessible by contest collaborators)
 	GetAssignableGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error)
 	// GetContestParticipants retrieves effective participants of a contest with access source information (only accessible by contest collaborators)
@@ -1014,7 +1014,7 @@ func (cs *contestService) RemoveGroupFromContest(db database.Database, currentUs
 	return cs.contestRepository.RemoveGroupFromContest(db, contestID, groupID)
 }
 
-func (cs *contestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
+func (cs *contestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.GroupWithMembers, error) {
 	// Check if user has edit permission for the contest
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
@@ -1027,15 +1027,43 @@ func (cs *contestService) GetContestGroups(db database.Database, currentUser *sc
 		return nil, err
 	}
 
-	// Convert to schemas
-	result := make([]schemas.Group, len(assignedGroups))
+	groupIDs := make([]int64, len(assignedGroups))
 	for i, group := range assignedGroups {
-		result[i] = schemas.Group{
-			ID:        group.ID,
-			Name:      group.Name,
-			CreatedBy: group.CreatedBy,
-			CreatedAt: group.CreatedAt,
-			UpdatedAt: group.UpdatedAt,
+		groupIDs[i] = group.ID
+	}
+
+	membersByGroup, err := cs.contestRepository.GetGroupMembersForGroups(db, groupIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to schemas
+	result := make([]schemas.GroupWithMembers, len(assignedGroups))
+	for i, group := range assignedGroups {
+		members := membersByGroup[group.ID]
+		if members == nil {
+			members = []models.User{}
+		}
+
+		memberSchemas := make([]schemas.UserInfo, len(members))
+		for j, member := range members {
+			memberSchemas[j] = schemas.UserInfo{
+				ID:       member.ID,
+				Name:     member.Name,
+				Surname:  member.Surname,
+				Username: member.Username,
+			}
+		}
+
+		result[i] = schemas.GroupWithMembers{
+			Group: schemas.Group{
+				ID:        group.ID,
+				Name:      group.Name,
+				CreatedBy: group.CreatedBy,
+				CreatedAt: group.CreatedAt,
+				UpdatedAt: group.UpdatedAt,
+			},
+			Members: memberSchemas,
 		}
 	}
 

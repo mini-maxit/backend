@@ -20,6 +20,11 @@ type Group struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+type GroupWithMembers struct {
+	Group
+	Members []UserInfo `json:"members"`
+}
+
 type CreateGroup struct {
 	Name string `json:"name" validate:"required,gte=3,lte=50"`
 }

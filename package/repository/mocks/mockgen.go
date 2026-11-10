@@ -1817,6 +1817,21 @@ func (mr *MockContestRepositoryMockRecorder) GetDetailed(db, contestID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDetailed", reflect.TypeOf((*MockContestRepository)(nil).GetDetailed), db, contestID)
 }
 
+// GetGroupMembersForGroups mocks base method.
+func (m *MockContestRepository) GetGroupMembersForGroups(db database.Database, groupIDs []int64) (map[int64][]models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGroupMembersForGroups", db, groupIDs)
+	ret0, _ := ret[0].(map[int64][]models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGroupMembersForGroups indicates an expected call of GetGroupMembersForGroups.
+func (mr *MockContestRepositoryMockRecorder) GetGroupMembersForGroups(db, groupIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroupMembersForGroups", reflect.TypeOf((*MockContestRepository)(nil).GetGroupMembersForGroups), db, groupIDs)
+}
+
 // GetParticipantAccessSources mocks base method.
 func (m *MockContestRepository) GetParticipantAccessSources(db database.Database, contestID int64, userIDs []int64) (map[int64]models.ParticipantAccessInfo, error) {
 	m.ctrl.T.Helper()

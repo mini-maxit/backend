@@ -900,6 +900,10 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, CreatedBy: 10}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return(assignedGroups, nil).Times(1)
+		cr.EXPECT().GetGroupMembersForGroups(db, []int64{1, 2}).Return(map[int64][]models.User{
+			1: {{ID: 10, Name: "Member", Surname: "One", Username: "member1"}},
+			2: {},
+		}, nil).Times(1)
 
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
 		require.NoError(t, err)
@@ -907,8 +911,10 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		assert.Len(t, result, 2)
 		assert.Equal(t, int64(1), result[0].ID)
 		assert.Equal(t, "Group 1", result[0].Name)
-		assert.Equal(t, int64(2), result[1].ID)
-		assert.Equal(t, "Group 2", result[1].Name)
+		require.Len(t, result[0].Members, 1)
+		assert.Equal(t, "member1", result[0].Members[0].Username)
+		assert.NotNil(t, result[1].Members)
+		assert.Empty(t, result[1].Members)
 	})
 
 	t.Run("success with empty groups", func(t *testing.T) {
@@ -918,6 +924,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
 		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{}, nil).Times(1)
+		cr.EXPECT().GetGroupMembersForGroups(db, []int64{}).Return(map[int64][]models.User{}, nil).Times(1)
 
 		result, err := cs.GetContestGroups(db, currentUser, contestID)
 		require.NoError(t, err)
@@ -1288,4 +1295,64 @@ func TestGetContestParticipants_NoSources(t *testing.T) {
 	jsonBytes, err := json.Marshal(result.Items[0])
 	require.NoError(t, err)
 	assert.Contains(t, string(jsonBytes), `"groups":[]`)
+}
+
+func TestGetContestGroups_MapsMembers(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	sr := mock_repository.NewMockSubmissionRepository(ctrl)
+	tr := mock_repository.NewMockTaskRepository(ctrl)
+	gr := mock_repository.NewMockGroupRepository(ctrl)
+	ts := mock_service.NewMockTaskService(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, ur, sr, tr, gr, acs, ts)
+	db := &testutils.MockDatabase{}
+
+	currentUser := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+	contestID := int64(1)
+	groupID := int64(7)
+
+	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Username: "alice", Email: "alice@example.com", Role: types.UserRoleStudent}
+	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Username: "bob", Email: "bob@example.com", Role: types.UserRoleStudent}
+
+	t.Run("maps members for assigned group", func(t *testing.T) {
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID, Name: "Class 4-C"}}, nil).Times(1)
+		cr.EXPECT().GetGroupMembersForGroups(db, []int64{groupID}).Return(map[int64][]models.User{
+			groupID: {alice, bob},
+		}, nil).Times(1)
+
+		result, err := cs.GetContestGroups(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		assert.Equal(t, groupID, result[0].ID)
+		assert.Equal(t, "Class 4-C", result[0].Name)
+		require.Len(t, result[0].Members, 2)
+		assert.Equal(t, alice.ID, result[0].Members[0].ID)
+		assert.Equal(t, alice.Name, result[0].Members[0].Name)
+		assert.Equal(t, alice.Surname, result[0].Members[0].Surname)
+		assert.Equal(t, alice.Username, result[0].Members[0].Username)
+		assert.Equal(t, bob.ID, result[0].Members[1].ID)
+	})
+
+	t.Run("empty member map becomes empty slice", func(t *testing.T) {
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
+		cr.EXPECT().GetContestGroups(db, contestID).Return([]models.Group{{ID: groupID, Name: "Class 4-C"}}, nil).Times(1)
+		cr.EXPECT().GetGroupMembersForGroups(db, []int64{groupID}).Return(map[int64][]models.User{}, nil).Times(1)
+
+		result, err := cs.GetContestGroups(db, currentUser, contestID)
+		require.NoError(t, err)
+		require.Len(t, result, 1)
+		assert.NotNil(t, result[0].Members)
+		assert.Empty(t, result[0].Members)
+
+		jsonBytes, err := json.Marshal(result[0])
+		require.NoError(t, err)
+		assert.Contains(t, string(jsonBytes), `"members":[]`)
+	})
 }
