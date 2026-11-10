@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/internal/testutils"
@@ -249,74 +250,65 @@ func TestGetTask(t *testing.T) {
 	tr := mock_repository.NewMockTaskRepository(ctrl)
 	io := mock_repository.NewMockTestCaseRepository(ctrl)
 	fr := mock_repository.NewMockFile(ctrl)
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
 	fsMock := filestorage.NewMockFileStorageService(ctrl)
 	fsMock.EXPECT().GetSignedFileURL(gomock.Any(), gomock.Any()).
 		Return("http://localhost:8888/buckets/maxit/path?expires=9999999999&signature=fakesig", nil).
 		AnyTimes()
-	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, nil, nil)
+	ts := service.NewTaskService(fsMock, fr, tr, io, ur, gr, nil, cr, acs)
 
-	task := &schemas.Task{
-		Title:     testTaskTitle,
-		CreatedBy: adminUser.ID,
-	}
+	taskID := int64(7)
+	contestID := int64(5)
+	taskModel := &models.Task{ID: taskID, Title: testTaskTitle, CreatedBy: adminUser.ID}
 
-	t.Run("Success", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
-		taskResp, err := ts.Get(db, adminUser, task.ID)
+	t.Run("collaborator can get", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, teacherUser, types.PermissionEdit).Return(nil).Times(1)
+
+		taskResp, err := ts.Get(db, teacherUser, taskID)
 		require.NoError(t, err)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+		assert.Equal(t, testTaskTitle, taskResp.Title)
 	})
 
-	t.Run("Sucess with assigned task to user", func(t *testing.T) {
-		tr.EXPECT().Get(gomock.Any(), task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
+	t.Run("student without permission and not in any contest is forbidden", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(false, nil).Times(1)
 
-		// tr.EXPECT().IsAssignedToUser(db, task.ID, studentUser.ID).Return(true, nil).Times(1)
-		taskResp, err := ts.Get(db, studentUser, task.ID)
-		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+		taskResp, err := ts.Get(db, studentUser, taskID)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, taskResp)
 	})
 
-	t.Run("Sucess with assigned task to group", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
+	t.Run("contest participant can get a started task", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(true, nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{ContestID: contestID, TaskID: taskID, StartAt: time.Now().Add(-time.Hour)}, nil).Times(1)
 
-		taskResp, err := ts.Get(db, studentUser, task.ID)
+		taskResp, err := ts.Get(db, studentUser, taskID)
 		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
+		assert.Equal(t, taskID, taskResp.ID)
 	})
 
-	t.Run("Success with created task", func(t *testing.T) {
-		tr.EXPECT().Get(db, task.ID).Return(&models.Task{
-			ID:        task.ID,
-			Title:     task.Title,
-			CreatedBy: task.CreatedBy,
-		}, nil).Times(1)
-		taskResp, err := ts.Get(db, teacherUser, task.ID)
-		require.NoError(t, err)
-		assert.Equal(t, task.ID, taskResp.ID)
-		assert.Equal(t, task.Title, taskResp.Title)
-		assert.Equal(t, task.CreatedBy, taskResp.CreatedBy)
+	t.Run("contest participant cannot get a task that has not started", func(t *testing.T) {
+		tr.EXPECT().Get(db, taskID).Return(taskModel, nil).Times(1)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, studentUser, types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		cr.EXPECT().GetTaskContests(db, taskID).Return([]int64{contestID}, nil).Times(1)
+		cr.EXPECT().IsUserParticipant(db, contestID, studentUser.ID).Return(true, nil).Times(1)
+		cr.EXPECT().GetContestTask(db, contestID, taskID).Return(&models.ContestTask{ContestID: contestID, TaskID: taskID, StartAt: time.Now().Add(time.Hour)}, nil).Times(1)
+
+		taskResp, err := ts.Get(db, studentUser, taskID)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+		assert.Nil(t, taskResp)
 	})
 
 	t.Run("Fail with non existent task", func(t *testing.T) {
-		taskID := int64(0)
-		tr.EXPECT().Get(db, taskID).Return(nil, gorm.ErrRecordNotFound).Times(1)
-		taskResp, err := ts.Get(db, adminUser, taskID)
+		tr.EXPECT().Get(db, int64(0)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		taskResp, err := ts.Get(db, adminUser, 0)
 		require.ErrorIs(t, err, errors.ErrNotFound)
 		assert.Nil(t, taskResp)
 	})

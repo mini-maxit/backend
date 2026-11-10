@@ -2,15 +2,18 @@ package service_test
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"math/rand/v2"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/internal/testutils"
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
+	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
@@ -902,4 +905,43 @@ func TestMarkSubmissionStatus(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSubmitAccess(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	taskID := int64(7)
+	student := &schemas.User{ID: 3, Role: types.UserRoleStudent}
+	teacher := &schemas.User{ID: 4, Role: types.UserRoleTeacher}
+	// returned by the first call after the access checks, to stop Submit there
+	errPastAccess := stderrors.New("past access checks")
+
+	t.Run("student without contestId is forbidden", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		setup.taskService.EXPECT().Get(db, student, taskID).Return(&schemas.TaskDetailed{ID: taskID}, nil)
+		setup.accessControlService.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, student, types.PermissionEdit).Return(errors.ErrForbidden)
+
+		_, err := setup.service.Submit(db, student, taskID, 1, nil, "solution.c")
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("task collaborator without contestId passes access checks", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		setup.taskService.EXPECT().Get(db, teacher, taskID).Return(&schemas.TaskDetailed{ID: taskID}, nil)
+		setup.accessControlService.EXPECT().CanUserAccess(db, types.ResourceTypeTask, taskID, teacher, types.PermissionEdit).Return(nil)
+		setup.submissionRepository.EXPECT().GetLatestForTaskByUser(db, taskID, teacher.ID).Return(nil, errPastAccess)
+
+		_, err := setup.service.Submit(db, teacher, taskID, 1, nil, "solution.c")
+		require.ErrorIs(t, err, errPastAccess)
+	})
+
+	t.Run("participant with contestId passes access checks", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		contestID := int64(5)
+		setup.taskService.EXPECT().Get(db, student, taskID).Return(&schemas.TaskDetailed{ID: taskID}, nil)
+		setup.contestService.EXPECT().ValidateContestSubmission(db, contestID, taskID, student.ID).Return(nil)
+		setup.submissionRepository.EXPECT().GetLatestForTaskByUser(db, taskID, student.ID).Return(nil, errPastAccess)
+
+		_, err := setup.service.Submit(db, student, taskID, 1, &contestID, "solution.c")
+		require.ErrorIs(t, err, errPastAccess)
+	})
 }

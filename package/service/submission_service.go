@@ -626,6 +626,12 @@ func (ss *submissionService) Submit(
 			ss.logger.Errorf("Contest submission validation failed: %v", err.Error())
 			return -1, err
 		}
+	} else {
+		// Outside a contest only task collaborators may submit (e.g. a teacher testing their own task).
+		err = ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, taskID, user, types.PermissionEdit)
+		if err != nil {
+			return -1, err
+		}
 	}
 	// Upload solution file to storage
 	latest, err := ss.submissionRepository.GetLatestForTaskByUser(db, taskID, user.ID)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
 
@@ -122,6 +123,14 @@ func (ts *taskService) Get(db database.Database, currentUser *schemas.User, task
 			return nil, errors.ErrNotFound
 		}
 		return nil, err
+	}
+
+	canView, err := ts.canViewTask(db, task.ID, currentUser)
+	if err != nil {
+		return nil, err
+	}
+	if !canView {
+		return nil, errors.ErrForbidden
 	}
 
 	descriptionURL, err := ts.filestorage.GetSignedFileURL(task.DescriptionFile.Path, 0)
@@ -554,6 +563,41 @@ func (ts *taskService) enrichTaskWithAttempts(
 }
 
 // hasTaskPermission checks that task exists and if the user has the required permission for the task.
+// canViewTask: task collaborators always; anyone else only as a participant of a contest
+// in which this task has already started.
+func (ts *taskService) canViewTask(db database.Database, taskID int64, user *schemas.User) (bool, error) {
+	err := ts.accessControlService.CanUserAccess(db, types.ResourceTypeTask, taskID, user, types.PermissionEdit)
+	if err == nil {
+		return true, nil
+	}
+	if !errors.Is(err, errors.ErrForbidden) {
+		return false, err
+	}
+
+	// shortcut: one query per contest the task is in, fine while tasks live in a handful of contests.
+	contestIDs, err := ts.contestRepository.GetTaskContests(db, taskID)
+	if err != nil {
+		return false, err
+	}
+	for _, contestID := range contestIDs {
+		isParticipant, err := ts.contestRepository.IsUserParticipant(db, contestID, user.ID)
+		if err != nil {
+			return false, err
+		}
+		if !isParticipant {
+			continue
+		}
+		contestTask, err := ts.contestRepository.GetContestTask(db, contestID, taskID)
+		if err != nil {
+			return false, err
+		}
+		if !contestTask.StartAt.After(time.Now()) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (ts *taskService) hasTaskPermission(db database.Database, taskID int64, user *schemas.User, requiredPermission types.Permission) error {
 	_, err := ts.taskRepository.Get(db, taskID)
 	if err != nil {
