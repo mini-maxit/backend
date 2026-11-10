@@ -194,17 +194,17 @@ definitions:
       ok:
         type: boolean
     type: object
-  httputils.APIResponse-schemas_PaginatedResult-array_schemas_CreatedContest:
-    properties:
-      data:
-        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_CreatedContest'
-      ok:
-        type: boolean
-    type: object
   httputils.APIResponse-schemas_PaginatedResult-array_schemas_ManagedContest:
     properties:
       data:
         $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ManagedContest'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_ManagedTask:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ManagedTask'
       ok:
         type: boolean
     type: object
@@ -679,6 +679,27 @@ definitions:
       taskCount:
         type: integer
     type: object
+  schemas.ManagedTask:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      creatorName:
+        type: string
+      id:
+        type: integer
+      isVisible:
+        type: boolean
+      permissionType:
+        allOf:
+        - $ref: '#/definitions/types.Permission'
+        description: '"view", "edit", "manage", "owner"'
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   schemas.MyTasksResponse:
     properties:
       contests:
@@ -711,20 +732,20 @@ definitions:
       pagination:
         $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
-  schemas.PaginatedResult-array_schemas_CreatedContest:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/schemas.CreatedContest'
-        type: array
-      pagination:
-        $ref: '#/definitions/schemas.PaginationMetadata'
-    type: object
   schemas.PaginatedResult-array_schemas_ManagedContest:
     properties:
       items:
         items:
           $ref: '#/definitions/schemas.ManagedContest'
+        type: array
+      pagination:
+        $ref: '#/definitions/schemas.PaginationMetadata'
+    type: object
+  schemas.PaginatedResult-array_schemas_ManagedTask:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/schemas.ManagedTask'
         type: array
       pagination:
         $ref: '#/definitions/schemas.PaginationMetadata'
@@ -1720,44 +1741,6 @@ paths:
       tags:
       - contests
   /contests-management/contests:
-    get:
-      description: Returns all contests in the system. Accessible only to admins.
-      parameters:
-      - description: Limit
-        in: query
-        name: limit
-        type: integer
-      - description: Offset
-        in: query
-        name: offset
-        type: integer
-      - description: Sort
-        in: query
-        name: sort
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_CreatedContest'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Get all contests (admin only)
-      tags:
-      - contests-management
-      - admin
     post:
       consumes:
       - application/json
@@ -2335,6 +2318,14 @@ paths:
         in: query
         name: taskId
         type: integer
+      - description: Search submissions by user (username, name or surname)
+        in: query
+        name: userSearch
+        type: string
+      - description: Search submissions by task title or ID
+        in: query
+        name: taskSearch
+        type: string
       produces:
       - application/json
       responses:
@@ -2785,9 +2776,16 @@ paths:
       - contests-management
   /contests-management/contests/managed:
     get:
-      description: Get all contests where the current user is the creator or has collaborator
-        access (view, edit, or manage) with pagination metadata
+      description: |-
+        Get all contests where the current user is the creator or has collaborator access (view, edit, or manage) with pagination metadata.
+        Admins can pass scope=all to get every contest in the system; contests without an explicit entry are returned with "owner" permission.
       parameters:
+      - description: Set to 'all' to list every contest (admin only)
+        enum:
+        - all
+        in: query
+        name: scope
+        type: string
       - description: Limit
         in: query
         name: limit
@@ -3982,6 +3980,56 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Get all created tasks
+      tags:
+      - tasks-management
+  /tasks-management/tasks/managed:
+    get:
+      description: |-
+        Gets all tasks the current user owns or collaborates on (view, edit, manage) with their permission and pagination metadata.
+        Admins can pass scope=all to get every task in the system; tasks without an explicit entry are returned with "owner" permission.
+      parameters:
+      - description: Set to 'all' to list every task (admin only)
+        enum:
+        - all
+        in: query
+        name: scope
+        type: string
+      - description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - description: Limit for pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Field to sort by
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_ManagedTask'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Get tasks manageable by the current user
       tags:
       - tasks-management
   /tasks/{id}:
