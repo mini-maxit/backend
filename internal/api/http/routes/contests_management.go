@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
-	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -22,9 +21,6 @@ type ContestsManagementRoute interface {
 	GetAssignableTasks(w http.ResponseWriter, r *http.Request)
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
 	RemoveTaskFromContest(w http.ResponseWriter, r *http.Request)
-	GetRegistrationRequests(w http.ResponseWriter, r *http.Request)
-	ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request)
-	RejectRegistrationRequest(w http.ResponseWriter, r *http.Request)
 	UpdateTaskInContest(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
@@ -398,142 +394,6 @@ func (cr *contestsManagementRouteImpl) UpdateTaskInContest(w http.ResponseWriter
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Task schedule updated successfully"))
-}
-
-// GetRegistrationRequests godoc
-//
-//	@Tags			contests-management
-//	@Summary		Get registration requests for a contest
-//	@Description	Get all pending registration requests for a specific contest (only accessible by contest creator or admin)
-//	@Produce		json
-//	@Param			id		path		int		true	"Contest ID"
-//	@Param			status	query		string	false	"Filter by status (pending, approved, rejected)"	default(pending)
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		404		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[[]schemas.RegistrationRequest]
-//	@Router			/contests-management/contests/{id}/registration-requests [get]
-func (cr *contestsManagementRouteImpl) GetRegistrationRequests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	contestStr := httputils.GetPathValue(r, "id")
-	if contestStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
-		return
-	}
-	contestID, err := strconv.ParseInt(contestStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
-		return
-	}
-
-	statusQuery := r.URL.Query().Get("status")
-	if statusQuery == "" {
-		statusQuery = "pending"
-	}
-	status, ok := types.ParseRegistrationRequestStatus(statusQuery)
-	if !ok {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status value")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-
-	requests, err := cr.contestService.GetRegistrationRequests(db, currentUser, contestID, status)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, requests)
-}
-
-func (cr *contestsManagementRouteImpl) ApproveRegistrationRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	contestStr := httputils.GetPathValue(r, "id")
-	contestID, err := strconv.ParseInt(contestStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
-		return
-	}
-
-	userStr := httputils.GetPathValue(r, "user_id")
-	userID, err := strconv.ParseInt(userStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-
-	err = cr.contestService.ApproveRegistrationRequest(db, currentUser, contestID, userID)
-	if err != nil {
-		// Fix me. Previously we still commited on ErrAlreadyParticipant
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request approved successfully"))
-}
-
-// RejectRegistrationRequest godoc
-//
-//	@Tags			contests-management
-//
-//	@Summary		Reject a registration request
-//	@Description	Reject a pending registration request for a contest (only accessible by contest creator or admin)
-//
-//	@Produce		json
-//	@Param			id		path		int	true	"Contest ID"
-//	@Param			user_id	path		int	true	"User ID"
-//	@Failure		400		{object}	httputils.APIError
-//	@Failure		403		{object}	httputils.APIError
-//	@Failure		404		{object}	httputils.APIError
-//	@Failure		405		{object}	httputils.APIError
-//	@Failure		500		{object}	httputils.APIError
-//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
-func (cr *contestsManagementRouteImpl) RejectRegistrationRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	contestStr := httputils.GetPathValue(r, "id")
-	contestID, err := strconv.ParseInt(contestStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
-		return
-	}
-
-	userStr := httputils.GetPathValue(r, "user_id")
-	userID, err := strconv.ParseInt(userStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-
-	err = cr.contestService.RejectRegistrationRequest(db, currentUser, contestID, userID)
-	if err != nil {
-		// Fix me. Previously we still commited on ErrAlreadyParticipant
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request rejected successfully"))
 }
 
 // GetContestTasks godoc
@@ -1423,18 +1283,6 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
-
-	mux.HandleFunc("/contests/{id}/registration-requests", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			route.GetRegistrationRequests(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
-
-	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/approve", route.ApproveRegistrationRequest)
-	mux.HandleFunc("/contests/{id}/registration-requests/{user_id}/reject", route.RejectRegistrationRequest)
 
 	// Group management endpoints
 	mux.HandleFunc("/contests/{id}/groups/assignable", route.GetAssignableGroups)

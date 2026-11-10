@@ -23,7 +23,6 @@ type ContestRoute interface {
 	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
 	GetMyPastContests(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
-	RegisterForContest(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -136,50 +135,6 @@ func (cr *ContestRouteImpl) GetContestTasks(w http.ResponseWriter, r *http.Reque
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
-}
-
-// RegisterForContest godoc
-//
-//	@Tags			contests
-//	@Summary		Register for a contest
-//	@Description	Create a pending registration for a contest (requires contest creator approval)
-//	@Produce		json
-//	@Param			id	path		int	true	"Contest ID"
-//	@Failure		400	{object}	httputils.APIError
-//	@Failure		403	{object}	httputils.APIError
-//	@Failure		404	{object}	httputils.APIError
-//	@Failure		405	{object}	httputils.APIError
-//	@Failure		409	{object}	httputils.APIError
-//	@Failure		500	{object}	httputils.APIError
-//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
-//	@Router			/contests/{id}/register [post]
-func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	contestStr := httputils.GetPathValue(r, "id")
-	if contestStr == "" {
-		httputils.ReturnError(w, http.StatusBadRequest, "Contest ID cannot be empty")
-		return
-	}
-	contestID, err := strconv.ParseInt(contestStr, 10, 64)
-	if err != nil {
-		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-
-	err = cr.contestService.RegisterForContest(db, currentUser, contestID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request submitted successfully"))
 }
 
 // GetTaskProgressForContest godoc
@@ -441,15 +396,6 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
 	mux.HandleFunc("/contests/{id}/tasks/{task_id}", contestRoute.GetContestTask)
 	mux.HandleFunc("/contests/{id}/results/my", contestRoute.GetMyContestResults)
-
-	mux.HandleFunc("/contests/{id}/register", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			contestRoute.RegisterForContest(w, r)
-		default:
-			httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		}
-	})
 }
 
 func NewContestRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestRoute {

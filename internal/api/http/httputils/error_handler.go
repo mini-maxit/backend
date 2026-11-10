@@ -152,13 +152,11 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 		errors.CodeTokenUserNotFound, errors.CodeInvalidTokenType:
 		return http.StatusUnauthorized
 
-	// Contest registration errors
-	case errors.CodeContestRegistrationClosed, errors.CodeContestEnded:
+	// Contest participation errors
+	case errors.CodeContestEnded:
 		return http.StatusForbidden
-	case errors.CodeAlreadyRegistered, errors.CodeAlreadyParticipant:
+	case errors.CodeAlreadyParticipant:
 		return http.StatusConflict
-	case errors.CodeNoPendingRegistration:
-		return http.StatusNotFound
 
 	// Contest task errors
 	case errors.CodeTaskNotInContest:

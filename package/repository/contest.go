@@ -8,7 +8,6 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
-	"gorm.io/gorm"
 )
 
 type ContestDetailed struct {
@@ -41,10 +40,6 @@ type ContestRepository interface {
 	EditWithStats(db database.Database, contestID int64, updates map[string]any) (*models.ContestWithStats, error)
 	// Delete removes a contest
 	Delete(db database.Database, contestID int64) error
-	// CreatePendingRegistration creates a pending registration request
-	CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error)
-	// IsPendingRegistrationExists checks if pending registration already exists
-	IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error)
 	// IsUserParticipant checks if user is already a participant
 	IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error)
 	// GetTasksForContest retrieves all tasks assigned to a contest
@@ -67,16 +62,8 @@ type ContestRepository interface {
 	IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error)
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, contestID, taskID int64) error
-	// GetRegistrationRequests retrieves 'status' registration requests for a contest
-	GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error)
-	// DeleteRegistrationRequest deletes a pending registration request
-	DeleteRegistrationRequest(db database.Database, requestID int64) error
 	// CreateContestParticipant adds a user as a participant to a contest
 	CreateContestParticipant(db database.Database, contestID, userID int64) error
-	// RejectRegistrationRequest rejects a pending registration request
-	UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error
-	// GetPendingRegistrationRequest retrieves a pending registration request for a user in a contest
-	GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error)
 	// GetContestTask retrieves the ContestTask relationship for validation
 	GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error)
 	GetTaskContests(db database.Database, taskID int64) ([]int64, error)
@@ -254,8 +241,7 @@ func (cr *contestRepository) GetAllForCreatorWithStats(db database.Database, cre
 		Select(`contests.*,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
-			false as is_participant,
-			false as has_pending_reg`).
+			false as is_participant`).
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
 			FROM %s
@@ -313,8 +299,7 @@ func (cr *contestRepository) EditWithStats(db database.Database, contestID int64
 		Select(`contests.*,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
-			false as is_participant,
-			false as has_pending_reg`).
+			false as is_participant`).
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as count
 			FROM %s
@@ -348,27 +333,6 @@ func (cr *contestRepository) Delete(db database.Database, contestID int64) error
 		return err
 	}
 	return nil
-}
-
-func (cr *contestRepository) CreatePendingRegistration(db database.Database, registration *models.ContestRegistrationRequests) (int64, error) {
-	tx := db.GetInstance()
-	err := tx.Create(registration).Error
-	if err != nil {
-		return 0, err
-	}
-	return registration.ID, nil
-}
-
-func (cr *contestRepository) IsPendingRegistrationExists(db database.Database, contestID int64, userID int64) (bool, error) {
-	tx := db.GetInstance()
-	var count int64
-	err := tx.Model(&models.ContestRegistrationRequests{}).
-		Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).
-		Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
 }
 
 func (cr *contestRepository) IsUserParticipant(db database.Database, contestID int64, userID int64) (bool, error) {
@@ -683,26 +647,6 @@ func (cr *contestRepository) IsTaskInContest(db database.Database, contestID, ta
 	return count > 0, nil
 }
 
-func (cr *contestRepository) GetRegistrationRequests(db database.Database, contestID int64, status types.RegistrationRequestStatus) ([]models.ContestRegistrationRequests, error) {
-	tx := db.GetInstance()
-	var requests []models.ContestRegistrationRequests
-	err := tx.Preload("User").Where("contest_id = ? AND status = ?", contestID, status).Find(&requests).Error
-	if err != nil {
-		return nil, err
-	}
-	return requests, nil
-}
-
-func (cr *contestRepository) UpdateRegistrationRequestStatus(db database.Database, requestID int64, status types.RegistrationRequestStatus) error {
-	tx := db.GetInstance()
-	return tx.Model(models.ContestRegistrationRequests{}).Where("id = ?", requestID).Updates(models.ContestRegistrationRequests{Status: status}).Error
-}
-
-func (cr *contestRepository) DeleteRegistrationRequest(db database.Database, requestID int64) error {
-	tx := db.GetInstance()
-	return tx.Model(models.ContestRegistrationRequests{}).Delete(&models.ContestRegistrationRequests{ID: requestID}).Error
-}
-
 func (cr *contestRepository) CreateContestParticipant(db database.Database, contestID, userID int64) error {
 	tx := db.GetInstance()
 	participant := &models.ContestParticipant{
@@ -714,20 +658,6 @@ func (cr *contestRepository) CreateContestParticipant(db database.Database, cont
 		return err
 	}
 	return nil
-}
-
-func (cr *contestRepository) GetPendingRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequests, error) {
-	tx := db.GetInstance()
-	var request []*models.ContestRegistrationRequests
-	err := tx.Where("contest_id = ? AND user_id = ? AND status = ?", contestID, userID, types.RegistrationRequestStatusPending).Limit(1).Find(&request).Error
-	if err != nil {
-		return nil, err
-	}
-	if len(request) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-
-	return request[0], nil
 }
 
 func (cr *contestRepository) GetContestTask(db database.Database, contestID, taskID int64) (*models.ContestTask, error) {

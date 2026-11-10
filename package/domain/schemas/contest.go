@@ -26,8 +26,7 @@ type ContestDetailed struct {
 
 type CreatedContest struct {
 	ContestDetailed
-	CreatedAt          time.Time `json:"createdAt"`
-	IsRegistrationOpen bool      `json:"isRegistrationOpen"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type ManagedContest struct {
@@ -36,21 +35,19 @@ type ManagedContest struct {
 }
 
 type CreateContest struct {
-	Name               string       `json:"name" validate:"required,gte=3,lte=100"`
-	Description        string       `json:"description" validate:"required"`
-	StartAt            time.Time    `json:"startAt" validate:"required"`
-	EndAt              OptionalTime `json:"endAt"`
-	IsRegistrationOpen bool         `json:"isRegistrationOpen"`
-	IsSubmissionOpen   bool         `json:"isSubmissionOpen"`
+	Name             string       `json:"name" validate:"required,gte=3,lte=100"`
+	Description      string       `json:"description" validate:"required"`
+	StartAt          time.Time    `json:"startAt" validate:"required"`
+	EndAt            OptionalTime `json:"endAt"`
+	IsSubmissionOpen bool         `json:"isSubmissionOpen"`
 }
 
 type EditContest struct {
-	Name               *string      `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
-	Description        *string      `json:"description,omitempty"`
-	StartAt            OptionalTime `json:"startAt"`
-	EndAt              OptionalTime `json:"endAt"`
-	IsRegistrationOpen *bool        `json:"isRegistrationOpen,omitempty"`
-	IsSubmissionOpen   *bool        `json:"isSubmissionOpen,omitempty"`
+	Name             *string      `json:"name,omitempty" validate:"omitempty,gte=3,lte=100"`
+	Description      *string      `json:"description,omitempty"`
+	StartAt          OptionalTime `json:"startAt"`
+	EndAt            OptionalTime `json:"endAt"`
+	IsSubmissionOpen *bool        `json:"isSubmissionOpen,omitempty"`
 }
 
 type ContestWithStats struct {
@@ -85,15 +82,6 @@ type AddTaskToContest struct {
 type UpdateTaskInContest struct {
 	StartAt OptionalTime `json:"startAt"`
 	EndAt   OptionalTime `json:"endAt"`
-}
-
-type RegistrationRequest struct {
-	ID        int64                           `json:"id"`
-	ContestID int64                           `json:"contestId"`
-	UserID    int64                           `json:"userId"`
-	User      User                            `json:"user"`
-	Status    types.RegistrationRequestStatus `json:"status"`
-	CreatedAt time.Time                       `json:"createdAt"`
 }
 
 type ContestTask struct {

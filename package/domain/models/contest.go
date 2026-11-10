@@ -7,14 +7,13 @@ import (
 )
 
 type Contest struct {
-	ID                 int64      `gorm:"primaryKey"`
-	Name               string     `gorm:"not null;unique"`
-	Description        string     `gorm:"type:text;null"`
-	CreatedBy          int64      `gorm:"foreignKey:UserID;not null"`
-	StartAt            time.Time  `gorm:"not null"`
-	EndAt              *time.Time `gorm:"null"`
-	IsRegistrationOpen bool       `gorm:"default:true;not null"`  // if false, only admins can add participants
-	IsSubmissionOpen   bool       `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
+	ID               int64      `gorm:"primaryKey"`
+	Name             string     `gorm:"not null;unique"`
+	Description      string     `gorm:"type:text;null"`
+	CreatedBy        int64      `gorm:"foreignKey:UserID;not null"`
+	StartAt          time.Time  `gorm:"not null"`
+	EndAt            *time.Time `gorm:"null"`
+	IsSubmissionOpen bool       `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
 
 	BaseModel
 
@@ -51,24 +50,12 @@ type ContestParticipantGroup struct {
 	Group   Group   `gorm:"foreignKey:GroupID;references:ID"`
 }
 
-type ContestRegistrationRequests struct {
-	ID        int64                           `gorm:"primaryKey;autoIncrement"`
-	ContestID int64                           `gorm:"not null"`
-	UserID    int64                           `gorm:"not null"`
-	Status    types.RegistrationRequestStatus `gorm:"type:registration_request_status;not null"`
-	BaseModel
-
-	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
-	User    User    `gorm:"foreignKey:UserID;references:ID"`
-}
-
 // ContestWithStats extends Contest with computed fields for efficient querying
 type ContestWithStats struct {
 	Contest
 	ParticipantCount int64 `gorm:"column:participant_count"`
 	TaskCount        int64 `gorm:"column:task_count"`
 	IsParticipant    bool  `gorm:"column:is_participant"`
-	HasPendingReg    bool  `gorm:"column:has_pending_reg"`
 }
 
 type ParticipantContestStats struct {

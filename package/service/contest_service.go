@@ -26,8 +26,6 @@ type ContestService interface {
 	Edit(db database.Database, currentUser *schemas.User, contestID int64, editInfo *schemas.EditContest) (*schemas.CreatedContest, error)
 	// Delete removes a contest
 	Delete(db database.Database, currentUser *schemas.User, contestID int64) error
-	// RegisterForContest creates a pending registration for a contest
-	RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error
 	// GetTasksForContest retrieves all contest task relations (with timing/submission flags) for a contest (for authorized users)
 	GetTasksForContest(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams, search string) (schemas.PaginatedResult[[]schemas.ContestTask], error)
 	// GetStartedTasksForContest retrieves already-started contest tasks filtered by status (for participants and users with access_policy)
@@ -44,12 +42,6 @@ type ContestService interface {
 	UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error
 	// RemoveTaskFromContest removes a task from a contest
 	RemoveTaskFromContest(db database.Database, currentUser *schemas.User, contestID, taskID int64) error
-	// GetRegistrationRequests retrieves pending registration requests for a contest
-	GetRegistrationRequests(db database.Database, currentUser *schemas.User, contestID int64, statusFilter types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error)
-	// ApproveRegistrationRequest approves a pending registration request for a contest
-	ApproveRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error
-	// RejectRegistrationRequest rejects a pending registration request for a contest
-	RejectRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error
 	// IsTaskInContest checks if a task is part of a contest
 	IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error)
 	// IsUserParticipant checks if a user is a participant in a contest
@@ -114,12 +106,11 @@ func (cs *contestService) Create(db database.Database, currentUser *schemas.User
 	}
 
 	model := &models.Contest{
-		Name:               contest.Name,
-		Description:        contest.Description,
-		CreatedBy:          currentUser.ID,
-		IsRegistrationOpen: contest.IsRegistrationOpen,
-		IsSubmissionOpen:   contest.IsSubmissionOpen,
-		StartAt:            contest.StartAt,
+		Name:             contest.Name,
+		Description:      contest.Description,
+		CreatedBy:        currentUser.ID,
+		IsSubmissionOpen: contest.IsSubmissionOpen,
+		StartAt:          contest.StartAt,
 	}
 
 	if contest.EndAt.Set {
@@ -200,8 +191,7 @@ func (cs *contestService) GetAllContests(db database.Database, currentUser *sche
 				// Stats fields are not available from GetAll; leave zero-values
 				IsSubmissionOpen: c.IsSubmissionOpen,
 			},
-			IsRegistrationOpen: c.IsRegistrationOpen,
-			CreatedAt:          c.CreatedAt,
+			CreatedAt: c.CreatedAt,
 		}
 	}
 
@@ -293,9 +283,6 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 	if editInfo.EndAt.Set {
 		editMap["end_at"] = editInfo.EndAt.Value
 	}
-	if editInfo.IsRegistrationOpen != nil {
-		editMap["is_registration_open"] = *editInfo.IsRegistrationOpen
-	}
 	if editInfo.IsSubmissionOpen != nil {
 		editMap["is_submission_open"] = *editInfo.IsSubmissionOpen
 	}
@@ -315,63 +302,6 @@ func (cs *contestService) Delete(db database.Database, currentUser *schemas.User
 	return cs.contestRepository.Delete(db, contestID)
 }
 
-func (cs *contestService) RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error {
-	// Get the contest
-	contest, err := cs.contestRepository.Get(db, contestID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNotFound
-		}
-		return err
-	}
-
-	if !cs.canAccessContest(db, contest.ID, currentUser) {
-		return errors.ErrNotFound
-	}
-
-	// Check if registration is open
-	if !contest.IsRegistrationOpen {
-		return errors.ErrContestRegistrationClosed
-	}
-
-	// Check if contest has ended
-	if contest.EndAt != nil && contest.EndAt.Before(time.Now()) {
-		return errors.ErrContestEnded
-	}
-
-	// Check if user is already a participant
-	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, currentUser.ID)
-	if err != nil {
-		return err
-	}
-	if isParticipant {
-		return errors.ErrAlreadyParticipant
-	}
-
-	// Check if user already has a pending registration
-	hasPending, err := cs.contestRepository.IsPendingRegistrationExists(db, contestID, currentUser.ID)
-	if err != nil {
-		return err
-	}
-	if hasPending {
-		return errors.ErrAlreadyRegistered
-	}
-
-	// Create pending registration
-	registration := &models.ContestRegistrationRequests{
-		ContestID: contestID,
-		UserID:    currentUser.ID,
-		Status:    types.RegistrationRequestStatusPending,
-	}
-
-	_, err = cs.contestRepository.CreatePendingRegistration(db, registration)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.EditContest) {
 	if editInfo.Name != nil {
 		model.Name = *editInfo.Name
@@ -384,9 +314,6 @@ func (cs *contestService) updateModel(model *models.Contest, editInfo *schemas.E
 	}
 	if editInfo.EndAt.Set {
 		model.EndAt = editInfo.EndAt.Value
-	}
-	if editInfo.IsRegistrationOpen != nil {
-		model.IsRegistrationOpen = *editInfo.IsRegistrationOpen
 	}
 	if editInfo.IsSubmissionOpen != nil {
 		model.IsSubmissionOpen = *editInfo.IsSubmissionOpen
@@ -720,7 +647,6 @@ func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.C
 			Status:           getContestStatus(model.StartAt, model.EndAt),
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
-		IsRegistrationOpen: model.IsRegistrationOpen,
 	}
 }
 
@@ -759,121 +685,6 @@ func ParticipantContestStatsToSchema(model *models.ParticipantContestStats) *sch
 		},
 		SolvedTaskCount: model.SolvedTaskCount,
 	}
-}
-
-func (cs *contestService) GetRegistrationRequests(db database.Database, currentUser *schemas.User, contestID int64, status types.RegistrationRequestStatus) ([]schemas.RegistrationRequest, error) {
-	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionManage)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get registration requests from repository
-	requests, err := cs.contestRepository.GetRegistrationRequests(db, contestID, status)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to schema
-	result := make([]schemas.RegistrationRequest, len(requests))
-	for i, req := range requests {
-		result[i] = schemas.RegistrationRequest{
-			ID:        req.ID,
-			ContestID: req.ContestID,
-			UserID:    req.UserID,
-			User:      *UserToSchema(&req.User),
-			CreatedAt: req.CreatedAt,
-			Status:    req.Status,
-		}
-	}
-
-	return result, nil
-}
-
-func (cs *contestService) ApproveRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error {
-	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
-	if err != nil {
-		return err
-	}
-
-	// Check if user exists
-	_, err = cs.userRepository.Get(db, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNotFound
-		}
-		return err
-	}
-
-	// Check if already a participant
-	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, userID)
-	if err != nil {
-		return err
-	}
-
-	// Check if pending registration exists
-	request, err := cs.contestRepository.GetPendingRegistrationRequest(db, contestID, userID)
-	if err != nil {
-		return err
-	}
-	hasPending := request != nil
-	if !hasPending {
-		return errors.ErrNoPendingRegistration
-	}
-	if isParticipant {
-		err = cs.contestRepository.DeleteRegistrationRequest(db, request.ID)
-		if err != nil {
-			return err
-		}
-		return errors.ErrAlreadyParticipant
-	}
-	err = cs.contestRepository.UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusApproved)
-	if err != nil {
-		return err
-	}
-	return cs.contestRepository.CreateContestParticipant(db, contestID, userID)
-}
-
-func (cs *contestService) RejectRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error {
-	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
-	if err != nil {
-		return err
-	}
-
-	// Check if user exists
-	_, err = cs.userRepository.Get(db, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNotFound
-		}
-		return err
-	}
-
-	// Check if already a participant
-	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, userID)
-	if err != nil {
-		return err
-	}
-
-	// Check if pending registration exists
-	request, err := cs.contestRepository.GetPendingRegistrationRequest(db, contestID, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.ErrNoPendingRegistration
-		}
-		return err
-	}
-	if request == nil {
-		return errors.ErrNoPendingRegistration
-	}
-	if isParticipant {
-		err = cs.contestRepository.DeleteRegistrationRequest(db, request.ID)
-		if err != nil {
-			return err
-		}
-		return errors.ErrAlreadyParticipant
-	}
-
-	return cs.contestRepository.UpdateRegistrationRequestStatus(db, request.ID, types.RegistrationRequestStatusRejected)
 }
 
 func (cs *contestService) IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error) {
@@ -1038,8 +849,7 @@ func ContestToCreatedSchema(model *repository.ContestDetailed) *schemas.CreatedC
 			Status:           getContestStatus(model.StartAt, model.EndAt),
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
-		IsRegistrationOpen: model.IsRegistrationOpen,
-		CreatedAt:          model.CreatedAt,
+		CreatedAt: model.CreatedAt,
 	}
 }
 
@@ -1167,8 +977,7 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 				Status:           getContestStatus(model.StartAt, model.EndAt),
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
-			IsRegistrationOpen: model.IsRegistrationOpen,
-			CreatedAt:          model.CreatedAt,
+			CreatedAt: model.CreatedAt,
 		},
 		PermissionType: model.PermissionType,
 	}
