@@ -314,10 +314,10 @@ func (mr *MockContestServiceMockRecorder) GetAssignableTasks(db, currentUser, co
 }
 
 // GetContestGroups mocks base method.
-func (m *MockContestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.Group, error) {
+func (m *MockContestService) GetContestGroups(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.GroupWithMembers, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContestGroups", db, currentUser, contestID)
-	ret0, _ := ret[0].([]schemas.Group)
+	ret0, _ := ret[0].([]schemas.GroupWithMembers)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -329,10 +329,10 @@ func (mr *MockContestServiceMockRecorder) GetContestGroups(db, currentUser, cont
 }
 
 // GetContestParticipants mocks base method.
-func (m *MockContestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+func (m *MockContestService) GetContestParticipants(db database.Database, currentUser *schemas.User, contestID int64, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.ContestParticipantAccess], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContestParticipants", db, currentUser, contestID, paginationParams)
-	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.User])
+	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.ContestParticipantAccess])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

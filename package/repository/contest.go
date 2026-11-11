@@ -76,8 +76,12 @@ type ContestRepository interface {
 	GetContestGroups(db database.Database, contestID int64) ([]models.Group, error)
 	// GetAssignableGroups retrieves all groups NOT assigned to a contest
 	GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error)
-	// GetContestParticipants retrieves all users assigned as participants to a contest
+	// GetGroupMembersForGroups retrieves members for a set of groups in a single query
+	GetGroupMembersForGroups(db database.Database, groupIDs []int64) (map[int64][]models.User, error)
+	// GetContestParticipants retrieves all effective participants of a contest (direct assignments and users in assigned groups)
 	GetContestParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error)
+	// GetParticipantAccessSources returns, for each requested user, how they access the contest (direct assignment and/or assigned groups)
+	GetParticipantAccessSources(db database.Database, contestID int64, userIDs []int64) (map[int64]models.ParticipantAccessInfo, error)
 	// GetAssignableParticipants retrieves all users NOT assigned as participants to a contest with pagination
 	GetAssignableParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error)
 	// AddParticipantsToContest adds multiple users as participants to a contest
@@ -821,6 +825,39 @@ func (cr *contestRepository) GetContestGroups(db database.Database, contestID in
 	return groups, nil
 }
 
+func (cr *contestRepository) GetGroupMembersForGroups(db database.Database, groupIDs []int64) (map[int64][]models.User, error) {
+	tx := db.GetInstance()
+	result := make(map[int64][]models.User)
+
+	if len(groupIDs) == 0 {
+		return result, nil
+	}
+
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+
+	type groupMemberRow struct {
+		GroupID int64 `gorm:"column:group_id"`
+		models.User
+	}
+
+	var rows []groupMemberRow
+	err := tx.Model(&models.User{}).
+		Select("users.*, "+ugTable+".group_id").
+		Joins(fmt.Sprintf("JOIN %s ON %s.user_id = users.id", ugTable, ugTable)).
+		Where(fmt.Sprintf("%s.group_id IN ?", ugTable), groupIDs).
+		Order("users.id ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.GroupID] = append(result[row.GroupID], row.User)
+	}
+
+	return result, nil
+}
+
 func (cr *contestRepository) GetAssignableGroups(db database.Database, contestID int64) ([]models.Group, error) {
 	tx := db.GetInstance()
 	var groups []models.Group
@@ -842,10 +879,20 @@ func (cr *contestRepository) GetContestParticipants(db database.Database, contes
 	var users []models.User
 	var totalCount int64
 
-	// Get total count of participants
+	cpTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+	cpgTable := database.ResolveTableName(tx, &models.ContestParticipantGroup{})
+	gTable := database.ResolveTableName(tx, &models.Group{})
+
+	directExists := fmt.Sprintf("SELECT 1 FROM %s WHERE contest_id = ? AND user_id = users.id", cpTable)
+	groupExists := fmt.Sprintf(
+		"SELECT 1 FROM %s AS ug JOIN %s AS g ON g.id = ug.group_id JOIN %s AS cpg ON cpg.group_id = ug.group_id WHERE ug.user_id = users.id AND cpg.contest_id = ?",
+		ugTable, gTable, cpgTable,
+	)
+
+	// Get total count of effective participants (direct assignments and users in assigned groups)
 	if err := tx.Model(&models.User{}).
-		Joins(fmt.Sprintf("JOIN %s ON contest_participants.user_id = users.id", database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Where("contest_participants.contest_id = ?", contestID).
+		Where("EXISTS ("+directExists+") OR EXISTS ("+groupExists+")", contestID, contestID).
 		Count(&totalCount).Error; err != nil {
 		return nil, 0, err
 	}
@@ -857,8 +904,8 @@ func (cr *contestRepository) GetContestParticipants(db database.Database, contes
 	}
 
 	err = paginatedTx.Model(&models.User{}).
-		Joins(fmt.Sprintf("JOIN %s ON contest_participants.user_id = users.id", database.ResolveTableName(tx, &models.ContestParticipant{}))).
-		Where("contest_participants.contest_id = ?", contestID).
+		Where("EXISTS ("+directExists+") OR EXISTS ("+groupExists+")", contestID, contestID).
+		Order("users.id ASC"). // unique tie-breaker so offset pages are stable on duplicate sort keys
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
@@ -866,18 +913,80 @@ func (cr *contestRepository) GetContestParticipants(db database.Database, contes
 	return users, totalCount, nil
 }
 
+func (cr *contestRepository) GetParticipantAccessSources(db database.Database, contestID int64, userIDs []int64) (map[int64]models.ParticipantAccessInfo, error) {
+	tx := db.GetInstance()
+	result := make(map[int64]models.ParticipantAccessInfo)
+
+	if len(userIDs) == 0 {
+		return result, nil
+	}
+
+	cpTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+	cpgTable := database.ResolveTableName(tx, &models.ContestParticipantGroup{})
+	gTable := database.ResolveTableName(tx, &models.Group{})
+
+	var directUserIDs []int64
+	err := tx.Table(cpTable).
+		Select("user_id").
+		Where("contest_id = ? AND user_id IN ?", contestID, userIDs).
+		Find(&directUserIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, userID := range directUserIDs {
+		info := result[userID]
+		info.Direct = true
+		if info.Groups == nil {
+			info.Groups = []models.Group{}
+		}
+		result[userID] = info
+	}
+
+	type groupAccess struct {
+		UserID    int64  `gorm:"column:user_id"`
+		GroupID   int64  `gorm:"column:group_id"`
+		GroupName string `gorm:"column:group_name"`
+	}
+	var groupAccessRows []groupAccess
+	err = tx.Table(ugTable+" AS ug").
+		Select("ug.user_id, g.id AS group_id, g.name AS group_name").
+		Joins("JOIN "+gTable+" AS g ON g.id = ug.group_id").
+		Joins("JOIN "+cpgTable+" AS cpg ON cpg.group_id = ug.group_id").
+		Where("ug.user_id IN ? AND cpg.contest_id = ?", userIDs, contestID).
+		Order("g.id ASC").
+		Find(&groupAccessRows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range groupAccessRows {
+		info := result[row.UserID]
+		if info.Groups == nil {
+			info.Groups = []models.Group{}
+		}
+		info.Groups = append(info.Groups, models.Group{ID: row.GroupID, Name: row.GroupName})
+		result[row.UserID] = info
+	}
+
+	return result, nil
+}
+
 func (cr *contestRepository) GetAssignableParticipants(db database.Database, contestID int64, limit, offset int, sort string) ([]models.User, int64, error) {
 	tx := db.GetInstance()
 	var users []models.User
 	var totalCount int64
 
-	// Get total count of assignable users (not already participants)
+	cpTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	ugTable := database.ResolveTableName(tx, &models.UserGroup{})
+	cpgTable := database.ResolveTableName(tx, &models.ContestParticipantGroup{})
+	assignableFilter := fmt.Sprintf(
+		"id NOT IN (SELECT user_id FROM %s WHERE contest_id = ?) AND id NOT IN (SELECT ug.user_id FROM %s AS ug JOIN %s AS cpg ON cpg.group_id = ug.group_id WHERE cpg.contest_id = ?)",
+		cpTable, ugTable, cpgTable,
+	)
+
+	// Get total count of assignable users (not already participants, directly or via an assigned group)
 	if err := tx.Model(&models.User{}).
-		Where("id NOT IN (?)",
-			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
-				Select("user_id").
-				Where("contest_id = ?", contestID),
-		).
+		Where(assignableFilter, contestID, contestID).
 		Count(&totalCount).Error; err != nil {
 		return nil, 0, err
 	}
@@ -889,11 +998,8 @@ func (cr *contestRepository) GetAssignableParticipants(db database.Database, con
 	}
 
 	err = paginatedTx.Model(&models.User{}).
-		Where("id NOT IN (?)",
-			tx.Table(database.ResolveTableName(tx, &models.ContestParticipant{})).
-				Select("user_id").
-				Where("contest_id = ?", contestID),
-		).
+		Where(assignableFilter, contestID, contestID).
+		Order("users.id ASC").
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
