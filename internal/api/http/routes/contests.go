@@ -20,7 +20,6 @@ type ContestRoute interface {
 	GetContestTasks(w http.ResponseWriter, r *http.Request)
 	GetMyActiveContests(w http.ResponseWriter, r *http.Request)
 	GetMyContestResults(w http.ResponseWriter, r *http.Request)
-	GetMyContests(w http.ResponseWriter, r *http.Request) // legacy combined endpoint
 	GetMyPastContests(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
 }
@@ -180,37 +179,6 @@ func (cr *ContestRouteImpl) GetTaskProgressForContest(w http.ResponseWriter, r *
 	httputils.ReturnSuccess(w, http.StatusOK, tasks)
 }
 
-// GetMyContests godoc
-//
-//	@Tags			contests
-//	@Summary		Get contests for a user (combined - deprecated; use /contests/my/active or /contests/my/past)
-//	@Description	Get contests for a user (returns ongoing, past, upcoming)
-//	@Produce		json
-//	@Deprecated
-//	@Failure	400	{object}	httputils.APIError
-//	@Failure	404	{object}	httputils.APIError
-//	@Failure	405	{object}	httputils.APIError
-//	@Failure	500	{object}	httputils.APIError
-//	@Success	200	{object}	httputils.APIResponse[schemas.UserContestsWithStats]
-//	@Router		/contests/my [get]
-func (cr *ContestRouteImpl) GetMyContests(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
-	db := httputils.GetDatabase(r)
-	currentUser := httputils.GetCurrentUser(r)
-
-	contests, err := cr.contestService.GetUserContests(db, currentUser.ID)
-	if err != nil {
-		httputils.HandleServiceError(w, err, db, cr.logger)
-		return
-	}
-
-	httputils.ReturnSuccess(w, http.StatusOK, contests)
-}
-
 // GetMyActiveContests godoc
 //
 //	@Tags			contests
@@ -368,9 +336,6 @@ func (cr *ContestRouteImpl) GetMyContestResults(w http.ResponseWriter, r *http.R
 }
 
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
-	// Legacy combined endpoint (optional keep); new split endpoints:
-	// /contests/my/active and /contests/my/past
-	mux.HandleFunc("/contests/my", contestRoute.GetMyContests)
 	mux.HandleFunc("/contests/my/active", contestRoute.GetMyActiveContests)
 	mux.HandleFunc("/contests/my/past", contestRoute.GetMyPastContests)
 
