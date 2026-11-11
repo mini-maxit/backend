@@ -52,6 +52,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  httputils.APIResponse-array_schemas_GroupWithMembers:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/schemas.GroupWithMembers'
+        type: array
+      ok:
+        type: boolean
+    type: object
   httputils.APIResponse-array_schemas_LanguageConfig:
     properties:
       data:
@@ -168,6 +177,13 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/schemas.MyTasksResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_ContestParticipantAccess:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ContestParticipantAccess'
       ok:
         type: boolean
     type: object
@@ -389,6 +405,29 @@ definitions:
       taskCount:
         type: integer
     type: object
+  schemas.ContestParticipantAccess:
+    properties:
+      createdAt:
+        type: string
+      direct:
+        type: boolean
+      email:
+        type: string
+      groups:
+        items:
+          $ref: '#/definitions/schemas.GroupRef'
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        $ref: '#/definitions/types.UserRole'
+      surname:
+        type: string
+      username:
+        type: string
+    type: object
   schemas.ContestResults:
     properties:
       contest:
@@ -564,6 +603,30 @@ definitions:
       updatedAt:
         type: string
     type: object
+  schemas.GroupRef:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  schemas.GroupWithMembers:
+    properties:
+      createdAt:
+        type: string
+      createdBy:
+        type: integer
+      id:
+        type: integer
+      members:
+        items:
+          $ref: '#/definitions/schemas.UserInfo'
+        type: array
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   schemas.LanguageConfig:
     properties:
       fileExtension:
@@ -642,6 +705,15 @@ definitions:
         type: boolean
       value:
         type: string
+    type: object
+  schemas.PaginatedResult-array_schemas_ContestParticipantAccess:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/schemas.ContestParticipantAccess'
+        type: array
+      pagination:
+        $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
   schemas.PaginatedResult-array_schemas_ContestTask:
     properties:
@@ -1773,7 +1845,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputils.APIResponse-array_schemas_Group'
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_GroupWithMembers'
         "400":
           description: Bad Request
           schema:
@@ -1963,7 +2035,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_ContestParticipantAccess'
         "400":
           description: Bad Request
           schema:
