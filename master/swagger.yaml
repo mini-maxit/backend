@@ -264,13 +264,6 @@ definitions:
       ok:
         type: boolean
     type: object
-  httputils.APIResponse-schemas_UserContestsWithStats:
-    properties:
-      data:
-        $ref: '#/definitions/schemas.UserContestsWithStats'
-      ok:
-        type: boolean
-    type: object
   httputils.APIResponse-schemas_WorkersStatus:
     properties:
       data:
@@ -1118,21 +1111,6 @@ definitions:
         type: integer
       user:
         $ref: '#/definitions/schemas.UserInfo'
-    type: object
-  schemas.UserContestsWithStats:
-    properties:
-      ongoing:
-        items:
-          $ref: '#/definitions/schemas.ContestWithStats'
-        type: array
-      past:
-        items:
-          $ref: '#/definitions/schemas.PastContestWithStats'
-        type: array
-      upcoming:
-        items:
-          $ref: '#/definitions/schemas.ContestWithStats'
-        type: array
     type: object
   schemas.UserEdit:
     properties:
@@ -2904,37 +2882,6 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Get tasks for a contest with submission statistics
-      tags:
-      - contests
-  /contests/my:
-    get:
-      deprecated: true
-      description: Get contests for a user (returns ongoing, past, upcoming)
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httputils.APIResponse-schemas_UserContestsWithStats'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "405":
-          description: Method Not Allowed
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputils.APIError'
-      summary: Get contests for a user (combined - deprecated; use /contests/my/active
-        or /contests/my/past)
       tags:
       - contests
   /contests/my/active:
