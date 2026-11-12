@@ -18,13 +18,13 @@ docker compose up --build -d
 To generate new migration file you can use the following command:
 
 ```bash
-atlas migrate diff --env gorm
+make migrate-diff name=<migration_name>
 ```
 
 To apply migrations to database you can use:
 
 ```bash
-atlas migrate apply --env gorm --url <database_url>
+make migrate-apply DATABASE_URL=<database_url>
 ```
 
 

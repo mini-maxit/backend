@@ -7,20 +7,9 @@ data "external_schema" "gorm" {
   ]
 }
 
-data "composite_schema" "app" {
-  # Load enum types first.
-  schema "maxit" {
-    url = "file://cmd/loader/schema.sql"
-  }
-  # Then, load the GORM models.
-  schema "maxit" {
-    url = data.external_schema.gorm.url
-  }
-}
-
 env "gorm" {
   src = [
-    data.composite_schema.app.url,
+    data.external_schema.gorm.url,
   ]
 
   dev = "docker://postgres/17/dev"

@@ -46,7 +46,7 @@ type TestResult struct {
 	Passed             *bool                      `gorm:"null"`
 	ExecutionTimeS     *float64                   `gorm:"null"` // in seconds
 	PeakMemoryKB       *int64                     `gorm:"null"` // in bytes
-	ExitCode           *int                       `gorm:"null"`
+	ExitCode           *int                       `gorm:"type:integer;null"`
 	StatusCode         types.TestResultStatusCode `gorm:"not null"`
 	ErrorMessage       string                     `gorm:"type:varchar"`
 	StdoutFileID       int64                      `gorm:"not null"`

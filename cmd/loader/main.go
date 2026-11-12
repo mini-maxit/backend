@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,9 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 )
 
+//go:embed schema.sql
+var enums string
+
 func main() {
 	stmts, err := gormschema.New("postgres", gormschema.WithConfig(database.GormConfig)).
 		Load(models.AllModels...)
@@ -21,8 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Prepend schema creation to the output
-	schemaCreation := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;\n", database.SchemaName)
-	io.WriteString(os.Stdout, schemaCreation)
+	// Schema, then enum types (unqualified, like the GORM columns that use them).
+	fmt.Fprintf(os.Stdout, "CREATE SCHEMA IF NOT EXISTS %[1]s;\nSET search_path TO %[1]s;\n%s\n", database.SchemaName, enums)
 	io.WriteString(os.Stdout, stmts)
 }
