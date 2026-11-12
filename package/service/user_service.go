@@ -186,10 +186,9 @@ func (us *userService) ChangePassword(
 
 func UserToInfoSchema(user *models.User) *schemas.UserInfo {
 	return &schemas.UserInfo{
-		ID:       user.ID,
-		Name:     user.Name,
-		Surname:  user.Surname,
-		Username: user.Username,
+		ID:      user.ID,
+		Name:    user.Name,
+		Surname: user.Surname,
 	}
 }
 
@@ -199,7 +198,6 @@ func UserToSchema(user *models.User) *schemas.User {
 		Name:      user.Name,
 		Surname:   user.Surname,
 		Email:     user.Email,
-		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
 	}
@@ -218,9 +216,6 @@ func (us *userService) updateModel(currentModel *models.User, updateInfo *schema
 		currentModel.Surname = *updateInfo.Surname
 	}
 
-	if updateInfo.Username != nil {
-		currentModel.Username = *updateInfo.Username
-	}
 	if updateInfo.Role != nil {
 		currentModel.Role = *updateInfo.Role
 	}

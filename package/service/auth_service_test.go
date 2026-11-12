@@ -40,7 +40,6 @@ func TestRegister(t *testing.T) {
 			Name:         testFirstName,
 			Surname:      testUserSurname,
 			Email:        "email2@email.com",
-			Username:     "username2",
 			PasswordHash: testPasswordHash,
 		}, nil).Times(1)
 
@@ -48,7 +47,6 @@ func TestRegister(t *testing.T) {
 			Name:     testFirstName,
 			Surname:  testUserSurname,
 			Email:    "email2@email.com",
-			Username: "username",
 			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
@@ -68,7 +66,6 @@ func TestRegister(t *testing.T) {
 			Name:     testFirstName,
 			Surname:  testUserSurname,
 			Email:    "email3@email.com",
-			Username: "username3",
 			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
@@ -85,7 +82,6 @@ func TestRegister(t *testing.T) {
 			Name:     testFirstName,
 			Surname:  testUserSurname,
 			Email:    "email4@email.com",
-			Username: "username4",
 			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
@@ -101,7 +97,6 @@ func TestRegister(t *testing.T) {
 			Name:     testFirstName,
 			Surname:  testUserSurname,
 			Email:    testUserEmail,
-			Username: "username5",
 			Password: testPassword,
 		}
 		response, err := as.Register(db, userRegister)
@@ -128,7 +123,6 @@ func TestLogin(t *testing.T) {
 		Name:         testFirstName,
 		Surname:      testUserSurname,
 		Email:        testUserEmail,
-		Username:     "username",
 		PasswordHash: string(hash),
 	}
 

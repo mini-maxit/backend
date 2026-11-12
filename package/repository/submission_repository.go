@@ -918,7 +918,6 @@ func (us *submissionRepository) GetUserStatsForContestTask(db database.Database,
 		)
 		SELECT
 			u.id as user_id,
-			u.username as user_username,
 			u.name as user_name,
 			u.surname as user_surname,
 			COUNT(DISTINCT s.id) as submission_count,
@@ -932,8 +931,8 @@ func (us *submissionRepository) GetUserStatsForContestTask(db database.Database,
 			AND s.status = 'evaluated'
 		LEFT JOIN best_submissions b ON b.user_id = u.id
 		WHERE cp.contest_id = ?
-		GROUP BY u.id, u.username, u.name, u.surname, b.best_score, b.best_submission_id
-		ORDER BY best_score DESC, u.username
+		GROUP BY u.id, u.name, u.surname, b.best_score, b.best_submission_id
+		ORDER BY best_score DESC, u.surname, u.name
 	`
 	if err := tx.Raw(query, taskID, contestID, taskID, contestID, contestID).Scan(&results).Error; err != nil {
 		return nil, err
@@ -955,7 +954,6 @@ func (us *submissionRepository) GetUserStatsForContest(db database.Database, con
 	summaryQuery := `
 		SELECT
 			u.id AS user_id,
-			u.username AS user_username,
 			u.name AS user_name,
 			u.surname AS user_surname,
 			COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN t.id END) AS tasks_attempted,
@@ -975,8 +973,8 @@ func (us *submissionRepository) GetUserStatsForContest(db database.Database, con
 			AND s.status = 'evaluated'
 		LEFT JOIN ` + database.ResolveTableName(tx, &models.SubmissionResult{}) + ` sr ON sr.submission_id = s.id
 		WHERE cp.contest_id = ?` + userFilter + `
-		GROUP BY u.id, u.username, u.name, u.surname
-		ORDER BY tasks_solved DESC, tasks_attempted DESC, u.username
+		GROUP BY u.id, u.name, u.surname
+		ORDER BY tasks_solved DESC, tasks_attempted DESC, u.surname, u.name
 	`
 
 	var summaryRows []models.UserContestSummaryRow
@@ -1075,10 +1073,9 @@ func (us *submissionRepository) GetUserStatsForContest(db database.Database, con
 		taskBreakdown := perfMap[s.UserID]
 		entry := models.UserContestStatsFull{
 			User: models.User{
-				ID:       s.UserID,
-				Username: s.UserUsername,
-				Name:     s.UserName,
-				Surname:  s.UserSurname,
+				ID:      s.UserID,
+				Name:    s.UserName,
+				Surname: s.UserSurname,
 			},
 			TasksAttempted:       s.TasksAttempted,
 			TasksSolved:          s.TasksSolved,

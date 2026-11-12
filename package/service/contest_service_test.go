@@ -901,7 +901,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
 		cr.EXPECT().GetContestGroups(db, contestID).Return(assignedGroups, nil).Times(1)
 		cr.EXPECT().GetGroupMembersForGroups(db, []int64{1, 2}).Return(map[int64][]models.User{
-			1: {{ID: 10, Name: "Member", Surname: "One", Username: "member1"}},
+			1: {{ID: 10, Name: "Member", Surname: "One"}},
 			2: {},
 		}, nil).Times(1)
 
@@ -912,7 +912,7 @@ func TestContestService_GetContestGroups(t *testing.T) {
 		assert.Equal(t, int64(1), result[0].ID)
 		assert.Equal(t, "Group 1", result[0].Name)
 		require.Len(t, result[0].Members, 1)
-		assert.Equal(t, "member1", result[0].Members[0].Username)
+		assert.Equal(t, "Member", result[0].Members[0].Name)
 		assert.NotNil(t, result[1].Members)
 		assert.Empty(t, result[1].Members)
 	})
@@ -1225,8 +1225,8 @@ func TestGetContestParticipants_MapsAccessSources(t *testing.T) {
 	contestID := int64(1)
 	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "name:asc"}
 
-	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Username: "alice", Email: "alice@example.com", Role: types.UserRoleStudent}
-	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Username: "bob", Email: "bob@example.com", Role: types.UserRoleStudent}
+	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Email: "alice@example.com", Role: types.UserRoleStudent}
+	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Email: "bob@example.com", Role: types.UserRoleStudent}
 
 	cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
 	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
@@ -1273,7 +1273,7 @@ func TestGetContestParticipants_NoSources(t *testing.T) {
 	contestID := int64(1)
 	params := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: "name:asc"}
 
-	charlie := models.User{ID: 3, Name: "Charlie", Surname: "C", Username: "charlie", Email: "charlie@example.com", Role: types.UserRoleStudent}
+	charlie := models.User{ID: 3, Name: "Charlie", Surname: "C", Email: "charlie@example.com", Role: types.UserRoleStudent}
 
 	cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
 	acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, currentUser, types.PermissionEdit).Return(nil).Times(1)
@@ -1315,8 +1315,8 @@ func TestGetContestGroups_MapsMembers(t *testing.T) {
 	contestID := int64(1)
 	groupID := int64(7)
 
-	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Username: "alice", Email: "alice@example.com", Role: types.UserRoleStudent}
-	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Username: "bob", Email: "bob@example.com", Role: types.UserRoleStudent}
+	alice := models.User{ID: 1, Name: "Alice", Surname: "A", Email: "alice@example.com", Role: types.UserRoleStudent}
+	bob := models.User{ID: 2, Name: "Bob", Surname: "B", Email: "bob@example.com", Role: types.UserRoleStudent}
 
 	t.Run("maps members for assigned group", func(t *testing.T) {
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil).Times(1)
@@ -1335,7 +1335,7 @@ func TestGetContestGroups_MapsMembers(t *testing.T) {
 		assert.Equal(t, alice.ID, result[0].Members[0].ID)
 		assert.Equal(t, alice.Name, result[0].Members[0].Name)
 		assert.Equal(t, alice.Surname, result[0].Members[0].Surname)
-		assert.Equal(t, alice.Username, result[0].Members[0].Username)
+		assert.Equal(t, alice.Name, result[0].Members[0].Name)
 		assert.Equal(t, bob.ID, result[0].Members[1].ID)
 	})
 

@@ -23,7 +23,6 @@ const (
 	testUserName     = "Test User"
 	testSurname      = "Test Surname"
 	testEmail        = "email@email.com"
-	testUsername     = "testuser"
 	testPasswordHash = "password"
 )
 
@@ -47,7 +46,6 @@ func TestGetUserByEmail(t *testing.T) {
 			Name:         testUserName,
 			Surname:      testSurname,
 			Email:        testEmail,
-			Username:     testUsername,
 			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().GetByEmail(db, user.Email).Return(user, nil).Times(1)
@@ -58,7 +56,6 @@ func TestGetUserByEmail(t *testing.T) {
 		assert.Equal(t, user.Email, userResp.Email)
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
-		assert.Equal(t, user.Username, userResp.Username)
 	})
 }
 
@@ -82,7 +79,6 @@ func TestGetUserByID(t *testing.T) {
 			Name:         testUserName,
 			Surname:      testSurname,
 			Email:        testEmail,
-			Username:     testUsername,
 			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().Get(db, user.ID).Return(user, nil).Times(1)
@@ -93,7 +89,6 @@ func TestGetUserByID(t *testing.T) {
 		assert.Equal(t, user.Email, userResp.Email)
 		assert.Equal(t, user.Name, userResp.Name)
 		assert.Equal(t, user.Surname, userResp.Surname)
-		assert.Equal(t, user.Username, userResp.Username)
 	})
 }
 
@@ -144,7 +139,6 @@ func TestEditUser(t *testing.T) {
 			Name:         testUserName,
 			Surname:      testSurname,
 			Email:        testEmail,
-			Username:     testUsername,
 			PasswordHash: testPasswordHash,
 		}
 		newName := "New Name"
@@ -184,7 +178,6 @@ func TestGetAllUsers(t *testing.T) {
 			Name:         testUserName,
 			Surname:      testSurname,
 			Email:        testEmail,
-			Username:     testUsername,
 			PasswordHash: testPasswordHash,
 		}
 		ur.EXPECT().GetAll(
@@ -199,7 +192,6 @@ func TestGetAllUsers(t *testing.T) {
 		assert.Equal(t, user.Email, result.Items[0].Email)
 		assert.Equal(t, user.Name, result.Items[0].Name)
 		assert.Equal(t, user.Surname, result.Items[0].Surname)
-		assert.Equal(t, user.Username, result.Items[0].Username)
 		assert.Equal(t, user.ID, result.Items[0].ID)
 		assert.Equal(t, user.Role, result.Items[0].Role)
 		assert.Equal(t, 1, result.Pagination.TotalItems)

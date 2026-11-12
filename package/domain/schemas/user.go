@@ -12,26 +12,23 @@ type User struct {
 	Name      string         `json:"name"`
 	Surname   string         `json:"surname"`
 	Email     string         `json:"email"`
-	Username  string         `json:"username"`
 	Role      types.UserRole `json:"role"`
 	CreatedAt time.Time      `json:"createdAt"`
 }
 
 // Struct to embed basic user info
 type UserInfo struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Username string `json:"username"`
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Surname string `json:"surname"`
 }
 
 // UserCreate represents the user create request.
 type UserEdit struct {
-	Name     *string         `json:"name,omitempty"`
-	Surname  *string         `json:"surname,omitempty"`
-	Email    *string         `json:"email,omitempty"`
-	Username *string         `json:"username,omitempty"`
-	Role     *types.UserRole `json:"role,omitempty"`
+	Name    *string         `json:"name,omitempty"`
+	Surname *string         `json:"surname,omitempty"`
+	Email   *string         `json:"email,omitempty"`
+	Role    *types.UserRole `json:"role,omitempty"`
 }
 
 // UserIDs represents the user IDs request.

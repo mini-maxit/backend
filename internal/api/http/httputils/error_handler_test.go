@@ -138,7 +138,6 @@ func TestConvertValidationErrors(t *testing.T) {
 		MaxLenField   string `validate:"lte=3" json:"maxLenField"`
 		MatchField    string `validate:"eqfield=ConfirmField" json:"matchField"`
 		ConfirmField  string `json:"confirmField"`
-		UsernameField string `validate:"username" json:"usernameField"`
 		PasswordField string `validate:"password" json:"passwordField"`
 	}
 
@@ -150,7 +149,6 @@ func TestConvertValidationErrors(t *testing.T) {
 		MaxLenField:   "1234",
 		MatchField:    "abc",
 		ConfirmField:  "abcd",
-		UsernameField: "1invalid",
 		PasswordField: "weak",
 	}
 
@@ -184,10 +182,6 @@ func TestConvertValidationErrors(t *testing.T) {
 	// eqfield -> FIELD_MUST_MATCH_%s where %s is json name of param (confirmField)
 	if v, exists := result["matchField"]; !exists || string(v.Code) != "FIELD_MUST_MATCH_confirmField" {
 		t.Errorf("matchField: expected FIELD_MUST_MATCH_confirmField, got %+v", v)
-	}
-	// username
-	if v, exists := result["usernameField"]; !exists || string(v.Code) != "INVALID_USERNAME_FORMAT" {
-		t.Errorf("usernameField: expected INVALID_USERNAME_FORMAT, got %+v", v)
 	}
 	// password
 	if v, exists := result["passwordField"]; !exists || string(v.Code) != "INVALID_PASSWORD_FORMAT" {

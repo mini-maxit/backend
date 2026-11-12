@@ -457,7 +457,7 @@ func (cr *contestsManagementRouteImpl) GetContestTasks(w http.ResponseWriter, r 
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
 //	@Param			taskId	query		int		false	"Task ID"
-//	@Param			userSearch	query	string	false	"Search submissions by user (username, name or surname)"
+//	@Param			userSearch	query	string	false	"Search submissions by user (name or surname)"
 //	@Param			taskSearch	query	string	false	"Search submissions by task title or ID"
 //	@Failure		400		{object}	httputils.APIError
 //	@Failure		403		{object}	httputils.APIError

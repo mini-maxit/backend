@@ -53,7 +53,6 @@ func (j *jwtService) generateToken(claims *schemas.JWTClaims, duration time.Dura
 	now := time.Now()
 	jwtClaims := jwt.MapClaims{
 		"user_id":  claims.UserID,
-		"username": claims.Username,
 		"role":     claims.Role,
 		"token_id": claims.TokenID,
 		"type":     claims.Type,
@@ -96,11 +95,10 @@ func (j *jwtService) parseToken(tokenString string) (*schemas.JWTClaims, error) 
 	}
 
 	return &schemas.JWTClaims{
-		UserID:   int64(claims["user_id"].(float64)),
-		Username: claims["username"].(string),
-		Role:     claims["role"].(string),
-		TokenID:  claims["token_id"].(string),
-		Type:     claims["type"].(string),
+		UserID:  int64(claims["user_id"].(float64)),
+		Role:    claims["role"].(string),
+		TokenID: claims["token_id"].(string),
+		Type:    claims["type"].(string),
 	}, nil
 }
 
@@ -120,22 +118,20 @@ func (j *jwtService) GenerateTokens(db database.Database, userId int64) (*schema
 
 	// Create access token claims
 	accessClaims := &schemas.JWTClaims{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-		Role:     string(user.Role),
-		TokenID:  tokenID,
-		Type:     TokenTypeAccess,
+		UserID:  user.ID,
+		Email:   user.Email,
+		Role:    string(user.Role),
+		TokenID: tokenID,
+		Type:    TokenTypeAccess,
 	}
 
 	// Create refresh token claims
 	refreshClaims := &schemas.JWTClaims{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-		Role:     string(user.Role),
-		TokenID:  tokenID,
-		Type:     TokenTypeRefresh,
+		UserID:  user.ID,
+		Email:   user.Email,
+		Role:    string(user.Role),
+		TokenID: tokenID,
+		Type:    TokenTypeRefresh,
 	}
 
 	accessToken, err := j.generateToken(accessClaims, j.accessTokenDuration)

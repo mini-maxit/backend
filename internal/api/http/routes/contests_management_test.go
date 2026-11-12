@@ -81,12 +81,11 @@ func TestGetContestParticipants(t *testing.T) {
 			Items: []schemas.ContestParticipantAccess{
 				{
 					User: schemas.User{
-						ID:       1,
-						Name:     "Alice",
-						Surname:  "A",
-						Username: "alice",
-						Email:    "alice@example.com",
-						Role:     testAdmin,
+						ID:      1,
+						Name:    "Alice",
+						Surname: "A",
+						Email:   "alice@example.com",
+						Role:    testAdmin,
 					},
 					Direct: true,
 					Groups: []schemas.GroupRef{
@@ -95,12 +94,11 @@ func TestGetContestParticipants(t *testing.T) {
 				},
 				{
 					User: schemas.User{
-						ID:       2,
-						Name:     "Bob",
-						Surname:  "B",
-						Username: "bob",
-						Email:    "bob@example.com",
-						Role:     testStudent,
+						ID:      2,
+						Name:    "Bob",
+						Surname: "B",
+						Email:   "bob@example.com",
+						Role:    testStudent,
 					},
 					Direct: false,
 					Groups: []schemas.GroupRef{
@@ -186,8 +184,8 @@ func TestGetContestGroups(t *testing.T) {
 					Name: "Group Seven",
 				},
 				Members: []schemas.UserInfo{
-					{ID: 1, Name: "Alice", Surname: "A", Username: "alice"},
-					{ID: 2, Name: "Bob", Surname: "B", Username: "bob"},
+					{ID: 1, Name: "Alice", Surname: "A"},
+					{ID: 2, Name: "Bob", Surname: "B"},
 				},
 			},
 		}

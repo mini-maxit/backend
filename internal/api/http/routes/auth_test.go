@@ -244,7 +244,6 @@ func TestRegister(t *testing.T) {
 		Name:            "name",
 		Surname:         "surname",
 		Email:           testLoginEmail,
-		Username:        "username",
 		Password:        "HardPassowrd123!",
 		ConfirmPassword: "HardPassowrd123!",
 	}
@@ -270,8 +269,8 @@ func TestRegister(t *testing.T) {
 	t.Run("Invalid request body", func(t *testing.T) {
 		// Test malformed JSON that triggers non-validation errors
 		invalidBodies := []string{
-			`{"name": "test", "surname": "user", "username": "testuser", "email": "test@email.com", "password": "password", "confirmPassword": "password", "extra": "field"}`, // extra field
-			`{"name": "test", "surname": "user", "username": "testuser", "email": "test@email.com", "password": "password", "confirmPassword": "password"}{"extra": "json"}`,  // multiple JSON objects
+			`{"name": "test", "surname": "user", "email": "test@email.com", "password": "password", "confirmPassword": "password", "extra": "field"}`, // extra field
+			`{"name": "test", "surname": "user", "email": "test@email.com", "password": "password", "confirmPassword": "password"}{"extra": "json"}`,  // multiple JSON objects
 		}
 
 		for _, body := range invalidBodies {

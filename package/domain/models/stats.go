@@ -56,7 +56,6 @@ type UserContestStatsFull struct {
 // UserContestSummaryRow maps the first (summary) query result per user.
 type UserContestSummaryRow struct {
 	UserID               int64  `gorm:"column:user_id"`
-	UserUsername         string `gorm:"column:user_username"`
 	UserName             string `gorm:"column:user_name"`
 	UserSurname          string `gorm:"column:user_surname"`
 	TasksAttempted       int64  `gorm:"column:tasks_attempted"`

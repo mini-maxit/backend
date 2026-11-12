@@ -18,7 +18,6 @@ func dump(db database.Database, log *zap.SugaredLogger, authService service.Auth
 		Name     string
 		Surname  string
 		Email    string
-		Username string
 		Password string
 		Role     types.UserRole
 	}{
@@ -27,7 +26,6 @@ func dump(db database.Database, log *zap.SugaredLogger, authService service.Auth
 			Name:     "AdminName",
 			Surname:  "AdminSurname",
 			Email:    "admin@admin.com",
-			Username: "admin",
 			Password: "adminadmin",
 			Role:     types.UserRoleAdmin,
 		},
@@ -35,7 +33,6 @@ func dump(db database.Database, log *zap.SugaredLogger, authService service.Auth
 			Name:     "TeacherName",
 			Surname:  "TeacherSurname",
 			Email:    "teacher@teacher.com",
-			Username: "teacher",
 			Password: "teacherteacher",
 			Role:     types.UserRoleTeacher,
 		},
@@ -43,7 +40,6 @@ func dump(db database.Database, log *zap.SugaredLogger, authService service.Auth
 			Name:     "StudentName",
 			Surname:  "StudentSurname",
 			Email:    "student@student.com",
-			Username: "student",
 			Password: "studentstudent",
 			Role:     types.UserRoleStudent,
 		},
@@ -53,20 +49,19 @@ func dump(db database.Database, log *zap.SugaredLogger, authService service.Auth
 			Name:     user.Name,
 			Surname:  user.Surname,
 			Email:    user.Email,
-			Username: user.Username,
 			Password: user.Password,
 		})
 		if err != nil {
-			log.Warnf("Failed to create %s: %s", user.Username, err.Error())
+			log.Warnf("Failed to create %s: %s", user.Email, err.Error())
 		}
 		registeredUser, err := userRepository.GetByEmail(db, user.Email)
 		if err != nil {
-			log.Warnf("Failed to get %s user: %s", user.Username, err.Error())
+			log.Warnf("Failed to get %s user: %s", user.Email, err.Error())
 		}
 		registeredUser.Role = user.Role
 		err = userRepository.Edit(db, registeredUser)
 		if err != nil {
-			log.Warnf("Failed to set %s role: %s", user.Username, err.Error())
+			log.Warnf("Failed to set %s role: %s", user.Email, err.Error())
 		}
 	}
 
