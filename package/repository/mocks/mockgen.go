@@ -345,9 +345,9 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetAllByUserForTeacher(db, userI
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionRepository) GetAllForContest(db database.Database, contestID int64, limit, offset int, sort, userSearch, taskSearch string) ([]models.Submission, int64, error) {
+func (m *MockSubmissionRepository) GetAllForContest(db database.Database, contestID int64, taskID *int64, limit, offset int, sort, userSearch, taskSearch string) ([]models.Submission, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForContest", db, contestID, limit, offset, sort, userSearch, taskSearch)
+	ret := m.ctrl.Call(m, "GetAllForContest", db, contestID, taskID, limit, offset, sort, userSearch, taskSearch)
 	ret0, _ := ret[0].([]models.Submission)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -355,9 +355,9 @@ func (m *MockSubmissionRepository) GetAllForContest(db database.Database, contes
 }
 
 // GetAllForContest indicates an expected call of GetAllForContest.
-func (mr *MockSubmissionRepositoryMockRecorder) GetAllForContest(db, contestID, limit, offset, sort, userSearch, taskSearch any) *gomock.Call {
+func (mr *MockSubmissionRepositoryMockRecorder) GetAllForContest(db, contestID, taskID, limit, offset, sort, userSearch, taskSearch any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForContest), db, contestID, limit, offset, sort, userSearch, taskSearch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionRepository)(nil).GetAllForContest), db, contestID, taskID, limit, offset, sort, userSearch, taskSearch)
 }
 
 // GetAllForGroup mocks base method.

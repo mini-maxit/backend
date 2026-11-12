@@ -510,12 +510,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 		}
 	}
 
-	var response *schemas.PaginatedResult[[]schemas.Submission]
-	if taskIDPtr != nil {
-		response, err = cr.submissionService.GetAll(db, currentUser, nil, taskIDPtr, &contestID, paginationParams)
-	} else {
-		response, err = cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams, userSearch, taskSearch)
-	}
+	response, err := cr.submissionService.GetAllForContest(db, contestID, taskIDPtr, currentUser, paginationParams, userSearch, taskSearch)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
 		return

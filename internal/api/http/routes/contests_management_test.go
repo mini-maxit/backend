@@ -762,3 +762,58 @@ func TestRemoveTaskFromContest(t *testing.T) {
 		assert.Equal(t, "Tasks removed from contest successfully", response.Data.Message)
 	})
 }
+
+func TestGetContestSubmissions(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cs := mock_service.NewMockContestService(ctrl)
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewContestsManagementRoute(cs, ss)
+	db := &testutils.MockDatabase{}
+
+	mux := mux.NewRouter()
+	mux.HandleFunc("/{id}/submissions", route.GetContestSubmissions)
+	handler := httputils.MockDatabaseMiddleware(mux, db)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		queryParams, _ := httputils.GetQueryParams(&query)
+		ctx := context.WithValue(r.Context(), httputils.UserKey, schemas.User{ID: 1, Role: testAdmin})
+		ctx = context.WithValue(ctx, httputils.QueryParamsKey, queryParams)
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	empty := &schemas.PaginatedResult[[]schemas.Submission]{}
+
+	t.Run("Combines taskId with search filters", func(t *testing.T) {
+		taskID := int64(7)
+		ss.EXPECT().
+			GetAllForContest(gomock.Any(), int64(3), &taskID, gomock.Any(), gomock.Any(), "jan", "sort").
+			Return(empty, nil).Times(1)
+
+		resp, err := http.Get(server.URL + "/3/submissions?taskId=7&userSearch=jan&taskSearch=sort")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("No taskId passes nil", func(t *testing.T) {
+		ss.EXPECT().
+			GetAllForContest(gomock.Any(), int64(3), (*int64)(nil), gomock.Any(), gomock.Any(), "", "").
+			Return(empty, nil).Times(1)
+
+		resp, err := http.Get(server.URL + "/3/submissions")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("Invalid taskId", func(t *testing.T) {
+		resp, err := http.Get(server.URL + "/3/submissions?taskId=abc")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+}
