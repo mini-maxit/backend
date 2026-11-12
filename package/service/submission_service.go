@@ -28,7 +28,8 @@ type SubmissionService interface {
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
 	GetAllForTask(db database.Database, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
-	GetAllForContest(db database.Database, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	// userSearch filters by the submitter's name/surname, taskSearch by task title or ID.
+	GetAllForContest(db database.Database, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams, userSearch, taskSearch string) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForUser retrieves all submissions for a specific user based on the current user's role and query parameters.
 	GetAllForUser(db database.Database, userID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAvailableLanguages retrieves all available languages.
@@ -433,6 +434,7 @@ func (ss *submissionService) GetAllForContest(
 	contestID int64,
 	user *schemas.User,
 	paginationParams schemas.PaginationParams,
+	userSearch, taskSearch string,
 ) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	var err error
 	submissionModels := []models.Submission{}
@@ -445,13 +447,13 @@ func (ss *submissionService) GetAllForContest(
 	switch user.Role {
 	case types.UserRoleAdmin:
 		// Admin is allowed to view all submissions for the contest
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, userSearch, taskSearch)
 	case types.UserRoleTeacher:
 		// Teacher is allowed to view all submissions for contests they created
 		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit); err != nil {
 			return nil, errors.ErrPermissionDenied
 		}
-		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+		submissionModels, totalCount, err = ss.submissionRepository.GetAllForContest(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, userSearch, taskSearch)
 	case types.UserRoleStudent:
 		// Students are not allowed to view all submissions for a contest
 		return nil, errors.ErrPermissionDenied

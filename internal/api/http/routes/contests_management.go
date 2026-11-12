@@ -488,6 +488,9 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
 
+	userSearch, _ := queryParams["userSearch"].(string)
+	taskSearch, _ := queryParams["taskSearch"].(string)
+
 	// Optional filtering by taskId
 	var taskIDPtr *int64
 	if v, ok := queryParams["taskId"]; ok {
@@ -511,7 +514,7 @@ func (cr *contestsManagementRouteImpl) GetContestSubmissions(w http.ResponseWrit
 	if taskIDPtr != nil {
 		response, err = cr.submissionService.GetAll(db, currentUser, nil, taskIDPtr, &contestID, paginationParams)
 	} else {
-		response, err = cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams)
+		response, err = cr.submissionService.GetAllForContest(db, contestID, currentUser, paginationParams, userSearch, taskSearch)
 	}
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, cr.logger)
