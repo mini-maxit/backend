@@ -1214,18 +1214,18 @@ func (mr *MockSubmissionServiceMockRecorder) GetAll(db, user, userID, taskID, co
 }
 
 // GetAllForContest mocks base method.
-func (m *MockSubmissionService) GetAllForContest(db database.Database, contestID int64, user *schemas.User, paginationParams schemas.PaginationParams, userSearch, taskSearch string) (*schemas.PaginatedResult[[]schemas.Submission], error) {
+func (m *MockSubmissionService) GetAllForContest(db database.Database, contestID int64, taskID *int64, user *schemas.User, paginationParams schemas.PaginationParams, userSearch, taskSearch string) (*schemas.PaginatedResult[[]schemas.Submission], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllForContest", db, contestID, user, paginationParams, userSearch, taskSearch)
+	ret := m.ctrl.Call(m, "GetAllForContest", db, contestID, taskID, user, paginationParams, userSearch, taskSearch)
 	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.Submission])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllForContest indicates an expected call of GetAllForContest.
-func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(db, contestID, user, paginationParams, userSearch, taskSearch any) *gomock.Call {
+func (mr *MockSubmissionServiceMockRecorder) GetAllForContest(db, contestID, taskID, user, paginationParams, userSearch, taskSearch any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForContest), db, contestID, user, paginationParams, userSearch, taskSearch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForContest", reflect.TypeOf((*MockSubmissionService)(nil).GetAllForContest), db, contestID, taskID, user, paginationParams, userSearch, taskSearch)
 }
 
 // GetAllForTask mocks base method.

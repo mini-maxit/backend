@@ -379,7 +379,7 @@ func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, c
 		Where(fmt.Sprintf("%s.contest_id = ?", contestTaskTable), contestID)
 
 	if search != "" {
-		base = base.Where(fmt.Sprintf("%s.title ILIKE ?", taskTable), "%"+search+"%")
+		base = base.Where(fmt.Sprintf("%s.title ILIKE ?", taskTable), utils.ContainsPattern(search))
 	}
 
 	if err := base.Count(&totalCount).Error; err != nil {
@@ -487,7 +487,7 @@ func (cr *contestRepository) GetAssignableTasks(db database.Database, contestID 
 	}
 
 	if search != "" {
-		base = base.Where("title ILIKE ?", "%"+search+"%")
+		base = base.Where("title ILIKE ?", utils.ContainsPattern(search))
 	}
 
 	if err := base.Count(&totalCount).Error; err != nil {

@@ -26,8 +26,9 @@ type SubmissionRepository interface {
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
 	GetAllForTaskByUser(db database.Database, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
-	// userSearch matches the submitter's name/surname, taskSearch matches the task title or ID.
-	GetAllForContest(db database.Database, contestID int64, limit, offset int, sort, userSearch, taskSearch string) ([]models.Submission, int64, error)
+	// taskID (optional) narrows to one task, userSearch matches the submitter's name/surname,
+	// taskSearch matches the task title or ID.
+	GetAllForContest(db database.Database, contestID int64, taskID *int64, limit, offset int, sort, userSearch, taskSearch string) ([]models.Submission, int64, error)
 	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
 	GetAllByUserForContest(db database.Database, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
@@ -506,6 +507,7 @@ func (sr *submissionRepository) GetAttemptCountForTaskByUser(db database.Databas
 func (us *submissionRepository) GetAllForContest(
 	db database.Database,
 	contestID int64,
+	taskID *int64,
 	limit, offset int,
 	sort, userSearch, taskSearch string,
 ) ([]models.Submission, int64, error) {
@@ -518,13 +520,16 @@ func (us *submissionRepository) GetAllForContest(
 	// Subqueries instead of joins keep sort columns unambiguous.
 	filter := func(q *gorm.DB) *gorm.DB {
 		q = q.Where("contest_id = ?", contestID)
+		if taskID != nil {
+			q = q.Where("task_id = ?", *taskID)
+		}
 		if userSearch != "" {
 			q = q.Where(fmt.Sprintf("user_id IN (SELECT id FROM %s WHERE CONCAT(name, ' ', surname) ILIKE ?)", userTable),
-				"%"+userSearch+"%")
+				utils.ContainsPattern(userSearch))
 		}
 		if taskSearch != "" {
 			q = q.Where(fmt.Sprintf("task_id IN (SELECT id FROM %s WHERE title ILIKE ? OR CAST(id AS TEXT) LIKE ?)", taskTable),
-				"%"+taskSearch+"%", "%"+taskSearch+"%")
+				utils.ContainsPattern(taskSearch), utils.ContainsPattern(taskSearch))
 		}
 		return q
 	}

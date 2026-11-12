@@ -124,3 +124,11 @@ func ValidateStruct(s any) error {
 
 	return err
 }
+
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// ContainsPattern turns user search text into a LIKE/ILIKE "contains" pattern,
+// escaping %, _ and \ so they match literally (Postgres' default LIKE escape is \).
+func ContainsPattern(search string) string {
+	return "%" + likeEscaper.Replace(search) + "%"
+}

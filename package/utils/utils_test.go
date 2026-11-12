@@ -119,3 +119,19 @@ func TestPasswordValidator(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsPattern(t *testing.T) {
+	cases := map[string]string{
+		"":         "%%",
+		"jan":      "%jan%",
+		"100%":     `%100\%%`,
+		"a_b":      `%a\_b%`,
+		`back\sl`:  `%back\\sl%`,
+		`%_\mixed`: `%\%\_\\mixed%`,
+	}
+	for in, want := range cases {
+		if got := utils.ContainsPattern(in); got != want {
+			t.Errorf("ContainsPattern(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

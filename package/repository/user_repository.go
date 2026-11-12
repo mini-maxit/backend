@@ -60,7 +60,7 @@ func (ur *userRepository) GetAll(db database.Database, limit, offset int, sort, 
 
 	filter := func(q *gorm.DB) *gorm.DB {
 		if search != "" {
-			pattern := "%" + search + "%"
+			pattern := utils.ContainsPattern(search)
 			q = q.Where("CONCAT(name, ' ', surname) ILIKE ? OR email ILIKE ?", pattern, pattern)
 		}
 		if role != "" {
