@@ -104,7 +104,7 @@ func (ar *AuthRouteImpl) Login(w http.ResponseWriter, r *http.Request) {
 //
 //	@Tags			auth
 //	@Summary		Register a user
-//	@Description	Registers a user with name, surname, email, username and password, returns JWT tokens
+//	@Description	Registers a user with name, surname, email and password, returns JWT tokens
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		schemas.UserRegisterRequest	true	"User Register Request"

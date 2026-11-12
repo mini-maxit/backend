@@ -1048,10 +1048,9 @@ func (cs *contestService) GetContestGroups(db database.Database, currentUser *sc
 		memberSchemas := make([]schemas.UserInfo, len(members))
 		for j, member := range members {
 			memberSchemas[j] = schemas.UserInfo{
-				ID:       member.ID,
-				Name:     member.Name,
-				Surname:  member.Surname,
-				Username: member.Username,
+				ID:      member.ID,
+				Name:    member.Name,
+				Surname: member.Surname,
 			}
 		}
 
@@ -1143,7 +1142,6 @@ func (cs *contestService) GetContestParticipants(db database.Database, currentUs
 				Name:      user.Name,
 				Surname:   user.Surname,
 				Email:     user.Email,
-				Username:  user.Username,
 				Role:      user.Role,
 				CreatedAt: user.CreatedAt,
 			},
@@ -1180,7 +1178,6 @@ func (cs *contestService) GetAssignableParticipants(db database.Database, curren
 			Name:      user.Name,
 			Surname:   user.Surname,
 			Email:     user.Email,
-			Username:  user.Username,
 			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 		}

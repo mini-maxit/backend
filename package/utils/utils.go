@@ -31,13 +31,6 @@ func ApplyPaginationAndSort(tx *gorm.DB, limit, offset int, sortBy string) (*gor
 	return tx, nil
 }
 
-// UsernameValidator validates the username.
-func UsernameValidator(fl validator.FieldLevel) bool {
-	username := fl.Field().String()
-	re := regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*$`)
-	return re.MatchString(username)
-}
-
 // PasswordValidator validates the password.
 // Password must:
 // * contain at least 8 characters
@@ -78,11 +71,7 @@ func NewValidator() (*validator.Validate, error) {
 		return name
 	})
 
-	err := validate.RegisterValidation("username", UsernameValidator)
-	if err != nil {
-		return nil, err
-	}
-	err = validate.RegisterValidation("password", PasswordValidator)
+	err := validate.RegisterValidation("password", PasswordValidator)
 	if err != nil {
 		return nil, err
 	}

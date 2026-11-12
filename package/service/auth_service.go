@@ -87,7 +87,6 @@ func (as *authService) Register(db database.Database, userRegister schemas.UserR
 		Name:         userRegister.Name,
 		Surname:      userRegister.Surname,
 		Email:        userRegister.Email,
-		Username:     userRegister.Username,
 		PasswordHash: string(hash),
 		Role:         types.UserRoleStudent,
 	}

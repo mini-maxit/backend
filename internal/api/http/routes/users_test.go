@@ -725,12 +725,11 @@ func TestGetMe(t *testing.T) {
 	route := routes.NewUserRoute(us)
 
 	currentUser := schemas.User{
-		ID:       1,
-		Name:     "John",
-		Surname:  "Doe",
-		Email:    "john.doe@example.com",
-		Username: "johndoe",
-		Role:     types.UserRoleStudent,
+		ID:      1,
+		Name:    "John",
+		Surname: "Doe",
+		Email:   "john.doe@example.com",
+		Role:    types.UserRoleStudent,
 	}
 
 	t.Run("Accept only GET", func(t *testing.T) {
@@ -778,12 +777,11 @@ func TestGetMe(t *testing.T) {
 
 	t.Run("Success - Different user role", func(t *testing.T) {
 		adminUser := schemas.User{
-			ID:       2,
-			Name:     "Admin",
-			Surname:  testSurname,
-			Email:    "admin@example.com",
-			Username: testAdmin,
-			Role:     types.UserRoleAdmin,
+			ID:      2,
+			Name:    "Admin",
+			Surname: testSurname,
+			Email:   "admin@example.com",
+			Role:    types.UserRoleAdmin,
 		}
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -261,7 +261,6 @@ const (
 	valCodeMinLength       validationErrorCode = "MIN_LENGTH_%s"
 	valCodeMaxLength       validationErrorCode = "MAX_LENGTH_%s"
 	valCodeFieldsMustMatch validationErrorCode = "FIELD_MUST_MATCH_%s"
-	valCodeInvalidUsername validationErrorCode = "INVALID_USERNAME_FORMAT"
 	valCodeInvalidPassword validationErrorCode = "INVALID_PASSWORD_FORMAT"
 	valCodeInvalidField    validationErrorCode = "INVALID_FIELD"
 )
@@ -299,10 +298,6 @@ func ConvertValidationErrors(validationErrors validator.ValidationErrors) map[st
 			}
 			errors[fieldName] = ValidationError{
 				Code: validationErrorCode(fmt.Sprintf(string(valCodeFieldsMustMatch), paramFieldName)),
-			}
-		case "username":
-			errors[fieldName] = ValidationError{
-				Code: valCodeInvalidUsername,
 			}
 		case "password":
 			errors[fieldName] = ValidationError{

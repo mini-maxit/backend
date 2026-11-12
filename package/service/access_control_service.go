@@ -207,7 +207,6 @@ func (acs *accessControlService) GetAssignableUsers(db database.Database, curren
 			Name:      u.Name,
 			Surname:   u.Surname,
 			Email:     u.Email,
-			Username:  u.Username,
 			Role:      u.Role,
 			CreatedAt: u.CreatedAt,
 		})

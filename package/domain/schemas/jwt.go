@@ -13,12 +13,11 @@ type JWTTokens struct {
 
 // JWTClaims represents the claims stored in JWT tokens
 type JWTClaims struct {
-	UserID   int64  `json:"userId"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	TokenID  string `json:"tokenId"`
-	Type     string `json:"type"` // "access" or "refresh"
+	UserID  int64  `json:"userId"`
+	Email   string `json:"email"`
+	Role    string `json:"role"`
+	TokenID string `json:"tokenId"`
+	Type    string `json:"type"` // "access" or "refresh"
 }
 
 // RefreshTokenRequest represents the request to refresh tokens

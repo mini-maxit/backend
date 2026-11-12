@@ -91,32 +91,6 @@ func TestValidateRoleAccess(t *testing.T) {
 	})
 }
 
-func TestUsernameValidator(t *testing.T) {
-	validate := validator.New()
-	err := validate.RegisterValidation("username", utils.UsernameValidator)
-	require.NoError(t, err)
-
-	tests := []struct {
-		username string
-		valid    bool
-	}{
-		{"validUsername", true},
-		{"validUsername123", true},
-		{"1invalidUsername", false},
-		{"invalid-username", false},
-		{"", false},
-	}
-
-	for _, test := range tests {
-		errs := validate.Var(test.username, "username")
-		if test.valid {
-			require.NoError(t, errs)
-		} else {
-			require.Error(t, errs)
-		}
-	}
-}
-
 func TestPasswordValidator(t *testing.T) {
 	validate := validator.New()
 	err := validate.RegisterValidation("password", utils.PasswordValidator)

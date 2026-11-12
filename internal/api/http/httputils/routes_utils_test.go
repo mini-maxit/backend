@@ -258,7 +258,7 @@ func TestExtractPaginationParams_WrongTypes(t *testing.T) {
 }
 
 func TestGetCurrentUser(t *testing.T) {
-	user := schemas.User{ID: 42, Username: "alice"}
+	user := schemas.User{ID: 42, Name: "alice"}
 	req := httptest.NewRequest(http.MethodGet, "/profile", nil)
 	ctx := context.WithValue(req.Context(), UserKey, user)
 	req = req.WithContext(ctx)
@@ -266,7 +266,7 @@ func TestGetCurrentUser(t *testing.T) {
 	got := GetCurrentUser(req)
 	require.NotNil(t, got)
 	assert.Equal(t, int64(42), got.ID)
-	assert.Equal(t, "alice", got.Username)
+	assert.Equal(t, "alice", got.Name)
 }
 
 func TestGetCurrentUser_PanicWhenMissing(t *testing.T) {
