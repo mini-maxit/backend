@@ -456,6 +456,7 @@ func (cr *contestRepository) GetTasksForContest(db database.Database, contestID 
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
+		Order("contest_tasks.position ASC, tasks.id ASC").
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
@@ -469,6 +470,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, c
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
+		Order("contest_tasks.position ASC, tasks.id ASC").
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
