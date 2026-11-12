@@ -565,6 +565,20 @@ func (mr *MockContestServiceMockRecorder) RemoveTaskFromContest(db, currentUser,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskFromContest", reflect.TypeOf((*MockContestService)(nil).RemoveTaskFromContest), db, currentUser, contestID, taskID)
 }
 
+// ReorderTasksInContest mocks base method.
+func (m *MockContestService) ReorderTasksInContest(db database.Database, currentUser *schemas.User, contestID int64, taskIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReorderTasksInContest", db, currentUser, contestID, taskIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReorderTasksInContest indicates an expected call of ReorderTasksInContest.
+func (mr *MockContestServiceMockRecorder) ReorderTasksInContest(db, currentUser, contestID, taskIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReorderTasksInContest", reflect.TypeOf((*MockContestService)(nil).ReorderTasksInContest), db, currentUser, contestID, taskIDs)
+}
+
 // UpdateTaskInContest mocks base method.
 func (m *MockContestService) UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error {
 	m.ctrl.T.Helper()

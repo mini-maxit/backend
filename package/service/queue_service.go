@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mini-maxit/backend/internal/database"
+	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
@@ -50,6 +51,7 @@ type QueueService interface {
 type queueService struct {
 	testCaseRepository         repository.TestCaseRepository
 	taskRepository             repository.TaskRepository
+	contestRepository          repository.ContestRepository
 	submissionRepository       repository.SubmissionRepository
 	submissionResultRepository repository.SubmissionResultRepository
 	queueRepository            repository.QueueMessageRepository
@@ -68,6 +70,7 @@ type queueService struct {
 
 func NewQueueService(
 	taskRepository repository.TaskRepository,
+	contestRepository repository.ContestRepository,
 	submissionRepository repository.SubmissionRepository,
 	submissionResultRepository repository.SubmissionResultRepository,
 	queueMessageRepository repository.QueueMessageRepository,
@@ -80,6 +83,7 @@ func NewQueueService(
 
 	s := &queueService{
 		taskRepository:             taskRepository,
+		contestRepository:          contestRepository,
 		submissionRepository:       submissionRepository,
 		submissionResultRepository: submissionResultRepository,
 		queueRepository:            queueMessageRepository,
@@ -119,6 +123,16 @@ func (qs *queueService) publishMessage(msg schemas.QueueMessage) error {
 	return nil
 }
 
+// effectiveLimit returns the contest override when one is set, otherwise the task's own limit.
+func effectiveLimit(taskLimit int64, ct *models.ContestTask, override func(*models.ContestTask) *int64) int64 {
+	if ct != nil {
+		if v := override(ct); v != nil {
+			return *v
+		}
+	}
+	return taskLimit
+}
+
 func (qs *queueService) PublishSubmission(db database.Database, submissionID int64, submissionResultID int64) error {
 	submission, err := qs.submissionRepository.Get(db, submissionID)
 	if err != nil {
@@ -130,6 +144,16 @@ func (qs *queueService) PublishSubmission(db database.Database, submissionID int
 	if err != nil {
 		qs.logger.Errorf("Error getting submission result: %v", err)
 		return err
+	}
+
+	// contest submissions may carry per-contest limit overrides for the task
+	var contestTask *models.ContestTask
+	if submission.ContestID != nil {
+		contestTask, err = qs.contestRepository.GetContestTask(db, *submission.ContestID, submission.TaskID)
+		if err != nil {
+			qs.logger.Errorf("Error getting contest task: %v", err)
+			return err
+		}
 	}
 
 	testCases := make([]schemas.QTestCase, 0, len(submissionResult.TestResults))
@@ -161,8 +185,8 @@ func (qs *queueService) PublishSubmission(db database.Database, submissionID int
 				Bucket:     tr.DiffFile.Bucket,
 				Path:       tr.DiffFile.Path,
 			},
-			TimeLimitMs:   tr.TestCase.TimeLimitMs,
-			MemoryLimitKB: tr.TestCase.MemoryLimitKB,
+			TimeLimitMs:   effectiveLimit(tr.TestCase.TimeLimitMs, contestTask, func(ct *models.ContestTask) *int64 { return ct.TimeLimitMs }),
+			MemoryLimitKB: effectiveLimit(tr.TestCase.MemoryLimitKB, contestTask, func(ct *models.ContestTask) *int64 { return ct.MemoryLimitKB }),
 		})
 	}
 
