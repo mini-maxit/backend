@@ -888,8 +888,8 @@ func (us *submissionRepository) GetTaskStatsForContest(db database.Database, con
 			GROUP BY submission_result_id
 		) as passed_tests ON passed_tests.submission_result_id = sr.id
 		WHERE ct.contest_id = ?
-		GROUP BY t.id, t.title
-		ORDER BY t.id
+		GROUP BY t.id, t.title, ct.position
+		ORDER BY ct.position, t.id
 	`
 
 	err := tx.Raw(query, contestID).Scan(&results).Error
@@ -1066,7 +1066,7 @@ func (us *submissionRepository) GetUserStatsForContest(db database.Database, con
 		INNER JOIN ` + database.ResolveTableName(tx, &models.ContestTask{}) + ` ct ON ct.contest_id = cp.contest_id
 		INNER JOIN ` + database.ResolveTableName(tx, &models.Task{}) + ` t ON t.id = ct.task_id
 		WHERE cp.contest_id = ?` + userFilter + `
-		ORDER BY u.id, t.id
+		ORDER BY u.id, ct.position, t.id
 	`
 
 	// Append contestID again for the WHERE cp.contest_id = ? part
