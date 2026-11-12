@@ -3846,6 +3846,14 @@ paths:
         in: query
         name: sort
         type: string
+      - description: Search users by name, surname or email
+        in: query
+        name: search
+        type: string
+      - description: Filter by role (student, teacher, admin)
+        in: query
+        name: role
+        type: string
       produces:
       - application/json
       responses:
@@ -3853,6 +3861,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
         "405":
           description: Method Not Allowed
           schema:
