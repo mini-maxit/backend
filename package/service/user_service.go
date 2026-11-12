@@ -21,8 +21,8 @@ type UserService interface {
 	ChangeRole(db database.Database, currentUser schemas.User, userID int64, role types.UserRole) error
 	// Edit updates the information of a user.
 	Edit(db database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
-	// GetAll retrieves all users based on the provided query parameters.
-	GetAll(db database.Database, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error)
+	// GetAll retrieves users matching the optional search (name, surname, email) and role filters.
+	GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string) (schemas.PaginatedResult[[]schemas.User], error)
 	// GetByEmail retrieves a user by their email.
 	GetByEmail(db database.Database, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
@@ -52,12 +52,12 @@ func (us *userService) GetByEmail(db database.Database, email string) (*schemas.
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(db database.Database, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.User], error) {
+func (us *userService) GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string) (schemas.PaginatedResult[[]schemas.User], error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = "role:desc"
 	}
 
-	userModels, totalCount, err := us.userRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
+	userModels, totalCount, err := us.userRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search, role)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return schemas.PaginatedResult[[]schemas.User]{}, err

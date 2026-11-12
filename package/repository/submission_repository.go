@@ -26,7 +26,8 @@ type SubmissionRepository interface {
 	// GetAllForTaskByUser returns all submissions for a task by a user. The submissions are paginated.
 	GetAllForTaskByUser(db database.Database, taskID, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForContest returns all submissions for a contest. The submissions are paginated.
-	GetAllForContest(db database.Database, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	// userSearch matches the submitter's name/surname, taskSearch matches the task title or ID.
+	GetAllForContest(db database.Database, contestID int64, limit, offset int, sort, userSearch, taskSearch string) ([]models.Submission, int64, error)
 	// GetAllByUserForContest returns all submissions by a user for a specific contest. The submissions are paginated.
 	GetAllByUserForContest(db database.Database, userID, contestID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUserForTask returns all submissions by a user for a specific task. The submissions are paginated.
@@ -506,14 +507,30 @@ func (us *submissionRepository) GetAllForContest(
 	db database.Database,
 	contestID int64,
 	limit, offset int,
-	sort string,
+	sort, userSearch, taskSearch string,
 ) ([]models.Submission, int64, error) {
 	tx := db.GetInstance()
 	submissions := []models.Submission{}
 	var totalCount int64
 
-	// Get total count first
-	err := tx.Model(&models.Submission{}).Where("contest_id = ?", contestID).Count(&totalCount).Error
+	userTable := database.ResolveTableName(tx, &models.User{})
+	taskTable := database.ResolveTableName(tx, &models.Task{})
+	// Subqueries instead of joins keep sort columns unambiguous.
+	filter := func(q *gorm.DB) *gorm.DB {
+		q = q.Where("contest_id = ?", contestID)
+		if userSearch != "" {
+			q = q.Where(fmt.Sprintf("user_id IN (SELECT id FROM %s WHERE CONCAT(name, ' ', surname) ILIKE ?)", userTable),
+				"%"+userSearch+"%")
+		}
+		if taskSearch != "" {
+			q = q.Where(fmt.Sprintf("task_id IN (SELECT id FROM %s WHERE title ILIKE ? OR CAST(id AS TEXT) LIKE ?)", taskTable),
+				"%"+taskSearch+"%", "%"+taskSearch+"%")
+		}
+		return q
+	}
+
+	// Get total count of matching submissions first
+	err := tx.Model(&models.Submission{}).Scopes(filter).Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -529,7 +546,7 @@ func (us *submissionRepository) GetAllForContest(
 		Preload("User").
 		Preload("Result").
 		Preload("Result.TestResults").
-		Where("contest_id = ?", contestID).
+		Scopes(filter).
 		Find(&submissions).Error
 
 	if err != nil {

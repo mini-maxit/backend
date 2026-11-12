@@ -68,7 +68,7 @@ func TestGetAllUsers(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(schemas.PaginatedResult[[]schemas.User]{}, gorm.ErrInvalidDB).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(schemas.PaginatedResult[[]schemas.User]{}, gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -102,7 +102,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 
 		paginatedResult := schemas.NewPaginatedResult(expectedUsers, 0, 0, int64(len(expectedUsers)))
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(paginatedResult, nil).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(paginatedResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -122,6 +122,39 @@ func TestGetAllUsers(t *testing.T) {
 		assert.Equal(t, expectedUsers, response.Data.Items)
 	})
 
+	t.Run("Passes search and role filters", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
+			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"search": "jan", "role": "teacher"})
+			route.GetAllUsers(w, r.WithContext(ctx))
+		})
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "jan", "teacher").
+			Return(schemas.NewPaginatedResult([]schemas.User{}, 0, 0, 0), nil).Times(1)
+
+		resp, err := http.Get(server.URL)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("Rejects invalid role", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
+			ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]any{"role": "superuser"})
+			route.GetAllUsers(w, r.WithContext(ctx))
+		})
+		server := httptest.NewServer(handler)
+		defer server.Close()
+
+		resp, err := http.Get(server.URL)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
 	t.Run("Success with empty list", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), httputils.DatabaseKey, db)
@@ -132,7 +165,7 @@ func TestGetAllUsers(t *testing.T) {
 		defer server.Close()
 
 		emptyResult := schemas.NewPaginatedResult([]schemas.User{}, 0, 0, 0)
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return(emptyResult, nil).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(emptyResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {

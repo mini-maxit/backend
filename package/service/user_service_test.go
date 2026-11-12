@@ -166,8 +166,10 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
+			"",
+			"",
 		).Return([]models.User{}, int64(0), nil).Times(1)
-		result, err := us.GetAll(db, paginationParams)
+		result, err := us.GetAll(db, paginationParams, "", "")
 		require.NoError(t, err)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -185,8 +187,10 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Limit,
 			paginationParams.Offset,
 			paginationParams.Sort,
+			"",
+			"",
 		).Return([]models.User{*user}, int64(1), nil).Times(1)
-		result, err := us.GetAll(db, paginationParams)
+		result, err := us.GetAll(db, paginationParams, "", "")
 		require.NoError(t, err)
 		assert.Len(t, result.Items, 1)
 		assert.Equal(t, user.Email, result.Items[0].Email)

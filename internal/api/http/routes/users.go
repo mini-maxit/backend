@@ -3,11 +3,13 @@ package routes
 import (
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/mini-maxit/backend/internal/api/http/httputils"
 	"github.com/mini-maxit/backend/package/domain/schemas"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/service"
 	"github.com/mini-maxit/backend/package/utils"
 	"go.uber.org/zap"
@@ -36,7 +38,10 @@ type UserRouteImpl struct {
 //	@Param			limit	query		int		false	"Limit"
 //	@Param			offset	query		int		false	"Offset"
 //	@Param			sort	query		string	false	"Sort"
+//	@Param			search	query		string	false	"Search users by name, surname or email"
+//	@Param			role	query		string	false	"Filter by role (student, teacher, admin)"
 //	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.User]]
+//	@Failure		400		{object}	httputils.APIError
 //	@Failure		405		{object}	httputils.APIError
 //	@Failure		500		{object}	httputils.APIError
 //	@Router			/users [get]
@@ -49,7 +54,13 @@ func (u *UserRouteImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	db := httputils.GetDatabase(r)
 	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
 	paginationParams := httputils.ExtractPaginationParams(queryParams)
-	result, err := u.userService.GetAll(db, paginationParams)
+	search, _ := queryParams["search"].(string)
+	role, _ := queryParams["role"].(string)
+	if role != "" && !slices.Contains([]types.UserRole{types.UserRoleStudent, types.UserRoleTeacher, types.UserRoleAdmin}, types.UserRole(role)) {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid role")
+		return
+	}
+	result, err := u.userService.GetAll(db, paginationParams, search, role)
 	if err != nil {
 		httputils.HandleServiceError(w, err, db, u.logger)
 		return
