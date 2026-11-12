@@ -418,8 +418,6 @@ definitions:
         $ref: '#/definitions/types.UserRole'
       surname:
         type: string
-      username:
-        type: string
     type: object
   schemas.ContestResults:
     properties:
@@ -1078,8 +1076,6 @@ definitions:
         $ref: '#/definitions/types.UserRole'
       surname:
         type: string
-      username:
-        type: string
     type: object
   schemas.UserChangePassword:
     properties:
@@ -1122,8 +1118,6 @@ definitions:
         $ref: '#/definitions/types.UserRole'
       surname:
         type: string
-      username:
-        type: string
     type: object
   schemas.UserIDs:
     properties:
@@ -1139,8 +1133,6 @@ definitions:
       name:
         type: string
       surname:
-        type: string
-      username:
         type: string
     type: object
   schemas.UserLoginRequest:
@@ -1171,17 +1163,12 @@ definitions:
         maxLength: 50
         minLength: 3
         type: string
-      username:
-        maxLength: 30
-        minLength: 3
-        type: string
     required:
     - confirmPassword
     - email
     - name
     - password
     - surname
-    - username
     type: object
   schemas.UserTaskPerformance:
     properties:
@@ -1602,8 +1589,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Registers a user with name, surname, email, username and password,
-        returns JWT tokens
+      description: Registers a user with name, surname, email and password, returns
+        JWT tokens
       parameters:
       - description: User Register Request
         in: body
@@ -2170,7 +2157,7 @@ paths:
         in: query
         name: taskId
         type: integer
-      - description: Search submissions by user (username, name or surname)
+      - description: Search submissions by user (name or surname)
         in: query
         name: userSearch
         type: string
