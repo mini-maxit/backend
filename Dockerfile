@@ -12,12 +12,13 @@ FROM alpine/curl:8.23.0
 
 WORKDIR /app
 
-# Install Atlas binary
-RUN curl -L https://release.ariga.io/atlas/atlas-linux-amd64-v1.3.0 -o /usr/local/bin/atlas && \
+# Install make and Atlas binary
+RUN apk add --no-cache make && curl -L https://release.ariga.io/atlas/atlas-linux-amd64-v1.3.0 -o /usr/local/bin/atlas && \
     chmod +x /usr/local/bin/atlas
 
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/atlas.hcl .
+COPY --from=builder /app/Makefile .
 COPY --from=builder /app/backend.o .
 COPY --from=builder /app/docs ./docs
 
