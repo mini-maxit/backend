@@ -1356,3 +1356,38 @@ func TestGetContestGroups_MapsMembers(t *testing.T) {
 		assert.Contains(t, string(jsonBytes), `"members":[]`)
 	})
 }
+
+func TestContestService_ReorderTasksInContest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	cr := mock_repository.NewMockContestRepository(ctrl)
+	acs := mock_service.NewMockAccessControlService(ctrl)
+	cs := service.NewContestService(cr, mock_repository.NewMockUserRepository(ctrl), mock_repository.NewMockSubmissionRepository(ctrl),
+		mock_repository.NewMockTaskRepository(ctrl), mock_repository.NewMockGroupRepository(ctrl), acs, mock_service.NewMockTaskService(ctrl))
+	db := &testutils.MockDatabase{}
+	user := &schemas.User{ID: 10, Role: types.UserRoleTeacher}
+	contestID := int64(1)
+
+	allowEdit := func() {
+		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID}, nil)
+		acs.EXPECT().CanUserAccess(db, types.ResourceTypeContest, contestID, user, types.PermissionEdit).Return(nil)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		allowEdit()
+		cr.EXPECT().ReorderContestTasks(db, contestID, []int64{3, 1, 2}).Return(nil)
+		require.NoError(t, cs.ReorderTasksInContest(db, user, contestID, []int64{3, 1, 2}))
+	})
+
+	t.Run("duplicate ids rejected", func(t *testing.T) {
+		allowEdit()
+		require.ErrorIs(t, cs.ReorderTasksInContest(db, user, contestID, []int64{1, 1}), errors.ErrInvalidData)
+	})
+
+	t.Run("set mismatch rejected", func(t *testing.T) {
+		allowEdit()
+		cr.EXPECT().ReorderContestTasks(db, contestID, []int64{1}).Return(gorm.ErrRecordNotFound)
+		require.ErrorIs(t, cs.ReorderTasksInContest(db, user, contestID, []int64{1}), errors.ErrInvalidData)
+	})
+}

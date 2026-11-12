@@ -2,11 +2,13 @@ package service_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/mini-maxit/backend/internal/testutils"
 
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/schemas"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
@@ -21,10 +23,12 @@ type mockQueuePublisher struct {
 	connected     bool
 	publishCalled bool
 	publishError  error
+	body          []byte
 }
 
 func (m *mockQueuePublisher) Publish(ctx context.Context, queueName string, replyTo string, body []byte) error {
 	m.publishCalled = true
+	m.body = body
 	return m.publishError
 }
 
@@ -49,6 +53,7 @@ func TestQueueService_PublishSubmission_WithoutChannel(t *testing.T) {
 	// Create queue service
 	queueService := service.NewQueueService(
 		taskRepository,
+		mock_repository.NewMockContestRepository(ctrl),
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
@@ -115,6 +120,7 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	// Create queue service
 	queueService := service.NewQueueService(
 		taskRepository,
+		mock_repository.NewMockContestRepository(ctrl),
 		submissionRepository,
 		submissionResultRepository,
 		queueMessageRepository,
@@ -130,4 +136,46 @@ func TestQueueService_RetryPendingSubmissions_WithoutChannel(t *testing.T) {
 	err := queueService.RetryPendingSubmissions(db)
 	require.Error(t, err, "RetryPendingSubmissions should return error when queue is unavailable")
 	assert.ErrorIs(t, err, errors.ErrQueueNotConnected)
+}
+
+func TestQueueService_PublishSubmission_ContestLimitOverride(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	submissionRepository := mock_repository.NewMockSubmissionRepository(ctrl)
+	submissionResultRepository := mock_repository.NewMockSubmissionResultRepository(ctrl)
+	contestRepository := mock_repository.NewMockContestRepository(ctrl)
+	publisher := &mockQueuePublisher{connected: true}
+	queueService := service.NewQueueService(
+		mock_repository.NewMockTaskRepository(ctrl),
+		contestRepository,
+		submissionRepository,
+		submissionResultRepository,
+		mock_repository.NewMockQueueMessageRepository(ctrl),
+		publisher,
+		"q",
+		"rq",
+	)
+
+	contestID := int64(7)
+	timeOverride := int64(5000)
+	db := &testutils.MockDatabase{}
+	submissionRepository.EXPECT().Get(db, int64(1)).Return(&models.Submission{ID: 1, TaskID: 2, ContestID: &contestID}, nil)
+	submissionResultRepository.EXPECT().Get(db, int64(1)).Return(&models.SubmissionResult{
+		ID:          1,
+		TestResults: []models.TestResult{{TestCase: models.TestCase{Order: 1, TimeLimitMs: 1000, MemoryLimitKB: 20000}}},
+	}, nil)
+	// only the time limit is overridden; memory falls back to the task's value
+	contestRepository.EXPECT().GetContestTask(db, contestID, int64(2)).Return(&models.ContestTask{TimeLimitMs: &timeOverride}, nil)
+	submissionRepository.EXPECT().MarkProcessing(db, int64(1)).Return(nil)
+
+	require.NoError(t, queueService.PublishSubmission(db, 1, 1))
+
+	var msg schemas.QueueMessage
+	require.NoError(t, json.Unmarshal(publisher.body, &msg))
+	var payload schemas.TaskQueueMessage
+	require.NoError(t, json.Unmarshal(msg.Payload, &payload))
+	require.Len(t, payload.TestCases, 1)
+	assert.Equal(t, int64(5000), payload.TestCases[0].TimeLimitMs)
+	assert.Equal(t, int64(20000), payload.TestCases[0].MemoryLimitKB)
 }

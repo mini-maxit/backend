@@ -2084,6 +2084,34 @@ func (mr *MockContestRepositoryMockRecorder) RemoveTaskFromContest(db, contestID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTaskFromContest", reflect.TypeOf((*MockContestRepository)(nil).RemoveTaskFromContest), db, contestID, taskID)
 }
 
+// ReorderContestTasks mocks base method.
+func (m *MockContestRepository) ReorderContestTasks(db database.Database, contestID int64, taskIDs []int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReorderContestTasks", db, contestID, taskIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReorderContestTasks indicates an expected call of ReorderContestTasks.
+func (mr *MockContestRepositoryMockRecorder) ReorderContestTasks(db, contestID, taskIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReorderContestTasks", reflect.TypeOf((*MockContestRepository)(nil).ReorderContestTasks), db, contestID, taskIDs)
+}
+
+// UpdateContestTaskLimits mocks base method.
+func (m *MockContestRepository) UpdateContestTaskLimits(db database.Database, contestID, taskID int64, updates map[string]any) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateContestTaskLimits", db, contestID, taskID, updates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateContestTaskLimits indicates an expected call of UpdateContestTaskLimits.
+func (mr *MockContestRepositoryMockRecorder) UpdateContestTaskLimits(db, contestID, taskID, updates any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContestTaskLimits", reflect.TypeOf((*MockContestRepository)(nil).UpdateContestTaskLimits), db, contestID, taskID, updates)
+}
+
 // UpdateRegistrationRequestStatus mocks base method.
 func (m *MockContestRepository) UpdateRegistrationRequestStatus(db database.Database, contestID, userID int64, status types.RegistrationRequestStatus) error {
 	m.ctrl.T.Helper()
