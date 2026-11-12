@@ -56,7 +56,7 @@ services:
       - "8080:8080"  # internal server (for backend/worker)
     image: ghcr.io/mini-maxit/file-storage:latest
     volumes:
-      - file-storage-media:/app/file-storage-media
+      - ./data/file-storage-media:/app/file-storage-media
     environment:
       - SIGNING_SECRET=secret
   worker:

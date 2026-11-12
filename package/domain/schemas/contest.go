@@ -73,15 +73,26 @@ type UserContestsWithStats struct {
 	Upcoming []ContestWithStats     `json:"upcoming"`
 }
 
+// AddTaskToContest limits override the task's per-test-case limits for this contest; absent or null keeps the task defaults.
 type AddTaskToContest struct {
-	TaskID  int64        `json:"taskId" validate:"required"`
-	StartAt OptionalTime `json:"startAt"`
-	EndAt   OptionalTime `json:"endAt"`
+	TaskID        int64         `json:"taskId" validate:"required"`
+	StartAt       OptionalTime  `json:"startAt"`
+	EndAt         OptionalTime  `json:"endAt"`
+	TimeLimitMs   OptionalInt64 `json:"timeLimitMs"`
+	MemoryLimitKB OptionalInt64 `json:"memoryLimitKb"`
 }
 
+// UpdateTaskInContest limits: absent leaves the current override, null clears it (back to task defaults), a number sets it.
 type UpdateTaskInContest struct {
-	StartAt OptionalTime `json:"startAt"`
-	EndAt   OptionalTime `json:"endAt"`
+	StartAt       OptionalTime  `json:"startAt"`
+	EndAt         OptionalTime  `json:"endAt"`
+	TimeLimitMs   OptionalInt64 `json:"timeLimitMs"`
+	MemoryLimitKB OptionalInt64 `json:"memoryLimitKb"`
+}
+
+// ReorderContestTasks lists every task of the contest in the desired order.
+type ReorderContestTasks struct {
+	TaskIDs []int64 `json:"taskIds" validate:"required"`
 }
 
 type ContestTask struct {
@@ -90,6 +101,9 @@ type ContestTask struct {
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`
+	Position         int64      `json:"position"`
+	TimeLimitMs      *int64     `json:"timeLimitMs"`   // contest override, null = task default
+	MemoryLimitKB    *int64     `json:"memoryLimitKb"` // contest override, null = task default
 }
 
 type TaskResult struct {

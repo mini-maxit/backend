@@ -22,6 +22,7 @@ type ContestsManagementRoute interface {
 	AddTaskToContest(w http.ResponseWriter, r *http.Request)
 	RemoveTaskFromContest(w http.ResponseWriter, r *http.Request)
 	UpdateTaskInContest(w http.ResponseWriter, r *http.Request)
+	ReorderContestTasks(w http.ResponseWriter, r *http.Request)
 	GetContestSubmissions(w http.ResponseWriter, r *http.Request)
 	GetCreatedContests(w http.ResponseWriter, r *http.Request)
 	GetManageableContests(w http.ResponseWriter, r *http.Request)
@@ -338,6 +339,52 @@ func (cr *contestsManagementRouteImpl) RemoveTaskFromContest(w http.ResponseWrit
 	}
 
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Tasks removed from contest successfully"))
+}
+
+// ReorderContestTasks godoc
+//
+//	@Tags			contests-management
+//	@Summary		Reorder the tasks of a contest
+//	@Description	Set the display order of a contest's tasks. The body must list every task of the contest exactly once (only accessible by contest collaborators with edit permission)
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int						true	"Contest ID"
+//	@Param			body	body		schemas.ReorderContestTasks	true	"Task IDs in the desired order"
+//	@Failure		400		{object}	httputils.ValidationErrorResponse
+//	@Failure		403		{object}	httputils.APIError
+//	@Failure		404		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests-management/contests/{id}/tasks/order [put]
+func (cr *contestsManagementRouteImpl) ReorderContestTasks(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestID, err := strconv.ParseInt(httputils.GetPathValue(r, "id"), 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	var request schemas.ReorderContestTasks
+	if err := httputils.ShouldBindJSON(r.Body, &request); err != nil {
+		httputils.HandleValidationError(w, err)
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	err = cr.contestService.ReorderTasksInContest(db, currentUser, contestID, request.TaskIDs)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Tasks reordered successfully"))
 }
 
 // UpdateTaskInContest godoc
@@ -1241,6 +1288,7 @@ func RegisterContestsManagementRoute(mux *mux.Router, route ContestsManagementRo
 	})
 
 	mux.HandleFunc("/contests/{id}/tasks/assignable-tasks", route.GetAssignableTasks)
+	mux.HandleFunc("/contests/{id}/tasks/order", route.ReorderContestTasks)
 	mux.HandleFunc("/contests/{id}/tasks/{task_id}", route.UpdateTaskInContest)
 
 	mux.HandleFunc("/contests/{id}/tasks", func(w http.ResponseWriter, r *http.Request) {

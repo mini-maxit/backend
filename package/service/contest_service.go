@@ -36,6 +36,8 @@ type ContestService interface {
 	GetUserContests(db database.Database, userID int64) (*schemas.UserContestsWithStats, error)
 	// AddTaskToContest adds a task to a contest
 	AddTaskToContest(db database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error
+	// ReorderTasksInContest sets the display order of the contest's tasks; taskIDs must list every task exactly once
+	ReorderTasksInContest(db database.Database, currentUser *schemas.User, contestID int64, taskIDs []int64) error
 	// UpdateTaskInContest updates a task's schedule in a contest
 	UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error
 	// RemoveTaskFromContest removes a task from a contest
@@ -293,7 +295,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 	}
 
 	if paginationParams.Sort == "" {
-		paginationParams.Sort = "start_at:asc"
+		paginationParams.Sort = "position:asc"
 	}
 
 	relations, totalCount, err := cs.contestRepository.GetContestTasksWithSettings(db, contestID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search)
@@ -309,6 +311,9 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
+			Position:         rel.Position,
+			TimeLimitMs:      rel.TimeLimitMs,
+			MemoryLimitKB:    rel.MemoryLimitKB,
 		}
 	}
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
@@ -350,6 +355,9 @@ func (cs *contestService) GetStartedTasksForContest(db database.Database, curren
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
+			Position:         rel.Position,
+			TimeLimitMs:      rel.TimeLimitMs,
+			MemoryLimitKB:    rel.MemoryLimitKB,
 		})
 	}
 	return result, nil
@@ -450,10 +458,32 @@ func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
 }
 
+func (cs *contestService) ReorderTasksInContest(db database.Database, currentUser *schemas.User, contestID int64, taskIDs []int64) error {
+	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
+	if err != nil {
+		return err
+	}
+	seen := make(map[int64]struct{}, len(taskIDs))
+	for _, id := range taskIDs {
+		if _, dup := seen[id]; dup {
+			return errors.ErrInvalidData
+		}
+		seen[id] = struct{}{}
+	}
+	err = cs.contestRepository.ReorderContestTasks(db, contestID, taskIDs)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errors.ErrInvalidData
+	}
+	return err
+}
+
 func (cs *contestService) UpdateTaskInContest(db database.Database, currentUser *schemas.User, contestID, taskID int64, request *schemas.UpdateTaskInContest) error {
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
+	}
+	if !validLimit(request.TimeLimitMs) || !validLimit(request.MemoryLimitKB) {
+		return errors.ErrInvalidData
 	}
 	contest, err := cs.contestRepository.Get(db, contestID)
 	if err != nil {
@@ -486,7 +516,21 @@ func (cs *contestService) UpdateTaskInContest(db database.Database, currentUser 
 		StartAt:   startAt,
 		EndAt:     endAt,
 	}
-	return cs.contestRepository.UpdateTaskInContest(db, taskContest)
+	if err := cs.contestRepository.UpdateTaskInContest(db, taskContest); err != nil {
+		return err
+	}
+
+	limits := map[string]any{}
+	if request.TimeLimitMs.Set {
+		limits["time_limit_ms"] = request.TimeLimitMs.Value
+	}
+	if request.MemoryLimitKB.Set {
+		limits["memory_limit_kb"] = request.MemoryLimitKB.Value
+	}
+	if len(limits) == 0 {
+		return nil
+	}
+	return cs.contestRepository.UpdateContestTaskLimits(db, contestID, taskID, limits)
 }
 
 func (cs *contestService) GetUserContests(db database.Database, userID int64) (*schemas.UserContestsWithStats, error) {
@@ -537,10 +581,18 @@ func (cs *contestService) GetUserContests(db database.Database, userID int64) (*
 	return &result, nil
 }
 
+// validLimit reports whether an override is absent/null or a positive number.
+func validLimit(o schemas.OptionalInt64) bool {
+	return o.Value == nil || *o.Value > 0
+}
+
 func (cs *contestService) AddTaskToContest(db database.Database, currentUser *schemas.User, contestID int64, request *schemas.AddTaskToContest) error {
 	err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit)
 	if err != nil {
 		return err
+	}
+	if !validLimit(request.TimeLimitMs) || !validLimit(request.MemoryLimitKB) {
+		return errors.ErrInvalidData
 	}
 	contest, err := cs.contestRepository.Get(db, contestID)
 	if err != nil {
@@ -578,6 +630,8 @@ func (cs *contestService) AddTaskToContest(db database.Database, currentUser *sc
 		StartAt:          startAt,
 		EndAt:            endAt,
 		IsSubmissionOpen: true,
+		TimeLimitMs:      request.TimeLimitMs.Value,
+		MemoryLimitKB:    request.MemoryLimitKB.Value,
 	}
 
 	return cs.contestRepository.AddTaskToContest(db, taskContest)

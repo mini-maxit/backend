@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
+	"gorm.io/gorm"
 )
 
 type ContestDetailed struct {
@@ -59,6 +60,11 @@ type ContestRepository interface {
 	AddTaskToContest(db database.Database, taskContest models.ContestTask) error
 	// UpdateTaskInContest updates a task's schedule in a contest
 	UpdateTaskInContest(db database.Database, taskContest models.ContestTask) error
+	// UpdateContestTaskLimits applies the given column updates (time_limit_ms / memory_limit_kb, nil clears) to a contest task
+	UpdateContestTaskLimits(db database.Database, contestID, taskID int64, updates map[string]any) error
+	// ReorderContestTasks sets the position of every task in the contest to its index in taskIDs.
+	// Returns gorm.ErrRecordNotFound unless taskIDs is exactly the set of the contest's tasks.
+	ReorderContestTasks(db database.Database, contestID int64, taskIDs []int64) error
 	// IsTaskInContest checks if a task is assigned to a contest
 	IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error)
 	// RemoveTaskFromContest removes a task from a contest
@@ -406,6 +412,7 @@ func (cr *contestRepository) GetContestTasksWithSettings(db database.Database, c
 // qualifyContestTaskSort qualifies sort fields with their table prefix for a joined contest_tasks/tasks query
 func qualifyContestTaskSort(sortBy, contestTaskTable, taskTable string) string {
 	fieldMap := map[string]string{
+		"position": contestTaskTable + ".position",
 		"id":       contestTaskTable + ".task_id",
 		"task_id":  contestTaskTable + ".task_id",
 		"start_at": contestTaskTable + ".start_at",
@@ -424,7 +431,7 @@ func qualifyContestTaskSort(sortBy, contestTaskTable, taskTable string) string {
 	if dir != "asc" && dir != "desc" {
 		dir = "asc"
 	}
-	return field + " " + dir
+	return field + " " + dir + ", " + contestTaskTable + ".task_id asc"
 }
 
 // GetStartedContestTasksWithSettings retrieves already-started contest-task relations (with timing flags) and preloads the associated Task
@@ -433,6 +440,7 @@ func (cr *contestRepository) GetStartedContestTasksWithSettings(db database.Data
 	var relations []models.ContestTask
 	err := tx.Model(&models.ContestTask{}).
 		Where("contest_id = ? AND start_at <= now()", contestID).
+		Order("position asc, task_id asc").
 		Preload("Task").
 		Preload("Task.Author").
 		Find(&relations).Error
@@ -448,6 +456,7 @@ func (cr *contestRepository) GetTasksForContest(db database.Database, contestID 
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
+		Order("contest_tasks.position ASC, tasks.id ASC").
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
@@ -461,6 +470,7 @@ func (cr *contestRepository) GetTasksForContestWithStats(db database.Database, c
 	err := tx.Model(&models.Task{}).
 		Joins(fmt.Sprintf("JOIN %s ON contest_tasks.task_id = tasks.id", database.ResolveTableName(tx, &models.ContestTask{}))).
 		Where("contest_tasks.contest_id = ?", contestID).
+		Order("contest_tasks.position ASC, tasks.id ASC").
 		Find(&tasks).Error
 	if err != nil {
 		return nil, err
@@ -628,9 +638,36 @@ func (cr *contestRepository) GetContestsForUserWithStats(db database.Database, u
 
 func (cr *contestRepository) AddTaskToContest(db database.Database, taskContest models.ContestTask) error {
 	tx := db.GetInstance()
-	err := tx.Create(&taskContest).Error
+	// append after the current last task
+	err := tx.Model(&models.ContestTask{}).
+		Where("contest_id = ?", taskContest.ContestID).
+		Select("COALESCE(MAX(position), 0) + 1").
+		Scan(&taskContest.Position).Error
 	if err != nil {
 		return err
+	}
+	return tx.Create(&taskContest).Error
+}
+
+func (cr *contestRepository) ReorderContestTasks(db database.Database, contestID int64, taskIDs []int64) error {
+	tx := db.GetInstance()
+	var count int64
+	if err := tx.Model(&models.ContestTask{}).Where("contest_id = ?", contestID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count != int64(len(taskIDs)) {
+		return gorm.ErrRecordNotFound
+	}
+	for i, taskID := range taskIDs {
+		res := tx.Model(&models.ContestTask{}).
+			Where("contest_id = ? AND task_id = ?", contestID, taskID).
+			Update("position", i+1)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected != 1 {
+			return gorm.ErrRecordNotFound
+		}
 	}
 	return nil
 }
@@ -650,6 +687,13 @@ func (cr *contestRepository) UpdateTaskInContest(db database.Database, taskConte
 			"end_at":   taskContest.EndAt,
 		}).Error
 	return err
+}
+
+func (cr *contestRepository) UpdateContestTaskLimits(db database.Database, contestID, taskID int64, updates map[string]any) error {
+	tx := db.GetInstance()
+	return tx.Model(&models.ContestTask{}).
+		Where("contest_id = ? AND task_id = ?", contestID, taskID).
+		Updates(updates).Error
 }
 
 func (cr *contestRepository) IsTaskInContest(db database.Database, contestID, taskID int64) (bool, error) {

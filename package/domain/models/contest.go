@@ -29,6 +29,10 @@ type ContestTask struct {
 	StartAt          time.Time  `gorm:"not null"`
 	EndAt            *time.Time `gorm:"null"`
 	IsSubmissionOpen bool       `gorm:"default:true;not null"`
+	Position         int64      `gorm:"not null;default:0"` // display order within the contest, ascending
+	// Per-contest overrides applied to every test case of the task; nil means use the task's own limits.
+	TimeLimitMs   *int64 `gorm:"null"`
+	MemoryLimitKB *int64 `gorm:"null"`
 
 	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
 	Task    Task    `gorm:"foreignKey:TaskID;references:ID"`
