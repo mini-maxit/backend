@@ -12,6 +12,7 @@ import (
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
+	"github.com/mini-maxit/backend/package/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -392,5 +393,40 @@ func TestIsTaskAssignedToUser(t *testing.T) {
 		isAssigned, err := us.IsTaskAssignedToUser(db, userID, taskID)
 		require.NoError(t, err)
 		assert.True(t, isAssigned)
+	})
+}
+
+func TestResetPassword(t *testing.T) {
+	db := &testutils.MockDatabase{}
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	cs := mock_service.NewMockContestService(ctrl)
+	us := service.NewUserService(ur, cs)
+
+	adminUser := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+	studentUser := schemas.User{ID: 2, Role: types.UserRoleStudent}
+
+	t.Run("Not authorized", func(t *testing.T) {
+		_, err := us.ResetPassword(db, studentUser, adminUser.ID)
+		require.ErrorIs(t, err, errors.ErrForbidden)
+	})
+
+	t.Run("User does not exist", func(t *testing.T) {
+		ur.EXPECT().Get(db, int64(99)).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		_, err := us.ResetPassword(db, adminUser, 99)
+		require.ErrorIs(t, err, errors.ErrUserNotFound)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		model := &models.User{ID: studentUser.ID, PasswordHash: "old"}
+		ur.EXPECT().Get(db, studentUser.ID).Return(model, nil).Times(1)
+		ur.EXPECT().Edit(db, model).Return(nil).Times(1)
+		password, err := us.ResetPassword(db, adminUser, studentUser.ID)
+		require.NoError(t, err)
+		require.NoError(t, bcrypt.CompareHashAndPassword([]byte(model.PasswordHash), []byte(password)))
+
+		v, err := utils.NewValidator()
+		require.NoError(t, err)
+		require.NoError(t, v.Struct(schemas.UserChangePassword{OldPassword: "x", NewPassword: password, NewPasswordConfirm: password}))
 	})
 }

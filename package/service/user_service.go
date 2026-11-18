@@ -1,6 +1,9 @@
 package service
 
 import (
+	"crypto/rand"
+	"math/big"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
@@ -17,6 +20,8 @@ import (
 type UserService interface {
 	// ChangePassword changes the password of a user.
 	ChangePassword(db database.Database, currentUser schemas.User, userID int64, data *schemas.UserChangePassword) error
+	// ResetPassword sets a new random password for a user (admin only) and returns it in plain text.
+	ResetPassword(db database.Database, currentUser schemas.User, userID int64) (string, error)
 	// ChangeRole changes the role of a user.
 	ChangeRole(db database.Database, currentUser schemas.User, userID int64, role types.UserRole) error
 	// Edit updates the information of a user.
@@ -182,6 +187,69 @@ func (us *userService) ChangePassword(
 		return err
 	}
 	return nil
+}
+
+// generatePassword returns a random password satisfying utils.PasswordValidator.
+func generatePassword() (string, error) {
+	groups := []string{"ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnopqrstuvwxyz", "23456789", "#!?@$%^&*-"}
+	all := groups[0] + groups[1] + groups[2] + groups[3]
+	const length = 16
+	pick := func(set string) (byte, error) {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(set))))
+		if err != nil {
+			return 0, err
+		}
+		return set[n.Int64()], nil
+	}
+	pw := make([]byte, length)
+	for i := range pw {
+		set := all
+		if i < len(groups) {
+			set = groups[i]
+		}
+		c, err := pick(set)
+		if err != nil {
+			return "", err
+		}
+		pw[i] = c
+	}
+	// shuffle so the guaranteed characters are not always first
+	for i := length - 1; i > 0; i-- {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
+		if err != nil {
+			return "", err
+		}
+		pw[i], pw[n.Int64()] = pw[n.Int64()], pw[i]
+	}
+	return string(pw), nil
+}
+
+func (us *userService) ResetPassword(db database.Database, currentUser schemas.User, userID int64) (string, error) {
+	if currentUser.Role != types.UserRoleAdmin {
+		return "", errors.ErrForbidden
+	}
+	user, err := us.userRepository.Get(db, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errors.ErrUserNotFound
+		}
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
+		return "", err
+	}
+	password, err := generatePassword()
+	if err != nil {
+		return "", err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	user.PasswordHash = string(hash)
+	if err := us.userRepository.Edit(db, user); err != nil {
+		us.logger.Errorf("Error resetting user password: %v", err.Error())
+		return "", err
+	}
+	return password, nil
 }
 
 func UserToInfoSchema(user *models.User) *schemas.UserInfo {

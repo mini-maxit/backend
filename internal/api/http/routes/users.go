@@ -22,6 +22,7 @@ type UserRoute interface {
 	EditUser(w http.ResponseWriter, r *http.Request)
 	CreateUsers(w http.ResponseWriter, r *http.Request)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+	ResetPassword(w http.ResponseWriter, r *http.Request)
 }
 
 type UserRouteImpl struct {
@@ -209,6 +210,44 @@ func (u *UserRouteImpl) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Password changed successfully"))
 }
 
+// ResetPassword godoc
+//
+//	@Tags			user
+//	@Summary		Reset user password (admin)
+//	@Description	Generates a new random password for the user and returns it once
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Success		200	{object}	httputils.APIResponse[schemas.UserResetPasswordResponse]
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Router			/users/{id}/password/reset [post]
+func (u *UserRouteImpl) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	userID, err := strconv.ParseInt(httputils.GetPathValue(r, "id"), 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid userID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	password, err := u.userService.ResetPassword(db, *currentUser, userID)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, u.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, schemas.UserResetPasswordResponse{NewPassword: password})
+}
+
 func (u *UserRouteImpl) CreateUsers(w http.ResponseWriter, _ *http.Request) {
 	// this funcion allows admin to ctreate new users with their email and given role
 	// the users will be created with a default password and will be required to change it on first login
@@ -262,4 +301,5 @@ func RegisterUserRoutes(mux *mux.Router, route UserRoute) {
 		}
 	})
 	mux.HandleFunc("/users/{id}/password", route.ChangePassword)
+	mux.HandleFunc("/users/{id}/password/reset", route.ResetPassword)
 }
