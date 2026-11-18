@@ -14,6 +14,7 @@ type Contest struct {
 	StartAt          time.Time  `gorm:"not null"`
 	EndAt            *time.Time `gorm:"null"`
 	IsSubmissionOpen bool       `gorm:"default:false;not null"` // if true, contest is active and participants can submit solutions
+	IsPublic         bool       `gorm:"default:false;not null"` // if true, contest is listed for all users, who can request to join
 
 	BaseModel
 
@@ -48,6 +49,28 @@ type ContestParticipantGroup struct {
 
 	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
 	Group   Group   `gorm:"foreignKey:GroupID;references:ID"`
+}
+
+// ContestRegistrationRequest is a user's request to join a public contest.
+// Approved requests are deleted (the user becomes a participant); rejected ones are kept so the user can't re-apply.
+type ContestRegistrationRequest struct {
+	ContestID int64                           `gorm:"primaryKey"`
+	UserID    int64                           `gorm:"primaryKey"`
+	Status    types.RegistrationRequestStatus `gorm:"type:varchar(16);not null"`
+	CreatedAt time.Time                       `gorm:"autoCreateTime;default:current_timestamp"`
+
+	Contest Contest `gorm:"foreignKey:ContestID;references:ID"`
+	User    User    `gorm:"foreignKey:UserID;references:ID"`
+}
+
+// PublicContest is a public contest with stats and the requesting user's registration state.
+type PublicContest struct {
+	Contest
+	ParticipantCount int64                            `gorm:"column:participant_count"`
+	TaskCount        int64                            `gorm:"column:task_count"`
+	IsParticipant    bool                             `gorm:"column:is_participant"`
+	RequestStatus    *types.RegistrationRequestStatus `gorm:"column:request_status"`
+	CreatorName      string                           `gorm:"column:creator_name"`
 }
 
 // ContestWithStats extends Contest with computed fields for efficient querying

@@ -27,6 +27,19 @@ type ContestDetailed struct {
 type CreatedContest struct {
 	ContestDetailed
 	CreatedAt time.Time `json:"createdAt"`
+	IsPublic  bool      `json:"isPublic"`
+}
+
+// PublicContest is a contest listed for every user, with the current user's registration state.
+type PublicContest struct {
+	ContestDetailed
+	RegistrationStatus types.RegistrationStatus `json:"registrationStatus"` // "registered", "canRegister", "awaitingApproval", "rejected", "registrationClosed"
+}
+
+type RegistrationRequest struct {
+	ContestID int64     `json:"contestId"`
+	User      User      `json:"user"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type ManagedContest struct {
@@ -40,6 +53,7 @@ type CreateContest struct {
 	StartAt          time.Time    `json:"startAt" validate:"required"`
 	EndAt            OptionalTime `json:"endAt"`
 	IsSubmissionOpen bool         `json:"isSubmissionOpen"`
+	IsPublic         bool         `json:"isPublic"`
 }
 
 type EditContest struct {
@@ -48,6 +62,7 @@ type EditContest struct {
 	StartAt          OptionalTime `json:"startAt"`
 	EndAt            OptionalTime `json:"endAt"`
 	IsSubmissionOpen *bool        `json:"isSubmissionOpen,omitempty"`
+	IsPublic         *bool        `json:"isPublic,omitempty"`
 }
 
 type ContestWithStats struct {

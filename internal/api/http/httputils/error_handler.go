@@ -155,8 +155,10 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	// Contest participation errors
 	case errors.CodeContestEnded:
 		return http.StatusForbidden
-	case errors.CodeAlreadyParticipant:
+	case errors.CodeAlreadyParticipant, errors.CodeAlreadyRegistered:
 		return http.StatusConflict
+	case errors.CodeNoPendingRegistration:
+		return http.StatusNotFound
 
 	// Contest task errors
 	case errors.CodeTaskNotInContest:

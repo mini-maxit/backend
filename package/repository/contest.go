@@ -8,6 +8,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
+	"gorm.io/gorm"
 )
 
 type ContestDetailed struct {
@@ -88,6 +89,18 @@ type ContestRepository interface {
 	AddParticipantsToContest(db database.Database, contestID int64, userIDs []int64) error
 	// RemoveParticipantsFromContest removes multiple users from contest participants
 	RemoveParticipantsFromContest(db database.Database, contestID int64, userIDs []int64) error
+	// GetPublicContests retrieves public contests (all statuses when status is empty) with stats and the user's registration state
+	GetPublicContests(db database.Database, userID int64, status types.ContestStatus, offset, limit int, sort string) ([]models.PublicContest, int64, error)
+	// GetRegistrationRequest retrieves the user's registration request for a contest, or nil if there is none
+	GetRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequest, error)
+	// CreateRegistrationRequest stores a new registration request
+	CreateRegistrationRequest(db database.Database, request *models.ContestRegistrationRequest) error
+	// GetPendingRegistrationRequests retrieves pending registration requests for a contest with preloaded users, oldest first
+	GetPendingRegistrationRequests(db database.Database, contestID int64) ([]models.ContestRegistrationRequest, error)
+	// UpdateRegistrationRequestStatus changes the status of a registration request
+	UpdateRegistrationRequestStatus(db database.Database, contestID, userID int64, status types.RegistrationRequestStatus) error
+	// DeleteRegistrationRequest removes a registration request
+	DeleteRegistrationRequest(db database.Database, contestID, userID int64) error
 }
 
 type contestRepository struct{}
@@ -1023,6 +1036,102 @@ func (cr *contestRepository) RemoveParticipantsFromContest(db database.Database,
 	tx := db.GetInstance()
 	err := tx.Where("contest_id = ? AND user_id IN ?", contestID, userIDs).Delete(&models.ContestParticipant{}).Error
 	return err
+}
+
+func (cr *contestRepository) GetPublicContests(db database.Database, userID int64, status types.ContestStatus, offset, limit int, sort string) ([]models.PublicContest, int64, error) {
+	tx := db.GetInstance()
+	contestParticipantTable := database.ResolveTableName(tx, &models.ContestParticipant{})
+	contestParticipantGroupTable := database.ResolveTableName(tx, &models.ContestParticipantGroup{})
+	userGroupTable := database.ResolveTableName(tx, &models.UserGroup{})
+
+	base := tx.Model(&models.Contest{}).Where("contests.is_public = ?", true)
+	switch status {
+	case types.ContestStatusOngoing:
+		base = base.Where("contests.start_at <= NOW() AND (contests.end_at IS NULL OR contests.end_at > NOW())")
+	case types.ContestStatusUpcoming:
+		base = base.Where("contests.start_at > NOW()")
+	case types.ContestStatusPast:
+		base = base.Where("contests.end_at IS NOT NULL AND contests.end_at <= NOW()")
+	}
+
+	var totalCount int64
+	if err := base.Session(&gorm.Session{}).Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Per-user columns are scalar subqueries rather than joins, so no extra created_at column makes the sort ambiguous.
+	query := base.Select(fmt.Sprintf(`contests.*,
+			(SELECT u.name || ' ' || u.surname FROM %[1]s u WHERE u.id = contests.created_by) as creator_name,
+			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
+			COALESCE(contest_task_count.count, 0) as task_count,
+			(EXISTS (SELECT 1 FROM %[2]s cp WHERE cp.contest_id = contests.id AND cp.user_id = ?)
+				OR EXISTS (SELECT 1 FROM %[3]s cpg JOIN %[4]s ug ON cpg.group_id = ug.group_id WHERE cpg.contest_id = contests.id AND ug.user_id = ?)) as is_participant,
+			(SELECT r.status FROM %[5]s r WHERE r.contest_id = contests.id AND r.user_id = ?) as request_status`,
+		database.ResolveTableName(tx, &models.User{}), contestParticipantTable, contestParticipantGroupTable, userGroupTable,
+		database.ResolveTableName(tx, &models.ContestRegistrationRequest{})), userID, userID, userID).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count FROM %s GROUP BY contest_id
+		) as direct_participants ON contests.id = direct_participants.contest_id`, contestParticipantTable)).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT cpg.contest_id, COUNT(DISTINCT ug.user_id) as count
+			FROM %s cpg JOIN %s ug ON cpg.group_id = ug.group_id
+			GROUP BY cpg.contest_id
+		) as group_participants ON contests.id = group_participants.contest_id`, contestParticipantGroupTable, userGroupTable)).
+		Joins(fmt.Sprintf(`LEFT JOIN (
+			SELECT contest_id, COUNT(*) as count FROM %s GROUP BY contest_id
+		) as contest_task_count ON contests.id = contest_task_count.contest_id`, database.ResolveTableName(tx, &models.ContestTask{})))
+
+	query, err := utils.ApplyPaginationAndSort(query, limit, offset, sort)
+	if err != nil {
+		return nil, 0, err
+	}
+	var contests []models.PublicContest
+	if err := query.Find(&contests).Error; err != nil {
+		return nil, 0, err
+	}
+	return contests, totalCount, nil
+}
+
+func (cr *contestRepository) GetRegistrationRequest(db database.Database, contestID, userID int64) (*models.ContestRegistrationRequest, error) {
+	tx := db.GetInstance()
+	var requests []models.ContestRegistrationRequest
+	err := tx.Where("contest_id = ? AND user_id = ?", contestID, userID).Limit(1).Find(&requests).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(requests) == 0 {
+		return nil, nil
+	}
+	return &requests[0], nil
+}
+
+func (cr *contestRepository) CreateRegistrationRequest(db database.Database, request *models.ContestRegistrationRequest) error {
+	return db.GetInstance().Create(request).Error
+}
+
+func (cr *contestRepository) GetPendingRegistrationRequests(db database.Database, contestID int64) ([]models.ContestRegistrationRequest, error) {
+	tx := db.GetInstance()
+	var requests []models.ContestRegistrationRequest
+	err := tx.Preload("User").
+		Where("contest_id = ? AND status = ?", contestID, types.RegistrationRequestStatusPending).
+		Order("created_at ASC").
+		Find(&requests).Error
+	if err != nil {
+		return nil, err
+	}
+	return requests, nil
+}
+
+func (cr *contestRepository) UpdateRegistrationRequestStatus(db database.Database, contestID, userID int64, status types.RegistrationRequestStatus) error {
+	return db.GetInstance().Model(&models.ContestRegistrationRequest{}).
+		Where("contest_id = ? AND user_id = ?", contestID, userID).
+		Update("status", status).Error
+}
+
+func (cr *contestRepository) DeleteRegistrationRequest(db database.Database, contestID, userID int64) error {
+	return db.GetInstance().
+		Where("contest_id = ? AND user_id = ?", contestID, userID).
+		Delete(&models.ContestRegistrationRequest{}).Error
 }
 
 func NewContestRepository() ContestRepository {

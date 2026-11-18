@@ -73,6 +73,16 @@ type ContestService interface {
 	AddParticipantsToContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
 	// RemoveParticipantsFromContest removes multiple users from contest participants (only accessible by contest collaborators with edit permission)
 	RemoveParticipantsFromContest(db database.Database, currentUser *schemas.User, contestID int64, userIDs []int64) error
+	// GetPublicContests lists public contests (all statuses when status is empty) with the current user's registration state
+	GetPublicContests(db database.Database, currentUser *schemas.User, status types.ContestStatus, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.PublicContest], error)
+	// RegisterForContest creates a pending registration request for a public contest
+	RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error
+	// GetRegistrationRequests lists pending registration requests for a contest (only accessible by contest collaborators with edit permission)
+	GetRegistrationRequests(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.RegistrationRequest, error)
+	// ApproveRegistrationRequest makes the requesting user a participant (only accessible by contest collaborators with edit permission)
+	ApproveRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error
+	// RejectRegistrationRequest rejects a pending request; the user cannot request again (only accessible by contest collaborators with edit permission)
+	RejectRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error
 }
 
 const defaultContestSort = "created_at:desc"
@@ -109,6 +119,7 @@ func (cs *contestService) Create(db database.Database, currentUser *schemas.User
 		Description:      contest.Description,
 		CreatedBy:        currentUser.ID,
 		IsSubmissionOpen: contest.IsSubmissionOpen,
+		IsPublic:         contest.IsPublic,
 		StartAt:          contest.StartAt,
 	}
 
@@ -137,7 +148,7 @@ func (cs *contestService) GetDetailed(db database.Database, currentUser *schemas
 		}
 		return nil, err
 	}
-	if !cs.canAccessContest(db, contestDetailed.ID, currentUser) {
+	if !contestDetailed.IsPublic && !cs.canAccessContest(db, contestDetailed.ID, currentUser) {
 		return nil, errors.ErrForbidden
 	}
 
@@ -244,6 +255,9 @@ func (cs *contestService) Edit(db database.Database, currentUser *schemas.User, 
 	}
 	if editInfo.IsSubmissionOpen != nil {
 		editMap["is_submission_open"] = *editInfo.IsSubmissionOpen
+	}
+	if editInfo.IsPublic != nil {
+		editMap["is_public"] = *editInfo.IsPublic
 	}
 	newModel, err := cs.contestRepository.EditWithStats(db, contestID, editMap)
 	if err != nil {
@@ -616,6 +630,8 @@ func ContestWithStatsToCreatedContest(model *models.ContestWithStats) *schemas.C
 			Status:           getContestStatus(model.StartAt, model.EndAt),
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
+		CreatedAt: model.CreatedAt,
+		IsPublic:  model.IsPublic,
 	}
 }
 
@@ -823,6 +839,7 @@ func ContestToCreatedSchema(model *repository.ContestDetailed) *schemas.CreatedC
 			IsSubmissionOpen: model.IsSubmissionOpen,
 		},
 		CreatedAt: model.CreatedAt,
+		IsPublic:  model.IsPublic,
 	}
 }
 
@@ -951,6 +968,7 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
 			CreatedAt: model.CreatedAt,
+			IsPublic:  model.IsPublic,
 		},
 		PermissionType: model.PermissionType,
 	}
@@ -1239,6 +1257,150 @@ func (cs *contestService) RemoveParticipantsFromContest(db database.Database, cu
 
 	// Remove participants from contest
 	return cs.contestRepository.RemoveParticipantsFromContest(db, contestID, userIDs)
+}
+
+func (cs *contestService) GetPublicContests(db database.Database, currentUser *schemas.User, status types.ContestStatus, paginationParams schemas.PaginationParams) (schemas.PaginatedResult[[]schemas.PublicContest], error) {
+	if paginationParams.Sort == "" {
+		paginationParams.Sort = defaultContestSort
+	}
+	contests, totalCount, err := cs.contestRepository.GetPublicContests(db, currentUser.ID, status, paginationParams.Offset, paginationParams.Limit, paginationParams.Sort)
+	if err != nil {
+		return schemas.PaginatedResult[[]schemas.PublicContest]{}, err
+	}
+
+	result := make([]schemas.PublicContest, len(contests))
+	for i := range contests {
+		c := &contests[i]
+		result[i] = schemas.PublicContest{
+			ContestDetailed: schemas.ContestDetailed{
+				BaseContest: schemas.BaseContest{
+					ID:          c.ID,
+					Name:        c.Name,
+					Description: c.Description,
+					CreatedBy:   c.CreatedBy,
+					StartAt:     c.StartAt,
+					EndAt:       c.EndAt,
+				},
+				CreatorName:      c.CreatorName,
+				ParticipantCount: c.ParticipantCount,
+				TaskCount:        c.TaskCount,
+				Status:           getContestStatus(c.StartAt, c.EndAt),
+				IsSubmissionOpen: c.IsSubmissionOpen,
+			},
+			RegistrationStatus: publicContestRegistrationStatus(c, time.Now()),
+		}
+	}
+	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func publicContestRegistrationStatus(c *models.PublicContest, now time.Time) types.RegistrationStatus {
+	switch {
+	case c.IsParticipant:
+		return types.RegistrationStatusRegistered
+	case c.RequestStatus != nil && *c.RequestStatus == types.RegistrationRequestStatusPending:
+		return types.RegistrationStatusAwaitingApproval
+	case c.RequestStatus != nil:
+		return types.RegistrationStatusRejected
+	case c.EndAt != nil && !c.EndAt.After(now):
+		return types.RegistrationStatusRegistrationClosed
+	default:
+		return types.RegistrationStatusCanRegister
+	}
+}
+
+func (cs *contestService) RegisterForContest(db database.Database, currentUser *schemas.User, contestID int64) error {
+	contest, err := cs.contestRepository.Get(db, contestID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrNotFound
+		}
+		return err
+	}
+	// Private contests are reported as missing so their existence doesn't leak.
+	if !contest.IsPublic {
+		return errors.ErrNotFound
+	}
+	if contest.EndAt != nil && !contest.EndAt.After(time.Now()) {
+		return errors.ErrContestEnded
+	}
+
+	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if isParticipant {
+		return errors.ErrAlreadyParticipant
+	}
+
+	existing, err := cs.contestRepository.GetRegistrationRequest(db, contestID, currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return errors.ErrAlreadyRegistered
+	}
+
+	return cs.contestRepository.CreateRegistrationRequest(db, &models.ContestRegistrationRequest{
+		ContestID: contestID,
+		UserID:    currentUser.ID,
+		Status:    types.RegistrationRequestStatusPending,
+	})
+}
+
+func (cs *contestService) GetRegistrationRequests(db database.Database, currentUser *schemas.User, contestID int64) ([]schemas.RegistrationRequest, error) {
+	if err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit); err != nil {
+		return nil, err
+	}
+	requests, err := cs.contestRepository.GetPendingRegistrationRequests(db, contestID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]schemas.RegistrationRequest, len(requests))
+	for i := range requests {
+		result[i] = schemas.RegistrationRequest{
+			ContestID: requests[i].ContestID,
+			User:      *UserToSchema(&requests[i].User),
+			CreatedAt: requests[i].CreatedAt,
+		}
+	}
+	return result, nil
+}
+
+func (cs *contestService) ApproveRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error {
+	if err := cs.getPendingRequestForManager(db, currentUser, contestID, userID); err != nil {
+		return err
+	}
+	if err := cs.contestRepository.DeleteRegistrationRequest(db, contestID, userID); err != nil {
+		return err
+	}
+	// The user may have been added in the meantime (directly or via a group); the request is resolved either way.
+	isParticipant, err := cs.contestRepository.IsUserParticipant(db, contestID, userID)
+	if err != nil || isParticipant {
+		return err
+	}
+	return cs.contestRepository.CreateContestParticipant(db, contestID, userID)
+}
+
+func (cs *contestService) RejectRegistrationRequest(db database.Database, currentUser *schemas.User, contestID, userID int64) error {
+	if err := cs.getPendingRequestForManager(db, currentUser, contestID, userID); err != nil {
+		return err
+	}
+	return cs.contestRepository.UpdateRegistrationRequestStatus(db, contestID, userID, types.RegistrationRequestStatusRejected)
+}
+
+// getPendingRequestForManager checks edit permission and that the user has a pending request for the contest.
+func (cs *contestService) getPendingRequestForManager(db database.Database, currentUser *schemas.User, contestID, userID int64) error {
+	if err := cs.hasContestPermission(db, contestID, currentUser, types.PermissionEdit); err != nil {
+		return err
+	}
+	request, err := cs.contestRepository.GetRegistrationRequest(db, contestID, userID)
+	if err != nil {
+		return err
+	}
+	if request == nil || request.Status != types.RegistrationRequestStatusPending {
+		return errors.ErrNoPendingRegistration
+	}
+	return nil
 }
 
 func NewContestService(contestRepository repository.ContestRepository, userRepository repository.UserRepository, submissionRepository repository.SubmissionRepository, taskRepository repository.TaskRepository, groupRepository repository.GroupRepository, accessControlService AccessControlService, taskService TaskService) ContestService {
