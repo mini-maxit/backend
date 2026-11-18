@@ -264,6 +264,13 @@ definitions:
       ok:
         type: boolean
     type: object
+  httputils.APIResponse-schemas_UserResetPasswordResponse:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.UserResetPasswordResponse'
+      ok:
+        type: boolean
+    type: object
   httputils.APIResponse-schemas_WorkersStatus:
     properties:
       data:
@@ -1169,6 +1176,11 @@ definitions:
     - name
     - password
     - surname
+    type: object
+  schemas.UserResetPasswordResponse:
+    properties:
+      newPassword:
+        type: string
     type: object
   schemas.UserTaskPerformance:
     properties:
@@ -3994,6 +4006,45 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Change user password
+      tags:
+      - user
+  /users/{id}/password/reset:
+    post:
+      description: Generates a new random password for the user and returns it once
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-schemas_UserResetPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Reset user password (admin)
       tags:
       - user
   /users/me:
