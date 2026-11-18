@@ -42,3 +42,8 @@ type UserChangePassword struct {
 	NewPassword        string `json:"newPassword" validate:"required,password,gte=8,lte=50"`
 	NewPasswordConfirm string `json:"newPasswordConfirm" validate:"required,eqfield=NewPassword,gte=8,lte=50"`
 }
+
+// UserResetPasswordResponse holds the generated password, shown to the admin only once.
+type UserResetPasswordResponse struct {
+	NewPassword string `json:"newPassword"`
+}

@@ -719,6 +719,21 @@ func (mr *MockUserServiceMockRecorder) IsTaskAssignedToUser(db, userID, taskID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTaskAssignedToUser", reflect.TypeOf((*MockUserService)(nil).IsTaskAssignedToUser), db, userID, taskID)
 }
 
+// ResetPassword mocks base method.
+func (m *MockUserService) ResetPassword(db database.Database, currentUser schemas.User, userID int64) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetPassword", db, currentUser, userID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResetPassword indicates an expected call of ResetPassword.
+func (mr *MockUserServiceMockRecorder) ResetPassword(db, currentUser, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetPassword", reflect.TypeOf((*MockUserService)(nil).ResetPassword), db, currentUser, userID)
+}
+
 // MockTaskService is a mock of TaskService interface.
 type MockTaskService struct {
 	ctrl     *gomock.Controller
