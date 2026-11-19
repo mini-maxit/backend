@@ -346,10 +346,14 @@ definitions:
     properties:
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
+      memoryLimitKb:
+        $ref: '#/definitions/schemas.OptionalInt64'
       startAt:
         $ref: '#/definitions/schemas.OptionalTime'
       taskId:
         type: integer
+      timeLimitMs:
+        $ref: '#/definitions/schemas.OptionalInt64'
     required:
     - taskId
     type: object
@@ -459,10 +463,18 @@ definitions:
         type: string
       isSubmissionOpen:
         type: boolean
+      memoryLimitKb:
+        description: contest override, null = task default
+        type: integer
+      position:
+        type: integer
       startAt:
         type: string
       task:
         $ref: '#/definitions/schemas.TaskInfo'
+      timeLimitMs:
+        description: contest override, null = task default
+        type: integer
     type: object
   schemas.ContestTaskStats:
     properties:
@@ -721,6 +733,13 @@ definitions:
           $ref: '#/definitions/schemas.ContestWithTasks'
         type: array
     type: object
+  schemas.OptionalInt64:
+    properties:
+      set:
+        type: boolean
+      value:
+        type: integer
+    type: object
   schemas.OptionalTime:
     properties:
       set:
@@ -911,6 +930,15 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/schemas.User'
+    type: object
+  schemas.ReorderContestTasks:
+    properties:
+      taskIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - taskIds
     type: object
   schemas.Submission:
     properties:
@@ -1140,8 +1168,12 @@ definitions:
     properties:
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
+      memoryLimitKb:
+        $ref: '#/definitions/schemas.OptionalInt64'
       startAt:
         $ref: '#/definitions/schemas.OptionalTime'
+      timeLimitMs:
+        $ref: '#/definitions/schemas.OptionalInt64'
     type: object
   schemas.User:
     properties:
@@ -2806,6 +2838,55 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Get available tasks for a contest
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/tasks/order:
+    put:
+      consumes:
+      - application/json
+      description: Set the display order of a contest's tasks. The body must list
+        every task of the contest exactly once (only accessible by contest collaborators
+        with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task IDs in the desired order
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/schemas.ReorderContestTasks'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.ValidationErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Reorder the tasks of a contest
       tags:
       - contests-management
   /contests-management/contests/{id}/user-stats:
