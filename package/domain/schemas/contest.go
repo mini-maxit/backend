@@ -18,6 +18,7 @@ type BaseContest struct {
 type ContestDetailed struct {
 	BaseContest
 	CreatorName      string              `json:"creatorName"`
+	CreatorSurname   string              `json:"creatorSurname"`
 	ParticipantCount int64               `json:"participantCount"`
 	TaskCount        int64               `json:"taskCount"`
 	Status           types.ContestStatus `json:"status"` // "upcoming", "ongoing", "past"
@@ -113,6 +114,7 @@ type ReorderContestTasks struct {
 type ContestTask struct {
 	Task             TaskInfo   `json:"task"`
 	CreatorName      string     `json:"creatorName"`
+	CreatorSurname   string     `json:"creatorSurname"`
 	StartAt          time.Time  `json:"startAt"`
 	EndAt            *time.Time `json:"endAt"`
 	IsSubmissionOpen bool       `json:"isSubmissionOpen"`

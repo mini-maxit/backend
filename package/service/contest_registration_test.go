@@ -94,7 +94,7 @@ func TestContestService_RegisterForContest(t *testing.T) {
 		cs, cr, _ := newRegistrationTestService(t)
 		cr.EXPECT().Get(db, contestID).Return(&models.Contest{ID: contestID, IsPublic: true}, nil)
 		cr.EXPECT().IsUserParticipant(db, contestID, student.ID).Return(false, nil)
-		cr.EXPECT().GetRegistrationRequest(db, contestID, student.ID).Return(nil, nil)
+		cr.EXPECT().GetRegistrationRequest(db, contestID, student.ID).Return(nil, gorm.ErrRecordNotFound)
 		cr.EXPECT().CreateRegistrationRequest(db, &models.ContestRegistrationRequest{
 			ContestID: contestID, UserID: student.ID, Status: types.RegistrationRequestStatusPending,
 		}).Return(nil)
@@ -191,7 +191,7 @@ func TestContestService_ResolveRegistrationRequests(t *testing.T) {
 	t.Run("no pending request", func(t *testing.T) {
 		cs, cr, acs := newRegistrationTestService(t)
 		expectManager(cr, acs, true)
-		cr.EXPECT().GetRegistrationRequest(db, contestID, userID).Return(nil, nil)
+		cr.EXPECT().GetRegistrationRequest(db, contestID, userID).Return(nil, gorm.ErrRecordNotFound)
 		require.ErrorIs(t, cs.ApproveRegistrationRequest(db, teacher, contestID, userID), errors.ErrNoPendingRegistration)
 	})
 

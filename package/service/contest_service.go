@@ -164,6 +164,7 @@ func (cs *contestService) GetDetailed(db database.Database, currentUser *schemas
 			EndAt:       contestDetailed.EndAt,
 		},
 		CreatorName:      contestDetailed.CreatedByName,
+		CreatorSurname:   contestDetailed.CreatedBySurname,
 		ParticipantCount: contestDetailed.ParticipantCount,
 		TaskCount:        contestDetailed.TaskCount,
 		Status:           getContestStatus(contestDetailed.StartAt, contestDetailed.EndAt),
@@ -322,6 +323,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 		result[i] = schemas.ContestTask{
 			Task:             *TaskToInfoSchema(&rel.Task),
 			CreatorName:      rel.Task.Author.Name,
+			CreatorSurname:   rel.Task.Author.Surname,
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
@@ -366,6 +368,7 @@ func (cs *contestService) GetStartedTasksForContest(db database.Database, curren
 		result = append(result, schemas.ContestTask{
 			Task:             *TaskToInfoSchema(&rel.Task),
 			CreatorName:      rel.Task.Author.Name,
+			CreatorSurname:   rel.Task.Author.Surname,
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
@@ -461,12 +464,13 @@ func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *
 	result := make([]schemas.Task, len(tasks))
 	for i, task := range tasks {
 		result[i] = schemas.Task{
-			ID:          task.ID,
-			Title:       task.Title,
-			CreatedBy:   task.CreatedBy,
-			CreatorName: task.Author.Name,
-			CreatedAt:   task.CreatedAt,
-			UpdatedAt:   task.UpdatedAt,
+			ID:             task.ID,
+			Title:          task.Title,
+			CreatedBy:      task.CreatedBy,
+			CreatorName:    task.Author.Name,
+			CreatorSurname: task.Author.Surname,
+			CreatedAt:      task.CreatedAt,
+			UpdatedAt:      task.UpdatedAt,
 		}
 	}
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
@@ -1336,6 +1340,7 @@ func (cs *contestService) GetPublicContests(db database.Database, currentUser *s
 					EndAt:       c.EndAt,
 				},
 				CreatorName:      c.CreatorName,
+				CreatorSurname:   c.CreatorSurname,
 				ParticipantCount: c.ParticipantCount,
 				TaskCount:        c.TaskCount,
 				Status:           getContestStatus(c.StartAt, c.EndAt),
@@ -1386,12 +1391,12 @@ func (cs *contestService) RegisterForContest(db database.Database, currentUser *
 		return errors.ErrAlreadyParticipant
 	}
 
-	existing, err := cs.contestRepository.GetRegistrationRequest(db, contestID, currentUser.ID)
-	if err != nil {
-		return err
-	}
-	if existing != nil {
+	_, err = cs.contestRepository.GetRegistrationRequest(db, contestID, currentUser.ID)
+	if err == nil {
 		return errors.ErrAlreadyRegistered
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
 	}
 
 	return cs.contestRepository.CreateRegistrationRequest(db, &models.ContestRegistrationRequest{
@@ -1448,10 +1453,13 @@ func (cs *contestService) getPendingRequestForManager(db database.Database, curr
 		return err
 	}
 	request, err := cs.contestRepository.GetRegistrationRequest(db, contestID, userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errors.ErrNoPendingRegistration
+	}
 	if err != nil {
 		return err
 	}
-	if request == nil || request.Status != types.RegistrationRequestStatusPending {
+	if request.Status != types.RegistrationRequestStatusPending {
 		return errors.ErrNoPendingRegistration
 	}
 	return nil
