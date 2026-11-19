@@ -4261,6 +4261,10 @@ paths:
         in: query
         name: role
         type: string
+      - description: List only soft-deleted users
+        in: query
+        name: deleted
+        type: boolean
       produces:
       - application/json
       responses:
@@ -4284,6 +4288,40 @@ paths:
       tags:
       - user
   /users/{id}:
+    delete:
+      description: Marks the user as deleted; the user can no longer log in
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Soft-delete user (admin)
+      tags:
+      - user
     get:
       description: Get user by ID
       parameters:
@@ -4440,6 +4478,40 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Reset user password (admin)
+      tags:
+      - user
+  /users/{id}/restore:
+    post:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Restore soft-deleted user (admin)
       tags:
       - user
   /users/me:
