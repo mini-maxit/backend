@@ -444,7 +444,7 @@ func TestContestService_GetStartedTasksForContest(t *testing.T) {
 		assert.Len(t, result, 1)
 		assert.Equal(t, int64(1), result[0].Task.ID)
 		assert.Equal(t, testTaskTitle, result[0].Task.Title)
-		assert.Equal(t, testCreatorName, result[0].CreatorName)
+		assert.Equal(t, testCreatorName, result[0].Creator.Name)
 	})
 
 	t.Run("successful retrieval - user with edit permission", func(t *testing.T) {

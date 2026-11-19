@@ -323,13 +323,18 @@ func GroupToSchemaDetailed(model *models.Group) *schemas.GroupDetailed {
 }
 
 func GroupToSchema(model *models.Group) *schemas.Group {
-	return &schemas.Group{
+	group := &schemas.Group{
 		ID:        model.ID,
 		Name:      model.Name,
 		CreatedBy: model.CreatedBy,
 		CreatedAt: model.CreatedAt,
 		UpdatedAt: model.UpdatedAt,
 	}
+	// Author is only preloaded by the list queries.
+	if model.Author.ID != 0 {
+		group.Creator = UserToInfoSchema(&model.Author)
+	}
+	return group
 }
 func NewGroupService(
 	groupRepository repository.GroupRepository,

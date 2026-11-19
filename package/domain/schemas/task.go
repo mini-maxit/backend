@@ -11,12 +11,12 @@ type EditTask struct {
 }
 
 type Task struct {
-	ID          int64     `json:"id"`
-	Title       string    `json:"title"`
-	CreatedBy   int64     `json:"createdBy"`
-	CreatorName string    `json:"creatorName"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID        int64     `json:"id"`
+	Title     string    `json:"title"`
+	CreatedBy int64     `json:"createdBy"`
+	Creator   UserInfo  `json:"creator"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type ManagedTask struct {
@@ -38,7 +38,7 @@ type TaskDetailed struct {
 	Title          string    `json:"title"`
 	DescriptionURL string    `json:"descriptionUrl"`
 	CreatedBy      int64     `json:"createdBy"`
-	CreatedByName  string    `json:"createdByName"`
+	Creator        UserInfo  `json:"creator"`
 	CreatedAt      time.Time `json:"createdAt"`
 }
 

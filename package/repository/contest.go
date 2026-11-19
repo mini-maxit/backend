@@ -14,6 +14,7 @@ import (
 type ContestDetailed struct {
 	models.Contest
 	CreatedByName    string `gorm:"column:created_by_name"`
+	CreatedBySurname string `gorm:"column:created_by_surname"`
 	ParticipantCount int64  `gorm:"column:participant_count"`
 	TaskCount        int64  `gorm:"column:task_count"` // number of tasks
 }
@@ -133,7 +134,7 @@ func (cr *contestRepository) GetDetailed(db database.Database, contestID int64) 
 	tx := db.GetInstance()
 	var contest ContestDetailed
 	err := tx.Model(&models.Contest{}).
-		Select(`contests.*, (users.name || ' ' || users.surname) as created_by_name, pc.participant_count, tc.task_count`).
+		Select(`contests.*, users.name as created_by_name, users.surname as created_by_surname, pc.participant_count, tc.task_count`).
 		Joins(fmt.Sprintf(`LEFT JOIN (
 			SELECT contest_id, COUNT(*) as participant_count
 			FROM %s
@@ -252,7 +253,7 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 		return nil, 0, err
 	}
 
-	err = paginatedQuery.Find(&contests).Error
+	err = paginatedQuery.Preload("Creator").Find(&contests).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1104,7 +1105,8 @@ func (cr *contestRepository) GetPublicContests(db database.Database, userID int6
 
 	// Per-user columns are scalar subqueries rather than joins, so no extra created_at column makes the sort ambiguous.
 	query := base.Select(fmt.Sprintf(`contests.*,
-			(SELECT u.name || ' ' || u.surname FROM %[1]s u WHERE u.id = contests.created_by) as creator_name,
+			(SELECT u.name FROM %[1]s u WHERE u.id = contests.created_by) as creator_name,
+			(SELECT u.surname FROM %[1]s u WHERE u.id = contests.created_by) as creator_surname,
 			COALESCE(direct_participants.count, 0) + COALESCE(group_participants.count, 0) as participant_count,
 			COALESCE(contest_task_count.count, 0) as task_count,
 			(EXISTS (SELECT 1 FROM %[2]s cp WHERE cp.contest_id = contests.id AND cp.user_id = ?)

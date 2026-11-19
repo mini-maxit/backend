@@ -79,7 +79,7 @@ func TestContestService_GetPublicContests_RegistrationStatus(t *testing.T) {
 	assert.Equal(t, types.RegistrationStatusRejected, result.Items[2].RegistrationStatus)
 	assert.Equal(t, types.RegistrationStatusRegistrationClosed, result.Items[3].RegistrationStatus)
 	assert.Equal(t, types.RegistrationStatusCanRegister, result.Items[4].RegistrationStatus)
-	assert.Equal(t, testCreatorName, result.Items[4].CreatorName)
+	assert.Equal(t, testCreatorName, result.Items[4].Creator.Name)
 	assert.Equal(t, int64(3), result.Items[4].ParticipantCount)
 	assert.Equal(t, 5, result.Pagination.TotalItems)
 }

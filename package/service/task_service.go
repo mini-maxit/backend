@@ -146,7 +146,7 @@ func (ts *taskService) Get(db database.Database, currentUser *schemas.User, task
 		Title:          task.Title,
 		DescriptionURL: descriptionURL,
 		CreatedBy:      task.CreatedBy,
-		CreatedByName:  task.Author.Name,
+		Creator:        *UserToInfoSchema(&task.Author),
 		CreatedAt:      task.CreatedAt,
 	}
 
@@ -488,12 +488,12 @@ func (ts *taskService) updateModel(currentModel *models.Task, updateInfo *schema
 
 func TaskToSchema(model *models.Task) *schemas.Task {
 	return &schemas.Task{
-		ID:          model.ID,
-		Title:       model.Title,
-		CreatedBy:   model.CreatedBy,
-		CreatorName: model.Author.Name,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
+		ID:        model.ID,
+		Title:     model.Title,
+		CreatedBy: model.CreatedBy,
+		Creator:   *UserToInfoSchema(&model.Author),
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
 	}
 }
 
@@ -577,12 +577,12 @@ func (ts *taskService) enrichTaskWithAttempts(
 
 	return &schemas.TaskWithAttempts{
 		Task: schemas.Task{
-			ID:          task.ID,
-			Title:       task.Title,
-			CreatedBy:   task.CreatedBy,
-			CreatorName: task.Author.Name,
-			CreatedAt:   task.CreatedAt,
-			UpdatedAt:   task.UpdatedAt,
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			Creator:   *UserToInfoSchema(&task.Author),
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
 		},
 		AttemptsSummary: schemas.AttemptsSummary{
 			BestScore:    bestScore,

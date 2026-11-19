@@ -163,7 +163,7 @@ func (cs *contestService) GetDetailed(db database.Database, currentUser *schemas
 			StartAt:     contestDetailed.StartAt,
 			EndAt:       contestDetailed.EndAt,
 		},
-		CreatorName:      contestDetailed.CreatedByName,
+		Creator:          &schemas.UserInfo{ID: contestDetailed.CreatedBy, Name: contestDetailed.CreatedByName, Surname: contestDetailed.CreatedBySurname},
 		ParticipantCount: contestDetailed.ParticipantCount,
 		TaskCount:        contestDetailed.TaskCount,
 		Status:           getContestStatus(contestDetailed.StartAt, contestDetailed.EndAt),
@@ -321,7 +321,7 @@ func (cs *contestService) GetTasksForContest(db database.Database, currentUser *
 	for i, rel := range relations {
 		result[i] = schemas.ContestTask{
 			Task:             *TaskToInfoSchema(&rel.Task),
-			CreatorName:      rel.Task.Author.Name,
+			Creator:          *UserToInfoSchema(&rel.Task.Author),
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
@@ -365,7 +365,7 @@ func (cs *contestService) GetStartedTasksForContest(db database.Database, curren
 
 		result = append(result, schemas.ContestTask{
 			Task:             *TaskToInfoSchema(&rel.Task),
-			CreatorName:      rel.Task.Author.Name,
+			Creator:          *UserToInfoSchema(&rel.Task.Author),
 			StartAt:          rel.StartAt,
 			EndAt:            rel.EndAt,
 			IsSubmissionOpen: rel.IsSubmissionOpen,
@@ -461,12 +461,12 @@ func (cs *contestService) GetAssignableTasks(db database.Database, currentUser *
 	result := make([]schemas.Task, len(tasks))
 	for i, task := range tasks {
 		result[i] = schemas.Task{
-			ID:          task.ID,
-			Title:       task.Title,
-			CreatedBy:   task.CreatedBy,
-			CreatorName: task.Author.Name,
-			CreatedAt:   task.CreatedAt,
-			UpdatedAt:   task.UpdatedAt,
+			ID:        task.ID,
+			Title:     task.Title,
+			CreatedBy: task.CreatedBy,
+			Creator:   *UserToInfoSchema(&task.Author),
+			CreatedAt: task.CreatedAt,
+			UpdatedAt: task.UpdatedAt,
 		}
 	}
 	return schemas.NewPaginatedResult(result, paginationParams.Offset, paginationParams.Limit, totalCount), nil
@@ -1018,6 +1018,7 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 				},
 				TaskCount:        model.TaskCount,
 				ParticipantCount: model.ParticipantCount,
+				Creator:          UserToInfoSchema(&model.Creator),
 				Status:           getContestStatus(model.StartAt, model.EndAt),
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},
@@ -1335,7 +1336,7 @@ func (cs *contestService) GetPublicContests(db database.Database, currentUser *s
 					StartAt:     c.StartAt,
 					EndAt:       c.EndAt,
 				},
-				CreatorName:      c.CreatorName,
+				Creator:          &schemas.UserInfo{ID: c.CreatedBy, Name: c.CreatorName, Surname: c.CreatorSurname},
 				ParticipantCount: c.ParticipantCount,
 				TaskCount:        c.TaskCount,
 				Status:           getContestStatus(c.StartAt, c.EndAt),

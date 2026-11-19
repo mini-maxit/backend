@@ -75,6 +75,7 @@ type PublicContest struct {
 	IsParticipant    bool                             `gorm:"column:is_participant"`
 	RequestStatus    *types.RegistrationRequestStatus `gorm:"column:request_status"`
 	CreatorName      string                           `gorm:"column:creator_name"`
+	CreatorSurname   string                           `gorm:"column:creator_surname"`
 }
 
 // ContestWithStats extends Contest with computed fields for efficient querying
