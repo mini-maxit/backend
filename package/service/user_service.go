@@ -33,7 +33,7 @@ type UserService interface {
 	GetByEmail(db database.Database, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
 	Get(db database.Database, userID int64) (*schemas.User, error)
-	// Delete soft-deletes a user (admin only). Admins cannot delete themselves.
+	// Delete soft-deletes a user (admin only). Admin accounts, including the caller, cannot be deleted.
 	Delete(db database.Database, currentUser schemas.User, userID int64) error
 	// Restore restores a soft-deleted user (admin only).
 	Restore(db database.Database, currentUser schemas.User, userID int64) error
@@ -85,7 +85,16 @@ func (us *userService) Delete(db database.Database, currentUser schemas.User, us
 	if currentUser.Role != types.UserRoleAdmin {
 		return errors.ErrForbidden
 	}
-	if currentUser.ID == userID {
+	target, err := us.userRepository.Get(db, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrUserNotFound
+		}
+		us.logger.Errorf("Error getting user by id: %v", err.Error())
+		return err
+	}
+	// covers self-deletion too, since only admins get this far
+	if target.Role == types.UserRoleAdmin {
 		return errors.ErrNotAllowed
 	}
 	if err := us.userRepository.Delete(db, userID); err != nil {

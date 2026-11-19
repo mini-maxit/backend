@@ -440,8 +440,13 @@ func TestUserServiceDeleteRestore(t *testing.T) {
 	admin := schemas.User{ID: 1, Role: types.UserRoleAdmin}
 
 	require.ErrorIs(t, us.Delete(nil, schemas.User{ID: 2, Role: types.UserRoleStudent}, 3), errors.ErrForbidden)
-	require.ErrorIs(t, us.Delete(nil, admin, admin.ID), errors.ErrNotAllowed)
 
+	ur.EXPECT().Get(gomock.Any(), admin.ID).Return(&models.User{ID: admin.ID, Role: types.UserRoleAdmin}, nil)
+	require.ErrorIs(t, us.Delete(nil, admin, admin.ID), errors.ErrNotAllowed)
+	ur.EXPECT().Get(gomock.Any(), int64(4)).Return(&models.User{ID: 4, Role: types.UserRoleAdmin}, nil)
+	require.ErrorIs(t, us.Delete(nil, admin, 4), errors.ErrNotAllowed)
+
+	ur.EXPECT().Get(gomock.Any(), int64(3)).Return(&models.User{ID: 3, Role: types.UserRoleStudent}, nil)
 	ur.EXPECT().Delete(gomock.Any(), int64(3)).Return(nil)
 	require.NoError(t, us.Delete(nil, admin, 3))
 
