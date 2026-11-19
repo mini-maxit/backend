@@ -93,6 +93,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 
 	queueService := service.NewQueueService(
 		taskRepository,
+		contestRepository,
 		submissionRepository,
 		submissionResultRepository,
 		queueRepository,
