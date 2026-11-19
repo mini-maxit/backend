@@ -1145,7 +1145,7 @@ func (cr *contestRepository) GetRegistrationRequest(db database.Database, contes
 		return nil, err
 	}
 	if len(requests) == 0 {
-		return nil, gorm.ErrRecordNotFound
+		return nil, nil //nolint:nilnil // callers treat (nil, nil) as "no request"
 	}
 	return &requests[0], nil
 }

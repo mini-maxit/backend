@@ -1386,12 +1386,12 @@ func (cs *contestService) RegisterForContest(db database.Database, currentUser *
 		return errors.ErrAlreadyParticipant
 	}
 
-	_, err = cs.contestRepository.GetRegistrationRequest(db, contestID, currentUser.ID)
-	if err == nil {
-		return errors.ErrAlreadyRegistered
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	existing, err := cs.contestRepository.GetRegistrationRequest(db, contestID, currentUser.ID)
+	if err != nil {
 		return err
+	}
+	if existing != nil {
+		return errors.ErrAlreadyRegistered
 	}
 
 	return cs.contestRepository.CreateRegistrationRequest(db, &models.ContestRegistrationRequest{
@@ -1448,13 +1448,10 @@ func (cs *contestService) getPendingRequestForManager(db database.Database, curr
 		return err
 	}
 	request, err := cs.contestRepository.GetRegistrationRequest(db, contestID, userID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return errors.ErrNoPendingRegistration
-	}
 	if err != nil {
 		return err
 	}
-	if request.Status != types.RegistrationRequestStatusPending {
+	if request == nil || request.Status != types.RegistrationRequestStatusPending {
 		return errors.ErrNoPendingRegistration
 	}
 	return nil
