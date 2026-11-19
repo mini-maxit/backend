@@ -17,6 +17,8 @@ const (
 
 	CodeQueueNotConnected ErrorCode = "ERR_QUEUE_NOT_CONNECTED"
 
+	CodeFileStorageUnavailable ErrorCode = "ERR_FILE_STORAGE_UNAVAILABLE"
+
 	CodeCORSNotAllowed ErrorCode = "ERR_CORS_NOT_ALLOWED"
 
 	// Task errors
@@ -284,6 +286,8 @@ var (
 	ErrEndBeforeStart = newServiceError(CodeEndBeforeStart, "End time cannot be before start time")
 
 	ErrQueueNotConnected = newServiceError(CodeQueueNotConnected, "Worker queue is not connected")
+
+	ErrFileStorageUnavailable = newServiceError(CodeFileStorageUnavailable, "File storage is temporarily unavailable")
 
 	// Contest group assignment errors
 	ErrGroupAlreadyAssignedToContest = newServiceError(CodeGroupAlreadyAssignedToContest, "Group is already assigned to the contest")

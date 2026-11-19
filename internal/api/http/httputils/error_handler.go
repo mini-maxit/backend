@@ -2,13 +2,16 @@ package httputils
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/errors"
+	"github.com/mini-maxit/file-storage/pkg/filestorage"
 	"go.uber.org/zap"
 )
 
@@ -189,7 +192,7 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 		return http.StatusInternalServerError
 	case errors.CodeEndBeforeStart:
 		return http.StatusBadRequest
-	case errors.CodeQueueNotConnected:
+	case errors.CodeQueueNotConnected, errors.CodeFileStorageUnavailable:
 		return http.StatusServiceUnavailable
 	// Default - internal error
 	default:
@@ -231,6 +234,12 @@ func HandleServiceError(w http.ResponseWriter, err error, db database.Database, 
 	serviceErr := new(errors.ServiceError)
 	if ok := errors.AsServiceError(err, &serviceErr); !ok {
 		serviceErr = errors.ErrInternalError
+		// File-storage network failure (DNS, connection refused, timeout) -> 503 instead of 500
+		var clientErr *filestorage.ErrClient
+		var netErr net.Error
+		if stderrors.As(err, &clientErr) && stderrors.As(err, &netErr) {
+			serviceErr = errors.ErrFileStorageUnavailable
+		}
 	}
 
 	// Get HTTP status from error code

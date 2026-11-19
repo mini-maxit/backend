@@ -16,6 +16,7 @@ import (
 	"github.com/mini-maxit/backend/package/errors"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -41,9 +42,9 @@ func newRegistrationServer(t *testing.T) (*httptest.Server, *mock_service.MockCo
 func doRequest(t *testing.T, method, url string) int {
 	t.Helper()
 	req, err := http.NewRequest(method, url, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	resp, err := http.DefaultClient.Do(req)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer resp.Body.Close()
 	return resp.StatusCode
 }
