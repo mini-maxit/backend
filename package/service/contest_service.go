@@ -1018,6 +1018,7 @@ func ManagedContestToSchema(model *models.ManagedContest) *schemas.ManagedContes
 				},
 				TaskCount:        model.TaskCount,
 				ParticipantCount: model.ParticipantCount,
+				Creator:          UserToInfoSchema(&model.Creator),
 				Status:           getContestStatus(model.StartAt, model.EndAt),
 				IsSubmissionOpen: model.IsSubmissionOpen,
 			},

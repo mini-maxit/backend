@@ -79,7 +79,7 @@ func (gr *groupRepository) GetAll(db database.Database, offset int, limit int, s
 	if err != nil {
 		return nil, err
 	}
-	err = paginatedTx.Model(&models.Group{}).Find(&groups).Error
+	err = paginatedTx.Model(&models.Group{}).Preload("Author").Find(&groups).Error
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +103,7 @@ func (gr *groupRepository) GetAllForTeacher(
 		Where("created_by = ?", userID).
 		Preload("Tasks").
 		Preload("Users").
+		Preload("Author").
 		Find(&groups).Error
 	if err != nil {
 		return nil, err

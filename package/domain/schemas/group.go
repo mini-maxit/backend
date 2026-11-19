@@ -16,6 +16,7 @@ type Group struct {
 	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	CreatedBy int64     `json:"createdBy"`
+	Creator   *UserInfo `json:"creator,omitempty"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

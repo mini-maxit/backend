@@ -253,7 +253,7 @@ func (cr *contestRepository) GetAllForCollaborator(db database.Database, userID 
 		return nil, 0, err
 	}
 
-	err = paginatedQuery.Find(&contests).Error
+	err = paginatedQuery.Preload("Creator").Find(&contests).Error
 	if err != nil {
 		return nil, 0, err
 	}
