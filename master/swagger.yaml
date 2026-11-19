@@ -402,8 +402,8 @@ definitions:
     properties:
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -457,8 +457,8 @@ definitions:
     type: object
   schemas.ContestTask:
     properties:
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       endAt:
         type: string
       isSubmissionOpen:
@@ -497,8 +497,8 @@ definitions:
     properties:
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -573,8 +573,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -628,6 +628,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       id:
         type: integer
       name:
@@ -648,6 +650,8 @@ definitions:
         type: string
       createdBy:
         type: integer
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       id:
         type: integer
       members:
@@ -678,8 +682,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -713,8 +717,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       id:
         type: integer
       permissionType:
@@ -834,8 +838,8 @@ definitions:
     properties:
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -869,8 +873,8 @@ definitions:
     properties:
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       description:
         type: string
       endAt:
@@ -1021,8 +1025,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       id:
         type: integer
       title:
@@ -1041,8 +1045,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      createdByName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       descriptionUrl:
         type: string
       id:
@@ -1093,8 +1097,8 @@ definitions:
         type: string
       createdBy:
         type: integer
-      creatorName:
-        type: string
+      creator:
+        $ref: '#/definitions/schemas.UserInfo'
       id:
         type: integer
       title:
