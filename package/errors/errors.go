@@ -99,8 +99,10 @@ const (
 	CodeInvalidTokenType  ErrorCode = "ERR_INVALID_TOKEN_TYPE"
 
 	// Contest participation errors
-	CodeContestEnded       ErrorCode = "ERR_CONTEST_ENDED"
-	CodeAlreadyParticipant ErrorCode = "ERR_ALREADY_PARTICIPANT"
+	CodeContestEnded          ErrorCode = "ERR_CONTEST_ENDED"
+	CodeAlreadyParticipant    ErrorCode = "ERR_ALREADY_PARTICIPANT"
+	CodeAlreadyRegistered     ErrorCode = "ERR_ALREADY_REGISTERED"
+	CodeNoPendingRegistration ErrorCode = "ERR_NO_PENDING_REGISTRATION"
 
 	// Contest task errors
 	CodeTaskNotInContest ErrorCode = "ERR_TASK_NOT_IN_CONTEST"
@@ -250,8 +252,10 @@ var (
 	ErrInvalidTokenType  = newServiceError(CodeInvalidTokenType, "Invalid token type")
 
 	// Contest participation errors
-	ErrContestEnded       = newServiceError(CodeContestEnded, "Contest has ended")
-	ErrAlreadyParticipant = newServiceError(CodeAlreadyParticipant, "User is already a participant of this contest")
+	ErrContestEnded          = newServiceError(CodeContestEnded, "Contest has ended")
+	ErrAlreadyParticipant    = newServiceError(CodeAlreadyParticipant, "User is already a participant of this contest")
+	ErrAlreadyRegistered     = newServiceError(CodeAlreadyRegistered, "A registration request for this contest already exists")
+	ErrNoPendingRegistration = newServiceError(CodeNoPendingRegistration, "No pending registration request for this contest")
 
 	// Contest task errors
 	ErrTaskNotInContest = newServiceError(CodeTaskNotInContest, "Task is not part of the contest")

@@ -22,6 +22,8 @@ type ContestRoute interface {
 	GetMyContestResults(w http.ResponseWriter, r *http.Request)
 	GetMyPastContests(w http.ResponseWriter, r *http.Request)
 	GetTaskProgressForContest(w http.ResponseWriter, r *http.Request)
+	GetPublicContests(w http.ResponseWriter, r *http.Request)
+	RegisterForContest(w http.ResponseWriter, r *http.Request)
 }
 
 type ContestRouteImpl struct {
@@ -335,7 +337,90 @@ func (cr *ContestRouteImpl) GetMyContestResults(w http.ResponseWriter, r *http.R
 	httputils.ReturnSuccess(w, http.StatusOK, results)
 }
 
+// GetPublicContests godoc
+//
+//	@Tags			contests
+//	@Summary		Get public contests
+//	@Description	Get public contests with the current user's registration status, optionally filtered by contest status
+//	@Produce		json
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Param			sort	query		string	false	"Sort"
+//	@Param			status	query		string	false	"Contest status"	Enums(ongoing, upcoming, past)
+//	@Failure		400		{object}	httputils.APIError
+//	@Failure		405		{object}	httputils.APIError
+//	@Failure		500		{object}	httputils.APIError
+//	@Success		200		{object}	httputils.APIResponse[schemas.PaginatedResult[[]schemas.PublicContest]]
+//	@Router			/contests/public [get]
+func (cr *ContestRouteImpl) GetPublicContests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	status := types.ContestStatus(r.URL.Query().Get("status"))
+	switch status {
+	case "", types.ContestStatusOngoing, types.ContestStatusUpcoming, types.ContestStatusPast:
+	default:
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid status query parameter")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+	queryParams := r.Context().Value(httputils.QueryParamsKey).(map[string]any)
+	paginationParams := httputils.ExtractPaginationParams(queryParams)
+
+	contests, err := cr.contestService.GetPublicContests(db, currentUser, status, paginationParams)
+	if err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, contests)
+}
+
+// RegisterForContest godoc
+//
+//	@Tags			contests
+//	@Summary		Request to join a public contest
+//	@Description	Create a pending registration request for a public contest; a contest collaborator approves or rejects it
+//	@Produce		json
+//	@Param			id	path		int	true	"Contest ID"
+//	@Failure		400	{object}	httputils.APIError
+//	@Failure		403	{object}	httputils.APIError
+//	@Failure		404	{object}	httputils.APIError
+//	@Failure		405	{object}	httputils.APIError
+//	@Failure		409	{object}	httputils.APIError
+//	@Failure		500	{object}	httputils.APIError
+//	@Success		200	{object}	httputils.APIResponse[httputils.MessageResponse]
+//	@Router			/contests/{id}/register [post]
+func (cr *ContestRouteImpl) RegisterForContest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		httputils.ReturnError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	contestID, err := strconv.ParseInt(httputils.GetPathValue(r, "id"), 10, 64)
+	if err != nil {
+		httputils.ReturnError(w, http.StatusBadRequest, "Invalid contest ID")
+		return
+	}
+
+	db := httputils.GetDatabase(r)
+	currentUser := httputils.GetCurrentUser(r)
+
+	if err := cr.contestService.RegisterForContest(db, currentUser, contestID); err != nil {
+		httputils.HandleServiceError(w, err, db, cr.logger)
+		return
+	}
+
+	httputils.ReturnSuccess(w, http.StatusOK, httputils.NewMessageResponse("Registration request submitted successfully"))
+}
+
 func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
+	// Must be registered before /contests/{id}.
+	mux.HandleFunc("/contests/public", contestRoute.GetPublicContests)
 	mux.HandleFunc("/contests/my/active", contestRoute.GetMyActiveContests)
 	mux.HandleFunc("/contests/my/past", contestRoute.GetMyPastContests)
 
@@ -361,6 +446,7 @@ func RegisterContestRoutes(mux *mux.Router, contestRoute ContestRoute) {
 	mux.HandleFunc("/contests/{id}/tasks/user-statistics", contestRoute.GetTaskProgressForContest)
 	mux.HandleFunc("/contests/{id}/tasks/{task_id}", contestRoute.GetContestTask)
 	mux.HandleFunc("/contests/{id}/results/my", contestRoute.GetMyContestResults)
+	mux.HandleFunc("/contests/{id}/register", contestRoute.RegisterForContest)
 }
 
 func NewContestRoute(contestService service.ContestService, submissionService service.SubmissionService) ContestRoute {
