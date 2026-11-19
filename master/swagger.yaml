@@ -79,6 +79,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  httputils.APIResponse-array_schemas_RegistrationRequest:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/schemas.RegistrationRequest'
+        type: array
+      ok:
+        type: boolean
+    type: object
   httputils.APIResponse-array_schemas_TaskUserStats:
     properties:
       data:
@@ -205,6 +214,13 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/schemas.PaginatedResult-array_schemas_ManagedTask'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_PaginatedResult-array_schemas_PublicContest:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.PaginatedResult-array_schemas_PublicContest'
       ok:
         type: boolean
     type: object
@@ -515,6 +531,8 @@ definitions:
         type: string
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
+      isPublic:
+        type: boolean
       isSubmissionOpen:
         type: boolean
       name:
@@ -551,6 +569,8 @@ definitions:
         type: string
       id:
         type: integer
+      isPublic:
+        type: boolean
       isSubmissionOpen:
         type: boolean
       name:
@@ -572,6 +592,8 @@ definitions:
         type: string
       endAt:
         $ref: '#/definitions/schemas.OptionalTime'
+      isPublic:
+        type: boolean
       isSubmissionOpen:
         type: boolean
       name:
@@ -652,6 +674,8 @@ definitions:
         type: string
       id:
         type: integer
+      isPublic:
+        type: boolean
       isSubmissionOpen:
         type: boolean
       name:
@@ -740,6 +764,15 @@ definitions:
       pagination:
         $ref: '#/definitions/schemas.PaginationMetadata'
     type: object
+  schemas.PaginatedResult-array_schemas_PublicContest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/schemas.PublicContest'
+        type: array
+      pagination:
+        $ref: '#/definitions/schemas.PaginationMetadata'
+    type: object
   schemas.PaginatedResult-array_schemas_Submission:
     properties:
       items:
@@ -813,6 +846,38 @@ definitions:
       taskCount:
         type: integer
     type: object
+  schemas.PublicContest:
+    properties:
+      createdBy:
+        type: integer
+      creatorName:
+        type: string
+      description:
+        type: string
+      endAt:
+        type: string
+      id:
+        type: integer
+      isSubmissionOpen:
+        type: boolean
+      name:
+        type: string
+      participantCount:
+        type: integer
+      registrationStatus:
+        allOf:
+        - $ref: '#/definitions/types.RegistrationStatus'
+        description: '"registered", "canRegister", "awaitingApproval", "rejected",
+          "registrationClosed"'
+      startAt:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/types.ContestStatus'
+        description: '"upcoming", "ongoing", "past"'
+      taskCount:
+        type: integer
+    type: object
   schemas.PutTestCase:
     properties:
       memoryLimit:
@@ -837,6 +902,15 @@ definitions:
         type: string
       pendingSubmissions:
         type: integer
+    type: object
+  schemas.RegistrationRequest:
+    properties:
+      contestId:
+        type: integer
+      createdAt:
+        type: string
+      user:
+        $ref: '#/definitions/schemas.User'
     type: object
   schemas.Submission:
     properties:
@@ -1237,6 +1311,20 @@ definitions:
     - PermissionEdit
     - PermissionManage
     - PermissionOwner
+  types.RegistrationStatus:
+    enum:
+    - registered
+    - canRegister
+    - awaitingApproval
+    - rejected
+    - registrationClosed
+    type: string
+    x-enum-varnames:
+    - RegistrationStatusRegistered
+    - RegistrationStatusCanRegister
+    - RegistrationStatusAwaitingApproval
+    - RegistrationStatusRejected
+    - RegistrationStatusRegistrationClosed
   types.SubmissionStatus:
     enum:
     - received
@@ -2141,6 +2229,137 @@ paths:
       summary: Get assignable participants for a contest
       tags:
       - contests-management
+  /contests-management/contests/{id}/registration-requests:
+    get:
+      description: Get pending registration requests for a contest, oldest first (only
+        accessible by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_RegistrationRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Get pending registration requests
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/registration-requests/{user_id}/approve:
+    post:
+      description: Approve a pending registration request; the user becomes a contest
+        participant (only accessible by contest collaborators with edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Approve a registration request
+      tags:
+      - contests-management
+  /contests-management/contests/{id}/registration-requests/{user_id}/reject:
+    post:
+      description: Reject a pending registration request; the user cannot request
+        to join this contest again (only accessible by contest collaborators with
+        edit permission)
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Reject a registration request
+      tags:
+      - contests-management
   /contests-management/contests/{id}/submissions:
     get:
       consumes:
@@ -2710,6 +2929,50 @@ paths:
       summary: Get a contest
       tags:
       - contests
+  /contests/{id}/register:
+    post:
+      description: Create a pending registration request for a public contest; a contest
+        collaborator approves or rejects it
+      parameters:
+      - description: Contest ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-httputils_MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Request to join a public contest
+      tags:
+      - contests
   /contests/{id}/results/my:
     get:
       description: Get results of the current user for a given contest, including
@@ -2931,6 +3194,53 @@ paths:
           schema:
             $ref: '#/definitions/httputils.APIError'
       summary: Get past contests for the current user
+      tags:
+      - contests
+  /contests/public:
+    get:
+      description: Get public contests with the current user's registration status,
+        optionally filtered by contest status
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      - description: Contest status
+        enum:
+        - ongoing
+        - upcoming
+        - past
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-schemas_PaginatedResult-array_schemas_PublicContest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Get public contests
       tags:
       - contests
   /groups-management/groups:
