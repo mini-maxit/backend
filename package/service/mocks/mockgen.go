@@ -731,6 +731,20 @@ func (mr *MockUserServiceMockRecorder) ChangeRole(db, currentUser, userID, role 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeRole", reflect.TypeOf((*MockUserService)(nil).ChangeRole), db, currentUser, userID, role)
 }
 
+// Delete mocks base method.
+func (m *MockUserService) Delete(db database.Database, currentUser schemas.User, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", db, currentUser, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockUserServiceMockRecorder) Delete(db, currentUser, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserService)(nil).Delete), db, currentUser, userID)
+}
+
 // Edit mocks base method.
 func (m *MockUserService) Edit(db database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error {
 	m.ctrl.T.Helper()
@@ -761,18 +775,18 @@ func (mr *MockUserServiceMockRecorder) Get(db, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserService) GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string) (schemas.PaginatedResult[[]schemas.User], error) {
+func (m *MockUserService) GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string, deleted bool) (schemas.PaginatedResult[[]schemas.User], error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", db, paginationParams, search, role)
+	ret := m.ctrl.Call(m, "GetAll", db, paginationParams, search, role, deleted)
 	ret0, _ := ret[0].(schemas.PaginatedResult[[]schemas.User])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockUserServiceMockRecorder) GetAll(db, paginationParams, search, role any) *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetAll(db, paginationParams, search, role, deleted any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserService)(nil).GetAll), db, paginationParams, search, role)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserService)(nil).GetAll), db, paginationParams, search, role, deleted)
 }
 
 // GetByEmail mocks base method.
@@ -818,6 +832,20 @@ func (m *MockUserService) ResetPassword(db database.Database, currentUser schema
 func (mr *MockUserServiceMockRecorder) ResetPassword(db, currentUser, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetPassword", reflect.TypeOf((*MockUserService)(nil).ResetPassword), db, currentUser, userID)
+}
+
+// Restore mocks base method.
+func (m *MockUserService) Restore(db database.Database, currentUser schemas.User, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", db, currentUser, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restore indicates an expected call of Restore.
+func (mr *MockUserServiceMockRecorder) Restore(db, currentUser, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockUserService)(nil).Restore), db, currentUser, userID)
 }
 
 // MockTaskService is a mock of TaskService interface.

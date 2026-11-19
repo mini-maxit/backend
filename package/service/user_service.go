@@ -27,11 +27,16 @@ type UserService interface {
 	// Edit updates the information of a user.
 	Edit(db database.Database, currentUser schemas.User, userID int64, updateInfo *schemas.UserEdit) error
 	// GetAll retrieves users matching the optional search (name, surname, email) and role filters.
-	GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string) (schemas.PaginatedResult[[]schemas.User], error)
+	// With deleted set it lists only soft-deleted users instead.
+	GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string, deleted bool) (schemas.PaginatedResult[[]schemas.User], error)
 	// GetByEmail retrieves a user by their email.
 	GetByEmail(db database.Database, email string) (*schemas.User, error)
 	// Get retrieves a user by their ID.
 	Get(db database.Database, userID int64) (*schemas.User, error)
+	// Delete soft-deletes a user (admin only). Admins cannot delete themselves.
+	Delete(db database.Database, currentUser schemas.User, userID int64) error
+	// Restore restores a soft-deleted user (admin only).
+	Restore(db database.Database, currentUser schemas.User, userID int64) error
 	// IsTaskAssignedToUser checks if a user has access to a specific task.
 	// Currently, a user has access if the task is assigned to a contest and the user is a participant in that contest.
 	// Future: may support direct task-to-user assignments.
@@ -57,12 +62,12 @@ func (us *userService) GetByEmail(db database.Database, email string) (*schemas.
 	return UserToSchema(userModel), nil
 }
 
-func (us *userService) GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string) (schemas.PaginatedResult[[]schemas.User], error) {
+func (us *userService) GetAll(db database.Database, paginationParams schemas.PaginationParams, search, role string, deleted bool) (schemas.PaginatedResult[[]schemas.User], error) {
 	if paginationParams.Sort == "" {
 		paginationParams.Sort = "role:desc"
 	}
 
-	userModels, totalCount, err := us.userRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search, role)
+	userModels, totalCount, err := us.userRepository.GetAll(db, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort, search, role, deleted)
 	if err != nil {
 		us.logger.Errorf("Error getting all users: %v", err.Error())
 		return schemas.PaginatedResult[[]schemas.User]{}, err
@@ -74,6 +79,37 @@ func (us *userService) GetAll(db database.Database, paginationParams schemas.Pag
 	}
 
 	return schemas.NewPaginatedResult(users, paginationParams.Offset, paginationParams.Limit, totalCount), nil
+}
+
+func (us *userService) Delete(db database.Database, currentUser schemas.User, userID int64) error {
+	if currentUser.Role != types.UserRoleAdmin {
+		return errors.ErrForbidden
+	}
+	if currentUser.ID == userID {
+		return errors.ErrNotAllowed
+	}
+	if err := us.userRepository.Delete(db, userID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrUserNotFound
+		}
+		us.logger.Errorf("Error deleting user: %v", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (us *userService) Restore(db database.Database, currentUser schemas.User, userID int64) error {
+	if currentUser.Role != types.UserRoleAdmin {
+		return errors.ErrForbidden
+	}
+	if err := us.userRepository.Restore(db, userID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.ErrUserNotFound
+		}
+		us.logger.Errorf("Error restoring user: %v", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (us *userService) Get(db database.Database, userID int64) (*schemas.User, error) {

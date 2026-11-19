@@ -68,7 +68,7 @@ func TestGetAllUsers(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(schemas.PaginatedResult[[]schemas.User]{}, gorm.ErrInvalidDB).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "", false).Return(schemas.PaginatedResult[[]schemas.User]{}, gorm.ErrInvalidDB).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -102,7 +102,7 @@ func TestGetAllUsers(t *testing.T) {
 		}
 
 		paginatedResult := schemas.NewPaginatedResult(expectedUsers, 0, 0, int64(len(expectedUsers)))
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(paginatedResult, nil).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "", false).Return(paginatedResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {
@@ -131,7 +131,7 @@ func TestGetAllUsers(t *testing.T) {
 		server := httptest.NewServer(handler)
 		defer server.Close()
 
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "jan", "teacher").
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "jan", "teacher", false).
 			Return(schemas.NewPaginatedResult([]schemas.User{}, 0, 0, 0), nil).Times(1)
 
 		resp, err := http.Get(server.URL)
@@ -165,7 +165,7 @@ func TestGetAllUsers(t *testing.T) {
 		defer server.Close()
 
 		emptyResult := schemas.NewPaginatedResult([]schemas.User{}, 0, 0, 0)
-		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "").Return(emptyResult, nil).Times(1)
+		us.EXPECT().GetAll(gomock.Any(), gomock.Any(), "", "", false).Return(emptyResult, nil).Times(1)
 
 		resp, err := http.Get(server.URL)
 		if err != nil {

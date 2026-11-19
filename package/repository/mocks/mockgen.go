@@ -1379,6 +1379,20 @@ func (mr *MockUserRepositoryMockRecorder) Create(db, user any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserRepository)(nil).Create), db, user)
 }
 
+// Delete mocks base method.
+func (m *MockUserRepository) Delete(db database.Database, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", db, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockUserRepositoryMockRecorder) Delete(db, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserRepository)(nil).Delete), db, userID)
+}
+
 // Edit mocks base method.
 func (m *MockUserRepository) Edit(db database.Database, user *models.User) error {
 	m.ctrl.T.Helper()
@@ -1409,9 +1423,9 @@ func (mr *MockUserRepositoryMockRecorder) Get(db, userID any) *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockUserRepository) GetAll(db database.Database, limit, offset int, sort, search, role string) ([]models.User, int64, error) {
+func (m *MockUserRepository) GetAll(db database.Database, limit, offset int, sort, search, role string, deleted bool) ([]models.User, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", db, limit, offset, sort, search, role)
+	ret := m.ctrl.Call(m, "GetAll", db, limit, offset, sort, search, role, deleted)
 	ret0, _ := ret[0].([]models.User)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -1419,9 +1433,9 @@ func (m *MockUserRepository) GetAll(db database.Database, limit, offset int, sor
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockUserRepositoryMockRecorder) GetAll(db, limit, offset, sort, search, role any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) GetAll(db, limit, offset, sort, search, role, deleted any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserRepository)(nil).GetAll), db, limit, offset, sort, search, role)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockUserRepository)(nil).GetAll), db, limit, offset, sort, search, role, deleted)
 }
 
 // GetByEmail mocks base method.
@@ -1437,6 +1451,35 @@ func (m *MockUserRepository) GetByEmail(db database.Database, email string) (*mo
 func (mr *MockUserRepositoryMockRecorder) GetByEmail(db, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByEmail", reflect.TypeOf((*MockUserRepository)(nil).GetByEmail), db, email)
+}
+
+// IsEmailDeleted mocks base method.
+func (m *MockUserRepository) IsEmailDeleted(db database.Database, email string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEmailDeleted", db, email)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsEmailDeleted indicates an expected call of IsEmailDeleted.
+func (mr *MockUserRepositoryMockRecorder) IsEmailDeleted(db, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmailDeleted", reflect.TypeOf((*MockUserRepository)(nil).IsEmailDeleted), db, email)
+}
+
+// Restore mocks base method.
+func (m *MockUserRepository) Restore(db database.Database, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restore", db, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restore indicates an expected call of Restore.
+func (mr *MockUserRepositoryMockRecorder) Restore(db, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockUserRepository)(nil).Restore), db, userID)
 }
 
 // MockFile is a mock of File interface.

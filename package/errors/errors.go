@@ -37,6 +37,7 @@ const (
 	// User errors
 	CodeUserNotFound      ErrorCode = "ERR_USER_NOT_FOUND"
 	CodeUserAlreadyExists ErrorCode = "ERR_USER_ALREADY_EXISTS"
+	CodeUserDeleted       ErrorCode = "ERR_USER_DELETED"
 
 	// Access control errors
 	CodeAccessAlreadyExists ErrorCode = "ERR_ACCESS_ALREADY_EXISTS"
@@ -190,6 +191,7 @@ var (
 	// User errors
 	ErrUserNotFound      = newServiceError(CodeUserNotFound, "User not found")
 	ErrUserAlreadyExists = newServiceError(CodeUserAlreadyExists, "User already exists")
+	ErrUserDeleted       = newServiceError(CodeUserDeleted, "User account has been deleted")
 
 	// Access control errors
 	ErrAccessAlreadyExists = newServiceError(CodeAccessAlreadyExists, "Access already exists")
