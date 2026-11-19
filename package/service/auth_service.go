@@ -26,7 +26,7 @@ type AuthService interface {
 	//
 	// Method validates provided user data, checks if user with provided email already exists,
 	// creates new user, creates JWT tokens for him and returns them.
-	// Possible errors: ErrUserAlreadyExists, errors returned by JWTService,
+	// Possible errors: ErrUserAlreadyExists, ErrUserDeleted, errors returned by JWTService,
 	// repository.UserRepository, bcrypt lib.
 	Register(db database.Database, userRegister schemas.UserRegisterRequest) (*schemas.JWTTokens, error)
 
@@ -76,6 +76,15 @@ func (as *authService) Register(db database.Database, userRegister schemas.UserR
 	if user != nil {
 		as.logger.Errorf("User already exists")
 		return nil, errors.ErrUserAlreadyExists
+	}
+
+	deleted, err := as.userRepository.IsEmailDeleted(db, userRegister.Email)
+	if err != nil {
+		as.logger.Errorf("Error checking deleted user: %v", err.Error())
+		return nil, err
+	}
+	if deleted {
+		return nil, errors.ErrUserDeleted
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(userRegister.Password), bcrypt.DefaultCost)

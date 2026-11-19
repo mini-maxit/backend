@@ -54,8 +54,23 @@ func TestRegister(t *testing.T) {
 		assert.Nil(t, response)
 	})
 
+	t.Run("email of a deleted user", func(t *testing.T) {
+		ur.EXPECT().GetByEmail(db, "deleted@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().IsEmailDeleted(db, "deleted@email.com").Return(true, nil).Times(1)
+
+		response, err := as.Register(db, schemas.UserRegisterRequest{
+			Name:     testFirstName,
+			Surname:  testUserSurname,
+			Email:    "deleted@email.com",
+			Password: testPassword,
+		})
+		require.ErrorIs(t, err, errors.ErrUserDeleted)
+		assert.Nil(t, response)
+	})
+
 	t.Run("successful user registration", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(db, "email3@email.com").Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().IsEmailDeleted(db, "email3@email.com").Return(false, nil).Times(1)
 		ur.EXPECT().Create(db, gomock.Any()).Return(int64(1), nil).Times(1)
 		js.EXPECT().GenerateTokens(db, int64(1)).Return(&schemas.JWTTokens{
 			AccessToken:  "access-token",
@@ -91,6 +106,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("failed to create user", func(t *testing.T) {
 		ur.EXPECT().GetByEmail(db, testUserEmail).Return(nil, gorm.ErrRecordNotFound).Times(1)
+		ur.EXPECT().IsEmailDeleted(db, testUserEmail).Return(false, nil).Times(1)
 		ur.EXPECT().Create(db, gomock.Any()).Return(int64(0), gorm.ErrInvalidDB).Times(1)
 
 		userRegister := schemas.UserRegisterRequest{

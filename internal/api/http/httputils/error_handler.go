@@ -86,7 +86,7 @@ func errorCodeToHTTPStatus(code errors.ErrorCode) int {
 	// User errors
 	case errors.CodeUserNotFound:
 		return http.StatusNotFound
-	case errors.CodeUserAlreadyExists:
+	case errors.CodeUserAlreadyExists, errors.CodeUserDeleted:
 		return http.StatusConflict
 
 	// Access control errors

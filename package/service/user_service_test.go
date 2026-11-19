@@ -169,8 +169,9 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Sort,
 			"",
 			"",
+			false,
 		).Return([]models.User{}, int64(0), nil).Times(1)
-		result, err := us.GetAll(db, paginationParams, "", "")
+		result, err := us.GetAll(db, paginationParams, "", "", false)
 		require.NoError(t, err)
 		assert.Empty(t, result.Items)
 		assert.Equal(t, 0, result.Pagination.TotalItems)
@@ -190,8 +191,9 @@ func TestGetAllUsers(t *testing.T) {
 			paginationParams.Sort,
 			"",
 			"",
+			false,
 		).Return([]models.User{*user}, int64(1), nil).Times(1)
-		result, err := us.GetAll(db, paginationParams, "", "")
+		result, err := us.GetAll(db, paginationParams, "", "", false)
 		require.NoError(t, err)
 		assert.Len(t, result.Items, 1)
 		assert.Equal(t, user.Email, result.Items[0].Email)
@@ -429,4 +431,25 @@ func TestResetPassword(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, v.Struct(schemas.UserChangePassword{OldPassword: "x", NewPassword: password, NewPasswordConfirm: password}))
 	})
+}
+
+func TestUserServiceDeleteRestore(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ur := mock_repository.NewMockUserRepository(ctrl)
+	us := service.NewUserService(ur, mock_service.NewMockContestService(ctrl))
+	admin := schemas.User{ID: 1, Role: types.UserRoleAdmin}
+
+	require.ErrorIs(t, us.Delete(nil, schemas.User{ID: 2, Role: types.UserRoleStudent}, 3), errors.ErrForbidden)
+
+	ur.EXPECT().Get(gomock.Any(), admin.ID).Return(&models.User{ID: admin.ID, Role: types.UserRoleAdmin}, nil)
+	require.ErrorIs(t, us.Delete(nil, admin, admin.ID), errors.ErrNotAllowed)
+	ur.EXPECT().Get(gomock.Any(), int64(4)).Return(&models.User{ID: 4, Role: types.UserRoleAdmin}, nil)
+	require.ErrorIs(t, us.Delete(nil, admin, 4), errors.ErrNotAllowed)
+
+	ur.EXPECT().Get(gomock.Any(), int64(3)).Return(&models.User{ID: 3, Role: types.UserRoleStudent}, nil)
+	ur.EXPECT().Delete(gomock.Any(), int64(3)).Return(nil)
+	require.NoError(t, us.Delete(nil, admin, 3))
+
+	ur.EXPECT().Restore(gomock.Any(), int64(3)).Return(gorm.ErrRecordNotFound)
+	require.ErrorIs(t, us.Restore(nil, admin, 3), errors.ErrUserNotFound)
 }

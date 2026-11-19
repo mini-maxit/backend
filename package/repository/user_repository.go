@@ -14,11 +14,18 @@ type UserRepository interface {
 	Edit(db database.Database, user *models.User) error
 	// GetAll returns users matching the optional search (name, surname, email) and role filters,
 	// with pagination, sorting and the total count of matching users
-	GetAll(db database.Database, limit, offset int, sort, search, role string) ([]models.User, int64, error)
+	// When deleted is true only soft-deleted users are returned, otherwise only active ones.
+	GetAll(db database.Database, limit, offset int, sort, search, role string, deleted bool) ([]models.User, int64, error)
 	// Get returns a user by ID
 	Get(db database.Database, userID int64) (*models.User, error)
 	// GetByEmail returns a user by email
 	GetByEmail(db database.Database, email string) (*models.User, error)
+	// IsEmailDeleted reports whether a soft-deleted user has this email
+	IsEmailDeleted(db database.Database, email string) (bool, error)
+	// Delete soft-deletes a user by setting deleted_at
+	Delete(db database.Database, userID int64) error
+	// Restore clears deleted_at of a soft-deleted user; returns gorm.ErrRecordNotFound if there is none
+	Restore(db database.Database, userID int64) error
 }
 
 type userRepository struct {
@@ -53,12 +60,15 @@ func (ur *userRepository) GetByEmail(db database.Database, email string) (*model
 	return user, nil
 }
 
-func (ur *userRepository) GetAll(db database.Database, limit, offset int, sort, search, role string) ([]models.User, int64, error) {
+func (ur *userRepository) GetAll(db database.Database, limit, offset int, sort, search, role string, deleted bool) ([]models.User, int64, error) {
 	tx := db.GetInstance()
 	users := &[]models.User{}
 	var totalCount int64
 
 	filter := func(q *gorm.DB) *gorm.DB {
+		if deleted {
+			q = q.Unscoped().Where("deleted_at IS NOT NULL")
+		}
 		if search != "" {
 			pattern := utils.ContainsPattern(search)
 			q = q.Where("CONCAT(name, ' ', surname) ILIKE ? OR email ILIKE ?", pattern, pattern)
@@ -84,6 +94,36 @@ func (ur *userRepository) GetAll(db database.Database, limit, offset int, sort, 
 	}
 
 	return *users, totalCount, nil
+}
+
+func (ur *userRepository) IsEmailDeleted(db database.Database, email string) (bool, error) {
+	var count int64
+	err := db.GetInstance().Unscoped().Model(&models.User{}).
+		Where("email = ? AND deleted_at IS NOT NULL", email).Count(&count).Error
+	return count > 0, err
+}
+
+func (ur *userRepository) Delete(db database.Database, userID int64) error {
+	res := db.GetInstance().Delete(&models.User{}, userID)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+func (ur *userRepository) Restore(db database.Database, userID int64) error {
+	res := db.GetInstance().Unscoped().Model(&models.User{}).
+		Where("id = ? AND deleted_at IS NOT NULL", userID).Update("deleted_at", nil)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func (ur *userRepository) Edit(db database.Database, user *models.User) error {
