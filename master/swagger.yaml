@@ -16,6 +16,15 @@ definitions:
       ok:
         type: boolean
     type: object
+  httputils.APIResponse-array_schemas_ContestActivity:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/schemas.ContestActivity'
+        type: array
+      ok:
+        type: boolean
+    type: object
   httputils.APIResponse-array_schemas_ContestTask:
     properties:
       data:
@@ -151,6 +160,13 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/routes.AuthResponse'
+      ok:
+        type: boolean
+    type: object
+  httputils.APIResponse-schemas_AdminDashboardStats:
+    properties:
+      data:
+        $ref: '#/definitions/schemas.AdminDashboardStats'
       ok:
         type: boolean
     type: object
@@ -357,6 +373,17 @@ definitions:
     required:
     - taskId
     type: object
+  schemas.AdminDashboardStats:
+    properties:
+      contests:
+        $ref: '#/definitions/schemas.DashboardContestCounts'
+      submissions:
+        $ref: '#/definitions/schemas.DashboardSubmissionCounts'
+      tasks:
+        type: integer
+      users:
+        $ref: '#/definitions/schemas.DashboardUserCounts'
+    type: object
   schemas.AttemptsSummary:
     properties:
       attemptCount:
@@ -397,6 +424,15 @@ definitions:
         type: integer
       userName:
         type: string
+    type: object
+  schemas.ContestActivity:
+    properties:
+      contestId:
+        type: integer
+      lastSubmittedAt:
+        type: string
+      newSubmissions:
+        type: integer
     type: object
   schemas.ContestDetailed:
     properties:
@@ -598,6 +634,39 @@ definitions:
       taskCount:
         type: integer
     type: object
+  schemas.DashboardContestCounts:
+    properties:
+      ongoing:
+        type: integer
+      total:
+        type: integer
+    type: object
+  schemas.DashboardSubmissionCounts:
+    properties:
+      hourly:
+        description: Hourly holds exactly 24 consecutive hours ending with the current
+          one, oldest first.
+        items:
+          $ref: '#/definitions/schemas.HourlySubmissions'
+        type: array
+      last24h:
+        type: integer
+      outcomes:
+        allOf:
+        - $ref: '#/definitions/schemas.SubmissionOutcomes'
+        description: Outcomes covers the same 24 hours as Hourly.
+      total:
+        type: integer
+    type: object
+  schemas.DashboardUserCounts:
+    properties:
+      admins:
+        type: integer
+      students:
+        type: integer
+      teachers:
+        type: integer
+    type: object
   schemas.EditContest:
     properties:
       description:
@@ -661,6 +730,13 @@ definitions:
       name:
         type: string
       updatedAt:
+        type: string
+    type: object
+  schemas.HourlySubmissions:
+    properties:
+      count:
+        type: integer
+      hour:
         type: string
     type: object
   schemas.LanguageConfig:
@@ -1001,6 +1077,17 @@ definitions:
         $ref: '#/definitions/schemas.Task'
       user:
         $ref: '#/definitions/schemas.User'
+    type: object
+  schemas.SubmissionOutcomes:
+    properties:
+      compilationError:
+        type: integer
+      failed:
+        type: integer
+      passed:
+        type: integer
+      pending:
+        type: integer
     type: object
   schemas.SubmissionResult:
     properties:
@@ -3328,6 +3415,59 @@ paths:
       summary: Get public contests
       tags:
       - contests
+  /dashboard/admin:
+    get:
+      description: User, contest, task and submission counts, plus hourly submissions
+        and outcomes for the last 24 hours (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-schemas_AdminDashboardStats'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Get platform usage statistics
+      tags:
+      - dashboard
+  /dashboard/teacher/contest-activity:
+    get:
+      description: 'For contests the user manages that are running or ended in the
+        last 7 days: submissions in the last 24 hours and the latest submission time
+        (teacher or admin)'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httputils.APIResponse-array_schemas_ContestActivity'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "405":
+          description: Method Not Allowed
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.APIError'
+      summary: Get recent submission activity of managed contests
+      tags:
+      - dashboard
   /groups-management/groups:
     get:
       description: Get all groups
