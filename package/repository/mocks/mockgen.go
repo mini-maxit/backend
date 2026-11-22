@@ -499,6 +499,22 @@ func (mr *MockSubmissionRepositoryMockRecorder) GetPendingSubmissions(db, limit 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSubmissions", reflect.TypeOf((*MockSubmissionRepository)(nil).GetPendingSubmissions), db, limit)
 }
 
+// GetTaskGroupsByUser mocks base method.
+func (m *MockSubmissionRepository) GetTaskGroupsByUser(db database.Database, userID int64, contestID, taskID, teacherID *int64, limit, offset int) ([]repository.SubmissionTaskGroup, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskGroupsByUser", db, userID, contestID, taskID, teacherID, limit, offset)
+	ret0, _ := ret[0].([]repository.SubmissionTaskGroup)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetTaskGroupsByUser indicates an expected call of GetTaskGroupsByUser.
+func (mr *MockSubmissionRepositoryMockRecorder) GetTaskGroupsByUser(db, userID, contestID, taskID, teacherID, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskGroupsByUser", reflect.TypeOf((*MockSubmissionRepository)(nil).GetTaskGroupsByUser), db, userID, contestID, taskID, teacherID, limit, offset)
+}
+
 // GetTaskStatsForContest mocks base method.
 func (m *MockSubmissionRepository) GetTaskStatsForContest(db database.Database, contestID int64) ([]models.ContestTaskStatsModel, error) {
 	m.ctrl.T.Helper()

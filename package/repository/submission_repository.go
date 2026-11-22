@@ -19,6 +19,9 @@ type SubmissionRepository interface {
 	GetAll(db database.Database, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllByUser returns all submissions by a user. The submissions are paginated.
 	GetAllByUser(db database.Database, userID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
+	// GetTaskGroupsByUser aggregates a user's submissions per task, newest activity first. Optional contestID/taskID
+	// narrow the set; a non-nil teacherID restricts to tasks or contests that teacher created. Paginated by group.
+	GetTaskGroupsByUser(db database.Database, userID int64, contestID, taskID, teacherID *int64, limit, offset int) ([]SubmissionTaskGroup, int64, error)
 	// GetAllForGroup returns all submissions for a group. The submissions are paginated.
 	GetAllForGroup(db database.Database, groupID int64, limit, offset int, sort string) ([]models.Submission, int64, error)
 	// GetAllForTask returns all submissions for a task. The submissions are paginated.
@@ -1179,6 +1182,53 @@ func (sr *submissionRepository) GetAllTaskStatsForContestUser(
 	}
 
 	return stats, nil
+}
+
+type SubmissionTaskGroup struct {
+	TaskID          int64     `gorm:"column:task_id"`
+	TaskTitle       string    `gorm:"column:task_title"`
+	Count           int64     `gorm:"column:submission_count"`
+	LastSubmittedAt time.Time `gorm:"column:last_submitted_at"`
+}
+
+func (sr *submissionRepository) GetTaskGroupsByUser(
+	db database.Database,
+	userID int64,
+	contestID, taskID, teacherID *int64,
+	limit, offset int,
+) ([]SubmissionTaskGroup, int64, error) {
+	tx := db.GetInstance()
+	base := tx.Table(database.ResolveTableName(tx, &models.Submission{})+" AS s").
+		Joins("JOIN "+database.ResolveTableName(tx, &models.Task{})+" AS t ON t.id = s.task_id").
+		Where("s.user_id = ?", userID)
+	if contestID != nil {
+		base = base.Where("s.contest_id = ?", *contestID)
+	}
+	if taskID != nil {
+		base = base.Where("s.task_id = ?", *taskID)
+	}
+	if teacherID != nil {
+		base = base.
+			Joins("LEFT JOIN "+database.ResolveTableName(tx, &models.Contest{})+" AS c ON c.id = s.contest_id").
+			Where("(t.created_by = ? OR (s.contest_id IS NOT NULL AND c.created_by = ?))", *teacherID, *teacherID)
+	}
+
+	var totalCount int64
+	if err := base.Session(&gorm.Session{}).Distinct("s.task_id").Count(&totalCount).Error; err != nil {
+		return nil, 0, err
+	}
+
+	groups := []SubmissionTaskGroup{}
+	err := base.Session(&gorm.Session{}).
+		Select("s.task_id AS task_id, t.title AS task_title, COUNT(*) AS submission_count, MAX(s.submitted_at) AS last_submitted_at").
+		Group("s.task_id, t.title").
+		Order("last_submitted_at DESC, s.task_id ASC").
+		Limit(limit).Offset(offset).
+		Scan(&groups).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return groups, totalCount, nil
 }
 
 func NewSubmissionRepository() SubmissionRepository {
