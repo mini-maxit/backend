@@ -80,15 +80,14 @@ func (ws *workerService) GetQueueStatus(currentUser *schemas.User) (*schemas.Que
 
 	connected := ws.queueService.IsConnected()
 
-	// Get count of pending submissions
-	pendingSubmissions, err := ws.submissionRepository.GetPendingSubmissions(ws.db, 1000)
+	pending, err := ws.submissionRepository.CountAwaitingResult(ws.db)
 	if err != nil {
 		return nil, err
 	}
 
 	return &schemas.QueueStatus{
 		Connected:          connected,
-		PendingSubmissions: len(pendingSubmissions),
+		PendingSubmissions: int(pending),
 		LastChecked:        time.Now(),
 	}, nil
 }

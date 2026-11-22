@@ -35,6 +35,7 @@ type Initialization struct {
 	AccessControlRoute       routes.AccessControlRoute
 	UserRoute                routes.UserRoute
 	WorkerRoute              routes.WorkerRoute
+	DashboardRoute           routes.DashboardRoute
 
 	QueueListener queue.Listener
 
@@ -62,6 +63,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	submissionResultRepository := repository.NewSubmissionResultRepository()
 	contestRepository := repository.NewContestRepository()
 	accessControlRepository := repository.NewAccessControlRepository()
+	dashboardRepository := repository.NewDashboardRepository()
 
 	// Services
 	filestorage, err := filestorage.NewFileStorageService(
@@ -141,6 +143,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		queueService,
 	)
 	workerService := service.NewWorkerService(queueService, submissionRepository, db)
+	dashboardService := service.NewDashboardService(dashboardRepository, time.Now)
 
 	// Routes
 	authRoute := routes.NewAuthRoute(userService, authService, cfg.API.RefreshTokenPath, cfg.API.CookieSecure)
@@ -153,6 +156,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 	accessControlRoute := routes.NewAccessControlRoute(accessControlService)
 	userRoute := routes.NewUserRoute(userService)
 	workerRoute := routes.NewWorkerRoute(workerService)
+	dashboardRoute := routes.NewDashboardRoute(dashboardService)
 	languagesManagementRoute := routes.NewLanguagesManagementRoute(langService)
 
 	// Queue listener - uses the same queue client as queue service
@@ -189,6 +193,7 @@ func NewInitialization(cfg *config.Config) *Initialization {
 		AccessControlRoute:       accessControlRoute,
 		UserRoute:                userRoute,
 		WorkerRoute:              workerRoute,
+		DashboardRoute:           dashboardRoute,
 
 		QueueListener: queueListener,
 	}
