@@ -22,6 +22,15 @@ type Submission struct {
 	Contest     *BaseContest           `json:"contest,omitempty"`
 }
 
+// SubmissionGroup is one row of GET /submissions?groupBy=...: an aggregate over a user's submissions.
+// For groupBy=task, Key is the task ID and Label the task title.
+type SubmissionGroup struct {
+	Key             string    `json:"key"`
+	Label           string    `json:"label"`
+	Count           int64     `json:"count"`
+	LastSubmittedAt time.Time `json:"lastSubmittedAt"`
+}
+
 type SubmissionDetailed struct {
 	Submission
 	FileURL string `json:"fileUrl"`

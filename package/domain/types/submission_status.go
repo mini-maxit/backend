@@ -67,3 +67,6 @@ func (t TestResultStatusCode) String() string {
 func (t TestResultStatusCode) IsValid() bool {
 	return t >= TestResultStatusCodeOK && t < TestResultStatusCodeNotExecuted
 }
+
+// SubmissionGroupByTask groups submissions per task in GET /submissions?groupBy=task.
+const SubmissionGroupByTask = "task"

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/mini-maxit/backend/internal/database"
@@ -25,6 +26,8 @@ type SubmissionService interface {
 	CreateSubmissionResult(db database.Database, submissionID int64, responseMessage schemas.QueueResponseMessage) (int64, error)
 	// GetAll retrieves all submissions based on the user's role and query parameters.
 	GetAll(db database.Database, user *schemas.User, userID, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
+	// GetGroups aggregates a user's submissions by groupBy (currently only "task"), paginated by group.
+	GetGroups(db database.Database, user *schemas.User, userID int64, groupBy string, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.SubmissionGroup], error)
 	// GetAllForTask retrieves all submissions for a specific task based on the user's role and query parameters.
 	GetAllForTask(db database.Database, taskID int64, user *schemas.User, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.Submission], error)
 	// GetAllForContest retrieves all submissions for a specific contest based on the user's role and query parameters.
@@ -115,36 +118,8 @@ func (ss *submissionService) getFilteredSubmissions(
 		targetUserID = *userID
 	}
 
-	// Authorization check for students
-	if user.Role == types.UserRoleStudent && targetUserID != user.ID {
-		ss.logger.Errorf("Student %v is not allowed to view submissions for user %v", user.ID, targetUserID)
-		return nil, 0, errors.ErrPermissionDenied
-	}
-
-	// Enforce access control for provided filters
-	if contestID != nil {
-		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, *contestID, user, types.PermissionEdit); err != nil {
-			ss.logger.Errorf("Access denied for contest %v: %v", *contestID, err)
-			return nil, 0, err
-		}
-	}
-	if taskID != nil {
-		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, *taskID, user, types.PermissionEdit); err != nil {
-			ss.logger.Errorf("Access denied for task %v: %v", *taskID, err)
-			return nil, 0, err
-		}
-	}
-	// If both filters are present, ensure the task belongs to the contest
-	if contestID != nil && taskID != nil {
-		inContest, err := ss.contestService.IsTaskInContest(db, *contestID, *taskID)
-		if err != nil {
-			ss.logger.Errorf("Error verifying task %v is in contest %v: %v", *taskID, *contestID, err)
-			return nil, 0, err
-		}
-		if !inContest {
-			ss.logger.Errorf("Task %v is not part of contest %v", *taskID, *contestID)
-			return nil, 0, errors.ErrPermissionDenied
-		}
+	if err := ss.authorizeFilters(db, user, targetUserID, contestID, taskID); err != nil {
+		return nil, 0, err
 	}
 
 	// Fetch submissions based on filters and user role
@@ -171,6 +146,86 @@ func (ss *submissionService) getFilteredSubmissions(
 	}
 
 	return submissionModels, totalCount, nil
+}
+
+// authorizeFilters checks that user may list targetUserID's submissions narrowed by the optional contest/task filters.
+func (ss *submissionService) authorizeFilters(
+	db database.Database,
+	user *schemas.User,
+	targetUserID int64,
+	contestID, taskID *int64,
+) error {
+	// Authorization check for students
+	if user.Role == types.UserRoleStudent && targetUserID != user.ID {
+		ss.logger.Errorf("Student %v is not allowed to view submissions for user %v", user.ID, targetUserID)
+		return errors.ErrPermissionDenied
+	}
+
+	// Enforce access control for provided filters
+	if contestID != nil {
+		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeContest, *contestID, user, types.PermissionEdit); err != nil {
+			ss.logger.Errorf("Access denied for contest %v: %v", *contestID, err)
+			return err
+		}
+	}
+	if taskID != nil {
+		if err := ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, *taskID, user, types.PermissionEdit); err != nil {
+			ss.logger.Errorf("Access denied for task %v: %v", *taskID, err)
+			return err
+		}
+	}
+	// If both filters are present, ensure the task belongs to the contest
+	if contestID != nil && taskID != nil {
+		inContest, err := ss.contestService.IsTaskInContest(db, *contestID, *taskID)
+		if err != nil {
+			ss.logger.Errorf("Error verifying task %v is in contest %v: %v", *taskID, *contestID, err)
+			return err
+		}
+		if !inContest {
+			ss.logger.Errorf("Task %v is not part of contest %v", *taskID, *contestID)
+			return errors.ErrPermissionDenied
+		}
+	}
+	return nil
+}
+
+func (ss *submissionService) GetGroups(
+	db database.Database,
+	user *schemas.User,
+	userID int64,
+	groupBy string,
+	taskID, contestID *int64,
+	paginationParams schemas.PaginationParams,
+) (*schemas.PaginatedResult[[]schemas.SubmissionGroup], error) {
+	if groupBy != types.SubmissionGroupByTask {
+		return nil, errors.ErrInvalidData
+	}
+	if err := ss.authorizeFilters(db, user, userID, contestID, taskID); err != nil {
+		return nil, err
+	}
+
+	var teacherID *int64
+	if user.Role == types.UserRoleTeacher && userID != user.ID {
+		teacherID = &user.ID
+	}
+
+	rows, totalCount, err := ss.submissionRepository.GetTaskGroupsByUser(db, userID, contestID, taskID, teacherID, paginationParams.Limit, paginationParams.Offset)
+	if err != nil {
+		ss.logger.Errorf("Error grouping submissions: %v", err.Error())
+		return nil, err
+	}
+
+	groups := make([]schemas.SubmissionGroup, len(rows))
+	for i, row := range rows {
+		groups[i] = schemas.SubmissionGroup{
+			Key:             strconv.FormatInt(row.TaskID, 10),
+			Label:           row.TaskTitle,
+			Count:           row.Count,
+			LastSubmittedAt: row.LastSubmittedAt,
+		}
+	}
+	result := schemas.NewPaginatedResult(groups, paginationParams.Offset, paginationParams.Limit, totalCount)
+	return &result, nil
 }
 
 func (ss *submissionService) fetchSubmissionsByFiltersForTeacher(

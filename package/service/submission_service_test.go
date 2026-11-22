@@ -15,6 +15,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/errors"
 	"github.com/mini-maxit/backend/package/filestorage"
+	"github.com/mini-maxit/backend/package/repository"
 	mock_repository "github.com/mini-maxit/backend/package/repository/mocks"
 	"github.com/mini-maxit/backend/package/service"
 	mock_service "github.com/mini-maxit/backend/package/service/mocks"
@@ -943,5 +944,51 @@ func TestSubmitAccess(t *testing.T) {
 
 		_, err := setup.service.Submit(db, student, taskID, 1, &contestID, "solution.c")
 		require.ErrorIs(t, err, errPastAccess)
+	})
+}
+
+func TestGetGroups(t *testing.T) {
+	lastAt := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+	params := schemas.PaginationParams{Limit: 10, Offset: 0}
+
+	t.Run("Admin groups any user's submissions by task without teacher scope", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		defer setup.ctrl.Finish()
+		setup.submissionRepository.EXPECT().
+			GetTaskGroupsByUser(gomock.Any(), int64(7), nil, nil, nil, 10, 0).
+			Return([]repository.SubmissionTaskGroup{{TaskID: 3, TaskTitle: "Two Sum", Count: 4, LastSubmittedAt: lastAt}}, int64(12), nil)
+
+		result, err := setup.service.GetGroups(nil, &schemas.User{ID: 1, Role: testRoleAdmin}, 7, types.SubmissionGroupByTask, nil, nil, params)
+		require.NoError(t, err)
+		assert.Equal(t, []schemas.SubmissionGroup{{Key: "3", Label: "Two Sum", Count: 4, LastSubmittedAt: lastAt}}, result.Items)
+		assert.Equal(t, 12, result.Pagination.TotalItems)
+	})
+
+	t.Run("Teacher viewing another user is scoped to their own tasks and contests", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		defer setup.ctrl.Finish()
+		teacherID := int64(5)
+		setup.submissionRepository.EXPECT().
+			GetTaskGroupsByUser(gomock.Any(), int64(7), nil, nil, &teacherID, 10, 0).
+			Return([]repository.SubmissionTaskGroup{}, int64(0), nil)
+
+		_, err := setup.service.GetGroups(nil, &schemas.User{ID: teacherID, Role: testRoleTeacher}, 7, types.SubmissionGroupByTask, nil, nil, params)
+		require.NoError(t, err)
+	})
+
+	t.Run("Student cannot group another user's submissions", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		defer setup.ctrl.Finish()
+
+		_, err := setup.service.GetGroups(nil, &schemas.User{ID: 1, Role: testRoleStudent}, 7, types.SubmissionGroupByTask, nil, nil, params)
+		require.ErrorIs(t, err, errors.ErrPermissionDenied)
+	})
+
+	t.Run("Unknown groupBy is rejected", func(t *testing.T) {
+		setup := setupSubmissionServiceTest(t)
+		defer setup.ctrl.Finish()
+
+		_, err := setup.service.GetGroups(nil, &schemas.User{ID: 1, Role: testRoleAdmin}, 7, "language", nil, nil, params)
+		require.ErrorIs(t, err, errors.ErrInvalidData)
 	})
 }

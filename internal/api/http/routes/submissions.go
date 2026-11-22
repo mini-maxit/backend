@@ -44,6 +44,7 @@ type SumbissionImpl struct {
 //	@Param			userId		query		int		false	"User ID filter"
 //	@Param			contestId	query		int		false	"Contest ID filter"
 //	@Param			taskId		query		int		false	"Task ID filter"
+//	@Param			groupBy		query		string	false	"Group results instead of listing submissions. Only \"task\" is supported and userId is required. Returns PaginatedResult[[]schemas.SubmissionGroup] (one row per task, newest activity first; sort is ignored), paginated by group."	Enums(task)
 //	@Param			limit		query		int		false	"Limit the number of returned submissions"
 //	@Param			offset		query		int		false	"Offset the returned submissions"
 //	@Param			sort		query		string	false	"Sort order"
@@ -102,6 +103,20 @@ func (s *SumbissionImpl) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	db := httputils.GetDatabase(r)
 	currentUser := httputils.GetCurrentUser(r)
+
+	if groupBy := r.URL.Query().Get("groupBy"); groupBy != "" {
+		if userID == nil {
+			httputils.ReturnError(w, http.StatusBadRequest, "groupBy requires userId")
+			return
+		}
+		groups, err := s.submissionService.GetGroups(db, currentUser, *userID, groupBy, taskID, contestID, paginationParams)
+		if err != nil {
+			httputils.HandleServiceError(w, err, db, s.logger)
+			return
+		}
+		httputils.ReturnSuccess(w, http.StatusOK, groups)
+		return
+	}
 
 	submissions, err := s.submissionService.GetAll(db, currentUser, userID, taskID, contestID, paginationParams)
 	if err != nil {

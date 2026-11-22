@@ -564,3 +564,39 @@ func TestSubmitSolution(t *testing.T) {
 		assert.Equal(t, int64(123), response.Data["submissionId"])
 	})
 }
+
+func TestGetAllGroupBy(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ss := mock_service.NewMockSubmissionService(ctrl)
+	route := routes.NewSubmissionRoutes(ss, mock_service.NewMockQueueService(ctrl), mock_service.NewMockTaskService(ctrl))
+	handler := httputils.MockDatabaseMiddleware(http.HandlerFunc(route.GetAll), &testutils.MockDatabase{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), httputils.UserKey, schemas.User{ID: 1, Role: testAdmin, Email: testExampleMail})
+		ctx = context.WithValue(ctx, httputils.QueryParamsKey, map[string]interface{}{})
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	defer server.Close()
+
+	t.Run("groupBy without userId is a bad request", func(t *testing.T) {
+		resp, err := http.Get(server.URL + "?groupBy=task")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("groupBy returns groups instead of submissions", func(t *testing.T) {
+		taskID := int64(3)
+		groups := schemas.NewPaginatedResult([]schemas.SubmissionGroup{{Key: "3", Label: "Two Sum", Count: 2}}, 0, 10, 1)
+		ss.EXPECT().GetGroups(gomock.Any(), gomock.Any(), int64(7), "task", &taskID, nil, gomock.Any()).Return(&groups, nil)
+
+		resp, err := http.Get(server.URL + "?groupBy=task&userId=7&taskId=3")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		response := &httputils.APIResponse[schemas.PaginatedResult[[]schemas.SubmissionGroup]]{}
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(response))
+		assert.Equal(t, groups.Items, response.Data.Items)
+	})
+}

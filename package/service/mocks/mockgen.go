@@ -1402,6 +1402,21 @@ func (mr *MockSubmissionServiceMockRecorder) GetAvailableLanguages(db any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableLanguages", reflect.TypeOf((*MockSubmissionService)(nil).GetAvailableLanguages), db)
 }
 
+// GetGroups mocks base method.
+func (m *MockSubmissionService) GetGroups(db database.Database, user *schemas.User, userID int64, groupBy string, taskID, contestID *int64, paginationParams schemas.PaginationParams) (*schemas.PaginatedResult[[]schemas.SubmissionGroup], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGroups", db, user, userID, groupBy, taskID, contestID, paginationParams)
+	ret0, _ := ret[0].(*schemas.PaginatedResult[[]schemas.SubmissionGroup])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetGroups indicates an expected call of GetGroups.
+func (mr *MockSubmissionServiceMockRecorder) GetGroups(db, user, userID, groupBy, taskID, contestID, paginationParams any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGroups", reflect.TypeOf((*MockSubmissionService)(nil).GetGroups), db, user, userID, groupBy, taskID, contestID, paginationParams)
+}
+
 // GetTaskStatsForContest mocks base method.
 func (m *MockSubmissionService) GetTaskStatsForContest(db database.Database, user *schemas.User, contestID int64) ([]schemas.ContestTaskStats, error) {
 	m.ctrl.T.Helper()
