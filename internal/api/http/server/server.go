@@ -101,6 +101,10 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	workerMux := mux.NewRouter()
 	routes.RegisterWorkerRoutes(workerMux, init.WorkerRoute)
 
+	// Dashboard routes
+	dashboardMux := mux.NewRouter()
+	routes.RegisterDashboardRoutes(dashboardMux, init.DashboardRoute)
+
 	// Secure routes (require authentication with JWT)
 	secureMux := mux.NewRouter()
 	secureMux.PathPrefix("/tasks-management/").Handler(http.StripPrefix("/tasks-management", tasksManagementMux))
@@ -113,6 +117,7 @@ func NewServer(init *initialization.Initialization, log *zap.SugaredLogger) *Ser
 	secureMux.PathPrefix("/languages-management/").Handler(http.StripPrefix("/languages-management", languagesManagementMux))
 	secureMux.PathPrefix("/contests").Handler(contestMux)
 	secureMux.PathPrefix("/workers/").Handler(http.StripPrefix("/workers", workerMux))
+	secureMux.PathPrefix("/dashboard/").Handler(http.StripPrefix("/dashboard", dashboardMux))
 
 	// API routes
 	apiMux := mux.NewRouter()

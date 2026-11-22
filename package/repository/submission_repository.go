@@ -69,6 +69,8 @@ type SubmissionRepository interface {
 	MarkProcessing(db database.Database, submissionID int64) error
 	// GetPendingSubmissions returns submissions that are in "received" status (not yet sent for evaluation).
 	GetPendingSubmissions(db database.Database, limit int) ([]models.Submission, error)
+	// CountAwaitingResult counts submissions still waiting for a result: received or sent for evaluation.
+	CountAwaitingResult(db database.Database) (int64, error)
 	// GetTaskStatsForContest returns aggregated statistics for each task in a contest
 	GetTaskStatsForContest(db database.Database, contestID int64) ([]models.ContestTaskStatsModel, error)
 	// GetUserStatsForContestTask returns per-user statistics for a specific task in a contest
@@ -374,6 +376,14 @@ func (us *submissionRepository) MarkFailed(db database.Database, submissionID in
 		CheckedAt:     time.Now(),
 	}).Error
 	return err
+}
+
+func (us *submissionRepository) CountAwaitingResult(db database.Database) (int64, error) {
+	var count int64
+	err := db.GetInstance().Model(&models.Submission{}).
+		Where("status IN ?", []types.SubmissionStatus{types.SubmissionStatusReceived, types.SubmissionStatusSentForEvaluation}).
+		Count(&count).Error
+	return count, err
 }
 
 func (us *submissionRepository) GetPendingSubmissions(db database.Database, limit int) ([]models.Submission, error) {
