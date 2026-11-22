@@ -3656,6 +3656,12 @@ paths:
         in: query
         name: taskId
         type: integer
+      - description: Group results instead of listing submissions. Only \
+        enum:
+        - task
+        in: query
+        name: groupBy
+        type: string
       - description: Limit the number of returned submissions
         in: query
         name: limit
