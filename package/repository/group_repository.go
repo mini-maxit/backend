@@ -5,6 +5,7 @@ import (
 
 	"github.com/mini-maxit/backend/internal/database"
 	"github.com/mini-maxit/backend/package/domain/models"
+	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
 )
 
@@ -23,7 +24,7 @@ type GroupRepository interface {
 	Get(db database.Database, groupID int64) (*models.Group, error)
 	// GetAll returns all groups with pagination and sorting
 	GetAll(db database.Database, offset int, limit int, sort string) ([]models.Group, error)
-	// GetAllForTeacher returns all groups created by teacher with pagination and sorting
+	// GetAllForTeacher returns all groups the teacher has access to with pagination and sorting
 	GetAllForTeacher(db database.Database, teacherID int64, offset int, limit int, sort string) ([]models.Group, error)
 	// GetUsers returns all users that belong to group
 	GetUsers(db database.Database, groupID int64) ([]models.User, error)
@@ -100,7 +101,7 @@ func (gr *groupRepository) GetAllForTeacher(
 
 	var groups []models.Group
 	err = paginatedTx.Model(&models.Group{}).
-		Where("created_by = ?", userID).
+		Where(hasAccessSQL(tx, types.ResourceTypeGroup, "groups.id"), userID).
 		Preload("Tasks").
 		Preload("Users").
 		Preload("Author").

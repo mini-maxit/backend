@@ -646,13 +646,14 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 
 	t.Run("Teacher retrieves submissions for their tasks", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, Task: models.Task{CreatedBy: 2}},
-			{ID: 2, TaskID: 2, UserID: 1, Status: types.SubmissionStatusEvaluated, Task: models.Task{CreatedBy: 2}},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 2, UserID: 1, Status: types.SubmissionStatusEvaluated},
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, testSortBySubmittedAtDesc).Return(
 			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, gomock.Any(), gomock.Any(), types.PermissionEdit).Return(nil).Times(2)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: testSortBySubmittedAtDesc}
 		user := &schemas.User{Role: testRoleTeacher, ID: 2}
@@ -663,14 +664,20 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		assert.Len(t, submissions.Items, 2)
 	})
 
-	t.Run("Teacher tries to retrieve submissions for tasks they didn't create", func(t *testing.T) {
+	t.Run("Teacher only sees submissions for tasks they have access to", func(t *testing.T) {
 		expectedSubmissions := []models.Submission{
-			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived, Task: models.Task{CreatedBy: 3}},
+			{ID: 1, TaskID: 1, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 2, TaskID: 2, UserID: 1, Status: types.SubmissionStatusReceived},
+			{ID: 3, TaskID: 3, UserID: 1, Status: types.SubmissionStatusReceived},
 		}
 
 		setup.submissionRepository.EXPECT().GetAllByUser(gomock.Any(), int64(1), 10, 0, testSortBySubmittedAtDesc).Return(
 			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
+		// Adjacent rows without access: the old in-loop slices.Delete skipped the second one.
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, int64(1), gomock.Any(), types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, int64(2), gomock.Any(), types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, int64(3), gomock.Any(), types.PermissionEdit).Return(nil).Times(1)
 
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: testSortBySubmittedAtDesc}
 		user := &schemas.User{Role: testRoleTeacher, ID: 2}
@@ -678,7 +685,8 @@ func TestSubmissionGetAllForUser(t *testing.T) {
 		submissions, err := setup.service.GetAllForUser(nil, 1, user, paginationParams)
 
 		require.NoError(t, err)
-		assert.Empty(t, submissions.Items)
+		require.Len(t, submissions.Items, 1)
+		assert.Equal(t, int64(3), submissions.Items[0].ID)
 	})
 
 	t.Run("Error retrieving submissions", func(t *testing.T) {
@@ -727,6 +735,7 @@ func TestGetAllForTask(t *testing.T) {
 		}
 
 		setup.taskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, int64(1), gomock.Any(), types.PermissionEdit).Return(nil).Times(1)
 		setup.submissionRepository.EXPECT().GetAllForTask(gomock.Any(), int64(1), 10, 0, testSortBySubmittedAtDesc).Return(
 			expectedSubmissions, int64(len(expectedSubmissions)), nil,
 		).Times(1)
@@ -740,9 +749,10 @@ func TestGetAllForTask(t *testing.T) {
 		assert.Len(t, submissions.Items, 2)
 	})
 
-	t.Run("Teacher tries to retrieve submissions for a task they didn't create", func(t *testing.T) {
+	t.Run("Teacher tries to retrieve submissions for a task they have no access to", func(t *testing.T) {
 		expectedTask := &schemas.TaskDetailed{ID: 1, CreatedBy: 2}
 		setup.taskService.EXPECT().Get(gomock.Any(), gomock.Any(), int64(1)).Return(expectedTask, nil).Times(1)
+		setup.accessControlService.EXPECT().CanUserAccess(gomock.Any(), types.ResourceTypeTask, int64(1), gomock.Any(), types.PermissionEdit).Return(errors.ErrForbidden).Times(1)
 		paginationParams := schemas.PaginationParams{Limit: 10, Offset: 0, Sort: testSortBySubmittedAtDesc}
 		user := &schemas.User{Role: testRoleTeacher, ID: 3}
 

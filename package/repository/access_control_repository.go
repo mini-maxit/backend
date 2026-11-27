@@ -7,6 +7,7 @@ import (
 	"github.com/mini-maxit/backend/package/domain/models"
 	"github.com/mini-maxit/backend/package/domain/types"
 	"github.com/mini-maxit/backend/package/utils"
+	"gorm.io/gorm"
 )
 
 // AccessControlRepository manages access control for resources (contests and tasks).
@@ -128,4 +129,16 @@ func (r *accessControlRepository) GetAssignableUsers(db database.Database, resou
 		return nil, 0, err
 	}
 	return users, total, nil
+}
+
+// hasAccessSQL returns a WHERE fragment matching rows whose resource (idColumn) the user, bound as the single
+// "?" arg, holds any live access entry on. Any entry implies at least edit, the level needed to view.
+func hasAccessSQL(tx *gorm.DB, resourceType types.ResourceType, idColumn string) string {
+	return fmt.Sprintf("EXISTS (SELECT 1 FROM %s ac WHERE ac.resource_type = '%s' AND ac.resource_id = %s AND ac.user_id = ? AND ac.deleted_at IS NULL)",
+		database.ResolveTableName(tx, &models.AccessControl{}), resourceType, idColumn)
+}
+
+// taskOrContestAccessSQL matches rows where the user, bound twice, has access to the task or to the contest.
+func taskOrContestAccessSQL(tx *gorm.DB, taskCol, contestCol string) string {
+	return "(" + hasAccessSQL(tx, types.ResourceTypeTask, taskCol) + " OR " + hasAccessSQL(tx, types.ResourceTypeContest, contestCol) + ")"
 }
