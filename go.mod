@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/mini-maxit/file-storage v0.4.0
-	github.com/rabbitmq/amqp091-go v1.16.0
+	github.com/rabbitmq/amqp091-go v1.17.0
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
