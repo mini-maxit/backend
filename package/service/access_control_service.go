@@ -313,8 +313,9 @@ func (acs *accessControlService) GrantOwnerAccess(db database.Database, resource
 
 	err := acs.accessControlRepository.AddAccess(db, access)
 	if err != nil {
-		acs.logger.Warnw("Failed to grant owner access", "error", err, "resourceType", resourceType, "resourceID", resourceID, "ownerID", ownerID)
-		// Don't fail the operation if we can't add owner as collaborator
+		// Fail the create: a resource without an owner row is unreachable through access control.
+		acs.logger.Errorw("Failed to grant owner access", "error", err, "resourceType", resourceType, "resourceID", resourceID, "ownerID", ownerID)
+		return err
 	}
 	return nil
 }

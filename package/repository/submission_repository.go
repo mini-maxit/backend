@@ -127,7 +127,7 @@ func (us *submissionRepository) GetAllForTeacher(
 			fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id",
 				database.ResolveTableName(tx, &models.Task{}),
 			)).
-		Where("tasks.created_by = ?", userID).
+		Where(hasAccessSQL(tx, types.ResourceTypeTask, "tasks.id"), userID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
@@ -147,7 +147,7 @@ func (us *submissionRepository) GetAllForTeacher(
 			fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id",
 				database.ResolveTableName(tx, &models.Task{}),
 			)).
-		Where("tasks.created_by = ?", userID).
+		Where(hasAccessSQL(tx, types.ResourceTypeTask, "tasks.id"), userID).
 		Find(&submissions).Error
 	if err != nil {
 		return nil, 0, err
@@ -310,7 +310,8 @@ func (us *submissionRepository) GetAllForTaskTeacher(
 		Preload("User").
 		Preload("Result").
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
-		Where("tasks.id = ? AND tasks.created_by = ?", taskID, userID).
+		Where("tasks.id = ?", taskID).
+		Where(hasAccessSQL(tx, types.ResourceTypeTask, "tasks.id"), userID).
 		Find(&submissions).Error
 
 	if err != nil {
@@ -704,7 +705,8 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 	err := tx.Model(&models.Submission{}).
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("LEFT JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND (tasks.created_by = ? OR (submissions.contest_id IS NOT NULL AND contests.created_by = ?))", userID, teacherID, teacherID).
+		Where("submissions.user_id = ?", userID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "submissions.contest_id"), teacherID, teacherID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
@@ -724,7 +726,8 @@ func (us *submissionRepository) GetAllByUserForTeacher(
 		Preload("Result.TestResults").
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("LEFT JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND (tasks.created_by = ? OR (submissions.contest_id IS NOT NULL AND contests.created_by = ?))", userID, teacherID, teacherID).
+		Where("submissions.user_id = ?", userID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "submissions.contest_id"), teacherID, teacherID).
 		Find(&submissions).Error
 
 	if err != nil {
@@ -746,7 +749,8 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 	// Get total count first
 	err := tx.Model(&models.Submission{}).
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
-		Where("submissions.user_id = ? AND submissions.task_id = ? AND tasks.created_by = ?", userID, taskID, teacherID).
+		Where("submissions.user_id = ? AND submissions.task_id = ?", userID, taskID).
+		Where(hasAccessSQL(tx, types.ResourceTypeTask, "tasks.id"), teacherID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
@@ -765,7 +769,8 @@ func (us *submissionRepository) GetAllByUserForTaskByTeacher(
 		Preload("Result").
 		Preload("Result.TestResults").
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
-		Where("submissions.user_id = ? AND submissions.task_id = ? AND tasks.created_by = ?", userID, taskID, teacherID).
+		Where("submissions.user_id = ? AND submissions.task_id = ?", userID, taskID).
+		Where(hasAccessSQL(tx, types.ResourceTypeTask, "tasks.id"), teacherID).
 		Find(&submissions).Error
 
 	if err != nil {
@@ -788,7 +793,8 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 	err := tx.Model(&models.Submission{}).
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND submissions.contest_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, teacherID, teacherID).
+		Where("submissions.user_id = ? AND submissions.contest_id = ?", userID, contestID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "contests.id"), teacherID, teacherID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
@@ -808,7 +814,8 @@ func (us *submissionRepository) GetAllByUserForContestByTeacher(
 		Preload("Result.TestResults").
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND submissions.contest_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, teacherID, teacherID).
+		Where("submissions.user_id = ? AND submissions.contest_id = ?", userID, contestID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "contests.id"), teacherID, teacherID).
 		Find(&submissions).Error
 
 	if err != nil {
@@ -831,7 +838,8 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 	err := tx.Model(&models.Submission{}).
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, taskID, teacherID, teacherID).
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ?", userID, contestID, taskID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "contests.id"), teacherID, teacherID).
 		Count(&totalCount).Error
 	if err != nil {
 		return nil, 0, err
@@ -851,7 +859,8 @@ func (us *submissionRepository) GetAllByUserForContestAndTaskByTeacher(
 		Preload("Result.TestResults").
 		Joins(fmt.Sprintf("JOIN %s ON tasks.id = submissions.task_id", database.ResolveTableName(tx, &models.Task{}))).
 		Joins(fmt.Sprintf("JOIN %s ON contests.id = submissions.contest_id", database.ResolveTableName(tx, &models.Contest{}))).
-		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ? AND (tasks.created_by = ? OR contests.created_by = ?)", userID, contestID, taskID, teacherID, teacherID).
+		Where("submissions.user_id = ? AND submissions.contest_id = ? AND submissions.task_id = ?", userID, contestID, taskID).
+		Where(taskOrContestAccessSQL(tx, "tasks.id", "contests.id"), teacherID, teacherID).
 		Find(&submissions).Error
 
 	if err != nil {
@@ -1220,7 +1229,7 @@ func (sr *submissionRepository) GetTaskGroupsByUser(
 	if teacherID != nil {
 		base = base.
 			Joins("LEFT JOIN "+database.ResolveTableName(tx, &models.Contest{})+" AS c ON c.id = s.contest_id").
-			Where("(t.created_by = ? OR (s.contest_id IS NOT NULL AND c.created_by = ?))", *teacherID, *teacherID)
+			Where(taskOrContestAccessSQL(tx, "t.id", "s.contest_id"), *teacherID, *teacherID)
 	}
 
 	var totalCount int64

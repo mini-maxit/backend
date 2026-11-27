@@ -750,7 +750,7 @@ func TestGrantOwnerAccess(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Error on add access does not fail the operation", func(t *testing.T) {
+	t.Run("Error on add access is returned", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		db := &testutils.MockDatabase{}
@@ -763,7 +763,7 @@ func TestGrantOwnerAccess(t *testing.T) {
 
 		acr.EXPECT().AddAccess(db, gomock.Any()).Return(assert.AnError).Times(1)
 		err := acs.GrantOwnerAccess(db, resourceType, resourceID, ownerID)
-		require.NoError(t, err)
+		require.ErrorIs(t, err, assert.AnError)
 	})
 
 	t.Run("Grants owner access for contest resource type", func(t *testing.T) {

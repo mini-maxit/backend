@@ -371,12 +371,11 @@ func (ss *submissionService) GetAllForUser(
 			return nil, errors.ErrPermissionDenied
 		}
 	case types.UserRoleTeacher:
-		// Teacher is only allowed to view submissions for tasks they created
-		for i, submission := range submissionModels {
-			if submission.Task.CreatedBy != currentUser.ID {
-				submissionModels = slices.Delete(submissionModels, i, i+1)
-			}
-		}
+		// Teacher is only allowed to view submissions for tasks they have access to.
+		// shortcut: filters after pagination (one access lookup per row, totalCount not adjusted); move into the query if this list grows.
+		submissionModels = slices.DeleteFunc(submissionModels, func(submission models.Submission) bool {
+			return ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, submission.TaskID, currentUser, types.PermissionEdit) != nil
+		})
 	}
 
 	result := make([]schemas.Submission, len(submissionModels))
@@ -410,13 +409,12 @@ func (ss *submissionService) GetAllForGroup(
 		// Student is only allowed to view their own submissions
 		return nil, 0, errors.ErrPermissionDenied
 	case types.UserRoleTeacher:
-		// Teacher is only allowed to view submissions for tasks they created
-		group, er := ss.groupRepository.Get(db, groupID)
-		if er != nil {
+		// Teacher is only allowed to view submissions for groups they have access to
+		if _, er := ss.groupRepository.Get(db, groupID); er != nil {
 			ss.logger.Errorf("Error getting group: %v", er.Error())
 			return nil, 0, er
 		}
-		if group.CreatedBy != user.ID {
+		if er := ss.accessControlService.CanUserAccess(db, types.ResourceTypeGroup, groupID, user, types.PermissionEdit); er != nil {
 			return nil, 0, errors.ErrPermissionDenied
 		}
 		submissionModels, totalCount, err = ss.submissionRepository.GetAllForGroup(db, groupID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
@@ -453,11 +451,10 @@ func (ss *submissionService) GetAllForTask(
 	case types.UserRoleAdmin:
 		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(db, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
 	case types.UserRoleTeacher:
-		task, er := ss.taskService.Get(db, user, taskID)
-		if er != nil {
+		if _, er := ss.taskService.Get(db, user, taskID); er != nil {
 			return nil, er
 		}
-		if task.CreatedBy != user.ID {
+		if er := ss.accessControlService.CanUserAccess(db, types.ResourceTypeTask, taskID, user, types.PermissionEdit); er != nil {
 			return nil, errors.ErrPermissionDenied
 		}
 		submissionModel, totalCount, err = ss.submissionRepository.GetAllForTask(db, taskID, paginationParams.Limit, paginationParams.Offset, paginationParams.Sort)
